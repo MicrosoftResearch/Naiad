@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Release</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{A6221415-1283-4C04-8D2C-E25A857E1FE9}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Naiad</RootNamespace>
+    <AssemblyName>Naiad</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>TRACE;DEBUG</DefineConstants>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DebugType>full</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE;LOGGING_ON</DefineConstants>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="Microsoft.CSharp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Channels\Endpoints.cs" />
+    <Compile Include="Channels\IOHelper.cs" />
+    <Compile Include="Channels\LocalChannel.cs" />
+    <Compile Include="Channels\Networking.cs" />
+    <Compile Include="CollectionTrace\CollectionTrace.cs" />
+    <Compile Include="CollectionTrace\CollectionTraceWithAggregation.cs" />
+    <Compile Include="CollectionTrace\CollectionTraceWithHeap.cs" />
+    <Compile Include="CollectionTrace\CollectionTraceWithoutHeap.cs" />
+    <Compile Include="CollectionTrace\Heaps.cs" />
+    <Compile Include="LatticeInternTable.cs" />
+    <Compile Include="OperatorImplementations\BinaryOperator.cs" />
+    <Compile Include="OperatorImplementations\BinaryStateful.cs" />
+    <Compile Include="OperatorImplementations\BinaryStatefulIntKeyed.cs" />
+    <Compile Include="OperatorImplementations\UnaryOperator.cs" />
+    <Compile Include="OperatorImplementations\UnaryStateful.cs" />
+    <Compile Include="OperatorImplementations\UnaryStatefulIntKeyed.cs" />
+    <Compile Include="OperatorImplementations\UnaryStatefulWithAggregation.cs" />
+    <Compile Include="Scheduling\Events.cs" />
+    <Compile Include="Scheduling\Placement.cs" />
+    <Compile Include="Tracing.cs" />
+    <Compile Include="CollectionInterfaces.cs" />
+    <Compile Include="DataStructures\Serialization.cs" />
+    <Compile Include="InputCollection.cs" />
+    <Compile Include="Remoting.cs" />
+    <Compile Include="Channels\ProcessBroadcastChannel.cs" />
+    <Compile Include="CodeGeneration\ExpressionComparer.cs" />
+    <Compile Include="DataStructures\BuddyAllocator.cs" />
+    <Compile Include="DataStructures\MinimalAntichain.cs" />
+    <Compile Include="NaiadServer.cs" />
+    <Compile Include="Channels\MessageDelivery.cs" />
+    <Compile Include="CodeGeneration\AutoSerialization.cs" />
+    <Compile Include="CommonNaiadables.cs" />
+    <Compile Include="DataStructures\CircularDataBuffer.cs" />
+    <Compile Include="DataStructures\NaiadList.cs" />
+    <Compile Include="Operators\Aggregate.cs" />
+    <Compile Include="Operators\BroadcastJoin.cs" />
+    <Compile Include="Operators\CausalClock.cs" />
+    <Compile Include="Operators\Deserializer.cs" />
+    <Compile Include="Operators\FileReader.cs" />
+    <Compile Include="Operators\FileWriter.cs" />
+    <Compile Include="Operators\SymmetricDifference.cs" />
+    <Compile Include="Operators\AdjustLattice.cs" />
+    <Compile Include="Controller.cs" />
+    <Compile Include="CoreGenerics.cs" />
+    <Compile Include="DataStructures\CircularLogBuffer.cs" />
+    <Compile Include="DataStructures\SubArray.cs" />
+    <Compile Include="Lattice.cs" />
+    <Compile Include="Logging.cs" />
+    <Compile Include="Operators\Abs.cs" />
+    <Compile Include="Operators\CoGroupBy.cs" />
+    <Compile Include="Operators\Count.cs" />
+    <Compile Include="Operators\Concat.cs" />
+    <Compile Include="Operators\Consolidate.cs" />
+    <Compile Include="DataStructures\BufferPool.cs" />
+    <Compile Include="Operators\Except.cs" />
+    <Compile Include="Operators\GroupBy.cs" />
+    <Compile Include="Channels\PipelineChannel.cs" />
+    <Compile Include="Collection.cs" />
+    <Compile Include="Operator.cs" />
+    <Compile Include="Operators\Input.cs" />
+    <Compile Include="Operators\Intersect.cs" />
+    <Compile Include="Operators\Join.cs" />
+    <Compile Include="Operators\Distinct.cs" />
+    <Compile Include="Operators\Max.cs" />
+    <Compile Include="Operators\Min.cs" />
+    <Compile Include="Operators\FixedPoint.cs" />
+    <Compile Include="ExtensionMethods.cs" />
+    <Compile Include="Operators\Prioritize.cs" />
+    <Compile Include="Operators\Sum.cs" />
+    <Compile Include="Scheduling\Reachability.cs" />
+    <Compile Include="Scheduling\Scheduler.cs" />
+    <Compile Include="DataStructures\Pair.cs" />
+    <Compile Include="Operators\Monitor.cs" />
+    <Compile Include="Operators\Output.cs" />
+    <Compile Include="Operators\SelectMany.cs" />
+    <Compile Include="Operators\Union.cs" />
+    <Compile Include="Scheduling\Version.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Operators\Select.cs" />
+    <Compile Include="Channels\Channel.cs" />
+    <Compile Include="Operators\Where.cs" />
+    <Compile Include="Util\Flags.cs" />
+    <Compile Include="Util\Win32.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

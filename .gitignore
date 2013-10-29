@@ -1,0 +1,15 @@
+*.suo
+*.user
+*.sln.docstates
+Debug/
+Release/
+x64/
+bin/
+obj/
+*.psess
+*.vsp
+*.vspx
+*.log
+Thumbs.db
+ehthumbs.db
+Desktop.ini
