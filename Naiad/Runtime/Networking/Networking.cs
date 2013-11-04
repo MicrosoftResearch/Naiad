@@ -134,8 +134,6 @@ namespace Naiad.Runtime.Networking
         private readonly int sendPageSize;
         public int SendPageSize { get { return this.sendPageSize; } }
 
-        bool debug = false; // set for extra printfs
-
         private enum ReceiveResult
         {
             Continue = 0,
@@ -679,7 +677,6 @@ namespace Naiad.Runtime.Networking
                 //Tracing.Trace("$SendD {0} {1} {2} {3}", header.SequenceNumber, segment.Length, header.FromShardID, header.DestShardID);
                 //Console.Error.WriteLine("$SendD {0} {1} {2} {3}", header.SequenceNumber, segment.Length, header.FromShardID, header.DestShardID);
             }
-            if (debug) Console.Error.WriteLine("SendBufferSegment type {0} len {1} offset {2}", segment.Type, segment.Length, segment.startOffset);
 
             if (Controller.Configuration.DontUseHighPriorityQueue)
                 HighPriority = false;
@@ -854,17 +851,14 @@ namespace Naiad.Runtime.Networking
 
                 if (bytesSent != length)
                 {
-                    if (debug) Console.Error.WriteLine("Send {0} returned {1}", length, bytesSent);
                     Debug.Assert(bytesSent == length);
                 }
                 this.connections[destProcessID].BytesSent += bytesSent; // Progress + Data
-                if (debug) Console.Error.WriteLine(">>> Sent {0} bytes to {1} (of {2}) pid {3}", bytesSent, destProcessID, length, this.Controller.Configuration.ProcessID);
                 
                 //Logging.Progress("Sent {0} bytes to {1} (of {2})", bytesSent, destProcessID, length);
                 if (errorCode != SocketError.Success)
                 {
                     Tracing.Trace("*Socket Error {0}", errorCode);
-                    if (debug) Console.Error.WriteLine("Socket Send error {0} bytesSent {1} dst {2}", errorCode, bytesSent, destProcessID);
                     this.HandleSocketError(destProcessID, errorCode);
                 }
 
@@ -957,12 +951,10 @@ namespace Naiad.Runtime.Networking
                 recvBytesOut += bytesRecvd;
                 numRecvs++;
 
-                if (debug) Console.Error.WriteLine("<<< Received {0} bytes from {1}", bytesRecvd, srcProcessID);
                 //Logging.Progress("Received {0} bytes from {1}", bytesRecvd, srcProcessID);
                 if (errorCode != SocketError.Success)
                 {
                     Tracing.Trace("*Socket Error {0}", errorCode);
-                    if (debug) Console.Error.WriteLine("Socket Recv error {0} bytesRecvd {1} src {2}", errorCode, bytesRecvd, srcProcessID);
 
                     this.HandleSocketError(srcProcessID, errorCode);
                 }
@@ -972,74 +964,41 @@ namespace Naiad.Runtime.Networking
                 {
                     message.ConnectionSequenceNumber = nextConnectionSequenceNumber++;
 
-                    //Tracing.Trace("$Recv {0} {1} {2} {3}", message.Header.SequenceNumber,
-                    //    message.Header.Length, message.Header.FromShardID, message.Header.DestShardID);
-                    //if (message.Header.SequenceNumber < 0)
-                    //    NaiadTracing.Trace.ProgressRecv(message.Header);
-                    //else
-                    //    NaiadTracing.Trace.DataRecv(message.Header);
-
                     this.connections[srcProcessID].recvStatistics[(int)RuntimeStatistic.RxNetMessages] += 1;
                     this.connections[srcProcessID].recvStatistics[(int)RuntimeStatistic.RxNetBytes] += message.Header.Length;
 
-                    //Console.Error.WriteLine("$Recv {0} {1} {2} {3}", message.Header.SequenceNumber, message.Header.Length, message.Header.FromShardID, message.Header.DestShardID);
-
-                    if (debug) Logging.Progress("Hark! a message from {0}/{2} of type {1} for {3}", srcProcessID, message.Type, message.Header.FromShardID, message.Header.DestShardID);
-
-                    switch (state)
+                    switch (message.Type)
                     {
-                        case RecvThreadState.Running:
-                        retry:
-
-                            switch (message.Type)
-                            {
-                                case SerializedMessageType.Startup:
-                                    Logging.Progress("Received startup message from {0}", srcProcessID);
-                                    this.OnRecvBarrierMessageAndBlock(message.Header.ChannelID);    // we put the barrier id in here
-                                    break;
-                                case SerializedMessageType.Shutdown:
-                                    Logging.Progress("Received shutdown message from {0}", srcProcessID);
-                                    Logging.Info("PerProcessRecvThread[{0}]: numRecvs {1} avgBytesIn {2} avgBytesOut {3}", srcProcessID, recvBytesIn / numRecvs, recvBytesOut / numRecvs);
-                                    this.shutdownRecvCountdown.Signal();
-                                    return;
-                                case SerializedMessageType.Checkpoint:
-                                    // Pause the thread until we are informed that we can continue.
-                                    Console.Error.WriteLine("Got checkpoint message from process {0}", srcProcessID);
-                                    this.connections[srcProcessID].ReceivedCheckpointMessages++;
-                                    this.connections[srcProcessID].LastCheckpointSequenceNumber = message.ConnectionSequenceNumber;
-                                    this.connections[srcProcessID].CheckpointPauseEvent.Set();
-                                    state = RecvThreadState.Checkpointing;
-
-                                    break;
-                                case SerializedMessageType.Data:
-                                    bool success = this.AttemptDelivery(message, srcProcessID);
-                                    Debug.Assert(success);
-                                    break;
-                                default:
-                                    Console.Error.WriteLine("Received BAD msg type {0} from process {1}! ", message.Type, srcProcessID);
-                                    Debug.Assert(false);
-                                    break;
-                            }
+                        case SerializedMessageType.Startup:
+                            Logging.Progress("Received startup message from {0}", srcProcessID);
+                            this.OnRecvBarrierMessageAndBlock(message.Header.ChannelID);    // we put the barrier id in here
                             break;
-                        case RecvThreadState.Checkpointing:
-                            switch (message.Type)
-                            {
-                                case SerializedMessageType.CheckpointData:
-                                    //Console.Error.WriteLine("Received a page of checkpoint data (seq# {0})", message.Header.SequenceNumber);
-                                    message.Dispose();
-                                    break;
- 
-                                default:
+                        case SerializedMessageType.Shutdown:
+                            Logging.Progress("Received shutdown message from {0}", srcProcessID);
+                            Logging.Info("PerProcessRecvThread[{0}]: numRecvs {1} avgBytesIn {2} avgBytesOut {3}", srcProcessID, recvBytesIn / numRecvs, recvBytesOut / numRecvs);
+                            this.shutdownRecvCountdown.Signal();
+                            return;
+                        case SerializedMessageType.Checkpoint:
+                            // Pause the thread until we are informed that we can continue.
+                            Logging.Progress("Got checkpoint message from process {0}", srcProcessID);
+                            this.connections[srcProcessID].ReceivedCheckpointMessages++;
+                            this.connections[srcProcessID].LastCheckpointSequenceNumber = message.ConnectionSequenceNumber;
+                            this.connections[srcProcessID].CheckpointPauseEvent.Set();
 
-                                    Console.Error.WriteLine("Pausing recieve thread for process {0} because of {1}", srcProcessID, message.Type);
-                                    this.connections[srcProcessID].CheckpointResumeEvent.WaitOne();
-                                    Console.Error.WriteLine("Resuming receive thread for process {0} after checkpoint", srcProcessID);
-                                    state = RecvThreadState.Running;
-                                    goto retry;
-                                    
-                            }
+                            Logging.Progress("Pausing recieve thread for process {0} because of {1}", srcProcessID, message.Type);
+                            this.connections[srcProcessID].CheckpointResumeEvent.WaitOne();
+                            Logging.Progress("Resuming receive thread for process {0} after checkpoint", srcProcessID);
+
                             break;
-                    }          
+                        case SerializedMessageType.Data:
+                            bool success = this.AttemptDelivery(message, srcProcessID);
+                            Debug.Assert(success);
+                            break;
+                        default:
+                            Logging.Progress("Received BAD msg type {0} from process {1}! ", message.Type, srcProcessID);
+                            Debug.Assert(false);
+                            break;
+                    }
                 }
             }
 #if RECV_AFFINITY

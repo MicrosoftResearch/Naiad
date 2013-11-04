@@ -145,23 +145,34 @@ namespace Naiad.Scheduling
         {
             var maxIdentifier = 0;
 
-            if (manager.Stages.Count > 0)
-                maxIdentifier = Math.Max(manager.Stages.Keys.Max(), maxIdentifier);
+            if (manager.Stages.Count() > 0)
+                maxIdentifier = Math.Max(manager.Stages.Max(x => x.Key), maxIdentifier);
 
-            if (manager.Edges.Count > 0)
-                maxIdentifier = Math.Max(manager.Edges.Keys.Max(), maxIdentifier);
+            if (manager.Edges.Count() > 0)
+                maxIdentifier = Math.Max(manager.Edges.Max(x => x.Key), maxIdentifier);
 
             this.Graph = new GraphNode[maxIdentifier + 1];
 
+#if true
+            for (int i = 0; i < this.Graph.Length; i++)
+                this.Graph[i] = new GraphNode(i, new int[] { });
+
+            foreach (var stage in manager.Stages)
+                this.Graph[stage.Key] = new GraphNode(stage.Value);
+
+            foreach (var edge in manager.Edges)
+                this.Graph[edge.Key] = new GraphNode(edge.Value);
+#else
             for (int i = 0; i < this.Graph.Length; i++)
             {
                 if (manager.Stages.ContainsKey(i))
                     this.Graph[i] = new GraphNode(manager.Stages[i]);
                 else if (manager.Edges.ContainsKey(i))
                     this.Graph[i] = new GraphNode(manager.Edges[i]);
-                else  // else it is processing a progress edge, because they are allocated differentyl
+                else  // else it is processing a progress edge, because they are allocated differently
                     this.Graph[i] = new GraphNode(i, new int[] { });
             }
+#endif
         }
 
         public HashSet<int> NoImpersonation = new HashSet<int>();

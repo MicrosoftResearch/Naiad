@@ -959,7 +959,7 @@ namespace Naiad.Dataflow.Channels
         }
     }
 
-    internal enum SerializedMessageType
+    public enum SerializedMessageType
     {
         Data = 1,
         Shutdown = 2,
@@ -968,7 +968,7 @@ namespace Naiad.Dataflow.Channels
         Startup = 5
     }
 
-    internal struct MessageHeader : IEquatable<MessageHeader>
+    public struct MessageHeader : IEquatable<MessageHeader>
     {
         public int FromShardID;
         public int SequenceNumber;

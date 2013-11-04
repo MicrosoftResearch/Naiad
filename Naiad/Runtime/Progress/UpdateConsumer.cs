@@ -35,9 +35,16 @@ using Naiad.Frameworks;
 
 namespace Naiad.Runtime.Progress
 {
+    public class FrontierChangedEventArgs : System.EventArgs
+    {
+        public readonly Pointstamp[] NewFrontier;
+
+        public FrontierChangedEventArgs(Pointstamp[] newFrontier) { this.NewFrontier = newFrontier; }
+    }
+
     public interface Frontier
     {
-        event EventHandler<Pointstamp[]> OnFrontierChanged;
+        event EventHandler<FrontierChangedEventArgs> OnFrontierChanged;
     }
 
     // Consumes information about outstanding records in the system, and reports the least causal time known to exist.
@@ -105,7 +112,7 @@ namespace Naiad.Runtime.Progress
 
                 // fire any frontier changed events
                 if (this.OnFrontierChanged != null)
-                    this.OnFrontierChanged(this, newFrontier);
+                    this.OnFrontierChanged(this, new FrontierChangedEventArgs(newFrontier));
 
                 // no elements means done.
                 if (newFrontier.Length == 0)
@@ -126,7 +133,7 @@ namespace Naiad.Runtime.Progress
 
         internal ProgressUpdateAggregator Aggregator;
 
-        public event EventHandler<Pointstamp[]> OnFrontierChanged;
+        public event EventHandler<FrontierChangedEventArgs> OnFrontierChanged;
 
         #region Checkpoint and Restore
 
@@ -241,13 +248,13 @@ namespace Naiad.Runtime.Progress
                 Tracing.Trace(")GlobalLock");
 
                 if (this.OnFrontierChanged != null)
-                    this.OnFrontierChanged(this, newfrontier);
+                    this.OnFrontierChanged(this, new FrontierChangedEventArgs(newfrontier));
             }
         }
 
         internal ProgressUpdateAggregator Aggregator;
 
-        public event EventHandler<Pointstamp[]> OnFrontierChanged;
+        public event EventHandler<FrontierChangedEventArgs> OnFrontierChanged;
 
         public override void Checkpoint(NaiadWriter writer) { this.PCS.Checkpoint(writer); }
         public override void Restore(NaiadReader reader)    { this.PCS.Restore(reader); }

@@ -107,10 +107,10 @@ namespace Naiad.Runtime
         Dataflow.InputStage<R> NewInput<R>();
         Dataflow.InputStage<R> NewInput<R>(string name);
 
-        IReadOnlyList<Dataflow.InputStage> Inputs { get; }
-        IReadOnlyList<Dataflow.Subscription> Outputs { get; }
-        IReadOnlyDictionary<int, Dataflow.Stage> Stages { get; }
-        IReadOnlyDictionary<int, Dataflow.Edge> Edges { get; }
+        IEnumerable<Dataflow.InputStage> Inputs { get; }
+        IEnumerable<Dataflow.Subscription> Outputs { get; }
+        IEnumerable<KeyValuePair<int, Dataflow.Stage>> Stages { get; }
+        IEnumerable<KeyValuePair<int, Dataflow.Edge>> Edges { get; }
 
         void Register(Dataflow.Subscription sub);
         int Register(Dataflow.Stage stage);
@@ -170,13 +170,13 @@ namespace Naiad.Runtime
 
 
         protected readonly List<Dataflow.InputStage> inputs = new List<Dataflow.InputStage>();
-        public IReadOnlyList<Dataflow.InputStage> Inputs
+        public IEnumerable<Dataflow.InputStage> Inputs
         {
             get { return this.inputs; }
         }
 
         protected readonly List<Dataflow.Subscription> outputs = new List<Dataflow.Subscription>();
-        public IReadOnlyList<Dataflow.Subscription> Outputs
+        public IEnumerable<Dataflow.Subscription> Outputs
         {
             get { return this.outputs; }
         }
@@ -184,13 +184,13 @@ namespace Naiad.Runtime
         public void Register(Naiad.Dataflow.Subscription sub) { outputs.Add(sub); }
 
         protected readonly Dictionary<int, Dataflow.Stage> stages = new Dictionary<int, Dataflow.Stage>();
-        public IReadOnlyDictionary<int, Dataflow.Stage> Stages
+        public IEnumerable<KeyValuePair<int, Dataflow.Stage>> Stages
         {
             get { return this.stages; }
         }
 
         protected readonly Dictionary<int, Dataflow.Edge> edges = new Dictionary<int, Dataflow.Edge>();
-        public IReadOnlyDictionary<int, Dataflow.Edge> Edges
+        public IEnumerable<KeyValuePair<int, Dataflow.Edge>> Edges
         {
             get { return this.edges; }
         }
@@ -408,11 +408,11 @@ namespace Naiad.Runtime
             if (this.materialized)
                 return;
 
-            foreach (var stage in Stages.Values)
-                stage.Materialize();
+            foreach (var stage in this.Stages)
+                stage.Value.Materialize();
 
-            foreach (var edge in Edges.Values)
-                edge.Materialize();
+            foreach (var edge in this.Edges)
+                edge.Value.Materialize();
 
             this.materialized = true; 
         }

@@ -63,7 +63,7 @@ namespace Naiad.Runtime.Progress
             this.consumer.InjectElement(time, update);
         }
 
-        public event EventHandler<Pointstamp[]> OnFrontierChanged { add { this.consumer.OnFrontierChanged += value; } remove { this.consumer.OnFrontierChanged -= value; } }
+        public event EventHandler<FrontierChangedEventArgs> OnFrontierChanged { add { this.consumer.OnFrontierChanged += value; } remove { this.consumer.OnFrontierChanged -= value; } }
 
         public void BlockUntilComplete()
         {
@@ -118,7 +118,7 @@ namespace Naiad.Runtime.Progress
 
         public LocalProgressInfo GetInfoForWorker(int workerId) { return this.consumer; }
 
-        public event EventHandler<Pointstamp[]> OnFrontierChanged { add { this.consumer.OnFrontierChanged += value; } remove { this.consumer.OnFrontierChanged -= value; } }
+        public event EventHandler<FrontierChangedEventArgs> OnFrontierChanged { add { this.consumer.OnFrontierChanged += value; } remove { this.consumer.OnFrontierChanged -= value; } }
 
         public void BlockUntilComplete()
         {
