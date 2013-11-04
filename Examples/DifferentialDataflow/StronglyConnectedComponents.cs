@@ -221,16 +221,21 @@ namespace Examples.DifferentialDataflow
                     manager.Activate();
 
                     // input graph and wait
-                    edges.OnNext(graph);
+                    if (controller.Configuration.ProcessID == 0)
+                        edges.OnNext(graph);
+                    else
+                        edges.OnNext();
 
                     result.Sync(0);
 
-                    Console.WriteLine();
-                    Console.WriteLine("Press [enter] repeatedly to rewire random edges in the graph. (\"done\" to exit)");
+                    Console.WriteLine("Computation completed");
 
                     // if we are up for interactive access ...
                     if (controller.Configuration.Processes == 1)
                     {
+                        Console.WriteLine();
+                        Console.WriteLine("Press [enter] repeatedly to rewire random edges in the graph. (\"done\" to exit)");
+
                         for (int i = 0; i < graph.Length; i++)
                         {
                             var line = Console.ReadLine();
