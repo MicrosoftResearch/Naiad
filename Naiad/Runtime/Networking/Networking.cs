@@ -697,6 +697,27 @@ namespace Naiad.Runtime.Networking
 
         private long bytesSent = 0;
 
+        private static SocketError SendAllBytes(Socket dest, ArraySegment<byte> segment)
+        {
+            SocketError result;
+            Tracing.Trace("[Send");
+            int bytesToSend = segment.Count;
+            int startOffset = segment.Offset;
+            do
+            {
+                int bytesSent = dest.Send(segment.Array, startOffset, bytesToSend, SocketFlags.None, out result);
+                startOffset += bytesSent;
+                bytesToSend -= bytesSent;
+            } while (result == SocketError.Success && bytesToSend != 0);
+            Tracing.Trace("]Send");
+            return result;
+        }
+
+        private static SocketError SendAllBytes(Socket dest, byte[] bytes)
+        {
+            return TcpNetworkChannel.SendAllBytes(dest, new ArraySegment<byte>(bytes));
+        }
+
         private void PerProcessSendThread(int destProcessID)
         {
 #if SEND_AFFINITY
@@ -739,11 +760,9 @@ namespace Naiad.Runtime.Networking
                 }
             }
 
-                       
-
-            this.connections[destProcessID].SendSocket.Send(BitConverter.GetBytes((int)NaiadProtocolOpcode.PeerConnect));
-            this.connections[destProcessID].SendSocket.Send(BitConverter.GetBytes(this.id));
-            this.connections[destProcessID].SendSocket.Send(BitConverter.GetBytes(this.localProcessID));
+            SendAllBytes(this.connections[destProcessID].SendSocket, BitConverter.GetBytes((int)NaiadProtocolOpcode.PeerConnect));
+            SendAllBytes(this.connections[destProcessID].SendSocket, BitConverter.GetBytes(this.id));
+            SendAllBytes(this.connections[destProcessID].SendSocket, BitConverter.GetBytes(this.localProcessID));
 
             this.connections[destProcessID].Status = ConnectionStatus.Idle;
 
@@ -787,40 +806,49 @@ namespace Naiad.Runtime.Networking
             {
                 BufferSegment seg;
                 int length = 0;
-                Tracing.Trace("(DeQueue");
-                while (this.connections[destProcessID].InflightSegments.Count < MAX_INFLIGHT_SEGMENTS && this.connections[destProcessID].HighPrioritySegmentQueue.TryDequeue(out seg))
+                
+                while (this.connections[destProcessID].HighPrioritySegmentQueue.TryDequeue(out seg))
                 {
-                    Debug.Assert(seg.Length > 0);
-
-                    this.connections[destProcessID].InflightArraySegments.Add(seg.ToArraySegment());
-                    this.connections[destProcessID].InflightSegments.Add(seg);
-
-                    this.connections[destProcessID].ProgressSegmentsSent += 1;
-                    this.connections[destProcessID].sendStatistics[(int)RuntimeStatistic.TxHighPriorityMessages] += 1;
-                    this.connections[destProcessID].sendStatistics[(int)RuntimeStatistic.TxHighPriorityBytes] += seg.Length;
-
-                    length += seg.Length;
-                    shuttingDown = (seg.Type == SerializedMessageType.Shutdown);
-
-                }
-
-                while (this.connections[destProcessID].InflightSegments.Count < MAX_INFLIGHT_SEGMENTS && this.connections[destProcessID].SegmentQueue.TryDequeue(out seg))
-                {
-                    Debug.Assert(seg.Length > 0);
-
-                    this.connections[destProcessID].InflightArraySegments.Add(seg.ToArraySegment());
-                    this.connections[destProcessID].InflightSegments.Add(seg);
-
-                    this.connections[destProcessID].DataSegmentsSent += 1;
-                    this.connections[destProcessID].sendStatistics[(int)RuntimeStatistic.TxNormalPriorityMessages] += 1;
-                    this.connections[destProcessID].sendStatistics[(int)RuntimeStatistic.TxNormalPriorityBytes] += seg.Length;
+                    Debug.Assert(seg.Length > 0); 
                     
                     length += seg.Length;
                     shuttingDown = (seg.Type == SerializedMessageType.Shutdown);
 
-                }
-                Tracing.Trace(")DeQueue");
+                    SocketError errorCode = SendAllBytes(socket, seg.ToArraySegment());
+                    if (errorCode != SocketError.Success)
+                    {
+                        Tracing.Trace("*Socket Error {0}", errorCode);
+                        this.HandleSocketError(destProcessID, errorCode);
+                    }
 
+                    this.connections[destProcessID].ProgressSegmentsSent += 1;
+                    this.connections[destProcessID].sendStatistics[(int)RuntimeStatistic.TxHighPriorityMessages] += 1;
+                    this.connections[destProcessID].sendStatistics[(int)RuntimeStatistic.TxHighPriorityBytes] += seg.Length;
+                    
+                    seg.Dispose();
+                }
+
+                while (this.connections[destProcessID].SegmentQueue.TryDequeue(out seg))
+                {
+                    Debug.Assert(seg.Length > 0);
+
+                    length += seg.Length;
+                    shuttingDown = (seg.Type == SerializedMessageType.Shutdown);
+
+                    SocketError errorCode = SendAllBytes(socket, seg.ToArraySegment());
+                    if (errorCode != SocketError.Success)
+                    {
+                        Tracing.Trace("*Socket Error {0}", errorCode);
+                        this.HandleSocketError(destProcessID, errorCode);
+                    }
+
+                    this.connections[destProcessID].DataSegmentsSent += 1;
+                    this.connections[destProcessID].sendStatistics[(int)RuntimeStatistic.TxNormalPriorityMessages] += 1;
+                    this.connections[destProcessID].sendStatistics[(int)RuntimeStatistic.TxNormalPriorityBytes] += seg.Length;
+
+                    seg.Dispose();
+                }
+                
                 if (length == 0)
                 {
                     if (this.useBroadcastWakeup)
@@ -837,37 +865,9 @@ namespace Naiad.Runtime.Networking
 
                 //this.connections[destProcessID].Status = shuttingDown ? ConnectionStatus.ShuttingDown : ConnectionStatus.Sending;
 
-                SocketError errorCode;
-                before = sw.ElapsedMilliseconds;
-                Tracing.Trace("[Send"); 
-                int bytesSent = socket.Send(this.connections[destProcessID].InflightArraySegments, SocketFlags.None, out errorCode);
-                Tracing.Trace("]Send");
-                after = sw.ElapsedMilliseconds;
-                if (after - before > 500)
-                {
-                    Tracing.Trace("*Slow!");
-                    Logging.Progress("PerProcessSendThread[{0}]: Slow Send {1}ms", destProcessID, after - before);
-                }
-
-                if (bytesSent != length)
-                {
-                    Debug.Assert(bytesSent == length);
-                }
-                this.connections[destProcessID].BytesSent += bytesSent; // Progress + Data
+                this.connections[destProcessID].BytesSent += length; // Progress + Data
                 
                 //Logging.Progress("Sent {0} bytes to {1} (of {2})", bytesSent, destProcessID, length);
-                if (errorCode != SocketError.Success)
-                {
-                    Tracing.Trace("*Socket Error {0}", errorCode);
-                    this.HandleSocketError(destProcessID, errorCode);
-                }
-
-                Tracing.Trace("(Dispose"); 
-                foreach (var segment in this.connections[destProcessID].InflightSegments)
-                    segment.Dispose();
-                Tracing.Trace(")Dispose"); 
-                this.connections[destProcessID].InflightSegments.Clear();
-                this.connections[destProcessID].InflightArraySegments.Clear();
             }
 
             this.shutdownSendCountdown.Signal();
