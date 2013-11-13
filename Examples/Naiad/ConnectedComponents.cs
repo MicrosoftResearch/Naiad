@@ -293,8 +293,8 @@ namespace Examples.ConnectedComponents
             // allocate a new controller from command line arguments.
             using (var controller = NewController.FromArgs(ref args))
             {
-                var nodeCount = args.Length == 2 ? Convert.ToInt32(args[0]) : 100000;
-                var edgeCount = args.Length == 2 ? Convert.ToInt32(args[1]) : 200000;
+                var nodeCount = args.Length == 3 ? Convert.ToInt32(args[1]) : 100000;
+                var edgeCount = args.Length == 3 ? Convert.ToInt32(args[2]) : 200000;
 
                 #region Generate a local fraction of input data
 
