@@ -469,6 +469,23 @@ namespace Naiad.Dataflow.Channels
             }
         }
 
+        public ArraySegment<byte> GetFreeSegment()
+        {
+            RecvBufferPage page;
+            if (this.partiallyProducedPage != null)
+            {
+                page = this.partiallyProducedPage;
+                this.partiallyProducedPage = null;
+            }
+            else if (!this.freePages.TryTake(out page))
+            {
+                page = new RecvBufferPage(this.pool, this, 0);
+                Logging.Debug("RecvPage {0}: was allocated to satisfy demand ({1} bytes free) (after blocking for a page)", page.Id, page.Buffer.Length - page.producePointer);
+            }
+            this.inUsePages.Add(page);
+            return page.GetSegmentForProducer();
+        }
+
         // TODO: This should maybe take an optional parameter to specify the amount of buffer
         //       that is desired (with appropriate blocking behavior).
         public List<ArraySegment<byte>> GetFreeSegments(List<ArraySegment<byte>> ret = null)
@@ -476,35 +493,8 @@ namespace Naiad.Dataflow.Channels
             if (ret == null)
                 ret = new List<ArraySegment<byte>>();
 
-            // First, if we have a partially-produced page, add it to the list of segments.
-            if (this.partiallyProducedPage != null)
-            {
-                ret.Add(this.partiallyProducedPage.GetSegmentForProducer());
-                this.inUsePages.Add(this.partiallyProducedPage);
-
-                // We unset this page as the partially-produced page, because it may become fully-produced
-                // after the next operation, and it will be checked again by OnBytesProduced().
-                this.partiallyProducedPage = null;
-            }
-
-            // Now add all of the free segments.
-            RecvBufferPage page;
-            while (ret.Count < RecvBufferSheaf.MAX_PAGES_FOR_RECV && this.freePages.TryTake(out page))
-            {
-                ret.Add(page.GetSegmentForProducer());
-
-                this.inUsePages.Add(page);
-            }
-
             while (ret.Count < RecvBufferSheaf.MAX_PAGES_FOR_RECV)
-            //if (ret.Count == 0)
-            {
-                page = new RecvBufferPage(this.pool, this, 0);
-                //this.AllPages.Add(page);
-                Logging.Debug("RecvPage {0}: was allocated to satisfy demand ({1} bytes free) (after blocking for a page)", page.Id, page.Buffer.Length - page.producePointer);
-                ret.Add(page.GetSegmentForProducer());
-                this.inUsePages.Add(page);
-            }
+                ret.Add(this.GetFreeSegment());
 
             Debug.Assert(ret.Sum(x => x.Count) > 0);
 

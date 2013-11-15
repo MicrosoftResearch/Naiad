@@ -928,20 +928,19 @@ namespace Naiad.Runtime.Networking
             long recvBytesIn = 0;
             long recvBytesOut = 0;
 
-            List<ArraySegment<byte>> recvSegments = new List<ArraySegment<byte>>();
             while (true)
             {
                 SocketError errorCode;
-                recvSegments = this.connections[srcProcessID].RecvBufferSheaf.GetFreeSegments(recvSegments);
-                
+
+
+                ArraySegment<byte> recvSegment = this.connections[srcProcessID].RecvBufferSheaf.GetFreeSegment();
+
                 // Keep track of size of buffers passed to recv
-                long tmp = 0;
-                foreach (var a in recvSegments) tmp += a.Count;
-                recvBytesIn += tmp;
+                
+                recvBytesIn += recvSegment.Count;
 
-                int bytesRecvd = socket.Receive(recvSegments, SocketFlags.None, out errorCode);
-                recvSegments.Clear();
-
+                int bytesRecvd = socket.Receive(recvSegment.Array, recvSegment.Offset, recvSegment.Count, SocketFlags.None, out errorCode);
+                
                 // If the remote host shuts down the Socket connection with the Shutdown method,
                 // and all available data has been received, the Receive method will complete 
                 // immediately and return zero bytes.
