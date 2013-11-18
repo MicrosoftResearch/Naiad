@@ -736,8 +736,6 @@ namespace Naiad.Runtime.Networking
                     this.connections[destProcessID].SendSocket.NoDelay = true;
                 }
                 
-                this.connections[destProcessID].SendSocket.SendBufferSize = MAX_SEND_SIZE;
-                
                 try
                 {
                     this.connections[destProcessID].SendSocket.Connect(this.connections[destProcessID].EndPoint);
@@ -787,8 +785,7 @@ namespace Naiad.Runtime.Networking
             {
                 socket.NoDelay = true;
             }
-            socket.SendBufferSize = MAX_SEND_SIZE;
-
+            
             if (this.Controller.Configuration.KeepAlives)
             {
                 socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
@@ -913,10 +910,6 @@ namespace Naiad.Runtime.Networking
             {
                 socket.NoDelay = true;
             }
-
-            socket.ReceiveBufferSize = MAX_SEND_SIZE;
-            //this.connections[peerID].Socket.ReceiveBufferSize = 1 << 20;
-            //this.connections[peerID].Socket.SendBufferSize = 1 << 20;
 
             long numRecvs = 0;
 
