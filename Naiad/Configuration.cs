@@ -259,6 +259,12 @@ namespace Naiad
         private bool variableLengthSerialization = false;
         public bool VariableLengthSerialization { get { return this.variableLengthSerialization; } set { this.variableLengthSerialization = value; } }
 
+        private bool useInlineSerialization = false;
+        /// <summary>
+        /// EXPERIMENTAL: Uses a new code generation technique to generate more efficient code for serialization.
+        /// </summary>
+        public bool UseInlineSerialization { get { return this.useInlineSerialization; } set { this.useInlineSerialization = value; } }
+
         private bool oneTimePerMessageSerialization = true;
         public bool OneTimePerMessageSerialization { get { return this.oneTimePerMessageSerialization; } set { this.oneTimePerMessageSerialization = value; } }
 
@@ -370,6 +376,10 @@ namespace Naiad
                         break;
                     case "--varlengthint":
                         config.VariableLengthSerialization = true;
+                        ++i;
+                        break;
+                    case "--inlineserializer":
+                        config.UseInlineSerialization = true;
                         ++i;
                         break;
                     case "--basic":
@@ -649,6 +659,8 @@ namespace Naiad
 
             // Used to set scheduler thread affinity
             config.MultipleLocalProcesses = multipleProcsSingleMachine;
+
+            Configuration.StaticConfiguration = config;
 
             return config;
         }
