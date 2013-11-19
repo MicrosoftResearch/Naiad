@@ -55,15 +55,18 @@ namespace Examples.DifferentialDataflow
 
                     graph.Activate();
 
-                    Console.WriteLine("Start entering lines of text. An empty line will exit the program.");
-                    Console.WriteLine("Naiad will display counts (and changes in counts) of words you type.");
-
-                    var line = Console.ReadLine();
-                    for (int i = 0; line != ""; i++ )
+                    if (controller.Configuration.ProcessID == 0)
                     {
-                        text.OnNext(line);
-                        graph.Sync(i);
-                        line = Console.ReadLine();
+                        Console.WriteLine("Start entering lines of text. An empty line will exit the program.");
+                        Console.WriteLine("Naiad will display counts (and changes in counts) of words you type.");
+
+                        var line = Console.ReadLine();
+                        for (int i = 0; line != ""; i++)
+                        {
+                            text.OnNext(line);
+                            graph.Sync(i);
+                            line = Console.ReadLine();
+                        }
                     }
 
                     text.OnCompleted(); // closes input

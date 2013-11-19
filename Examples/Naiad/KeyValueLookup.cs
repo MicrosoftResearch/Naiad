@@ -88,27 +88,30 @@ namespace Examples.KeyValueLookup
 
                     graph.Activate();
 
-                    Console.WriteLine("Enter two strings to insert/overwrite a (key, value) pairs.");
-                    Console.WriteLine("Enter one string to look up a key.");
-
-                    // repeatedly read lines and introduce records based on their structure.
-                    // note: it is important to advance both inputs in order to make progress.
-                    for (var line = Console.ReadLine(); line.Length > 0; line = Console.ReadLine())
+                    if (controller.Configuration.ProcessID == 0)
                     {
-                        var split = line.Split();
+                        Console.WriteLine("Enter two strings to insert/overwrite a (key, value) pairs.");
+                        Console.WriteLine("Enter one string to look up a key.");
 
-                        if (split.Length == 1)
+                        // repeatedly read lines and introduce records based on their structure.
+                        // note: it is important to advance both inputs in order to make progress.
+                        for (var line = Console.ReadLine(); line.Length > 0; line = Console.ReadLine())
                         {
-                            queries.OnNext(line);
-                            keyvals.OnNext();
+                            var split = line.Split();
+
+                            if (split.Length == 1)
+                            {
+                                queries.OnNext(line);
+                                keyvals.OnNext();
+                            }
+                            if (split.Length == 2)
+                            {
+                                queries.OnNext();
+                                keyvals.OnNext(split[0].PairWith(split[1]));
+                            }
+                            if (split.Length > 2)
+                                Console.Error.WriteLine("error: lines with three or more strings are not understood.");
                         }
-                        if (split.Length == 2)
-                        {
-                            queries.OnNext();
-                            keyvals.OnNext(split[0].PairWith(split[1]));
-                        }
-                        if (split.Length > 2)
-                            Console.Error.WriteLine("error: lines with three or more strings are not understood.");
                     }
 
                     keyvals.OnCompleted();

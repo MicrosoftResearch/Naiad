@@ -172,11 +172,12 @@ namespace Examples.DifferentialDataflow
 
                     #region Issue batches of queries and assess performance
 
-                    Console.WriteLine("Issuing {0} rounds of batches of {1} queries (press [enter] to start)", iterations, batchSize);
-                    Console.ReadLine();
-
-                    var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-
+                    if (controller.Configuration.ProcessID == 0)
+                    {
+                        Console.WriteLine("Issuing {0} rounds of batches of {1} queries (press [enter] to start)", iterations, batchSize);
+                        Console.ReadLine();
+                    }
+                    
                     for (int i = 0; i < iterations; i++)
                     {
                         // we round-robin through query terms. more advanced queries are possible.

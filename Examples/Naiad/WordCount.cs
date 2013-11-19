@@ -107,15 +107,18 @@ namespace Examples.WordCount
                     // 3. Subscribe to the resulting stream with a callback to print the outputs.
                     counts.Subscribe(list => { foreach (var element in list) Console.WriteLine(element); });
 
-                    // with our dataflow graph defined, we can start soliciting strings from the user.
-                    Console.WriteLine("Start entering lines of text. An empty line will exit the program.");
-                    Console.WriteLine("Naiad will display counts (and changes in counts) of words you type.");
-
                     graph.Activate();       // activate the execution of this graph (no new stages allowed).
 
-                    // read lines of input and hand them to the input, until an empty line appears.
-                    for (var line = Console.ReadLine(); line.Length > 0; line = Console.ReadLine())
-                        source.OnNext(line.Split());
+                    if (controller.Configuration.ProcessID == 0)
+                    {
+                        // with our dataflow graph defined, we can start soliciting strings from the user.
+                        Console.WriteLine("Start entering lines of text. An empty line will exit the program.");
+                        Console.WriteLine("Naiad will display counts (and changes in counts) of words you type.");
+
+                        // read lines of input and hand them to the input, until an empty line appears.
+                        for (var line = Console.ReadLine(); line.Length > 0; line = Console.ReadLine())
+                            source.OnNext(line.Split());
+                    }
 
                     source.OnCompleted();   // signal the end of the input.
                     graph.Join();           // waits until the graph has finished executing.
