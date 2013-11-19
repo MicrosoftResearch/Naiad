@@ -630,7 +630,7 @@ namespace Naiad.Runtime.Networking
 
         public void DoStartupBarrier()
         {
-            Console.Error.WriteLine("Attempting startup barrier");
+            Logging.Info("Attempting startup barrier");
 
             var barrierId = this.currentBarrierId++;
 
