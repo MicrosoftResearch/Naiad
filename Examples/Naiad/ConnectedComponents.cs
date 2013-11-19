@@ -29,6 +29,7 @@ using Naiad.Dataflow;
 using Naiad.Dataflow.PartitionBy;
 
 using Naiad.Frameworks.Lindi;
+using System.Diagnostics;
 
 namespace Examples.ConnectedComponents
 {
@@ -308,6 +309,8 @@ namespace Examples.ConnectedComponents
 
                 Console.WriteLine("Computing components of a random graph on {0} nodes and {1} edges", nodeCount, edgeCount);
 
+                Stopwatch stopwatch = new Stopwatch();
+
                 // allocate a new graph manager for the computation.
                 using (var manager = controller.NewGraph())
                 {
@@ -320,8 +323,9 @@ namespace Examples.ConnectedComponents
                                  .Concat(edges);
 
                     edges.DirectedReachability()
-                         .Subscribe(list => Console.WriteLine("labeled {0} nodes", list.Count()));
+                         .Subscribe(list => Console.WriteLine("labeled {0} nodes in {1}", list.Count(), stopwatch.Elapsed));
 
+                    stopwatch.Start();
                     manager.Activate();     // start graph computation
                     manager.Join();         // block until computation completes
                 }
