@@ -31,6 +31,7 @@ using Naiad.DataStructures;
 using Naiad.FaultTolerance;
 
 using Naiad.Dataflow;
+using Naiad.Scheduling;
 
 namespace Naiad.Frameworks
 {
@@ -564,6 +565,22 @@ namespace Naiad.Frameworks
             where TVertex : Vertex<TTime>
         {
             return new Stage<TVertex, TTime>(context, factory, name);
+        }
+
+        /// <summary>
+        /// Creates a stage from a shard factory
+        /// </summary>
+        /// <typeparam name="TVertex">Shard type</typeparam>
+        /// <typeparam name="TTime">Time type</typeparam>
+        /// <param name="context">Time context</param>
+        /// <param name="factory">Shard factory</param>
+        /// <param name="name">Descriptive name</param>
+        /// <returns>Constructed stage</returns>
+        public static Stage<TVertex, TTime> NewStage<TVertex, TTime>(Placement placement, OpaqueTimeContext<TTime> context, Func<int, Stage<TTime>, TVertex> factory, string name)
+            where TTime : Time<TTime>
+            where TVertex : Vertex<TTime>
+        {
+            return new Stage<TVertex, TTime>(placement, context, Stage.OperatorType.Default, factory, name);
         }
     }
 

@@ -46,6 +46,7 @@ namespace Examples
             examples.Add("wordcount", new WordCount.WordCount());
             examples.Add("lookup", new KeyValueLookup.KeyValueLookup());
             examples.Add("connectedcomponents", new ConnectedComponents.ConnectedComponents());
+            examples.Add("throughput", new Throughput.Throughput());
 
             // also load up some differential dataflow examples
             examples.Add("dd-stronglyconnectedcomponents", new DifferentialDataflow.SCC());

@@ -55,6 +55,7 @@
     <Compile Include="DifferentialDataflow\WordCount.cs" />
     <Compile Include="Naiad\ConnectedComponents.cs" />
     <Compile Include="Naiad\KeyValueLookup.cs" />
+    <Compile Include="Naiad\Throughput.cs" />
     <Compile Include="Naiad\WordCount.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
