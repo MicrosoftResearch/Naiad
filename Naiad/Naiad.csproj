@@ -128,6 +128,7 @@
     <Compile Include="Runtime\Scheduling\Version.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Channels\Channel.cs" />
+    <Compile Include="Util\DependencyLister.cs" />
     <Compile Include="Util\NetworkMonitoringStats.cs" />
     <Compile Include="Util\Win32.cs" />
     <Compile Include="Dataflow\Stage.cs" />
