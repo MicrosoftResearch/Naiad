@@ -1025,6 +1025,8 @@ namespace Naiad.CodeGeneration
 
             public void AddType(Type t)
             {
+                this.AddReferencedAssembly(t.Assembly);
+
                 if (!AllTypes.Contains(t))
                 {
                     AllTypes.Add(t);
