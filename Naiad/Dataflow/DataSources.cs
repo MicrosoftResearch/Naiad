@@ -331,7 +331,7 @@ namespace Naiad.Dataflow
         public override void Join()
         {
             if (!this.completed)
-                throw new Exception("BatchedDataSource.Join() called before BatchedDataSource.OnCompleted()");
+                Logging.Error("BatchedDataSource.Join() called before BatchedDataSource.OnCompleted()");
         }
 
         public void OnError(System.Exception exception) { throw exception; }
