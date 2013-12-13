@@ -45,7 +45,7 @@ namespace Naiad.Runtime.Progress
         
         // this should only be accessed under this.Lock, where we may swap these two things and flush one or the other.
         private Dictionary<Pointstamp, Int64> BufferedUpdates = new Dictionary<Pointstamp, long>();
-        private Dictionary<Pointstamp, Int64> BufferedUpdates2 = new Dictionary<Pointstamp, long>();
+        //private Dictionary<Pointstamp, Int64> BufferedUpdates2 = new Dictionary<Pointstamp, long>();
 
         // protects this.BufferedUpdates manipulation. It should not be consulted or manipulated without this lock.
         private readonly Object Lock = new object();
@@ -106,22 +106,29 @@ namespace Naiad.Runtime.Progress
 
             if (mustFlushBuffer)
             {
+                Dictionary<Pointstamp, Int64> PrivateBufferedUpdates;
+                Dictionary<Pointstamp, Int64> FreshBufferedUpdates = new Dictionary<Pointstamp, long>();
+
                 // we don't want to get stuck behind a centralizer -> consumer on the same process.
                 Tracing.Trace("(GlobalLock");
                 lock (this.scheduler.Controller.GlobalLock)
                 {
                     // get exclusive access and swap the update buffer.
                     Tracing.Trace("(AggLock"); 
+
                     lock (this.Lock)
                     {
-                        var temp = this.BufferedUpdates2;
-                        this.BufferedUpdates2 = this.BufferedUpdates;
-                        this.BufferedUpdates = temp;
+                        PrivateBufferedUpdates = this.BufferedUpdates;
+                        this.BufferedUpdates = FreshBufferedUpdates;
+
+                        //var temp = this.BufferedUpdates2;
+                        //this.BufferedUpdates2 = this.BufferedUpdates;
+                        //this.BufferedUpdates = temp;
                     }
                     Tracing.Trace(")AggLock");
 
                     // update Notifications count to include shipped values.
-                    foreach (var pair in BufferedUpdates2)
+                    foreach (var pair in PrivateBufferedUpdates)
                     {
                         if (this.Stage.InternalGraphManager.Reachability.Graph[pair.Key.Location].IsStage)
                         {
@@ -136,16 +143,17 @@ namespace Naiad.Runtime.Progress
                     }
 
                     // send positive updates first.
-                    foreach (var pair in BufferedUpdates2)
+                    foreach (var pair in PrivateBufferedUpdates)
                         if (pair.Value > 0)
                             this.Output.Send(pair.Value, pair.Key);
 
                     // send negative updates second.
-                    foreach (var pair in BufferedUpdates2)
+                    foreach (var pair in PrivateBufferedUpdates)
                         if (pair.Value < 0)
                             this.Output.Send(pair.Value, pair.Key);
 
-                    this.BufferedUpdates2.Clear();
+                    // here we might return it to a shared queue of dictionaries
+                    PrivateBufferedUpdates.Clear();
                     this.Output.Flush();
                 }
                 Tracing.Trace(")GlobalLock");
