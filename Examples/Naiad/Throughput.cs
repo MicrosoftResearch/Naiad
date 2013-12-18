@@ -124,6 +124,7 @@ namespace Examples.Throughput
 
                     graph.Join();
                 }
+                controller.Join();
             }
         }
     }
