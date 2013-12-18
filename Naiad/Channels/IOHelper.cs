@@ -955,7 +955,8 @@ namespace Naiad.Dataflow.Channels
         Shutdown = 2,
         Checkpoint = 3,
         CheckpointData = 4,
-        Startup = 5
+        Startup = 5,
+        Failure = 6
     }
 
     public struct MessageHeader : IEquatable<MessageHeader>
@@ -1009,6 +1010,11 @@ namespace Naiad.Dataflow.Channels
         public static MessageHeader GenerateBarrierMessageHeader(int barrierId)
         {
             return new MessageHeader(-1, -1, barrierId, -1, 0, SerializedMessageType.Startup);
+        }
+
+        public static MessageHeader GraphFailure(int graphId)
+        {
+            return new MessageHeader(-1, -1, graphId, -1, 0, SerializedMessageType.Failure);
         }
 
         public static MessageHeader Checkpoint

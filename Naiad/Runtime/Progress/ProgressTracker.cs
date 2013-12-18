@@ -45,6 +45,8 @@ namespace Naiad.Runtime.Progress
 
         void Complain(TextWriter writer);
 
+        void Cancel();
+
         void BlockUntilComplete();
     }
 
@@ -64,6 +66,11 @@ namespace Naiad.Runtime.Progress
         }
 
         public event EventHandler<FrontierChangedEventArgs> OnFrontierChanged { add { this.consumer.OnFrontierChanged += value; } remove { this.consumer.OnFrontierChanged -= value; } }
+
+        public void Cancel()
+        {
+            this.consumer.FrontierEmpty.Set();
+        }
 
         public void BlockUntilComplete()
         {
@@ -119,6 +126,11 @@ namespace Naiad.Runtime.Progress
         public LocalProgressInfo GetInfoForWorker(int workerId) { return this.consumer; }
 
         public event EventHandler<FrontierChangedEventArgs> OnFrontierChanged { add { this.consumer.OnFrontierChanged += value; } remove { this.consumer.OnFrontierChanged -= value; } }
+
+        public void Cancel()
+        {
+            this.consumer.FrontierEmpty.Set();
+        }
 
         public void BlockUntilComplete()
         {

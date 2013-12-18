@@ -314,8 +314,16 @@ namespace Naiad.Scheduling
                     if (this.graphStates[i].Manager != null && this.graphStates[i].Manager.CurrentState == Runtime.InternalGraphManagerState.Active)
                     {
                         Tracing.Trace("(Flush {0}", this.Index);
-                        this.graphStates[i].PostOffice.DrainAllQueues();
-                        this.graphStates[i].Producer.Start();   // tell everyone about records produced and consumed.
+                        try
+                        {
+                            this.graphStates[i].PostOffice.DrainAllQueues();
+                            this.graphStates[i].Producer.Start();   // tell everyone about records produced and consumed.
+                        }
+                        catch (Exception e)
+                        {
+                            Logging.Error("Graph {0} failed on scheduler {1} with exception:\n{2}", i, this.Index, e);
+                            this.graphStates[i].Manager.Cancel(e);
+                        }
                         Tracing.Trace(")Flush {0}", this.Index);
                     }
                 }
@@ -343,8 +351,16 @@ namespace Naiad.Scheduling
                 {
                     if (graphStates[i].Manager != null && this.graphStates[i].Manager.CurrentState == Runtime.InternalGraphManagerState.Active)
                     {
-                        var ranSomething = RunWorkItem(i);
-                        ranAnything = ranSomething || ranAnything;
+                        try
+                        {
+                            var ranSomething = RunWorkItem(i);
+                            ranAnything = ranSomething || ranAnything;
+                        }
+                        catch (Exception e)
+                        {
+                            Logging.Error("Graph {0} failed on scheduler {1} with exception:\n{2}", i, this.Index, e);
+                            this.graphStates[i].Manager.Cancel(e);
+                        }
                     }
                 }
 

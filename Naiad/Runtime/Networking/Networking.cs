@@ -799,7 +799,7 @@ namespace Naiad.Runtime.Networking
             long before, after;
 
            bool shuttingDown = false;
-            while (!shuttingDown)
+            while (true)
             {
                 BufferSegment seg;
                 int length = 0;
@@ -845,7 +845,9 @@ namespace Naiad.Runtime.Networking
 
                     seg.Dispose();
                 }
-                
+
+                if (shuttingDown)
+                    break;
                 if (length == 0)
                 {
                     if (this.useBroadcastWakeup)
@@ -964,6 +966,10 @@ namespace Naiad.Runtime.Networking
                         case SerializedMessageType.Startup:
                             Logging.Progress("Received startup message from {0}", srcProcessID);
                             this.OnRecvBarrierMessageAndBlock(message.Header.ChannelID);    // we put the barrier id in here
+                            break;
+                        case SerializedMessageType.Failure:
+                            Logging.Error("Received graph failure message from {0}", srcProcessID);
+                            this.Controller.GetInternalGraph(message.Header.ChannelID).Cancel(new Exception(string.Format("Received graph failure message from {0}", srcProcessID)));
                             break;
                         case SerializedMessageType.Shutdown:
                             Logging.Progress("Received shutdown message from {0}", srcProcessID);

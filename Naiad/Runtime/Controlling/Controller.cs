@@ -90,6 +90,8 @@ namespace Naiad
         Placement DefaultPlacement { get; }
 
         void Join();
+
+        Task JoinAsync();
     }
 
     internal interface InternalController
@@ -112,6 +114,8 @@ namespace Naiad
         NetworkChannel NetworkChannel { get; }
 
         void DoStartupBarrier();
+
+        InternalGraphManager GetInternalGraph(int index);
     }
 
     /// <summary>
@@ -146,6 +150,11 @@ namespace Naiad
     internal class BaseController : IDisposable, InternalController, Controller
     {
         private readonly List<BaseGraphManager> graphManagers;
+
+        public InternalGraphManager GetInternalGraph(int index)
+        {
+            return this.graphManagers[index];
+        }
 
         public string QueryStatistic(RuntimeStatistic stat)
         {
@@ -528,8 +537,19 @@ namespace Naiad
         /// </summary>
         public void Join()
         {
+            List<Exception> graphExceptions = new List<Exception>();
+
             foreach (var manager in this.graphManagers.Where(x => x.CurrentState != InternalGraphManagerState.Inactive))
-                manager.Join();
+            {
+                try
+                {
+                    manager.Join();
+                }
+                catch (Exception e)
+                {
+                    graphExceptions.Add(e);
+                }
+            }
 
             this.workerGroup.Abort();
             
@@ -539,6 +559,15 @@ namespace Naiad
             NotifyOnShutdown();
 
             this.isJoined = true;
+
+            if (graphExceptions.Count > 0)
+                throw new AggregateException(graphExceptions);
+        }
+
+        public Task JoinAsync()
+        {
+            // TODO: Make the use of async more pervasive in the runtime.
+            return Task.Factory.StartNew(() => this.Join(), TaskCreationOptions.LongRunning);
         }
 
         public long? QueryStatisticAsLong(RuntimeStatistic s)

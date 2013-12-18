@@ -89,13 +89,17 @@ namespace Naiad.Runtime
     /// Much of this functionality used to exist in the controller, but we extract out
     /// the 
     /// </summary>
-    internal enum InternalGraphManagerState { Inactive, Active, Complete }
+    internal enum InternalGraphManagerState { Inactive, Active, Complete, Failed }
 
     internal interface InternalGraphManager
     {
         int Index { get; }
 
         InternalGraphManagerState CurrentState { get; }
+
+        void Cancel(Exception dueTo);
+
+        Exception Exception { get; }
 
         InternalController Controller { get; }
 
@@ -135,8 +139,57 @@ namespace Naiad.Runtime
         private readonly int index;
         public int Index { get { return this.index; } }
 
+        public void Cancel(Exception e)
+        {
+            Logging.Error("Cancelling execution of graph {0}, due to exception:\n{1}", this.Index, e);
+
+            lock (this)
+            {
+                if (this.currentState == InternalGraphManagerState.Failed)
+                    return;
+
+                this.currentState = InternalGraphManagerState.Failed;
+                this.Exception = e;
+
+                MessageHeader header = MessageHeader.GraphFailure(this.index);
+                SendBufferPage page = SendBufferPage.CreateSpecialPage(header, 0);
+                BufferSegment segment = page.Consume();
+                
+                Logging.Error("Broadcasting graph failure message");
+                            
+                this.Controller.NetworkChannel.BroadcastBufferSegment(header, segment);
+
+                this.ProgressTracker.Cancel();
+            }
+        }
+
         private InternalGraphManagerState currentState = InternalGraphManagerState.Inactive;
         public InternalGraphManagerState CurrentState { get { return this.currentState; } }
+
+        private Exception exception = null;
+        public Exception Exception 
+        {
+            get
+            {
+                return this.exception; 
+            }
+            private set
+            {
+                lock (this) 
+                {
+                    if (this.exception == null)
+                        this.exception = value;
+                    else if (!(this.exception is AggregateException))
+                        this.exception = new AggregateException(this.exception, value);
+                    else
+                    {
+                        List<Exception> innerExceptions = new List<Exception>((this.exception as AggregateException).InnerExceptions);
+                        innerExceptions.Add(value);
+                        this.exception = new AggregateException(innerExceptions);
+                    }
+                }
+            }
+        }
 
         private readonly InternalController controller;
         public InternalController Controller { get { return this.controller; } }
@@ -330,6 +383,9 @@ namespace Naiad.Runtime
 
                 // wait for all progress updates to drain.
                 this.ProgressTracker.BlockUntilComplete();
+
+                if (this.exception != null)
+                    throw new Exception("Error during Naiad execution", this.exception);
 
                 NotifyOnShutdown();
 
