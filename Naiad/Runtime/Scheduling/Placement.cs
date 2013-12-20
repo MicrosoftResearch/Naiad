@@ -118,6 +118,37 @@ namespace Naiad.Scheduling
         }
     }
 
+    public class ExplicitPlacement : BasePlacement
+    {
+
+        private readonly VertexLocation[] locations;
+
+        public override VertexLocation this[int shardId]
+        {
+            get { return this.locations[shardId]; }
+        }
+
+        public override int Count
+        {
+            get { return this.locations.Length; }
+        }
+
+        public override IEnumerator<VertexLocation> GetEnumerator()
+        {
+            return this.locations.AsEnumerable().GetEnumerator();
+        }
+
+        public override bool Equals(Placement that)
+        {
+            return this.locations.SequenceEqual(that);
+        }
+
+        public ExplicitPlacement(IEnumerable<VertexLocation> locations)
+        {
+            this.locations = locations.ToArray();
+        }
+    }
+
     public class SingleVertexPerProcessPlacement : BasePlacement
     {
         private readonly int numProcs;
