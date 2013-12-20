@@ -198,7 +198,9 @@ namespace Naiad.Dataflow.Channels
         private readonly NetworkChannel networkChannel;
 
         //private readonly int[,] sendSequenceNumbers;
-        
+
+        private readonly RemotePostbox remotePostbox;
+
         private readonly Mailbox<S, T>[] mailboxes;
 
         //private readonly LocalMailbox<S, T>[] mailboxes;
@@ -222,6 +224,7 @@ namespace Naiad.Dataflow.Channels
             this.routingHashcodeFunction = routingHashcodeFunction;
             this.networkChannel = networkChannel;
             this.mailboxes = mailboxes;
+            this.remotePostbox = new RemotePostbox(this.ProcessID, this.shardid, this.threadindex);
             
             //this.sendSequenceNumbers = new int[Naiad.Processes, this.receiverBundle.LocalParallelism];
         }
@@ -248,7 +251,7 @@ namespace Naiad.Dataflow.Channels
 
             if (progressBuffer != null)
                 progressBuffer.Update(record.v2, +1);
-        }
+        } 
 
         public void Send(Message<Pair<S, T>> records)
         {
@@ -268,7 +271,7 @@ namespace Naiad.Dataflow.Channels
                 }
 
                 Debug.Assert(destShardID < this.mailboxes.Length);
-                this.mailboxes[destShardID].Send(record, new RemotePostbox(this.ProcessID, this.ShardID, this.ThreadIndex));
+                this.mailboxes[destShardID].Send(record, this.remotePostbox);
 
                 if (progressBuffer != null)
                     progressBuffer.Update(record.v2, +1);
