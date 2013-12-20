@@ -42,7 +42,7 @@ namespace Examples.Throughput
             Console.WriteLine("In OnDone");
             for (int i = 0; i < this.numberToSend; ++i)
             {
-                this.output.Send(37, 0);
+                this.output.Send(this.VertexId, 0);
             }
         }
 
@@ -55,9 +55,11 @@ namespace Examples.Throughput
             this.NotifyAt(0);
         }
 
-        public static Stream<int, Epoch> MakeStage(int numberToSend, Stream<int, Epoch> input)
+        public static Stream<int, Epoch> MakeStage(int numberToSend, int numberOfPartitions, Stream<int, Epoch> input)
         {
-            Stage<ProducerVertex, Epoch> stage = Foundry.NewStage(new SingleVertexPlacement(0, 0), input.Context, (i, s) => new ProducerVertex(i, s, numberToSend), "Producer");
+            Placement placement = new ExplicitPlacement(Enumerable.Range(0, numberOfPartitions).Select(x => new VertexLocation(x, 0, x)));
+
+            Stage<ProducerVertex, Epoch> stage = Foundry.NewStage(placement, input.Context, (i, s) => new ProducerVertex(i, s, numberToSend), "Producer");
             stage.NewInput(input, (v, m) => { }, null);
             Stream<int, Epoch> stream = stage.NewOutput(v => v.output);
             return stream;
@@ -81,21 +83,22 @@ namespace Examples.Throughput
 
         public override void OnDone(Epoch time)
         {
-            Console.WriteLine("Received {0}/{1} in {2}", numReceived, numberToConsume, stopwatch.Elapsed);
+            Console.WriteLine("Received {0} records in {1}", numReceived, stopwatch.Elapsed);
         }
 
         private ConsumerVertex(int id, Stage<Epoch> stage, int numberToConsume)
             : base(id, stage)
         {
-            Console.WriteLine("Constructing Consumer {0}", id);
             this.numberToConsume = numberToConsume;
             this.NotifyAt(0);
         }
 
-        public static Stage<ConsumerVertex, Epoch> MakeStage(int numberToConsume, Stream<int, Epoch> stream)
+        public static Stage<ConsumerVertex, Epoch> MakeStage(int numberToConsume, int numberOfPartitions, Stream<int, Epoch> stream)
         {
-            Stage<ConsumerVertex, Epoch> stage = Foundry.NewStage(new SingleVertexPlacement(1, 0), stream.Context, (i, s) => new ConsumerVertex(i, s, numberToConsume), "Consumer");
-            stage.NewInput(stream, (m, v) => v.OnRecv(m), null);
+            Placement placement = new ExplicitPlacement(Enumerable.Range(0, numberOfPartitions).Select(x => new VertexLocation(x, 1, x)));
+
+            Stage<ConsumerVertex, Epoch> stage = Foundry.NewStage(placement, stream.Context, (i, s) => new ConsumerVertex(i, s, numberToConsume), "Consumer");
+            stage.NewInput(stream, (m, v) => v.OnRecv(m), x => x);
             return stage;
         }
     }
@@ -117,8 +120,8 @@ namespace Examples.Throughput
                 {
                     Stream<int, Epoch> input = graph.NewInput(new ConstantDataSource<int>(5));
 
-                    Stream<int, Epoch> stream = ProducerVertex.MakeStage(numToExchange, input);
-                    Stage<ConsumerVertex, Epoch> consumer = ConsumerVertex.MakeStage(numToExchange, stream);
+                    Stream<int, Epoch> stream = ProducerVertex.MakeStage(numToExchange, controller.Configuration.WorkerCount, input);
+                    Stage<ConsumerVertex, Epoch> consumer = ConsumerVertex.MakeStage(numToExchange, controller.Configuration.WorkerCount, stream);
 
                     graph.Activate();
 
