@@ -18,7 +18,7 @@
  * permissions and limitations under the License.
  */
 
-﻿#define VAR_LENGTH_INT
+#define VAR_LENGTH_INT
 using System;
 using System.Collections.Generic;
 using System.Linq;

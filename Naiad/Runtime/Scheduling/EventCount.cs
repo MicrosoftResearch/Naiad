@@ -18,7 +18,7 @@
  * permissions and limitations under the License.
  */
 
-﻿//#define USESPINLOCK
+//#define USESPINLOCK
 
 using System;
 using System.Collections.Generic;

@@ -18,7 +18,7 @@
  * permissions and limitations under the License.
  */
 
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Linq;

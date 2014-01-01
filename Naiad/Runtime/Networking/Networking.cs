@@ -18,7 +18,7 @@
  * permissions and limitations under the License.
  */
 
-﻿//#define DUPLEX_SOCKET
+//#define DUPLEX_SOCKET
 #define SYNC_SEND
 #define SYNC_RECV
 //#define SEND_HIGH_PRIORITY

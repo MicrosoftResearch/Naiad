@@ -18,7 +18,7 @@
  * permissions and limitations under the License.
  */
 
-﻿using Naiad.Runtime;
+using Naiad.Runtime;
 using System;
 using System.Collections.Generic;
 using System.Linq;

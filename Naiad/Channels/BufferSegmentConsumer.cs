@@ -18,7 +18,7 @@
  * permissions and limitations under the License.
  */
 
-﻿using Naiad.Runtime.Networking;
+using Naiad.Runtime.Networking;
 using System;
 using System.Collections.Generic;
 using System.IO;

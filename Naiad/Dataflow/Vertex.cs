@@ -18,7 +18,7 @@
  * permissions and limitations under the License.
  */
 
-﻿using Naiad.CodeGeneration;
+using Naiad.CodeGeneration;
 using Naiad.Dataflow.Channels;
 using Naiad.Dataflow.Reporting;
 using Naiad.DataStructures;

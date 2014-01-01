@@ -18,7 +18,7 @@
  * permissions and limitations under the License.
  */
 
-﻿#if false
+#if false
 using System;
 using System.Collections.Generic;
 using System.Linq;

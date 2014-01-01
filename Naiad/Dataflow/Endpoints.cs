@@ -18,7 +18,7 @@
  * permissions and limitations under the License.
  */
 
-﻿using Naiad.Dataflow.Channels;
+using Naiad.Dataflow.Channels;
 using Naiad.FaultTolerance;
 using System;
 using System.Collections.Generic;

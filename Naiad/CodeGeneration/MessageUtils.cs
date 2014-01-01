@@ -34,7 +34,7 @@
  * limitations under the License.
  */
 
-﻿using Naiad.Dataflow;
+using Naiad.Dataflow;
 using System;
 using System.Collections.Generic;
 using System.Linq;

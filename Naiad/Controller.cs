@@ -18,7 +18,7 @@
  * permissions and limitations under the License.
  */
 
-﻿#define NEW_CLOCK_CHANNEL
+#define NEW_CLOCK_CHANNEL
 //#define SEPARATE_CLOCK_NET
 using System;
 using System.Collections.Generic;

@@ -18,7 +18,7 @@
  * permissions and limitations under the License.
  */
 
-﻿using Naiad.Dataflow;
+using Naiad.Dataflow;
 using Naiad.Dataflow.Channels;
 using Naiad.Runtime.Progress;
 using System;
