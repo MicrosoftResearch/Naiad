@@ -44,9 +44,13 @@ namespace Naiad.Dataflow.Iteration
         {
             for (int i = 0; i < message.length; i++)
             {
+#if true
+                this.outputs.Send(message.payload[i].v1, new IterationIn<T>(message.payload[i].v2, InitialIteration(message.payload[i].v1)));
+#else
                 this.outputs.Buffer.payload[this.outputs.Buffer.length++] = new Pair<R, IterationIn<T>>(message.payload[i].v1, new IterationIn<T>(message.payload[i].v2, InitialIteration(message.payload[i].v1)));
                 if (this.outputs.Buffer.length == this.outputs.Buffer.payload.Length)
                     this.outputs.SendBuffer();
+#endif
             }
         }
 
@@ -125,9 +129,13 @@ namespace Naiad.Dataflow.Iteration
                 var record = message.payload[i];
                 if (record.v2.t < this.MaxIterations)
                 {
+#if true
+                    this.Output.Send(record.v1, new IterationIn<T>(record.v2.s, record.v2.t + 1));
+#else
                     this.Output.Buffer.payload[this.Output.Buffer.length++] = new Pair<R, IterationIn<T>>(record.v1, new IterationIn<T>(record.v2.s, record.v2.t + 1));
                     if (this.Output.Buffer.length == this.Output.Buffer.payload.Length)
                         this.Output.SendBuffer();
+#endif
                 }
             }
         }
@@ -161,11 +169,7 @@ namespace Naiad.Dataflow.Iteration
             {
                 var record = message.payload[i];
                 if (record.v2.t >= releaseAfter)
-                {
-                    this.outputs.Buffer.payload[this.outputs.Buffer.length++] = new Pair<R, T>(record.v1, record.v2.s);
-                    if (this.outputs.Buffer.length == this.outputs.Buffer.payload.Length)
-                        this.outputs.SendBuffer();
-                }
+                    this.outputs.Send(record.v1, record.v2.s);
             }    
         }
 

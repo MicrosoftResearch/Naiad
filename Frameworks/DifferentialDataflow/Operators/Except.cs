@@ -41,9 +41,8 @@ namespace Naiad.Frameworks.DifferentialDataflow.Operators
             {
                 var record = message.payload[i];
                 record.v1.weight *= -1;
-                this.Output.Buffer.payload[this.Output.Buffer.length++] = record;
-                if (this.Output.Buffer.payload.Length == this.Output.Buffer.length)
-                    this.Output.SendBuffer();
+
+                this.Output.Send(record.v1, record.v2);
             }
         }
 

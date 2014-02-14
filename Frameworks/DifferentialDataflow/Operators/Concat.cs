@@ -28,7 +28,6 @@ using Naiad.Dataflow;
 namespace Naiad.Frameworks.DifferentialDataflow.Operators
 {
     internal class Concat<S, T> : BinaryVertex<Weighted<S>, Weighted<S>, Weighted<S>, T>
-        //OperatorImplementations.BinaryStatelessOperator<S, S, S, T>
         where S : IEquatable<S>
         where T : Naiad.Time<T>
     {

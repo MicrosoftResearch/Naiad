@@ -42,11 +42,7 @@ namespace Naiad.Frameworks.DifferentialDataflow.Operators
                 var record = message.payload[i].v1;
                 var time = message.payload[i].v2;
                 foreach (var r in selector(record.record))
-                {
-                    this.Output.Buffer.payload[this.Output.Buffer.length++] = new Naiad.Pair<Weighted<R>, T>(new Weighted<R>(r, record.weight), time);
-                    if (this.Output.Buffer.length == this.Output.Buffer.payload.Length)
-                        this.Output.SendBuffer();
-                }
+                    this.Output.Send(new Weighted<R>(r, record.weight), time);
             }
         }
         
@@ -77,14 +73,8 @@ namespace Naiad.Frameworks.DifferentialDataflow.Operators
                 var time = message.payload[i].v2;
 
                 foreach (var r in selector(record.record))
-                {
                     for (int ii = 0; ii < r.Count; ii++)
-                    {
-                        this.Output.Buffer.payload[this.Output.Buffer.length++] = new Naiad.Pair<Weighted<R>, T>(new Weighted<R>(r.Array[r.Offset + i], record.weight), time);
-                        if (this.Output.Buffer.length == this.Output.Buffer.payload.Length)
-                            this.Output.SendBuffer();
-                    }
-                }
+                        this.Output.Send(new Weighted<R>(r.Array[r.Offset + i], record.weight), time);
             }
         }
 

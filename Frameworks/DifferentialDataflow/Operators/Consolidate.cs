@@ -103,17 +103,7 @@ namespace Naiad.Frameworks.DifferentialDataflow.Operators
                     // send the accumulations at workTime
                     foreach (var pair in accumulations[time])
                         if (pair.Value != 0)
-                        {
-                            //Send(pair.Key.ToNaiadRecord(pair.Value, time));
-                            this.Output.Buffer.payload[this.Output.Buffer.length++] = new Pair<Weighted<S>, T>(new Weighted<S>(pair.Key, pair.Value), time);
-
-                            if (this.Output.Buffer.length == this.Output.Buffer.payload.Length)
-                            {
-                                this.Output.Send(this.Output.Buffer);
-                                this.Output.Buffer.length = 0;
-                            }
-
-                        }
+                            this.Output.Send(new Weighted<S>(pair.Key, pair.Value), time);
 
                     accumulations.Remove(time);
 

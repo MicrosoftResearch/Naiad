@@ -34,32 +34,10 @@ namespace Naiad.Frameworks.DifferentialDataflow.Operators
     {
         public Func<S, R> selector;
 
-#if false
-        public override void OnRecv(Weighted<S> record, T time)
-        {
-            this.Output.Send(selector(record.record).ToWeighted(record.weight), time);
-        }
-
-        Message<Naiad.Pair<Weighted<R>, T>> message;
-        public override void OnRecv(Naiad.Dataflow.Message<Naiad.Pair<Weighted<S>, T>> elements)
-        {
-            for (int i = 0; i < elements.length; i++)
-                message.payload[i] = new Naiad.Pair<Weighted<R>, T>(selector(elements.payload[i].s.record).ToWeighted(elements.payload[i].s.weight), elements.payload[i].t);
-
-            message.length = elements.length;
-            this.Output.Send(message);
-        }
-#endif
         public override void MessageReceived(Message<Pair<Weighted<S>, T>> message)
         {
             for (int i = 0; i < message.length; i++)
-            {
-                var record = message.payload[i];
-
-                this.Output.Buffer.payload[this.Output.Buffer.length++] = new Naiad.Pair<Weighted<R>, T>(selector(record.v1.record).ToWeighted(record.v1.weight), record.v2);
-                if (this.Output.Buffer.payload.Length == this.Output.Buffer.length)
-                    this.Output.SendBuffer();
-            }
+                this.Output.Send(this.selector(message.payload[i].v1.record).ToWeighted(message.payload[i].v1.weight), message.payload[i].v2);
         }
 
         public Select(int index, Stage<T> collection, Expression<Func<S, R>> transformation)

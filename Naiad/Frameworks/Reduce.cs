@@ -41,14 +41,14 @@ namespace Naiad.Frameworks.Reduction
             where TReducer : IReducer<TState, TInput, TOutput>
             where TTime : Time<TTime>
         {
-            return UnaryVertex<TInput, TState, TTime>.MakeStage(stream, (i, v) => new LocalReduceShard<TReducer, TState, TInput, TOutput, TTime>(i, v, factory), null, null, name);
+            return Foundry.NewStage(stream, (i, v) => new LocalReduceShard<TReducer, TState, TInput, TOutput, TTime>(i, v, factory), null, null, name);
         }
 
         public static Stream<TOutput, TTime> LocalCombine<TReducer, TState, TInput, TOutput, TTime>(this Stream<TState, TTime> stream, Func<TReducer> factory, string name)
             where TReducer : IReducer<TState, TInput, TOutput>
             where TTime : Time<TTime>
         {
-            return UnaryVertex<TState, TOutput, TTime>.MakeStage(stream, (i, v) => new LocalCombineShard<TReducer, TState, TInput, TOutput, TTime>(i, v, factory), null, null, name);
+            return Foundry.NewStage(stream, (i, v) => new LocalCombineShard<TReducer, TState, TInput, TOutput, TTime>(i, v, factory), null, null, name);
         }
 
         public static Stream<Pair<TKey, TState>, TTime> LocalReduce<TReducer, TState, TValue, TOutput, TKey, TInput, TTime>(
@@ -57,7 +57,7 @@ namespace Naiad.Frameworks.Reduction
             where TReducer : IReducer<TState, TValue, TOutput>
             where TTime : Time<TTime>
         {
-            return UnaryVertex<TInput, Pair<TKey, TState>, TTime>.MakeStage(stream, (i, v) => new LocalKeyedReduceShard<TReducer, TState, TValue, TOutput, TKey, TInput, TTime>(i, v, key, val, factory), inPlacement, outPlacement, name);
+            return Foundry.NewStage(stream, (i, v) => new LocalKeyedReduceShard<TReducer, TState, TValue, TOutput, TKey, TInput, TTime>(i, v, key, val, factory), inPlacement, outPlacement, name);
         }
 
         public static Stream<Pair<K, X>, T> LocalTimeReduce<A, X, R, S, K, I, T>(
@@ -66,7 +66,7 @@ namespace Naiad.Frameworks.Reduction
             where A : IReducer<X, R, S>
             where T : Time<T>
         {
-            return UnaryVertex<I, Pair<K, X>, T>.MakeStage(stream, (i, v) => new LocalTimeKeyedReduceShard<A, X, R, S, K, I, T>(i, v, key, val, factory), inPlacement, outPlacement, name);
+            return Foundry.NewStage(stream, (i, v) => new LocalTimeKeyedReduceShard<A, X, R, S, K, I, T>(i, v, key, val, factory), inPlacement, outPlacement, name);
         }
 
         public static Stream<Pair<K, X>, T> LocalReduce<A, X, R, S, K, I, T>(
@@ -90,7 +90,7 @@ namespace Naiad.Frameworks.Reduction
                 inPlacement = x => x.v1.GetHashCode();
             }
 
-            return UnaryVertex<Pair<K, X>, Pair<K, S>, T>.MakeStage(stream, (i, v) => new LocalKeyedCombineShard<A, X, R, S, K, T>(i, v, factory), inPlacement, outPlacement, name);
+            return Foundry.NewStage(stream, (i, v) => new LocalKeyedCombineShard<A, X, R, S, K, T>(i, v, factory), inPlacement, outPlacement, name);
         }
 
         public static Stream<Pair<K, S>, T> LocalTimeCombine<A, X, R, S, K, T>(
@@ -105,7 +105,7 @@ namespace Naiad.Frameworks.Reduction
                 inPlacement = x => x.v1.GetHashCode();
             }
 
-            return UnaryVertex<Pair<K, X>, Pair<K, S>, T>.MakeStage(stream, (i, v) => new LocalTimeKeyedCombineShard<A, X, R, S, K, T>(i, v, factory), inPlacement, outPlacement, name);
+            return Foundry.NewStage(stream, (i, v) => new LocalTimeKeyedCombineShard<A, X, R, S, K, T>(i, v, factory), inPlacement, outPlacement, name);
         }
 
         public static Stream<Pair<K, S>, T> LocalCombine<A, X, R, S, K, T>(
@@ -140,7 +140,7 @@ namespace Naiad.Frameworks.Reduction
 
             var processDests = stream.ForStage.InternalGraphManager.DefaultPlacement.Where(x => x.ThreadId == 0).Select(x => x.VertexId).ToArray();
 
-            var boutput = UnaryVertex<R, Pair<int, R>, T>.MakeStage(stream, (i, v) => new BroadcastSendShard<R, T>(i, v, processDests), null, null, "BroadcastProcessSend");
+            var boutput = Foundry.NewStage(stream, (i, v) => new BroadcastSendShard<R, T>(i, v, processDests), null, null, "BroadcastProcessSend");
 
             var collectable = boutput;
             if (stream.ForStage.InternalGraphManager.DefaultPlacement.Where(x => x.ProcessId == controller.Configuration.ProcessID).Count() > 1)
@@ -150,7 +150,7 @@ namespace Naiad.Frameworks.Reduction
                                             .Select(x => x.VertexId)
                                             .ToArray();
 
-                collectable = UnaryVertex<Pair<int, R>, Pair<int, R>, T>.MakeStage(boutput, (i, v) => new BroadcastForwardShard<R, T>(i, v, threadDests), x => x.v1, null, "BroadcastShardSend");
+                collectable = Foundry.NewStage(boutput, (i, v) => new BroadcastForwardShard<R, T>(i, v, threadDests), x => x.v1, null, "BroadcastShardSend");
             }
 
             // TODO : fix this to use a streaming expression

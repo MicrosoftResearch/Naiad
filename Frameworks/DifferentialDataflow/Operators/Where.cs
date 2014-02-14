@@ -40,18 +40,8 @@ namespace Naiad.Frameworks.DifferentialDataflow.Operators
         public override void MessageReceived(Naiad.Dataflow.Message<Naiad.Pair<Weighted<S>, T>> elements)
         {
             for (int i = 0; i < elements.length; i++)
-            {
                 if (predicate(elements.payload[i].v1.record))
-                {
-                    this.Output.Buffer.payload[this.Output.Buffer.length++] = elements.payload[i];
-
-                    if (this.Output.Buffer.length == this.Output.Buffer.payload.Length)
-                    {
-                        this.Output.Send(this.Output.Buffer);
-                        this.Output.Buffer.length = 0;
-                    }
-                }
-            }
+                    this.Output.Send(elements.payload[i].v1, elements.payload[i].v2);
         }
 
         public Where(int index, Stage<T> collection, Expression<Func<S, bool>> pred)

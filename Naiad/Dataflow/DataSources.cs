@@ -32,7 +32,13 @@ namespace Naiad.Dataflow
     /// </summary>
     public interface DataSource
     {
+        /// <summary>
+        /// Called by the GraphManager before it completes its own Activate().
+        /// </summary>
         void Activate();
+        /// <summary>
+        /// Called by the GraphManager before it completes its own Join().
+        /// </summary>
         void Join();
     }
 
@@ -42,6 +48,7 @@ namespace Naiad.Dataflow
     /// <typeparam name="TRecord"></typeparam>
     public interface DataSource<TRecord> : DataSource
     {
+        // indicates a StreamingInput to be used for each local worker.
         void RegisterInputs(IEnumerable<StreamingInput<TRecord>> inputs);
     }
 
@@ -221,6 +228,144 @@ namespace Naiad.Dataflow
             externalGraphStream.Subscribe((msg, i) => { this.OnRecv(msg, i); }, (epoch, i) => { this.OnNotify(epoch.t, i); }, this.OnCompleted);
         }
     }
+
+    #region Inter-graph data source
+
+    public class InterGraphDataSource<TRecord> : BaseDataSource<TRecord>
+    {
+        private readonly InterGraphDataSink<TRecord> Sink;
+
+        public override void Activate()
+        {
+            this.Sink.Register(this);
+        }
+        
+        public void OnRecv(TRecord[] message, int epoch, int fromWorker)
+        {
+            this.inputsByWorker[fromWorker].OnStreamingRecv(message, epoch);
+        }
+
+        public void OnNotify(int epoch, int fromWorker)
+        {
+            this.inputsByWorker[fromWorker].OnStreamingNotify(epoch);
+        }
+
+        public void OnCompleted(int fromWorker)
+        {
+            this.inputsByWorker[fromWorker].OnCompleted();
+        }
+
+        public InterGraphDataSource(InterGraphDataSink<TRecord> sink)
+        {
+            this.Sink = sink;
+        }
+    }
+
+    public class InterGraphDataSink<TRecord>
+    {
+        private readonly List<InterGraphDataSource<TRecord>> TargetSources;
+        private readonly Dictionary<int, List<TRecord>>[] StatesByWorker;
+        private readonly List<Pair<int, TRecord[]>>[] FrozenStates;
+        private readonly bool[] Completed;
+
+        private void OnRecv(Message<Pair<TRecord, Epoch>> message, int fromWorker)
+        {
+            lock (this)
+            {
+                for (int i = 0; i < message.length; i++)
+                {
+                    var dictionary = this.StatesByWorker[fromWorker];
+                    if (!dictionary.ContainsKey(message.payload[i].v2.t))
+                        dictionary.Add(message.payload[i].v2.t, new List<TRecord>());
+
+                    dictionary[message.payload[i].v2.t].Add(message.payload[i].v1);
+                }
+            }
+        }
+
+        private void OnNotify(int epoch, int fromWorker)
+        {
+            lock (this)
+            {
+                if (this.StatesByWorker[fromWorker].ContainsKey(epoch))
+                {
+                    var array = this.StatesByWorker[fromWorker][epoch].ToArray();
+
+                    foreach (var source in this.TargetSources)
+                    {
+                        source.OnRecv(array, epoch, fromWorker);
+                        source.OnNotify(epoch, fromWorker);
+                    }
+
+                    this.FrozenStates[fromWorker].Add(new Pair<int, TRecord[]>(epoch, array));
+                    this.StatesByWorker[fromWorker].Remove(epoch);
+                }
+            }
+        }
+
+        private void OnCompleted(int fromWorker)
+        {
+            lock (this)
+            {
+                foreach (var source in this.TargetSources)
+                    source.OnCompleted(fromWorker);
+
+                this.Completed[fromWorker] = true;
+            }
+        }
+
+        public InterGraphDataSource<TRecord> NewDataSource()
+        {
+            return new InterGraphDataSource<TRecord>(this);
+        }
+
+        public void Register(InterGraphDataSource<TRecord> source)
+        {
+            lock (this)
+            {
+                this.TargetSources.Add(source);
+
+                for (int i = 0; i < this.FrozenStates.Length; i++)
+                {
+                    foreach (var frozen in this.FrozenStates[i])
+                    {
+                        source.OnRecv(frozen.v2, frozen.v1, i);
+                        source.OnNotify(frozen.v1, i);
+                    }
+
+                    if (this.Completed[i])
+                        source.OnCompleted(i);
+                }
+            }
+        }
+
+        public InterGraphDataSink(Stream<TRecord, Epoch> stream)
+        {
+            this.TargetSources = new List<InterGraphDataSource<TRecord>>();
+
+            var workers = stream.Context.Context.Manager.GraphManager.Controller.Workers.Count;
+
+            this.StatesByWorker = new Dictionary<int,List<TRecord>>[workers];
+            for (int i = 0; i < this.StatesByWorker.Length; i++)
+                this.StatesByWorker[i] = new Dictionary<int, List<TRecord>>();
+
+            this.FrozenStates = new List<Pair<int,TRecord[]>>[workers];
+            for (int i = 0; i < this.FrozenStates.Length; i++)
+                this.FrozenStates[i] = new List<Pair<int, TRecord[]>>();
+
+            this.Completed = new bool[workers];
+            for (int i = 0; i < this.Completed.Length; i++)
+                this.Completed[i] = false;
+
+            var placement = stream.StageOutput.ForStage.Placement;
+
+            stream.Subscribe((msg, i) => { this.OnRecv(msg, placement[i].ThreadId); }, (epoch, i) => { this.OnNotify(epoch.t, placement[i].ThreadId); }, i => this.OnCompleted(placement[i].ThreadId));
+        }
+    }
+
+
+    #endregion
+
 
     /// <summary>
     /// DataSource supporting manual epoch-at-a-time data introduction.

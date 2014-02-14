@@ -161,7 +161,7 @@ namespace Naiad.Frameworks
     {
         private bool mustFlush = false;
         private Dataflow.Channels.SendWire<TRecord, TTime>[] SendChannels;
-        public Message<Pair<TRecord, TTime>> Buffer;
+        private Message<Pair<TRecord, TTime>> Buffer;
 
         private bool loggingEnabled = false;
         public bool LoggingEnabled { get { return this.loggingEnabled; } set { this.loggingEnabled = value; } }
@@ -201,6 +201,12 @@ namespace Naiad.Frameworks
             SendChannels = SendChannels.Concat(new[] { sendFiber }).ToArray();
         }
 
+        /// <summary>
+        /// Sends a single record at a given time.
+        /// </summary>
+        /// <param name="record">the record</param>
+        /// <param name="time">the time</param>
+        // [System.Runtime.CompilerServices.MethodImplAttribute(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         public void Send(TRecord record, TTime time)
         {
             mustFlush = true;
@@ -211,8 +217,14 @@ namespace Naiad.Frameworks
                 SendBuffer();
         }
 
+        /// <summary>
+        /// Sends a pre-formed message of pairs of records and times.
+        /// </summary>
+        /// <param name="message"></param>
         public void Send(Message<Pair<TRecord, TTime>> message)
         {
+            this.SendBuffer();  // flush any current buffer to ensure FIFO order.
+
             if (this.loggingEnabled)
                 this.LogMessage(Buffer);
             mustFlush = true;
@@ -220,11 +232,10 @@ namespace Naiad.Frameworks
                 SendChannels[i].Send(message);
         }
 
-        public void SendBuffer()
+        private void SendBuffer()
         {
             if (Buffer.length > 0)
             {
-
                 var temp = Buffer;
                 Buffer.Disable();
 
@@ -242,21 +253,7 @@ namespace Naiad.Frameworks
 
         public void Flush()
         {
-            if (Buffer.length > 0)
-            {
-                var temp = Buffer;
-                Buffer.Disable();
-
-                if (SpareBuffers.Count > 0)
-                    Buffer = SpareBuffers.Dequeue();
-                else
-                    Buffer.Enable();
-
-                Send(temp);
-
-                temp.length = 0;
-                SpareBuffers.Enqueue(temp);
-            }
+            SendBuffer();
 
             if (mustFlush)  // avoids perpetuating cycle of flushing.
             {
@@ -318,10 +315,26 @@ namespace Naiad.Frameworks
     public abstract class UnaryVertex<TInput, TOutput, TTime> : Vertex<TTime>
         where TTime : Time<TTime>
     {
+        /// <summary>
+        /// Manages the list of intended recipients, and the buffering and sending of output.
+        /// </summary>
         protected readonly VertexOutputBuffer<TOutput, TTime> Output;
 
+        /// <summary>
+        /// A programmer-supplied action to be performed on each message receipt.
+        /// </summary>
+        /// <param name="message">Received message</param>
         public abstract void MessageReceived(Message<Pair<TInput, TTime>> message);
 
+        /// <summary>
+        /// Factory to produce a stage consisting of these vertices.
+        /// </summary>
+        /// <param name="stream">Source data stream</param>
+        /// <param name="factory">Function from index and stage to a UnaryVertex</param>
+        /// <param name="inputPartitionBy">input partitioning requirement</param>
+        /// <param name="outputPartitionBy">output partitioning guarantee</param>
+        /// <param name="name">console-friendly name</param>
+        /// <returns>stream of records from the vertices</returns>
         public static Stream<TOutput, TTime> MakeStage(Stream<TInput, TTime> stream, Func<int, Stage<TTime>, UnaryVertex<TInput, TOutput, TTime>> factory, Expression<Func<TInput, int>> inputPartitionBy, Expression<Func<TOutput, int>> outputPartitionBy, string name)
         {
             var stage = Foundry.NewStage(stream.Context, factory, name);
@@ -332,6 +345,11 @@ namespace Naiad.Frameworks
             return output;
         }
 
+        /// <summary>
+        /// Creates a new UnaryVertex
+        /// </summary>
+        /// <param name="index">vertex index</param>
+        /// <param name="stage">host stage</param>
         public UnaryVertex(int index, Stage<TTime> stage)
             : base(index, stage)
         {
@@ -354,6 +372,17 @@ namespace Naiad.Frameworks
         public abstract void MessageReceived1(Message<Pair<TInput1, TTime>> message);
         public abstract void MessageReceived2(Message<Pair<TInput2, TTime>> message);
 
+        /// <summary>
+        /// Creates a new stream from the output of a stage of BinaryVertex objects.
+        /// </summary>
+        /// <param name="stream1">first input stream</param>
+        /// <param name="stream2">second input stream</param>
+        /// <param name="factory">factory from index and stage to BinaryVertex</param>
+        /// <param name="input1PartitionBy">first input partitioning requirement</param>
+        /// <param name="input2PartitionBy">second input partitioning requirement</param>
+        /// <param name="outputPartitionBy">output partitioning guarantee</param>
+        /// <param name="name">friendly name</param>
+        /// <returns>the output stream of the corresponding binary stage.</returns>
         public static Stream<TOutput, TTime> MakeStage(Stream<TInput1, TTime> stream1, Stream<TInput2, TTime> stream2, Func<int, Stage<TTime>, BinaryVertex<TInput1, TInput2, TOutput, TTime>> factory, Expression<Func<TInput1, int>> input1PartitionBy, Expression<Func<TInput2, int>> input2PartitionBy, Expression<Func<TOutput, int>> outputPartitionBy, string name)
         {
             var stage = Foundry.NewStage(stream1.Context, factory, name);
@@ -366,6 +395,11 @@ namespace Naiad.Frameworks
             return output;
         }
 
+        /// <summary>
+        /// Creates a new BinaryVertex
+        /// </summary>
+        /// <param name="index">vertex index</param>
+        /// <param name="stage">host stage</param>
         public BinaryVertex(int index, Stage<TTime> stage)
             : base(index, stage)
         {
@@ -399,6 +433,12 @@ namespace Naiad.Frameworks
             this.Action(this.Input.GetRecordsAt(time));
         }
 
+        /// <summary>
+        /// Creates a new SinkBufferingStage
+        /// </summary>
+        /// <param name="index">vertex index</param>
+        /// <param name="stage">host stage</param>
+        /// <param name="action">action on input collection</param>
         public SinkBufferingVertex(int index, Stage<TTime> stage, Expression<Action<IEnumerable<TOutput>>> action)
             : base(index, stage)
         {
@@ -435,6 +475,12 @@ namespace Naiad.Frameworks
                 this.Output.Send(result, time);
         }
 
+        /// <summary>
+        /// Constructs a new UnaryBufferingVertex.
+        /// </summary>
+        /// <param name="index">vertex index</param>
+        /// <param name="stage">host stage</param>
+        /// <param name="transformation">transformation from input collection to output collection</param>
         public UnaryBufferingVertex(int index, Stage<TTime> stage, Expression<Func<IEnumerable<TInput>, IEnumerable<TOutput>>> transformation)
             : base(index, stage)
         {
@@ -479,6 +525,12 @@ namespace Naiad.Frameworks
                 this.Output.Send(result, time);
         }
 
+        /// <summary>
+        /// Constructs a new BinaryBufferingVertex
+        /// </summary>
+        /// <param name="index">vertex index</param>
+        /// <param name="stage">host stage</param>
+        /// <param name="transformation">transformation from two input collections to an output collection</param>
         public BinaryBufferingVertex(int index, Stage<TTime> stage, Expression<Func<IEnumerable<TInput1>, IEnumerable<TInput2>, IEnumerable<TOutput>>> transformation)
             : base(index, stage)
         {

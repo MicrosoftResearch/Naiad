@@ -48,7 +48,7 @@ namespace Naiad.Frameworks.Lindi
         /// <returns>stream of transformed records</returns>
         public static Stream<TOutput, TTime> Select<TInput, TOutput, TTime>(this Stream<TInput, TTime> stream, Func<TInput, TOutput> function) where TTime : Time<TTime>
         {
-            return UnaryVertex<TInput, TOutput, TTime>.MakeStage(stream, (i, v) => new SelectVertex<TInput, TOutput, TTime>(i, v, function), null, null, "Select");
+            return Foundry.NewStage(stream, (i, v) => new SelectVertex<TInput, TOutput, TTime>(i, v, function), null, null, "Select");
         }
 
         /// <summary>
@@ -61,7 +61,7 @@ namespace Naiad.Frameworks.Lindi
         /// <returns>filtered stream</returns>
         public static Stream<TRecord, TTime> Where<TRecord, TTime>(this Stream<TRecord, TTime> stream, Func<TRecord, bool> predicate) where TTime : Time<TTime>
         {
-            return UnaryVertex<TRecord, TRecord, TTime>.MakeStage(stream, (i, v) => new WhereVertex<TRecord, TTime>(i, v, predicate), stream.PartitionedBy, stream.PartitionedBy, "Where");
+            return Foundry.NewStage(stream, (i, v) => new WhereVertex<TRecord, TTime>(i, v, predicate), stream.PartitionedBy, stream.PartitionedBy, "Where");
         }
 
         /// <summary>
@@ -75,7 +75,7 @@ namespace Naiad.Frameworks.Lindi
         /// <returns>the concatenation of all results produced from each input record</returns>
         public static Stream<TOutput, TTime> SelectMany<TInput, TOutput, TTime>(this Stream<TInput, TTime> stream, Func<TInput, IEnumerable<TOutput>> function) where TTime : Time<TTime>
         {
-            return UnaryVertex<TInput, TOutput, TTime>.MakeStage(stream, (i, v) => new SelectManyVertex<TInput, TOutput, TTime>(i, v, function), null, null, "SelectMany");
+            return Foundry.NewStage(stream, (i, v) => new SelectManyVertex<TInput, TOutput, TTime>(i, v, function), null, null, "SelectMany");
         }
 
         /// <summary>
@@ -90,7 +90,7 @@ namespace Naiad.Frameworks.Lindi
         {
             // test to see if they are partitioned properly, and if so maintain the information in output partitionedby information.
             var partitionedBy = Naiad.CodeGeneration.ExpressionComparer.Instance.Equals(stream1.PartitionedBy, stream2.PartitionedBy) ? stream1.PartitionedBy : null;
-            return BinaryVertex<TRecord, TRecord, TRecord, TTime>.MakeStage(stream1, stream2, (i, v) => new ConcatVertex<TRecord, TTime>(i, v), partitionedBy, partitionedBy, partitionedBy, "Concat");
+            return Foundry.NewStage(stream1, stream2, (i, v) => new ConcatVertex<TRecord, TTime>(i, v), partitionedBy, partitionedBy, partitionedBy, "Concat");
         }
 
         /// <summary>
@@ -293,11 +293,7 @@ namespace Naiad.Frameworks.Lindi
         public override void MessageReceived(Dataflow.Message<Pair<S, T>> message)
         {
             for (int i = 0; i < message.length; i++)
-            {
-                this.Output.Buffer.payload[this.Output.Buffer.length++] = new Pair<R, T>(Function(message.payload[i].v1), message.payload[i].v2);
-                if (this.Output.Buffer.length == this.Output.Buffer.payload.Length)
-                    this.Output.SendBuffer();
-            }
+                this.Output.Send(this.Function(message.payload[i].v1), message.payload[i].v2);
         }
 
         public SelectVertex(int index, Stage<T> stage, Func<S, R> function)
@@ -315,14 +311,8 @@ namespace Naiad.Frameworks.Lindi
         public override void MessageReceived(Dataflow.Message<Pair<S, T>> message)
         {
             for (int i = 0; i < message.length; i++)
-            {
                 if (Function(message.payload[i].v1))
-                {
-                    this.Output.Buffer.payload[this.Output.Buffer.length++] = message.payload[i];
-                    if (this.Output.Buffer.length == this.Output.Buffer.payload.Length)
-                        this.Output.SendBuffer();
-                }
-            }
+                    this.Output.Send(message.payload[i].v1, message.payload[i].v2);
         }
 
         public WhereVertex(int index, Stage<T> stage, Func<S, bool> function)
@@ -586,7 +576,7 @@ namespace Naiad.Frameworks.Lindi
         public static Stream<TOutput, TTime> SelectShard<TInput, TOutput, TTime>(this Stream<TInput, TTime> stream, Func<int, TInput, TOutput> function)
             where TTime : Time<TTime>
         {
-            return UnaryVertex<TInput, TOutput, TTime>.MakeStage(stream, (i, v) => new ShardSelect<TInput, TOutput, TTime>(i, v, function), null, null, "ShardSelect");
+            return Foundry.NewStage(stream, (i, v) => new ShardSelect<TInput, TOutput, TTime>(i, v, function), null, null, "ShardSelect");
         }
 
         /// <summary>
@@ -601,7 +591,7 @@ namespace Naiad.Frameworks.Lindi
         public static Stream<TOutput, TTime> SelectManyArraySegment<TInput, TOutput, TTime>(this Stream<TInput, TTime> stream, Func<TInput, IEnumerable<ArraySegment<TOutput>>> function)
             where TTime : Time<TTime>
         {
-            return UnaryVertex<TInput, TOutput, TTime>.MakeStage(stream, (i, v) => new SelectManyArraySegment<TInput, TOutput, TTime>(i, v, function), null, null, "SelectManyArraySegment");
+            return Foundry.NewStage(stream, (i, v) => new SelectManyArraySegment<TInput, TOutput, TTime>(i, v, function), null, null, "SelectManyArraySegment");
         }
 
         /// <summary>
@@ -735,9 +725,13 @@ namespace Naiad.Frameworks.Lindi
         {
             for (int i = 0; i < message.length; i++)
             {
+#if true
+                this.Output.Send(this.Function(this.VertexId, message.payload[i].v1), message.payload[i].v2);
+#else
                 this.Output.Buffer.payload[this.Output.Buffer.length++] = new Pair<R, T>(Function(this.VertexId, message.payload[i].v1), message.payload[i].v2);
                 if (this.Output.Buffer.length == this.Output.Buffer.payload.Length)
                     this.Output.SendBuffer();
+#endif
             }
         }
 
@@ -760,14 +754,8 @@ namespace Naiad.Frameworks.Lindi
                 var record = message.payload[ii];
                 var time = record.v2;
                 foreach (var result in Function(record.v1))
-                {
                     for (int i = result.Offset; i < result.Offset + result.Count; i++)
-                    {
-                        this.Output.Buffer.payload[this.Output.Buffer.length++] = new Pair<R, T>(result.Array[i], time);
-                        if (this.Output.Buffer.length == this.Output.Buffer.payload.Length)
-                            this.Output.SendBuffer();
-                    }
-                }
+                        this.Output.Send(result.Array[i], time);
             }
         }
 

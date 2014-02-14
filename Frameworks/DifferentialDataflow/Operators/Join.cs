@@ -89,16 +89,10 @@ namespace Naiad.Frameworks.DifferentialDataflow.Operators
                     for (int j = 0; j < differences2.Count; j++)
                         if (differences2.Array[j].weight != 0)
                         {
-                            //Send(resultSelector(k, v, differences2.Array[j].record).ToNaiadRecord(entry.weight * differences2.Array[j].weight, newTime));
                             var result = resultSelector(k, v, differences2.Array[j].record);
                             var weight = entry.weight * differences2.Array[j].weight;
-                            this.Output.Buffer.payload[this.Output.Buffer.length++] = new Pair<Weighted<R>, T>(new Weighted<R>(result, weight), newTime);
 
-                            if (this.Output.Buffer.length == this.Output.Buffer.payload.Length)
-                            {
-                                this.Output.Send(this.Output.Buffer);
-                                this.Output.Buffer.length = 0;
-                            }
+                            this.Output.Send(new Weighted<R>(result, weight), newTime);
                         }
                 }
             }
@@ -146,13 +140,8 @@ namespace Naiad.Frameworks.DifferentialDataflow.Operators
                             //Send(resultSelector(k, differences1.Array[j].record, v).ToNaiadRecord(entry.weight * differences1.Array[j].weight, newTime));
                             var result = resultSelector(k, differences1.Array[j].record, v);
                             var weight = entry.weight * differences1.Array[j].weight;
-                            this.Output.Buffer.payload[this.Output.Buffer.length++] = new Pair<Weighted<R>, T>(new Weighted<R>(result, weight), newTime);
 
-                            if (this.Output.Buffer.length == this.Output.Buffer.payload.Length)
-                            {
-                                this.Output.Send(this.Output.Buffer);
-                                this.Output.Buffer.length = 0;
-                            }
+                            this.Output.Send(new Weighted<R>(result, weight), newTime);
                         }
                 }
             }
