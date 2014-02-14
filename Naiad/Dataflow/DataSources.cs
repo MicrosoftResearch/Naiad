@@ -139,6 +139,11 @@ namespace Naiad.Dataflow
         public ConstantDataSource(TRecord element) { this.contents = new TRecord[] { element }; }
 
         /// <summary>
+        /// Constructs a DataSource with no elements.
+        /// </summary>
+        public ConstantDataSource() : this(Enumerable.Empty<TRecord>()) { }
+
+        /// <summary>
         /// Supplies contents to the StreamingInputs.
         /// </summary>
         public override void Activate()
@@ -197,40 +202,13 @@ namespace Naiad.Dataflow
             }
         }
     }
-
-    /// <summary>
-    /// DataSource for adapting a stream from another graph manager.
-    /// </summary>
-    /// <typeparam name="TRecord">record type</typeparam>
-    public class ExternalGraphDataSource<TRecord> : BaseDataSource<TRecord>
-    {
-        private void OnRecv(Message<Pair<TRecord, Epoch>> message, int fromWorker)
-        {
-            Logging.Info("In EGSI.OnRecv");
-            for (int i = 0; i < message.length; ++i)
-            {
-                this.inputsByWorker[fromWorker].OnStreamingRecv(new TRecord[] { message.payload[i].v1 }, message.payload[i].v2.t);
-            }
-        }
-
-        private void OnNotify(int epoch, int fromWorker)
-        {
-            this.inputsByWorker[fromWorker].OnStreamingNotify(epoch);
-        }
-
-        private void OnCompleted(int fromWorker)
-        {
-            this.inputsByWorker[fromWorker].OnCompleted();
-        }
-
-        public ExternalGraphDataSource(Stream<TRecord, Epoch> externalGraphStream)
-        {
-            externalGraphStream.Subscribe((msg, i) => { this.OnRecv(msg, i); }, (epoch, i) => { this.OnNotify(epoch.t, i); }, this.OnCompleted);
-        }
-    }
-
+    
     #region Inter-graph data source
 
+    /// <summary>
+    /// Data source from another graph manager.
+    /// </summary>
+    /// <typeparam name="TRecord">record type</typeparam>
     public class InterGraphDataSource<TRecord> : BaseDataSource<TRecord>
     {
         private readonly InterGraphDataSink<TRecord> Sink;
@@ -255,12 +233,20 @@ namespace Naiad.Dataflow
             this.inputsByWorker[fromWorker].OnCompleted();
         }
 
+        /// <summary>
+        /// Constructs a new InterGraphDataSource from an InterGraphDataSink.
+        /// </summary>
+        /// <param name="sink"></param>
         public InterGraphDataSource(InterGraphDataSink<TRecord> sink)
         {
             this.Sink = sink;
         }
     }
 
+    /// <summary>
+    /// Data sink for use by other graph managers.
+    /// </summary>
+    /// <typeparam name="TRecord"></typeparam>
     public class InterGraphDataSink<TRecord>
     {
         private readonly List<InterGraphDataSource<TRecord>> TargetSources;
@@ -314,12 +300,16 @@ namespace Naiad.Dataflow
             }
         }
 
+        /// <summary>
+        /// Returns a new InterGraphDataSource for use by other graph managers.
+        /// </summary>
+        /// <returns>data source</returns>
         public InterGraphDataSource<TRecord> NewDataSource()
         {
             return new InterGraphDataSource<TRecord>(this);
         }
 
-        public void Register(InterGraphDataSource<TRecord> source)
+        internal void Register(InterGraphDataSource<TRecord> source)
         {
             lock (this)
             {
@@ -339,6 +329,10 @@ namespace Naiad.Dataflow
             }
         }
 
+        /// <summary>
+        /// Creates a new InterGraphDataSink from a stream.
+        /// </summary>
+        /// <param name="stream">source stream</param>
         public InterGraphDataSink(Stream<TRecord, Epoch> stream)
         {
             this.TargetSources = new List<InterGraphDataSource<TRecord>>();
@@ -362,7 +356,6 @@ namespace Naiad.Dataflow
             stream.Subscribe((msg, i) => { this.OnRecv(msg, placement[i].ThreadId); }, (epoch, i) => { this.OnNotify(epoch.t, placement[i].ThreadId); }, i => this.OnCompleted(placement[i].ThreadId));
         }
     }
-
 
     #endregion
 
