@@ -48,7 +48,7 @@ namespace Naiad.Frameworks.Lindi
         /// <returns>stream of transformed records</returns>
         public static Stream<TOutput, TTime> Select<TInput, TOutput, TTime>(this Stream<TInput, TTime> stream, Func<TInput, TOutput> function) where TTime : Time<TTime>
         {
-            return Foundry.NewStage(stream, (i, v) => new SelectVertex<TInput, TOutput, TTime>(i, v, function), null, null, "Select");
+            return Foundry.NewUnaryStage(stream, (i, v) => new SelectVertex<TInput, TOutput, TTime>(i, v, function), null, null, "Select");
         }
 
         /// <summary>
@@ -61,7 +61,7 @@ namespace Naiad.Frameworks.Lindi
         /// <returns>filtered stream</returns>
         public static Stream<TRecord, TTime> Where<TRecord, TTime>(this Stream<TRecord, TTime> stream, Func<TRecord, bool> predicate) where TTime : Time<TTime>
         {
-            return Foundry.NewStage(stream, (i, v) => new WhereVertex<TRecord, TTime>(i, v, predicate), stream.PartitionedBy, stream.PartitionedBy, "Where");
+            return Foundry.NewUnaryStage(stream, (i, v) => new WhereVertex<TRecord, TTime>(i, v, predicate), stream.PartitionedBy, stream.PartitionedBy, "Where");
         }
 
         /// <summary>
@@ -75,7 +75,7 @@ namespace Naiad.Frameworks.Lindi
         /// <returns>the concatenation of all results produced from each input record</returns>
         public static Stream<TOutput, TTime> SelectMany<TInput, TOutput, TTime>(this Stream<TInput, TTime> stream, Func<TInput, IEnumerable<TOutput>> function) where TTime : Time<TTime>
         {
-            return Foundry.NewStage(stream, (i, v) => new SelectManyVertex<TInput, TOutput, TTime>(i, v, function), null, null, "SelectMany");
+            return Foundry.NewUnaryStage(stream, (i, v) => new SelectManyVertex<TInput, TOutput, TTime>(i, v, function), null, null, "SelectMany");
         }
 
         /// <summary>
@@ -90,7 +90,7 @@ namespace Naiad.Frameworks.Lindi
         {
             // test to see if they are partitioned properly, and if so maintain the information in output partitionedby information.
             var partitionedBy = Naiad.CodeGeneration.ExpressionComparer.Instance.Equals(stream1.PartitionedBy, stream2.PartitionedBy) ? stream1.PartitionedBy : null;
-            return Foundry.NewStage(stream1, stream2, (i, v) => new ConcatVertex<TRecord, TTime>(i, v), partitionedBy, partitionedBy, partitionedBy, "Concat");
+            return Foundry.NewBinaryStage(stream1, stream2, (i, v) => new ConcatVertex<TRecord, TTime>(i, v), partitionedBy, partitionedBy, partitionedBy, "Concat");
         }
 
         /// <summary>
@@ -145,7 +145,7 @@ namespace Naiad.Frameworks.Lindi
         public static Stream<TResult, TTime> Join<TInput1, TInput2, TKey, TResult, TTime>(this Stream<TInput1, TTime> stream1, Stream<TInput2, TTime> stream2, Func<TInput1, TKey> key1, Func<TInput2, TKey> key2, Func<TInput1, TInput2, TResult> reducer)  where TTime : Time<TTime>
         {
             //return stream1.BinaryExpression(stream2, x => key1(x).GetHashCode(), x => key2(x).GetHashCode(), (x1, x2) => x1.Join(x2, key1, key2, reducer), "Join");
-            return Foundry.NewStage(stream1, stream2, (i, s) => new JoinVertex<TInput1, TInput2, TKey, TResult, TTime>(i, s, key1, key2, reducer), x => key1(x).GetHashCode(), x => key2(x).GetHashCode(), null, "Join");
+            return Foundry.NewBinaryStage(stream1, stream2, (i, s) => new JoinVertex<TInput1, TInput2, TKey, TResult, TTime>(i, s, key1, key2, reducer), x => key1(x).GetHashCode(), x => key2(x).GetHashCode(), null, "Join");
         }
 
         /// <summary>
@@ -157,7 +157,7 @@ namespace Naiad.Frameworks.Lindi
         /// <returns>distinct elements of the input stream</returns>
         public static Stream<TRecord, TTime> Distinct<TRecord, TTime>(this Stream<TRecord, TTime> stream) where TTime : Time<TTime>
         {
-            return stream.NewStage((i, v) => new DistinctVertex<TRecord, TTime>(i, v), x => x.GetHashCode(), x => x.GetHashCode(), "Distinct");
+            return stream.NewUnaryStage((i, v) => new DistinctVertex<TRecord, TTime>(i, v), x => x.GetHashCode(), x => x.GetHashCode(), "Distinct");
         }
 
         /// <summary>
@@ -183,7 +183,7 @@ namespace Naiad.Frameworks.Lindi
         /// <returns>stream of records in both input streams</returns>
         public static Stream<TRecord, TTime> Intersect<TRecord, TTime>(this Stream<TRecord, TTime> stream1, Stream<TRecord, TTime> stream2) where TTime : Time<TTime>
         {
-            return Foundry.NewStage(stream1, stream2, (i, s) => new IntersectVertex<TRecord, TTime>(i, s), x => x.GetHashCode(), x => x.GetHashCode(), x => x.GetHashCode(), "Intersect");
+            return Foundry.NewBinaryStage(stream1, stream2, (i, s) => new IntersectVertex<TRecord, TTime>(i, s), x => x.GetHashCode(), x => x.GetHashCode(), x => x.GetHashCode(), "Intersect");
         }
 
         /// <summary>
@@ -196,7 +196,7 @@ namespace Naiad.Frameworks.Lindi
         /// <returns></returns>
         public static Stream<TRecord, TTime> Except<TRecord, TTime>(this Stream<TRecord, TTime> stream1, Stream<TRecord, TTime> stream2) where TTime : Time<TTime>
         {
-            return Foundry.NewStage(stream1, stream2, (i, s) => new ExceptVertex<TRecord, TTime>(i, s), x => x.GetHashCode(), x => x.GetHashCode(), x => x.GetHashCode(), "Except");
+            return Foundry.NewBinaryStage(stream1, stream2, (i, s) => new ExceptVertex<TRecord, TTime>(i, s), x => x.GetHashCode(), x => x.GetHashCode(), x => x.GetHashCode(), "Except");
         }
 
         /// <summary>
@@ -576,7 +576,7 @@ namespace Naiad.Frameworks.Lindi
         public static Stream<TOutput, TTime> SelectShard<TInput, TOutput, TTime>(this Stream<TInput, TTime> stream, Func<int, TInput, TOutput> function)
             where TTime : Time<TTime>
         {
-            return Foundry.NewStage(stream, (i, v) => new ShardSelect<TInput, TOutput, TTime>(i, v, function), null, null, "ShardSelect");
+            return Foundry.NewUnaryStage(stream, (i, v) => new ShardSelect<TInput, TOutput, TTime>(i, v, function), null, null, "ShardSelect");
         }
 
         /// <summary>
@@ -591,7 +591,7 @@ namespace Naiad.Frameworks.Lindi
         public static Stream<TOutput, TTime> SelectManyArraySegment<TInput, TOutput, TTime>(this Stream<TInput, TTime> stream, Func<TInput, IEnumerable<ArraySegment<TOutput>>> function)
             where TTime : Time<TTime>
         {
-            return Foundry.NewStage(stream, (i, v) => new SelectManyArraySegment<TInput, TOutput, TTime>(i, v, function), null, null, "SelectManyArraySegment");
+            return Foundry.NewUnaryStage(stream, (i, v) => new SelectManyArraySegment<TInput, TOutput, TTime>(i, v, function), null, null, "SelectManyArraySegment");
         }
 
         /// <summary>
@@ -710,7 +710,7 @@ namespace Naiad.Frameworks.Lindi
         /// <param name="action">Operation to apply to each record and the output stream. Often (r,s) => s.Write(r);</param>
         public static void WriteToFiles<S>(this Stream<S, Epoch> input, string format, Action<S, System.IO.BinaryWriter> action)
         {
-            Foundry.NewStage(input, (i, v) => new Writer<S>(i, v, action, format), null, "Writer");
+            Foundry.NewSinkStage(input, (i, v) => new Writer<S>(i, v, action, format), null, "Writer");
         }
     }
    

@@ -39,7 +39,7 @@ namespace Examples.WordCount
         /// <returns>stream of counts</returns>
         public static Naiad.Dataflow.Stream<Pair<TRecord, Int64>, Epoch> StreamingCount<TRecord>(this Naiad.Dataflow.Stream<TRecord, Epoch> stream)
         {
-            return Naiad.Frameworks.Foundry.NewStage(stream, (i, s) => new CountVertex<TRecord>(i, s), x => x.GetHashCode(), null, "Count");
+            return Naiad.Frameworks.Foundry.NewUnaryStage(stream, (i, s) => new CountVertex<TRecord>(i, s), x => x.GetHashCode(), null, "Count");
         }
 
         /// <summary>

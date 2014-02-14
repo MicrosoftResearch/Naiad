@@ -34,7 +34,7 @@ namespace Examples.KeyValueLookup
         // key-value pairs on the first input are retrieved via the second input.
         public static Stream<Pair<TKey, TValue>, Epoch> KeyValueLookup<TKey, TValue>(this Stream<Pair<TKey, TValue>, Epoch> kvpairs, Stream<TKey, Epoch> requests)
         {
-            return Naiad.Frameworks.Foundry.NewStage(kvpairs, requests, (i, s) => new KeyValueLookupVertex<TKey, TValue>(i, s), x => x.v1.GetHashCode(), y => y.GetHashCode(), null, "Lookup");
+            return Naiad.Frameworks.Foundry.NewBinaryStage(kvpairs, requests, (i, s) => new KeyValueLookupVertex<TKey, TValue>(i, s), x => x.v1.GetHashCode(), y => y.GetHashCode(), null, "Lookup");
         }
 
         /// <summary>

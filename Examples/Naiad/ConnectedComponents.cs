@@ -72,7 +72,7 @@ namespace Examples.ConnectedComponents
             where TTime : Time<TTime>
             where TValue : IEquatable<TValue>
         {
-            return Naiad.Frameworks.Foundry.NewStage(input, (i, s) => new StreamingAggregateVertex<TKey, TValue, TTime>(i, s, aggregate), x => x.v1.GetHashCode(), x => x.v1.GetHashCode(), "StreamingAggregate");
+            return Naiad.Frameworks.Foundry.NewUnaryStage(input, (i, s) => new StreamingAggregateVertex<TKey, TValue, TTime>(i, s, aggregate), x => x.v1.GetHashCode(), x => x.v1.GetHashCode(), "StreamingAggregate");
         }
 
         /// <summary>
@@ -141,7 +141,7 @@ namespace Examples.ConnectedComponents
             where TTime : Time<TTime>
             where TValue : IEquatable<TValue>
         {
-            return Naiad.Frameworks.Foundry.NewStage(input, (i, s) => new BlockingAggregateVertex<TKey, TValue, TTime>(i, s, aggregate), x => x.v1.GetHashCode(), x => x.v1.GetHashCode(), "BlockingAggregate");
+            return Naiad.Frameworks.Foundry.NewUnaryStage(input, (i, s) => new BlockingAggregateVertex<TKey, TValue, TTime>(i, s, aggregate), x => x.v1.GetHashCode(), x => x.v1.GetHashCode(), "BlockingAggregate");
         }
 
         /// <summary>
@@ -209,7 +209,7 @@ namespace Examples.ConnectedComponents
         public static Stream<Pair<TVertex, TState>, TTime> GraphJoin<TVertex, TState, TTime>(this Stream<Pair<TVertex, TState>, TTime> values, Stream<Pair<TVertex, TVertex>, TTime> edges) 
             where TTime : Time<TTime>
         {
-            return Naiad.Frameworks.Foundry.NewStage(edges, values, (i, s) => new GraphJoinVertex<TVertex, TState, TTime>(i, s), x => x.v1.GetHashCode(), y => y.v1.GetHashCode(), null, "GraphJoin");
+            return Naiad.Frameworks.Foundry.NewBinaryStage(edges, values, (i, s) => new GraphJoinVertex<TVertex, TState, TTime>(i, s), x => x.v1.GetHashCode(), y => y.v1.GetHashCode(), null, "GraphJoin");
         }
 
         public class GraphJoinVertex<TVertex, TState, TTime> : Naiad.Frameworks.BinaryVertex<Pair<TVertex, TVertex>, Pair<TVertex, TState>, Pair<TVertex, TState>, TTime>

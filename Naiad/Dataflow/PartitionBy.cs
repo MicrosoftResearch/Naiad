@@ -38,19 +38,19 @@ namespace Naiad.Dataflow.PartitionBy
             if (partitionBy == null || Naiad.CodeGeneration.ExpressionComparer.Instance.Equals(stream.PartitionedBy, partitionBy))
                 return stream;
 
-            return Foundry.NewStage(stream, (i, v) => new PartitionByVertex<R, T>(i, v, null), partitionBy, partitionBy, "PartitionBy");
+            return Foundry.NewUnaryStage(stream, (i, v) => new PartitionByVertex<R, T>(i, v, null), partitionBy, partitionBy, "PartitionBy");
         }
 
         public static Stream<R, T> AssumePartitionedBy<R, T>(Stream<R, T> stream, Expression<Func<R, int>> partitionBy)
             where T : Time<T>
         {
-            return Foundry.NewStage(stream, (i, v) => new PartitionByVertex<R, T>(i, v, null), null, partitionBy, "PartitionBy");
+            return Foundry.NewUnaryStage(stream, (i, v) => new PartitionByVertex<R, T>(i, v, null), null, partitionBy, "PartitionBy");
         }
 
         public static Stream<R, T> AssertPartitionedBy<R, T>(Stream<R, T> stream, Expression<Func<R, int>> partitionBy)
             where T : Time<T>
         {
-            return Foundry.NewStage(stream, (i, v) => new PartitionByVertex<R, T>(i, v, partitionBy), null, partitionBy, "PartitionBy");
+            return Foundry.NewUnaryStage(stream, (i, v) => new PartitionByVertex<R, T>(i, v, partitionBy), null, partitionBy, "PartitionBy");
         }
     }
 

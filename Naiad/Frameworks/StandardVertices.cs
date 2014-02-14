@@ -558,7 +558,7 @@ namespace Naiad.Frameworks
         /// <param name="factory">Vertex factory</param>
         /// <param name="inputPartitionBy">Partitioning requirement</param>
         /// <param name="name">Descriptive name</param>
-        public static void NewStage<TOutput, TTime>(this Stream<TOutput, TTime> source, Func<int, Stage<TTime>, SinkVertex<TOutput, TTime>> factory, Expression<Func<TOutput, int>> inputPartitionBy, string name)
+        public static void NewSinkStage<TOutput, TTime>(this Stream<TOutput, TTime> source, Func<int, Stage<TTime>, SinkVertex<TOutput, TTime>> factory, Expression<Func<TOutput, int>> inputPartitionBy, string name)
             where TTime : Time<TTime>
         {
             SinkVertex<TOutput, TTime>.MakeStage(source, factory, inputPartitionBy, name);
@@ -576,7 +576,7 @@ namespace Naiad.Frameworks
         /// <param name="outputPartitionBy">Partitioning guarantee</param>
         /// <param name="name">Descriptive name</param>
         /// <returns>The stage's output</returns>
-        public static Stream<TOutput, TTime> NewStage<TInput, TOutput, TTime>(this Stream<TInput, TTime> source, Func<int, Stage<TTime>, UnaryVertex<TInput, TOutput, TTime>> factory, Expression<Func<TInput, int>> inputPartitionBy, Expression<Func<TOutput, int>> outputPartitionBy, string name)
+        public static Stream<TOutput, TTime> NewUnaryStage<TInput, TOutput, TTime>(this Stream<TInput, TTime> source, Func<int, Stage<TTime>, UnaryVertex<TInput, TOutput, TTime>> factory, Expression<Func<TInput, int>> inputPartitionBy, Expression<Func<TOutput, int>> outputPartitionBy, string name)
             where TTime : Time<TTime>
         {
             return UnaryVertex<TInput, TOutput, TTime>.MakeStage(source, factory, inputPartitionBy, outputPartitionBy, name);
@@ -597,7 +597,7 @@ namespace Naiad.Frameworks
         /// <param name="outputPartitionBy">Partitioning guarantee</param>
         /// <param name="name">Descriptive name</param>
         /// <returns>The stage's output</returns>
-        public static Stream<TOutput, TTime> NewStage<TInput1, TInput2, TOutput, TTime>(this Stream<TInput1, TTime> source, Stream<TInput2, TTime> other, Func<int, Stage<TTime>, BinaryVertex<TInput1, TInput2, TOutput, TTime>> factory, Expression<Func<TInput1, int>> input1PartitionBy, Expression<Func<TInput2, int>> input2PartitionBy, Expression<Func<TOutput, int>> outputPartitionBy, string name)
+        public static Stream<TOutput, TTime> NewBinaryStage<TInput1, TInput2, TOutput, TTime>(this Stream<TInput1, TTime> source, Stream<TInput2, TTime> other, Func<int, Stage<TTime>, BinaryVertex<TInput1, TInput2, TOutput, TTime>> factory, Expression<Func<TInput1, int>> input1PartitionBy, Expression<Func<TInput2, int>> input2PartitionBy, Expression<Func<TOutput, int>> outputPartitionBy, string name)
             where TTime : Time<TTime>
         {
             return BinaryVertex<TInput1, TInput2, TOutput, TTime>.MakeStage(source, other, factory, input1PartitionBy, input2PartitionBy, outputPartitionBy, name);

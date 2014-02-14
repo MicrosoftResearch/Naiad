@@ -179,7 +179,7 @@ namespace Naiad.Frameworks.DifferentialDataflow
         private ShardedCollection<R2, T> Manufacture<R2>(Func<int, Stage<T>, UnaryVertex<Weighted<R>, Weighted<R2>, T>> factory, Expression<Func<Weighted<R>, int>> inputPartitionedBy, Expression<Func<Weighted<R2>, int>> outputPartitionedBy, string name)
             where R2 : IEquatable<R2>
         {
-            var output = Foundry.NewStage(this.Output, factory, inputPartitionedBy, outputPartitionedBy, name);
+            var output = Foundry.NewUnaryStage(this.Output, factory, inputPartitionedBy, outputPartitionedBy, name);
             
             return new ShardedCollection<R2, T>(output, this.Immutable);
         }
@@ -188,7 +188,7 @@ namespace Naiad.Frameworks.DifferentialDataflow
             where S : IEquatable<S>
             where R2 : IEquatable<R2>
         {
-            var output = Foundry.NewStage(this.Output, other.Output, factory, input1PartitionedBy, input2PartitionedBy, outputPartitionedBy, name);
+            var output = Foundry.NewBinaryStage(this.Output, other.Output, factory, input1PartitionedBy, input2PartitionedBy, outputPartitionedBy, name);
 
             return new ShardedCollection<R2, T>(output, this.Immutable && other.Immutable);
         }
