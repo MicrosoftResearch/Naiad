@@ -32,6 +32,7 @@ namespace Examples.DifferentialDataflow
 {
     public static class GraphColoringExtensionMethods
     {
+        // returns a pair of node identifier and the first integer not in colors.
         public static IEnumerable<IntPair> UpdateColors(int node, IEnumerable<int> colors)
         {
             var array = colors.ToArray();
@@ -74,39 +75,6 @@ namespace Examples.DifferentialDataflow
                                                       .AssumePartitionedBy(c => c.s)
                                                       , c => c.s);
         }
-
-        public static IEnumerable<IntPair> FindColor(int node, IEnumerable<int> colors)
-        {
-            var hashset = new HashSet<int>();
-            foreach (var element in colors)
-                if (!hashset.Contains(element))
-                    hashset.Add(element);
-
-            var myColor = 0;
-            while (hashset.Contains(myColor))
-                myColor++;
-            yield return new IntPair(node, myColor);
-        }
-
-        // takes a graph, returns a coloring of the graph (or diverges).
-        public static Collection<IntPair, T> ColorSimple<T>(this Collection<IntPair, T> graph)
-            where T : Time<T>
-        {
-            var uncolored = graph.SelectMany(edge => new[] { edge.s, edge.t })
-                                    .Distinct()
-                                    .Select(n => new IntPair(n, Int32.MaxValue));
-
-            graph = graph.Select(edge => new IntPair(Math.Min(edge.s, edge.t), Math.Max(edge.s, edge.t)));
-
-            return uncolored.FixedPoint((lc, color) => graph.EnterLoop(lc)
-                                                            .Join(color, e => e.s, c => c.s, e => e.t, c => c.t, (n, e, c) => new IntPair(e, c))
-                                                            .Concat(uncolored.EnterLoop(lc))
-                                                            .GroupBy(c => c.s, c => c.t, (n, cs) => FindColor(n, cs))
-                                                            //.Monitor(null)
-                                                            .AssumePartitionedBy(c => c.s)
-                                                            , c => c.s);
-        }
-
     }
 
     public class GraphColoring : Example
@@ -134,7 +102,7 @@ namespace Examples.DifferentialDataflow
                 using (var manager = controller.NewGraph())
                 {
                     // set up the CC computation
-                    var edges = new IncrementalCollection<IntPair>(manager);//.NewInput<IntPair>();
+                    var edges = new IncrementalCollection<IntPair>(manager);
 
                     var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 

@@ -41,9 +41,7 @@ namespace Examples.Throughput
         {
             Console.WriteLine("In OnDone");
             for (int i = 0; i < this.numberToSend; ++i)
-            {
                 this.output.Send(this.VertexId, 0);
-            }
         }
 
         private ProducerVertex(int id, Stage<Epoch> stage, int numberToSend)
@@ -107,14 +105,14 @@ namespace Examples.Throughput
     {
         public string Usage
         {
-            get { throw new NotImplementedException(); }
+            get { return "[records]"; }
         }
 
         public void Execute(string[] args)
         {
             using (Controller controller = NewController.FromArgs(ref args))
             {
-                int numToExchange = int.Parse(args[1]);
+                int numToExchange = args.Length > 1 ? int.Parse(args[1]) : 1000000;
 
                 using (GraphManager graph = controller.NewGraph())
                 {
