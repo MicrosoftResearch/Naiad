@@ -184,53 +184,10 @@ namespace Naiad.Frameworks.DifferentialDataflow
         /// <param name="output">Source collection</param>
         /// <param name="action">Callback action</param>
         /// <returns>A subscription whose disposal should disconnect the action from the source, but doesn't.</returns>
-        public static Naiad.Dataflow.Subscription Subscribe<R>(this Collection<R, Epoch> output, Action<Weighted<R>[]> action)
+        public static Naiad.Subscription Subscribe<R>(this Collection<R, Epoch> output, Action<Weighted<R>[]> action)
             where R : IEquatable<R>
         {
-            return Naiad.Dataflow.SubscribeExtensionMethods.Subscribe(output.Output, x => action(x.ToArray()));
-
-#if false
-            if (action == null)
-                throw new ArgumentNullException("action");
-
-            var dictionary = new Dictionary<int, Dictionary<R, Int64>>();
-
-            output.Monitor((i,x) =>
-            {
-                lock (dictionary)
-                {
-                    foreach (var y in x)
-                    {
-                        if (!dictionary.ContainsKey(y.time.t))
-                            dictionary.Add(y.time.t, new Dictionary<R, Int64>());
-
-                        if (!dictionary[y.time.t].ContainsKey(y.record))
-                            dictionary[y.time.t].Add(y.record, 0);
-
-                        dictionary[y.time.t][y.record] += y.weight;
-
-                        if (dictionary[y.time.t][y.record] == 0)
-                            dictionary[y.time.t].Remove(y.record);
-                    }
-                }
-            });
-
-            ((TypedCollection<R, Epoch>)output).Controller.AddEpochAction(epoch =>
-            {
-                lock (dictionary)
-                {
-                    if (dictionary.ContainsKey(epoch))
-                    {
-                        action(dictionary[epoch].Select(kvp => new Weighted<R>(kvp.Key, kvp.Value)).Where(x => x.weight != 0).ToArray());
-                        dictionary.Remove(epoch);
-                    }
-                    else
-                        action(new Weighted<R>[] { });
-                }
-            });
-
-            return null;
-#endif
+            return output.Output.Subscribe(x => action(x.ToArray()));
         }
     }
 

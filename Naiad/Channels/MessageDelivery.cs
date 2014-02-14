@@ -1117,7 +1117,7 @@ namespace Naiad.Dataflow.Channels
 
         public int ThreadIndex { get { return -1; } }
 
-        public RemoteMailbox(int channelID, int processID, int shardID, Runtime.InternalGraphManager manager)
+        public RemoteMailbox(int channelID, int processID, int shardID, InternalGraphManager manager)
         {
             this.channelID = channelID;
             this.processID = processID;

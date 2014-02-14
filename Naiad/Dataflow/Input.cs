@@ -86,7 +86,7 @@ namespace Naiad.Dataflow
         public static implicit operator Stream<TRecord, Epoch>(InputStage<TRecord> stage) { return stage.Stream; }
 
         public OpaqueTimeContext<Epoch> Context { get { return this.stage.Context; } }
-        internal Runtime.InternalGraphManager InternalGraphManager { get { return this.stage.InternalGraphManager; } }
+        internal InternalGraphManager InternalGraphManager { get { return this.stage.InternalGraphManager; } }
         public Placement Placement { get { return this.stage.Placement; } }
 
         private readonly string inputName;
@@ -94,7 +94,7 @@ namespace Naiad.Dataflow
 
         private readonly Stage<InputVertex<TRecord>, Epoch> stage;
 
-        internal InputStage(Placement placement, Runtime.InternalGraphManager graphManager, string inputName)
+        internal InputStage(Placement placement, InternalGraphManager graphManager, string inputName)
         {
             this.inputName = inputName;
 
@@ -281,13 +281,9 @@ namespace Naiad.Dataflow
 
                 if (nextInstruction.payload != null)
                 {
-                    //Console.WriteLine("Sending " + nextInstruction.payload.Length);
                     for (int j = 0; j < nextInstruction.payload.Length; j++)
-                    {
-                        this.Output.Buffer.payload[this.Output.Buffer.length++] = new Pair<S,Epoch>(nextInstruction.payload[j], sendTime);
-                        if (this.Output.Buffer.length == this.Output.Buffer.payload.Length)
-                            this.Output.SendBuffer();
-                    }
+                        this.Output.Send(nextInstruction.payload[j], sendTime);
+
                     Flush();
                 }
 
@@ -551,7 +547,7 @@ namespace Naiad.Dataflow
             this.output = new VertexOutputBuffer<S,Epoch>(this);
         }
 
-        internal static Stream<S, Epoch> MakeStage(DataSource<S> source, Runtime.InternalGraphManager graphManager, Placement placement, string inputName)
+        internal static Stream<S, Epoch> MakeStage(DataSource<S> source, InternalGraphManager graphManager, Placement placement, string inputName)
         {
             var stage = new StreamingInputStage<S>(source, placement, graphManager, inputName);
          
@@ -585,7 +581,7 @@ namespace Naiad.Dataflow
         public static implicit operator Stream<R, Epoch>(StreamingInputStage<R> stage) { return stage.Output; }
 
         public OpaqueTimeContext<Epoch> Context { get { return this.stage.Context; } }
-        internal Runtime.InternalGraphManager InternalGraphManager { get { return this.stage.InternalGraphManager; } }
+        internal InternalGraphManager InternalGraphManager { get { return this.stage.InternalGraphManager; } }
         public Placement Placement { get { return this.stage.Placement; } }
 
         private readonly string inputName;
@@ -609,7 +605,7 @@ namespace Naiad.Dataflow
         public void Checkpoint(NaiadWriter writer) { throw new NotImplementedException(); }
         public void Restore(NaiadReader reader) { throw new NotImplementedException(); } 
 
-        internal StreamingInputStage(DataSource<R> source, Placement placement, Runtime.InternalGraphManager graphManager, string inputName)
+        internal StreamingInputStage(DataSource<R> source, Placement placement, InternalGraphManager graphManager, string inputName)
         {
             this.inputName = inputName;
 

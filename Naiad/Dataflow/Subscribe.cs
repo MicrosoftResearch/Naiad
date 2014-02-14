@@ -29,7 +29,7 @@ using Naiad.Scheduling;
 using Naiad.Dataflow;
 using Naiad.Frameworks;
 
-namespace Naiad.Dataflow
+namespace Naiad
 {
     /// <summary>
     /// Returned by Subscribe(), allowing threads to block until epochs have completed.
@@ -106,7 +106,10 @@ namespace Naiad.Dataflow
             return new Subscription<R>(stream, stream.ForStage.Placement, stream.Context, onRecv, onNotify, onComplete);
         }
     }
+}
 
+namespace Naiad.Dataflow
+{
     /// <summary>
     /// Manages several subscribe shards, and allows another thread to block until all have completed a specified epoch
     /// </summary>

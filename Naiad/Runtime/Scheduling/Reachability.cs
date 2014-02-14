@@ -141,7 +141,7 @@ namespace Naiad.Scheduling
 
         public GraphNode[] Graph;
 
-        internal void RegenerateGraph(Runtime.InternalGraphManager manager)
+        internal void RegenerateGraph(InternalGraphManager manager)
         {
             var maxIdentifier = 0;
 
@@ -216,7 +216,7 @@ namespace Naiad.Scheduling
         }
 
         // populates this.ComparisonDepth, indexed by collection and channel identifiers.
-        public void UpdateReachabilityPartialOrder(Runtime.InternalGraphManager graphManager)
+        public void UpdateReachabilityPartialOrder(InternalGraphManager graphManager)
         {
             RegenerateGraph(graphManager);
 

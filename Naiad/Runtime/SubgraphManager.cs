@@ -28,7 +28,7 @@ using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Naiad.Runtime
+namespace Naiad
 {
     /// <summary>
     /// Manages the construction and execution of individual dataflow graphs.
@@ -112,11 +112,11 @@ namespace Naiad.Runtime
         Dataflow.InputStage<R> NewInput<R>(string name);
 
         IEnumerable<Dataflow.InputStage> Inputs { get; }
-        IEnumerable<Dataflow.Subscription> Outputs { get; }
+        IEnumerable<Subscription> Outputs { get; }
         IEnumerable<KeyValuePair<int, Dataflow.Stage>> Stages { get; }
         IEnumerable<KeyValuePair<int, Dataflow.Edge>> Edges { get; }
 
-        void Register(Dataflow.Subscription sub);
+        void Register(Subscription sub);
         int Register(Dataflow.Stage stage);
         int Register(Dataflow.Edge edge);
         
@@ -228,13 +228,13 @@ namespace Naiad.Runtime
             get { return this.inputs; }
         }
 
-        protected readonly List<Dataflow.Subscription> outputs = new List<Dataflow.Subscription>();
-        public IEnumerable<Dataflow.Subscription> Outputs
+        protected readonly List<Subscription> outputs = new List<Subscription>();
+        public IEnumerable<Subscription> Outputs
         {
             get { return this.outputs; }
         }
 
-        public void Register(Naiad.Dataflow.Subscription sub) { outputs.Add(sub); }
+        public void Register(Subscription sub) { outputs.Add(sub); }
 
         protected readonly Dictionary<int, Dataflow.Stage> stages = new Dictionary<int, Dataflow.Stage>();
         public IEnumerable<KeyValuePair<int, Dataflow.Stage>> Stages

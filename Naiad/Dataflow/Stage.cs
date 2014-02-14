@@ -41,8 +41,8 @@ namespace Naiad.Dataflow
     /// </summary>
     public abstract class Stage
     {
-        private readonly Runtime.InternalGraphManager graphManager;
-        internal Runtime.InternalGraphManager InternalGraphManager { get { return this.graphManager; } }
+        private readonly InternalGraphManager graphManager;
+        internal InternalGraphManager InternalGraphManager { get { return this.graphManager; } }
         public readonly int StageId;
         internal abstract Pointstamp DefaultVersion { get; }
 
@@ -140,7 +140,7 @@ namespace Naiad.Dataflow
         /// </summary>
         public string Name { get { return name; } }
 
-        internal Stage(Placement placement, Runtime.InternalGraphManager graphManager, OperatorType operatorType, string name)
+        internal Stage(Placement placement, InternalGraphManager graphManager, OperatorType operatorType, string name)
         {
             this.graphManager = graphManager;
             this.targets = new List<Edge>();

@@ -120,7 +120,7 @@ namespace Naiad.Frameworks.DifferentialDataflow
 
         internal override Naiad.Dataflow.OpaqueTimeContext<Epoch> Statistics { get { return this.stream.Context; } }
 
-        public IncrementalCollection(Naiad.Runtime.GraphManager manager)
+        public IncrementalCollection(Naiad.GraphManager manager)
         {
             this.inputVertex = new Dataflow.BatchedDataSource<Weighted<R>>();
             this.stream = manager.NewInput(inputVertex);

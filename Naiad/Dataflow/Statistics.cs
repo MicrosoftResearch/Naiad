@@ -282,11 +282,8 @@ namespace Naiad.Dataflow
             public void ForwardLog(Pair<string, T>[] message)
             {
                 for (int i = 0; i < message.Length; i++)
-                {
-                    this.inlineStatistics.Buffer.payload[this.inlineStatistics.Buffer.length++] = message[i];
-                    if (this.inlineStatistics.Buffer.length == this.inlineStatistics.Buffer.payload.Length)
-                        this.inlineStatistics.SendBuffer();
-                }
+                    this.inlineStatistics.Send(message[i].v1, message[i].v2);
+
                 this.inlineStatistics.Flush();
             }
 
@@ -587,7 +584,7 @@ namespace Naiad.Dataflow
 
     internal interface ITimeContextManager
     {
-        Runtime.InternalGraphManager GraphManager { get; }
+        InternalGraphManager GraphManager { get; }
         ITimeContext<T> MakeContextForScope<T>(string name, Reporting.IReportingConnector<T> downstreamConnector) where T : Time<T>;
         ITimeContext<T> MakeRawContextForScope<T>(string name) where T : Time<T>;
         ITimeContext<Epoch> RootContext { get; }
@@ -629,8 +626,8 @@ namespace Naiad.Dataflow
 
     internal class TimeContextManager : ITimeContextManager
     {
-        private readonly Runtime.InternalGraphManager graphManager;
-        public Runtime.InternalGraphManager GraphManager { get { return this.graphManager; } }
+        private readonly InternalGraphManager graphManager;
+        public InternalGraphManager GraphManager { get { return this.graphManager; } }
 
         private ITimeContext<Epoch> rootContext;
         public ITimeContext<Epoch> RootContext { get { return rootContext; } }
@@ -664,7 +661,7 @@ namespace Naiad.Dataflow
             return new TimeContext<T>(this, name, downstreamConnector, hasAggregate);
         }
 
-        internal TimeContextManager(Runtime.InternalGraphManager g)
+        internal TimeContextManager(InternalGraphManager g)
         {
             this.graphManager = g;
             this.rootContext = null;

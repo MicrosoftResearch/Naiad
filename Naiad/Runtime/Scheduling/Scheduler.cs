@@ -38,7 +38,7 @@ namespace Naiad.Scheduling
     {
         internal class GraphState
         {
-            public readonly Runtime.InternalGraphManager Manager;
+            public readonly InternalGraphManager Manager;
 
             public readonly PostOffice PostOffice;
             public readonly NaiadList<WorkItem> WorkItems;
@@ -74,7 +74,7 @@ namespace Naiad.Scheduling
 
             private Runtime.Progress.ProgressUpdateProducer producer;
 
-            public GraphState(Runtime.InternalGraphManager manager, Scheduler scheduler)
+            public GraphState(InternalGraphManager manager, Scheduler scheduler)
             {
                 this.Manager = manager;
                 this.PostOffice = new PostOffice(scheduler);
@@ -89,7 +89,7 @@ namespace Naiad.Scheduling
             }
         }
 
-        internal GraphState State(Runtime.InternalGraphManager graphManager)
+        internal GraphState State(InternalGraphManager graphManager)
         {
             if (this.graphStates.Count <= graphManager.Index || this.graphStates[graphManager.Index].Manager == null)
                 this.RegisterGraph(graphManager);
@@ -98,7 +98,7 @@ namespace Naiad.Scheduling
         }
 
         private volatile List<GraphState> graphStates = new List<GraphState>();
-        internal void RegisterGraph(Runtime.InternalGraphManager graphManager)
+        internal void RegisterGraph(InternalGraphManager graphManager)
         {
             var success = false;
 
@@ -192,7 +192,7 @@ namespace Naiad.Scheduling
             Logging.Info("Shard {2}: Finishing @ {1}:\t{0}", workItem.Shard, workItem.Requirement, this.Index);
         }
 
-        internal void Register(Dataflow.Vertex shard, Runtime.InternalGraphManager manager)
+        internal void Register(Dataflow.Vertex shard, InternalGraphManager manager)
         {
             for (int i = 0; i < this.graphStates.Count; i++)
                 if (this.graphStates[i].Manager == manager)
@@ -299,7 +299,7 @@ namespace Naiad.Scheduling
                 // check for graphs that have empty frontiers: these can be shutdown
                 for (int i = 0; i < this.graphStates.Count; i++)
                 {
-                    if (this.graphStates[i].Manager != null && this.graphStates[i].Manager.CurrentState == Runtime.InternalGraphManagerState.Active && this.graphStates[i].Manager.ProgressTracker.GetInfoForWorker(this.Index).PointstampCountSet.Frontier.Length == 0)
+                    if (this.graphStates[i].Manager != null && this.graphStates[i].Manager.CurrentState == InternalGraphManagerState.Active && this.graphStates[i].Manager.ProgressTracker.GetInfoForWorker(this.Index).PointstampCountSet.Frontier.Length == 0)
                     {
                         foreach (Dataflow.Vertex shard in this.graphStates[i].Shards)
                             shard.ShutDown();
@@ -311,7 +311,7 @@ namespace Naiad.Scheduling
                 // push any pending messages to recipients, so that work-to-do is as current as possible
                 for (int i = 0; i < this.graphStates.Count; i++)
                 {
-                    if (this.graphStates[i].Manager != null && this.graphStates[i].Manager.CurrentState == Runtime.InternalGraphManagerState.Active)
+                    if (this.graphStates[i].Manager != null && this.graphStates[i].Manager.CurrentState == InternalGraphManagerState.Active)
                     {
                         Tracing.Trace("(Flush {0}", this.Index);
                         try
@@ -335,7 +335,7 @@ namespace Naiad.Scheduling
                     Tracing.Trace("(reachability {0}", this.Index);
                     for (int i = 0; i < this.graphStates.Count; i++)
                     {
-                        if (this.graphStates[i].Manager != null && this.graphStates[i].Manager.CurrentState == Runtime.InternalGraphManagerState.Active)
+                        if (this.graphStates[i].Manager != null && this.graphStates[i].Manager.CurrentState == InternalGraphManagerState.Active)
                         {
                             var frontiers = this.graphStates[i].Manager.ProgressTracker.GetInfoForWorker(0).PointstampCountSet.Frontier.Concat(this.graphStates[i].Producer.LocalPCS.Frontier).ToArray();
                             this.graphStates[i].Manager.Reachability.UpdateReachability(this.Controller, frontiers, this.graphStates[i].Shards);
@@ -349,7 +349,7 @@ namespace Naiad.Scheduling
                 var ranAnything = false;
                 for (int i = 0; i < graphStates.Count; i++)
                 {
-                    if (graphStates[i].Manager != null && this.graphStates[i].Manager.CurrentState == Runtime.InternalGraphManagerState.Active)
+                    if (graphStates[i].Manager != null && this.graphStates[i].Manager.CurrentState == InternalGraphManagerState.Active)
                     {
                         try
                         {

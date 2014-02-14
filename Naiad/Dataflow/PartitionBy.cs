@@ -34,27 +34,27 @@ namespace Naiad.Dataflow.PartitionBy
         public static Stream<R, T> PartitionBy<R, T>(this Stream<R, T> stream, Expression<Func<R,int>> partitionBy)
             where T : Time<T>
         {
-            // if the data are already partitioned (or claim to be) just return the stream.
+            // if the data are already partitioned correctly (or claim to be) just return the stream.
             if (partitionBy == null || Naiad.CodeGeneration.ExpressionComparer.Instance.Equals(stream.PartitionedBy, partitionBy))
                 return stream;
 
-            return Foundry.NewStage(stream, (i, v) => new PartitionByShard<R, T>(i, v, null), partitionBy, partitionBy, "PartitionBy");
+            return Foundry.NewStage(stream, (i, v) => new PartitionByVertex<R, T>(i, v, null), partitionBy, partitionBy, "PartitionBy");
         }
 
         public static Stream<R, T> AssumePartitionedBy<R, T>(Stream<R, T> stream, Expression<Func<R, int>> partitionBy)
             where T : Time<T>
         {
-            return Foundry.NewStage(stream, (i, v) => new PartitionByShard<R, T>(i, v, null), null, partitionBy, "PartitionBy");
+            return Foundry.NewStage(stream, (i, v) => new PartitionByVertex<R, T>(i, v, null), null, partitionBy, "PartitionBy");
         }
 
         public static Stream<R, T> AssertPartitionedBy<R, T>(Stream<R, T> stream, Expression<Func<R, int>> partitionBy)
             where T : Time<T>
         {
-            return Foundry.NewStage(stream, (i, v) => new PartitionByShard<R, T>(i, v, partitionBy), null, partitionBy, "PartitionBy");
+            return Foundry.NewStage(stream, (i, v) => new PartitionByVertex<R, T>(i, v, partitionBy), null, partitionBy, "PartitionBy");
         }
     }
 
-    internal class PartitionByShard<R, T> : Naiad.Frameworks.UnaryVertex<R, R, T>
+    internal class PartitionByVertex<R, T> : Naiad.Frameworks.UnaryVertex<R, R, T>
         where T : Time<T>
     {
         private readonly Func<R,int> key;
@@ -71,7 +71,7 @@ namespace Naiad.Dataflow.PartitionBy
 
         public override bool Stateful { get { return false; } }
 
-        public PartitionByShard(int index, Stage<T> stage, Expression<Func<R,int>> keyFunc)
+        public PartitionByVertex(int index, Stage<T> stage, Expression<Func<R,int>> keyFunc)
             : base(index, stage)
         {
             this.key = keyFunc == null ? null : keyFunc.Compile();
