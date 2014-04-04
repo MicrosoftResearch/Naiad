@@ -44,7 +44,8 @@
     <SignAssembly>true</SignAssembly>
   </PropertyGroup>
   <PropertyGroup>
-    <AssemblyOriginatorKeyFile>NaiadLINQ.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>
+    </AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -112,7 +113,6 @@
   <ItemGroup>
     <None Include="App.config" />
     <None Include="Microsoft.Research.Naiad.DifferentialDataflow.nuspec" />
-    <None Include="NaiadLINQ.snk" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

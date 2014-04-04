@@ -1,20 +1,26 @@
 Installation steps
 ------------------
 
-Naiad is distributed as a Visual Studio 2012 solution, comprising 
+Naiad is distributed as a Visual Studio 2013 solution, comprising 
 the following projects:
 
 * "Naiad", which contains the core Naiad system and support libraries,
-  and builds Naiad.dll. If you create your own project that uses
-  Naiad, you must add a reference to Naiad.dll.
+  and builds Microsoft.Research.Naiad.dll. If you create your own project that
+  uses Naiad, you must add a reference to this library.
 
 * "Lindi", a LINQ-like library for data-parallel iterative computation.
 
-* "DifferentialDataflow" a LINQ-like library supporting incremental 
+* "DifferentialDataflow", a LINQ-like library supporting incremental 
   execution of iterative computation.
+
+* "AzureSupport", a library of Naiad components that supports writing to
+  and reading from Windows Azure Storage.
 
 * "Examples", which contains several example Naiad applications and
   builds Examples.exe.
+
+* In addition, the "ClusterSubmission" solution contains experimental support
+  for launching Naiad programs on Azure and YARN clusters.
 
 These projects can be built and executed using any of the following
 implementations of the .NET framework:

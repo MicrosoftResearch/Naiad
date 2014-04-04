@@ -1,4 +1,4 @@
-/* Naiad ver. 0.2
+/* Naiad ver. 0.3
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
