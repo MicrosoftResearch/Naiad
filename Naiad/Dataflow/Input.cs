@@ -22,15 +22,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Naiad.Dataflow.Channels;
-using Naiad.CodeGeneration;
-using Naiad.Runtime.Controlling;
-using Naiad.FaultTolerance;
-using Naiad.Frameworks;
-using Naiad.Scheduling;
+using Microsoft.Research.Naiad.Dataflow.Channels;
+using Microsoft.Research.Naiad.CodeGeneration;
+using Microsoft.Research.Naiad.Runtime.Controlling;
+using Microsoft.Research.Naiad.FaultTolerance;
+using Microsoft.Research.Naiad.Frameworks;
+using Microsoft.Research.Naiad.Scheduling;
 using System.Diagnostics;
 
-namespace Naiad.Dataflow
+namespace Microsoft.Research.Naiad.Dataflow
 {
     internal interface InputStage : ICheckpointable
     {
@@ -60,15 +60,15 @@ namespace Naiad.Dataflow
     /// </summary>
     internal class InputStage<TRecord> : InputStage, IObserver<IEnumerable<TRecord>>, IObserver<TRecord>
     {
-        private readonly KeyValuePair<int,InputVertex<TRecord>>[] localShards;
+        private readonly KeyValuePair<int,InputVertex<TRecord>>[] localVertices;
 
-        internal InputVertex<TRecord> GetInputShard(int shardId) 
+        internal InputVertex<TRecord> GetInputVertex(int vertexId) 
         {
-            foreach (var shard in localShards)
-                if (shardId == shard.Key)
-                    return shard.Value;
+            foreach (var vertex in localVertices)
+                if (vertexId == vertex.Key)
+                    return vertex.Value;
 
-            throw new Exception(String.Format("Shard {0} not found in Input {1} on Process {2}", shardId, stage.StageId, stage.InternalGraphManager.Controller.Configuration.ProcessID));
+            throw new Exception(String.Format("Vertex {0} not found in Input {1} on Process {2}", vertexId, stage.StageId, stage.InternalGraphManager.Controller.Configuration.ProcessID));
         }
 
         public int InputId { get { return this.stage.StageId; } }
@@ -100,12 +100,12 @@ namespace Naiad.Dataflow
 
             stage = Foundry.NewStage(new OpaqueTimeContext<Epoch>(graphManager.ContextManager.RootContext), (i, v) => new InputVertex<TRecord>(i, v), this.inputName);
 
-            this.output = stage.NewOutput(shard => shard.Output);
+            this.output = stage.NewOutput(vertex => vertex.Output);
 
             stage.Materialize();
 
-            this.localShards = placement.Where(x => x.ProcessId == graphManager.Controller.Configuration.ProcessID)
-                                        .Select(x => new KeyValuePair<int, InputVertex<TRecord>>(x.VertexId, stage.GetShard(x.VertexId) as InputVertex<TRecord>))
+            this.localVertices = placement.Where(x => x.ProcessId == graphManager.Controller.Configuration.ProcessID)
+                                        .Select(x => new KeyValuePair<int, InputVertex<TRecord>>(x.VertexId, stage.GetVertex(x.VertexId) as InputVertex<TRecord>))
                                         .ToArray();
 
             this.completedCalled = false;
@@ -156,15 +156,15 @@ namespace Naiad.Dataflow
             lock (this)
             {
                 var arrayCursor = 0;
-                for (int i = 0; i < this.localShards.Length; i++)
+                for (int i = 0; i < this.localVertices.Length; i++)
                 {
-                    var toEat = (array.Length / this.localShards.Length) + ((i < (array.Length % this.localShards.Length)) ? 1 : 0);
+                    var toEat = (array.Length / this.localVertices.Length) + ((i < (array.Length % this.localVertices.Length)) ? 1 : 0);
                     var chunk = new TRecord[toEat];
 
                     Array.Copy(array, arrayCursor, chunk, 0, toEat);
                     arrayCursor += toEat;
 
-                    this.localShards[i].Value.OnNext(chunk);
+                    this.localVertices[i].Value.OnNext(chunk);
                 }
                 ++this.currentEpoch;
             }
@@ -177,8 +177,8 @@ namespace Naiad.Dataflow
             {
                 this.EnsureProgressTrackerActivated();
                 this.completedCalled = true;
-                for (int i = 0; i < this.localShards.Length; i++)
-                    this.localShards[i].Value.OnCompleted();
+                for (int i = 0; i < this.localVertices.Length; i++)
+                    this.localVertices[i].Value.OnCompleted();
             }
         }
 
@@ -199,15 +199,15 @@ namespace Naiad.Dataflow
                     ++this.currentEpoch;
 
                     var arrayCursor = 0;
-                    for (int i = 0; i < this.localShards.Length; i++)
+                    for (int i = 0; i < this.localVertices.Length; i++)
                     {
-                        var toEat = (array.Length / this.localShards.Length) + ((i < (array.Length % this.localShards.Length)) ? 1 : 0);
+                        var toEat = (array.Length / this.localVertices.Length) + ((i < (array.Length % this.localVertices.Length)) ? 1 : 0);
                         var chunk = new TRecord[toEat];
 
                         Array.Copy(array, arrayCursor, chunk, 0, toEat);
                         arrayCursor += toEat;
 
-                        this.localShards[i].Value.OnCompleted(chunk);
+                        this.localVertices[i].Value.OnCompleted(chunk);
                     }
                 }
             }
@@ -222,16 +222,16 @@ namespace Naiad.Dataflow
 
         public void Checkpoint(NaiadWriter writer)
         {
-            writer.Write(currentEpoch, PrimitiveSerializers.Int32);
-            writer.Write(completedCalled, PrimitiveSerializers.Bool);
-            writer.Write(hasActivatedProgressTracker, PrimitiveSerializers.Bool);
+            writer.Write(currentEpoch, this.InternalGraphManager.CodeGenerator.GetSerializer<int>());
+            writer.Write(completedCalled, this.InternalGraphManager.CodeGenerator.GetSerializer<bool>());
+            writer.Write(hasActivatedProgressTracker, this.InternalGraphManager.CodeGenerator.GetSerializer<bool>());
         }
 
         public void Restore(NaiadReader reader)
         {
-            this.currentEpoch = reader.Read<int>(PrimitiveSerializers.Int32);
-            this.completedCalled = reader.Read<bool>(PrimitiveSerializers.Bool);
-            this.hasActivatedProgressTracker = reader.Read<bool>(PrimitiveSerializers.Bool);
+            this.currentEpoch = reader.Read<int>(this.InternalGraphManager.CodeGenerator.GetSerializer<int>());
+            this.completedCalled = reader.Read<bool>(this.InternalGraphManager.CodeGenerator.GetSerializer<bool>());
+            this.hasActivatedProgressTracker = reader.Read<bool>(this.InternalGraphManager.CodeGenerator.GetSerializer<bool>());
         }
 
         public bool Stateful { get { return true; } }
@@ -276,13 +276,15 @@ namespace Naiad.Dataflow
             {
                 var sendTime = new Epoch(i);
 
+                var output = this.Output.GetBufferForTime(sendTime);
+
                 Instruction nextInstruction;
                 inputQueue.TryDequeue(out nextInstruction);
 
                 if (nextInstruction.payload != null)
                 {
                     for (int j = 0; j < nextInstruction.payload.Length; j++)
-                        this.Output.Send(nextInstruction.payload[j], sendTime);
+                        output.Send(nextInstruction.payload[j]);
 
                     Flush();
                 }
@@ -343,30 +345,30 @@ namespace Naiad.Dataflow
         public override void Checkpoint(NaiadWriter writer)
         {
             if (weightedSSerializer == null)
-                weightedSSerializer = AutoSerialization.GetSerializer<S>();
+                weightedSSerializer = this.CodeGenerator.GetSerializer<S>();
 
-            writer.Write(this.nextAvailableEpoch, PrimitiveSerializers.Int32);
-            writer.Write(this.nextSendEpoch, PrimitiveSerializers.Int32);
-            writer.Write(this.inputQueue.Count, PrimitiveSerializers.Int32);
+            var intSerializer = this.CodeGenerator.GetSerializer<Int32>();
+            var boolSerializer = this.CodeGenerator.GetSerializer<bool>();
+
+            writer.Write(this.nextAvailableEpoch, intSerializer);
+            writer.Write(this.nextSendEpoch, intSerializer);
+            writer.Write(this.inputQueue.Count, intSerializer);
             foreach (Instruction batch in this.inputQueue)
             {
-                if (batch.payload != null) batch.payload.Checkpoint(batch.payload.Length, writer, weightedSSerializer);
-                writer.Write(batch.isLast, PrimitiveSerializers.Bool);
+                if (batch.payload != null) batch.payload.Checkpoint(batch.payload.Length, writer);
+                writer.Write(batch.isLast, boolSerializer);
             }
         }
 
         public override void Restore(NaiadReader reader)
         {
-            if (weightedSSerializer == null)
-                weightedSSerializer = AutoSerialization.GetSerializer<S>();
-
-            this.nextAvailableEpoch = reader.Read<int>(PrimitiveSerializers.Int32);
-            this.nextSendEpoch = reader.Read<int>(PrimitiveSerializers.Int32);
-            int inputQueueCount = reader.Read<int>(PrimitiveSerializers.Int32);
+            this.nextAvailableEpoch = reader.Read<int>();
+            this.nextSendEpoch = reader.Read<int>();
+            int inputQueueCount = reader.Read<int>();
             for (int i = 0; i < inputQueueCount; ++i)
             {
-                S[] array = FaultToleranceExtensionMethods.RestoreArray<S>(reader, n => new S[n], weightedSSerializer);
-                bool isLast = reader.Read<bool>(PrimitiveSerializers.Bool);
+                S[] array = FaultToleranceExtensionMethods.RestoreArray<S>(reader, n => new S[n]);
+                bool isLast = reader.Read<bool>();
                 this.inputQueue.Enqueue(new Instruction(array, isLast));
             }
         }
@@ -497,9 +499,10 @@ namespace Naiad.Dataflow
                     if (nextInstruction.Epoch >= this.currentVertexHold)
                     {
                         var sendTime = new Epoch(nextInstruction.Epoch);
+                        var output = this.output.GetBufferForTime(sendTime);
                         for (int i = 0; i < nextInstruction.Payload.Length; ++i)
                         {
-                            this.output.Send(nextInstruction.Payload[i], sendTime);
+                            output.Send(nextInstruction.Payload[i]);
                         }
                         this.Flush();
                     }
@@ -557,15 +560,15 @@ namespace Naiad.Dataflow
 
     internal class StreamingInputStage<R> : InputStage
     {
-        private readonly StreamingInputVertex<R>[] localShards;
+        private readonly StreamingInputVertex<R>[] localVertices;
 
-        internal StreamingInputVertex<R> GetInputShard(int shardId)
+        internal StreamingInputVertex<R> GetInputVertex(int vertexId)
         {
-            foreach (var shard in localShards)
-                if (shardId == shard.VertexId)
-                    return shard;
+            foreach (var vertex in localVertices)
+                if (vertexId == vertex.VertexId)
+                    return vertex;
 
-            throw new Exception(String.Format("Shard {0} not found in Input {1} on Process {2}", shardId, stage.StageId, stage.InternalGraphManager.Controller.Configuration.ProcessID));
+            throw new Exception(String.Format("Vertex {0} not found in Input {1} on Process {2}", vertexId, stage.StageId, stage.InternalGraphManager.Controller.Configuration.ProcessID));
         }
 
         public int InputId { get { return this.stage.StageId; } }
@@ -594,10 +597,10 @@ namespace Naiad.Dataflow
 
         private readonly Stage<StreamingInputVertex<R>, Epoch> stage;
 
-        public int CurrentEpoch { get { return this.localShards.Min(x => x.CurrentEpoch); } }
-        public int MaximumValidEpoch { get { return this.localShards.Max(x => x.MaximumValidEpoch); } }
+        public int CurrentEpoch { get { return this.localVertices.Min(x => x.CurrentEpoch); } }
+        public int MaximumValidEpoch { get { return this.localVertices.Max(x => x.MaximumValidEpoch); } }
 
-        public bool IsCompleted { get { return this.localShards.All(x => x.IsCompleted); } }
+        public bool IsCompleted { get { return this.localVertices.All(x => x.IsCompleted); } }
 
         public Type RecordType { get { return typeof(R); } }
 
@@ -611,15 +614,15 @@ namespace Naiad.Dataflow
 
             this.stage = Foundry.NewStage(new OpaqueTimeContext<Epoch>(graphManager.ContextManager.RootContext), (i, v) => new StreamingInputVertex<R>(i, v), this.inputName);
 
-            this.output = stage.NewOutput(shard => shard.output);
+            this.output = stage.NewOutput(vertex => vertex.output);
 
             this.stage.Materialize();
 
-            this.localShards = placement.Where(x => x.ProcessId == graphManager.Controller.Configuration.ProcessID)
-                                        .Select(x => this.stage.GetShard(x.VertexId) as StreamingInputVertex<R>)
+            this.localVertices = placement.Where(x => x.ProcessId == graphManager.Controller.Configuration.ProcessID)
+                                        .Select(x => this.stage.GetVertex(x.VertexId) as StreamingInputVertex<R>)
                                         .ToArray();
 
-            source.RegisterInputs(this.localShards);
+            source.RegisterInputs(this.localVertices);
 
             this.completedCalled = false;
             this.hasActivatedProgressTracker = false;

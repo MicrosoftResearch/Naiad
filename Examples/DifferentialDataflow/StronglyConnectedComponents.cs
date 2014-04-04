@@ -23,8 +23,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-using Naiad;
-using Naiad.Frameworks.DifferentialDataflow;
+using Microsoft.Research.Naiad;
+using Microsoft.Research.Naiad.Frameworks.DifferentialDataflow;
 
 namespace Examples.DifferentialDataflow
 {
@@ -203,7 +203,7 @@ namespace Examples.DifferentialDataflow
                 for (int i = 0; i < edgeCount; i++)
                     graph[i] = new Edge(random.Next(nodeCount), random.Next(nodeCount));
 
-                using (var manager = controller.NewGraph())
+                using (var manager = controller.NewComputation())
                 {
                     // set up the CC computation
                     var edges = new IncrementalCollection<Edge>(manager);//.NewInput<Edge>();
@@ -226,7 +226,7 @@ namespace Examples.DifferentialDataflow
                     else
                         edges.OnNext();
 
-                    result.Sync(0);
+                    result.Sync(new Epoch(0));
 
                     Console.WriteLine("Computation completed");
 
@@ -245,7 +245,7 @@ namespace Examples.DifferentialDataflow
                             var newEdge = new Edge(random.Next(nodeCount), random.Next(nodeCount));
                             Console.WriteLine("Rewiring edge: {0} -> {1}", graph[i], newEdge);
                             edges.OnNext(new[] { new Weighted<Edge>(graph[i], -1), new Weighted<Edge>(newEdge, 1) });
-                            result.Sync(i + 1);
+                            result.Sync(new Epoch(i + 1));
                         }
                     }
 

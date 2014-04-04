@@ -25,15 +25,15 @@ using System.Text;
 using System.Threading;
 using System.Diagnostics;
 
-using Naiad.CodeGeneration;
-using Naiad.Scheduling;
+using Microsoft.Research.Naiad.CodeGeneration;
+using Microsoft.Research.Naiad.Scheduling;
 using System.Collections.Concurrent;
-using Naiad.DataStructures;
+using Microsoft.Research.Naiad.DataStructures;
 using System.IO;
-using Naiad.Frameworks;
-using Naiad.Runtime.Controlling;
+using Microsoft.Research.Naiad.Frameworks;
+using Microsoft.Research.Naiad.Runtime.Controlling;
 
-namespace Naiad.Dataflow.Channels
+namespace Microsoft.Research.Naiad.Dataflow.Channels
 {
     /// <summary>
     /// Fixed-size and reference-counted array of bytes.  
@@ -157,11 +157,10 @@ namespace Naiad.Dataflow.Channels
         }
 
 
-        public bool WriteHeader(MessageHeader header)
+        public bool WriteHeader(MessageHeader header, NaiadSerialization<MessageHeader> serializer)
         {
             Debug.Assert(this.validPointer == this.producerPointer);
             Debug.Assert(this.nextHeader == null);
-            NaiadSerialization<MessageHeader> serializer = MessageHeader.Serializer;
             SubArray<byte> bufferAsSubarray = new SubArray<byte>(this.Buffer, this.producerPointer);
             bool success = serializer.Serialize(ref bufferAsSubarray, default(MessageHeader)); // auto-generated serialization code
             if (success)
@@ -174,13 +173,13 @@ namespace Naiad.Dataflow.Channels
             return success;
         }
 
-        public MessageHeader FinalizeLastMessage()
+        public MessageHeader FinalizeLastMessage(NaiadSerialization<MessageHeader> headerSerializer)
         {
             MessageHeader header = (MessageHeader)this.nextHeader;
 
             if (this.currentMessageHeaderOffset != NOT_SET)
             {
-                NaiadSerialization<MessageHeader> serializer = MessageHeader.Serializer;
+                NaiadSerialization<MessageHeader> serializer = headerSerializer;
                 SubArray<byte> bufferAsSubarray = new SubArray<byte>(this.Buffer, this.currentMessageHeaderOffset);
                 this.currentMessageHeaderOffset = this.producerPointer;
                 int currentMessageLength = ((this.producerPointer - this.validPointer) - MessageHeader.SizeOf);
@@ -205,21 +204,6 @@ namespace Naiad.Dataflow.Channels
                 Debug.Assert(false);
             }
             return header;
-        }
-
-        /// <summary>
-        /// Attempts to write a record to this page.
-        /// </summary>
-        /// <typeparam name="S">The record's value type.</typeparam>
-        /// <typeparam name="T">The record's time type.</typeparam>
-        /// 
-        /// <param name="serializer">Used to transform the record into bytes.</param>
-        /// <param name="record">The record to send.</param>
-        /// <returns>true iff the write was successful.</returns>
-        public bool WriteRecord<S, T>(NaiadSerialization<Pair<S, T>> serializer, Pair<S, T> record)
-        {
-            Debug.Assert(this.nextHeader != null);
-            return this.Write(serializer, record);
         }
 
         public bool Write<S>(NaiadSerialization<S> serializer, S element)
@@ -258,6 +242,23 @@ namespace Naiad.Dataflow.Channels
             }
         }
 
+        public int WriteElements<S>(NaiadSerialization<S> serializer, ArraySegment<S> elements)
+        {
+            SubArray<byte> bufferAsSubarray = new SubArray<byte>(this.Buffer, this.producerPointer);
+            int numWritten = serializer.TrySerializeMany(ref bufferAsSubarray, elements);
+            this.producerPointer = bufferAsSubarray.Count;
+            return numWritten;
+            /*
+            for (int i = 0; i < elements.Count; ++i, ++numWritten)
+            {
+                bool success = serializer.Serialize(ref bufferAsSubarray, elements.Array[i + elements.Offset]);
+                if (!success)
+                    break;
+            }
+            this.producerPointer = bufferAsSubarray.Count;
+            return numWritten;*/
+        }
+
         public void WriteReserved<S>(NaiadSerialization<S> serializer, S element)
         {
             Debug.Assert(this.reservedPointer != NOT_SET);
@@ -291,7 +292,7 @@ namespace Naiad.Dataflow.Channels
             return ret;
         }
 
-        public static SendBufferPage CreateSpecialPage(MessageHeader header, int seqno)
+        public static SendBufferPage CreateSpecialPage(MessageHeader header, int seqno, NaiadSerialization<MessageHeader> serializer)
         {
             header.SequenceNumber = seqno;
             SendBufferPage ret = new SendBufferPage(GlobalBufferPool<byte>.pool, MessageHeader.SizeOf);
@@ -299,7 +300,7 @@ namespace Naiad.Dataflow.Channels
             ret.nextHeader = header;
             Logging.Info("Created page of type {0}", ret.Type.ToString());
             SubArray<byte> bufferAsSubarray = new SubArray<byte>(ret.Buffer, ret.producerPointer);
-            bool success = MessageHeader.Serializer.Serialize(ref bufferAsSubarray, header);
+            bool success = serializer.Serialize(ref bufferAsSubarray, header);
             Debug.Assert(success);
             ret.producerPointer = bufferAsSubarray.Count;
             ret.validPointer = bufferAsSubarray.Count;
@@ -307,9 +308,9 @@ namespace Naiad.Dataflow.Channels
             return ret;
         }
 
-        public static SendBufferPage CreateShutdownMessagePage(int seqno)
+        public static SendBufferPage CreateShutdownMessagePage(int seqno, NaiadSerialization<MessageHeader> serializer)
         {
-            return CreateSpecialPage(MessageHeader.Shutdown, seqno);
+            return CreateSpecialPage(MessageHeader.Shutdown, seqno, serializer);
         }
     
 
@@ -348,18 +349,18 @@ namespace Naiad.Dataflow.Channels
             return new ArraySegment<byte>(this.Buffer, this.producePointer, this.Buffer.Length - this.producePointer);
         }
 
-        public unsafe bool ConsumeHeader(out MessageHeader header)
+        public unsafe bool ConsumeHeader(out MessageHeader header, NaiadSerialization<MessageHeader> serializer)
         {
             header = default(MessageHeader);
             if (this.producePointer - this.consumePointer < MessageHeader.SizeOf)
                 return false;
 
-            MessageHeader.ReadHeaderFromBuffer(this.Buffer, this.consumePointer, ref header);
+            MessageHeader.ReadHeaderFromBuffer(this.Buffer, this.consumePointer, ref header, serializer);
             this.consumePointer += MessageHeader.SizeOf;
             return true;
         }
 
-        public unsafe bool ConsumeHeader(RecvBufferPage nextPage, out MessageHeader header)
+        public unsafe bool ConsumeHeader(RecvBufferPage nextPage, out MessageHeader header, NaiadSerialization<MessageHeader> serializer)
         {
             Debug.Assert(nextPage != null);
             header = default(MessageHeader);
@@ -377,7 +378,7 @@ namespace Naiad.Dataflow.Channels
             this.consumePointer += bytesInThisPage;
             nextPage.consumePointer += bytesInNextPage;
 
-            MessageHeader.ReadHeaderFromBuffer(headerBuffer, 0, ref header);
+            MessageHeader.ReadHeaderFromBuffer(headerBuffer, 0, ref header, serializer);
             return true;
         }
 
@@ -545,7 +546,7 @@ namespace Naiad.Dataflow.Channels
             this.inUsePages.Clear();
         }
 
-        private bool ConsumeNextHeader(ref MessageHeader header)
+        private bool ConsumeNextHeader(ref MessageHeader header, NaiadSerialization<MessageHeader> headerSerializer)
         {
 
 
@@ -553,7 +554,7 @@ namespace Naiad.Dataflow.Channels
             {
                 //if (this.partiallyProducedPage != null)
                 //    Console.Error.WriteLine("!!! Next header starts at offset: {0}", this.partiallyProducedPage.consumePointer);
-                if (this.partiallyProducedPage != null && this.partiallyProducedPage.ConsumeHeader(out header))
+                if (this.partiallyProducedPage != null && this.partiallyProducedPage.ConsumeHeader(out header, headerSerializer))
                     return true;
                 else
                     return false;
@@ -565,7 +566,7 @@ namespace Naiad.Dataflow.Channels
             RecvBufferPage firstPage = firstNode.Value;
 
             //Console.Error.WriteLine("!!! Next header starts at offset: {0}", firstPage.consumePointer);
-            if (firstPage.ConsumeHeader(out header))
+            if (firstPage.ConsumeHeader(out header, headerSerializer))
             {
                 if (firstPage.consumePointer == firstPage.Buffer.Length)
                 {
@@ -595,7 +596,7 @@ namespace Naiad.Dataflow.Channels
                 return false;
             }
 
-            bool success = firstPage.ConsumeHeader(secondPage, out header);
+            bool success = firstPage.ConsumeHeader(secondPage, out header, headerSerializer);
             if (success)
             {
                 // We've completely consumed the first page, because we had to split onto the second page.
@@ -676,7 +677,7 @@ namespace Naiad.Dataflow.Channels
         /// Returns a collection of messages that have been produced but not yet consumed.
         /// </summary>
         /// <returns></returns>
-        public IEnumerable<SerializedMessage> ConsumeMessages()
+        public IEnumerable<SerializedMessage> ConsumeMessages(NaiadSerialization<MessageHeader> headerSerializer)
         {
             while (true)
             {
@@ -699,7 +700,7 @@ namespace Naiad.Dataflow.Channels
                 {
                     if (!this.currentMessageHeaderValid)
                     {
-                        bool success = this.ConsumeNextHeader(ref this.currentMessageHeader);
+                        bool success = this.ConsumeNextHeader(ref this.currentMessageHeader, headerSerializer);
                         if (!success)
                         {
                             this.currentMessageHeaderValid = false;
@@ -961,33 +962,33 @@ namespace Naiad.Dataflow.Channels
 
     public struct MessageHeader : IEquatable<MessageHeader>
     {
-        public int FromShardID;
-        public int SequenceNumber;
         public int ChannelID;
-        public int DestShardID;
+        public int DestVertexID;
+        public int FromVertexID;
         public int Length;
+        public int SequenceNumber;
         public SerializedMessageType Type;
 
-        public MessageHeader(int fromShardID, int sequenceNumber, int channelID, int destShardID, SerializedMessageType type)
-            : this(fromShardID, sequenceNumber, channelID, destShardID, -1, type)
+        public MessageHeader(int fromVertexID, int sequenceNumber, int channelID, int destVertexID, SerializedMessageType type)
+            : this(fromVertexID, sequenceNumber, channelID, destVertexID, -1, type)
         { }
 
-        public MessageHeader(int fromShardID, int sequenceNumber, int channelID, int destShardID, int length, SerializedMessageType type)
+        public MessageHeader(int fromVertexID, int sequenceNumber, int channelID, int destVertexID, int length, SerializedMessageType type)
         {
-            this.FromShardID = fromShardID;
+            this.FromVertexID = fromVertexID;
             this.SequenceNumber = sequenceNumber;
             this.ChannelID = channelID;
-            this.DestShardID = destShardID;
+            this.DestVertexID = destVertexID;
             this.Length = length;
             this.Type = type;
         }
 
         public bool Equals(MessageHeader that)
         {
-            return this.FromShardID == that.FromShardID
+            return this.FromVertexID == that.FromVertexID
                 && this.SequenceNumber == that.SequenceNumber
                 && this.ChannelID == that.ChannelID
-                && this.DestShardID == that.DestShardID
+                && this.DestVertexID == that.DestVertexID
                 && this.Length == that.Length;
         }
 
@@ -996,7 +997,7 @@ namespace Naiad.Dataflow.Channels
             get
             {
                 return this.Type == SerializedMessageType.CheckpointData || (this.ChannelID >= 0
-                    // && this.DestShardID < Naiad.NumberOfTotalShards // (no longer easily accessible).
+                    // && this.DestVertexID < Naiad.NumberOfTotalVertices // (no longer easily accessible).
                     && this.Length < RecvBufferPage.PAGE_SIZE
                     && this.Length >= 0);
             }
@@ -1022,15 +1023,6 @@ namespace Naiad.Dataflow.Channels
             get { return new MessageHeader(-1, -1, -1, -1, 0, SerializedMessageType.Checkpoint); }
         }
 
-        private static readonly NaiadSerialization<MessageHeader> serializer = AutoSerialization.GetSerializer<MessageHeader>();
-        public static NaiadSerialization<MessageHeader> Serializer
-        {
-            get
-            {
-                return MessageHeader.serializer;
-            }
-        }
-
         public unsafe static int SizeOf
         {
             get
@@ -1039,18 +1031,18 @@ namespace Naiad.Dataflow.Channels
             }
         }
 
-        public static void ReadHeaderFromBuffer(byte[] array, int offset, ref MessageHeader header)
+        public static void ReadHeaderFromBuffer(byte[] array, int offset, ref MessageHeader header, NaiadSerialization<MessageHeader> headerSerializer)
         {
             RecvBuffer buffer = new RecvBuffer(array, offset, offset + MessageHeader.SizeOf);
-            bool success = MessageHeader.Serializer.TryDeserialize(ref buffer, out header);
+            bool success = headerSerializer.TryDeserialize(ref buffer, out header);
             Debug.Assert(success);
             Debug.Assert(Enum.IsDefined(typeof(SerializedMessageType), header.Type));
         }
 
-        public static void WriteHeaderToBuffer(byte[] array, int offset, MessageHeader header)
+        public static void WriteHeaderToBuffer(byte[] array, int offset, MessageHeader header, NaiadSerialization<MessageHeader> headerSerializer)
         {
             SubArray<byte> bufferAsSubarray = new SubArray<byte>(array, offset);
-            MessageHeader.Serializer.Serialize(ref bufferAsSubarray, header);
+            headerSerializer.Serialize(ref bufferAsSubarray, header);
             Debug.Assert(bufferAsSubarray.Count == offset + MessageHeader.SizeOf);
         }
 
@@ -1074,24 +1066,24 @@ namespace Naiad.Dataflow.Channels
 
         public bool Equals(SerializedMessage other)
         {
-            return this.Header.FromShardID == other.Header.FromShardID
+            return this.Header.FromVertexID == other.Header.FromVertexID
                 && this.Header.SequenceNumber == other.Header.SequenceNumber
                 && this.FromProcessID == other.FromProcessID
                 && this.Header.ChannelID == other.Header.ChannelID
-                && this.Header.DestShardID == other.Header.DestShardID;
+                && this.Header.DestVertexID == other.Header.DestVertexID;
         }
 
-        internal static SerializedMessage SpecialMessage(int fromProcessID, int channelID, int fromShardID, int destShardID, int seqNum, SerializedMessageType type)
+        internal static SerializedMessage SpecialMessage(int fromProcessID, int channelID, int fromVertexID, int destVertexID, int seqNum, SerializedMessageType type)
         {
-            return new SerializedMessage(fromProcessID, channelID, fromShardID, destShardID, seqNum, type);
+            return new SerializedMessage(fromProcessID, channelID, fromVertexID, destVertexID, seqNum, type);
         }
 
-        private SerializedMessage(int fromProcessID, int channelID, int fromShardID, int destShardID, int seqNum, SerializedMessageType type)
+        private SerializedMessage(int fromProcessID, int channelID, int fromVertexID, int destVertexID, int seqNum, SerializedMessageType type)
         {
             this.FromProcessID = fromProcessID;
             this.Header.ChannelID = channelID;
-            this.Header.FromShardID = fromShardID;
-            this.Header.DestShardID = destShardID;
+            this.Header.FromVertexID = fromVertexID;
+            this.Header.DestVertexID = destVertexID;
             this.Header.SequenceNumber = seqNum;
             this.Type = type;
 
@@ -1125,6 +1117,15 @@ namespace Naiad.Dataflow.Channels
         }
     }
 
+    public static class NaiadSerializationConstants
+    {
+        public const int CHANNEL_ID = 0x4149414e;
+        public const int DEST_VERTEX_ID = 0x0a0d2144;
+
+        // Now implemented using the SerializationCodeGenerator properties.
+        //public const int FROM_VERTEX_ID = (MAJOR_VERSION_NUMBER << 16) + MINOR_VERSION_NUMBER;
+    }
+
     public class NaiadWriter : IDisposable
     {
         private const int PAGE_SIZE = 1 << 14;
@@ -1139,15 +1140,26 @@ namespace Naiad.Dataflow.Channels
         private Type lastType;
         private object lastSerializer;
 
-        public NaiadWriter(Stream stream)
-            : this(new SerializedMessageSender[] { new StreamSerializedMessageSender(stream, PAGE_SIZE) })
+        private readonly SerializationCodeGenerator codeGenerator;
+
+        private readonly NaiadSerialization<MessageHeader> headerSerializer;
+
+        private readonly int versionNumber;
+
+        public NaiadWriter(Stream stream, SerializationCodeGenerator codeGenerator)
+            : this(new SerializedMessageSender[] { new StreamSerializedMessageSender(stream, PAGE_SIZE) }, codeGenerator)
         { }
 
-        internal NaiadWriter(IEnumerable<SerializedMessageSender> senders)
+        internal NaiadWriter(IEnumerable<SerializedMessageSender> senders, SerializationCodeGenerator codeGenerator)
         {
             this.senders = senders.ToArray();
             this.currentPage = null;
             this.sequenceNumber = 0;
+
+            this.codeGenerator = codeGenerator;
+            this.headerSerializer = codeGenerator.GetSerializer<MessageHeader>();
+
+            this.versionNumber = (codeGenerator.MajorVersion << 16) + codeGenerator.MinorVersion;
 
             this.lastType = null;
             this.lastSerializer = null;
@@ -1161,7 +1173,7 @@ namespace Naiad.Dataflow.Channels
             if (typeof(S) != this.lastType)
             {
                 this.lastType = typeof(S);
-                this.lastSerializer = AutoSerialization.GetSerializer<S>();
+                this.lastSerializer = this.codeGenerator.GetSerializer<S>();
             }
             this.Write(value, (NaiadSerialization<S>)this.lastSerializer);
         }
@@ -1173,14 +1185,14 @@ namespace Naiad.Dataflow.Channels
             if (this.currentPage == null)
             {
                 this.currentPage = new SendBufferPage(new ThreadLocalBufferPool<byte>(1), PAGE_SIZE);
-                this.currentPage.WriteHeader(new MessageHeader(-1, this.sequenceNumber++, -1, -1, SerializedMessageType.CheckpointData));
+                this.currentPage.WriteHeader(new MessageHeader(this.versionNumber, this.sequenceNumber++, NaiadSerializationConstants.CHANNEL_ID, NaiadSerializationConstants.DEST_VERTEX_ID, SerializedMessageType.CheckpointData), this.headerSerializer);
             }
 
             if (!this.currentPage.Write(serializer, value))
             {
                 this.FlushCurrentPage();
                 this.currentPage = new SendBufferPage(new ThreadLocalBufferPool<byte>(1), PAGE_SIZE);
-                this.currentPage.WriteHeader(new MessageHeader(-1, this.sequenceNumber++, -1, -1, SerializedMessageType.CheckpointData));
+                this.currentPage.WriteHeader(new MessageHeader(this.versionNumber, this.sequenceNumber++, NaiadSerializationConstants.CHANNEL_ID, NaiadSerializationConstants.DEST_VERTEX_ID, SerializedMessageType.CheckpointData), this.headerSerializer);
                 if (!this.currentPage.Write(serializer, value))
                     throw new IOException("Cannot current write a record that is longer than a SendBufferPage (16KB).");
             }
@@ -1190,7 +1202,7 @@ namespace Naiad.Dataflow.Channels
 
         public void FlushCurrentPage()
         {
-            var hdr = this.currentPage.FinalizeLastMessage();
+            var hdr = this.currentPage.FinalizeLastMessage(this.headerSerializer);
             BufferSegment segment = this.currentPage.Consume();
 
             foreach (SerializedMessageSender sender in this.senders)
@@ -1222,57 +1234,92 @@ namespace Naiad.Dataflow.Channels
 
         private RecvBuffer currentPage;
 
-        public int pagesRead;
-        public int objectsRead;
-
         private Type lastType;
         private object lastSerializer;
 
-        public NaiadReader(Stream stream)
+        public readonly SerializationCodeGenerator CodeGenerator;
+        private NaiadSerialization<MessageHeader> headerSerializer;
+
+        private readonly int versionNumber;
+
+        public NaiadReader(Stream stream, SerializationCodeGenerator codeGenerator)
         {
+            this.CodeGenerator = codeGenerator;
+            this.versionNumber = (codeGenerator.MajorVersion << 16) + codeGenerator.MinorVersion;
+            this.headerSerializer = this.CodeGenerator.GetSerializer<MessageHeader>();
+
             this.stream = stream;
             this.buffer = GlobalBufferPool<byte>.pool.CheckOut(PAGE_SIZE);
             this.lastType = null;
             this.lastSerializer = null;
 
-            this.currentPage = this.GetNextPage();
+            bool nextPageAvailable = this.TryGetNextPage(out this.currentPage);
+            if (!nextPageAvailable)
+                throw new InvalidDataException("Stream does not contain data");
+
         }
 
         public S Read<S>()
-            where S : IEquatable<S>
         {
             if (typeof(S) != this.lastType)
             {
                 this.lastType = typeof(S);
-                this.lastSerializer = AutoSerialization.GetSerializer<S>();
+                this.lastSerializer = this.CodeGenerator.GetSerializer<S>();
             }
             return this.Read<S>((NaiadSerialization<S>)this.lastSerializer);
         }
 
-        private RecvBuffer GetNextPage()
+        private bool TryGetNextPage(out RecvBuffer result)
         {
-            this.stream.Read(this.buffer, 0, this.buffer.Length);
+            int bytesRead = this.stream.Read(this.buffer, 0, this.buffer.Length);
+            if (bytesRead == 0)
+            {
+                result = default(RecvBuffer);
+                return false;
+            }
+            else
+            {
+                MessageHeader parsedHeader = default(MessageHeader);
+                MessageHeader.ReadHeaderFromBuffer(this.buffer, 0, ref parsedHeader, this.headerSerializer);
 
-            MessageHeader parsedHeader = default(MessageHeader);
-            MessageHeader.ReadHeaderFromBuffer(this.buffer, 0, ref parsedHeader);
+                if (parsedHeader.FromVertexID != this.versionNumber)
+                {
+                    throw new InvalidDataException(string.Format("Cannot deserialize this file with serializer version {0}.{1} (file uses version {2}.{3})", this.CodeGenerator.MajorVersion, this.CodeGenerator.MinorVersion, parsedHeader.FromVertexID >> 16, parsedHeader.FromVertexID & 0xFFFF));
+                }
 
-            ++this.pagesRead;
 
-            return new RecvBuffer(this.buffer, MessageHeader.SizeOf, MessageHeader.SizeOf + parsedHeader.Length);
+                result = new RecvBuffer(this.buffer, MessageHeader.SizeOf, MessageHeader.SizeOf + parsedHeader.Length);
+                return true;
+            }
+        }
+
+        public bool TryRead<S>(NaiadSerialization<S> deserializer, out S result)
+        {
+            if (!deserializer.TryDeserialize(ref this.currentPage, out result))
+            {
+                bool nextPageAvailable = this.TryGetNextPage(out this.currentPage);
+                if (!nextPageAvailable)
+                    return false;
+                bool success = deserializer.TryDeserialize(ref this.currentPage, out result);
+                return success;
+            }
+            else
+            {
+                return true;
+            }
         }
 
         public S Read<S>(NaiadSerialization<S> deserializer)
         {
             S ret;
-            if (!deserializer.TryDeserialize(ref this.currentPage, out ret))
+            bool success = this.TryRead<S>(deserializer, out ret);
+            if (!success)
             {
-                this.currentPage = this.GetNextPage();
-                bool success = deserializer.TryDeserialize(ref this.currentPage, out ret);
-                Debug.Assert(success);
+                throw new InvalidOperationException("No more records in stream");
             }
-            ++this.objectsRead;
             return ret;
         }
+
 
         public void Dispose()
         {
@@ -1291,58 +1338,62 @@ namespace Naiad.Dataflow.Channels
         private ManualResetEvent writtenEvent;
         private int sequenceNumber;
 
-        public NaiadStreamWriter(Stream stream)
+        private readonly int versionNumber;
+
+        private readonly SerializationCodeGenerator codeGenerator;
+        private readonly NaiadSerialization<MessageHeader> headerSerializer;
+
+        public NaiadStreamWriter(Stream stream, SerializationCodeGenerator codeGenerator)
         {
             this.stream = stream;
             this.currentPage = null;
-            this.serializer = AutoSerialization.GetSerializer<S>();
+            this.codeGenerator = codeGenerator;
+            this.versionNumber = (codeGenerator.MajorVersion << 16) + codeGenerator.MinorVersion;
+            this.serializer = this.codeGenerator.GetSerializer<S>();
+            this.headerSerializer = this.codeGenerator.GetSerializer<MessageHeader>();
             this.writtenEvent = new ManualResetEvent(true);
             this.sequenceNumber = 0;
         }
 
-        public void Write(S weightedElement)
+        public void Write(S element)
         {
             if (this.currentPage == null)
             {
                 this.currentPage = new SendBufferPage(GlobalBufferPool<byte>.pool, PAGE_SIZE);
-                this.currentPage.WriteHeader(new MessageHeader(-1, this.sequenceNumber++, -1, -1, SerializedMessageType.Data));
+                this.currentPage.WriteHeader(new MessageHeader(this.versionNumber, this.sequenceNumber++, NaiadSerializationConstants.CHANNEL_ID, NaiadSerializationConstants.DEST_VERTEX_ID, SerializedMessageType.Data), this.headerSerializer);
             }
 
-            if (!this.currentPage.Write(this.serializer, weightedElement))
+            if (!this.currentPage.Write(this.serializer, element))
             {
                 this.FlushCurrentPage();
-                this.currentPage = new SendBufferPage(GlobalBufferPool<byte>.pool, PAGE_SIZE);
-                this.currentPage.WriteHeader(new MessageHeader(-1, this.sequenceNumber++, -1, -1, SerializedMessageType.Data));
-                if (!this.currentPage.Write(this.serializer, weightedElement))
-                    throw new IOException("Cannot current write a record that is longer than a SendBufferPage (16KB).");
+
+                // Allocate new page
+                int size = PAGE_SIZE;
+                this.currentPage = new SendBufferPage(GlobalBufferPool<byte>.pool, size);
+                this.currentPage.WriteHeader(new MessageHeader(this.versionNumber, this.sequenceNumber++, NaiadSerializationConstants.CHANNEL_ID, NaiadSerializationConstants.DEST_VERTEX_ID, SerializedMessageType.Data), this.headerSerializer);
+                while (!this.currentPage.Write(this.serializer, element))
+                {
+                    this.currentPage.Release();
+                    this.currentPage = null;
+                    size <<= 1;
+                    Logging.Info("Doubling send buffer size due to long record (new size = {0}) in channel {0}", size, this.ToString());
+                    this.currentPage = new SendBufferPage(GlobalBufferPool<byte>.pool, size);
+                    this.currentPage.WriteHeader(new MessageHeader(this.versionNumber, this.sequenceNumber, NaiadSerializationConstants.CHANNEL_ID, NaiadSerializationConstants.DEST_VERTEX_ID, SerializedMessageType.Data), this.headerSerializer);
+                }
             }
         }
 
         public void FlushCurrentPage()
         {
-            this.currentPage.FinalizeLastMessage();
+            this.currentPage.FinalizeLastMessage(this.headerSerializer);
             using (BufferSegment segment = this.currentPage.Consume())
             {
                 ArraySegment<byte> arraySegment = segment.ToArraySegment();
-#if BUGGY_ASYNC_WRITES
-                this.writtenEvent.WaitOne();
-                this.writtenEvent.Reset();
-                this.stream.BeginWrite(arraySegment.Array, arraySegment.Offset, arraySegment.Count, this.WriteCallback, null);
-#else
                 this.stream.Write(arraySegment.Array, arraySegment.Offset, arraySegment.Count);
-#endif
             }
             this.currentPage.Release();
             this.currentPage = null;
         }
-
-#if BUGGY_ASYNC_WRITES
-        public void WriteCallback(IAsyncResult result)
-        {
-            this.stream.EndWrite(result);
-            this.writtenEvent.Set();
-        }
-#endif
         
         public void Dispose()
         {
@@ -1356,10 +1407,12 @@ namespace Naiad.Dataflow.Channels
         }
     }
 
+#if false
     public interface SerializedMessageDecoder<T>
     {
         IEnumerable<T> Elements(SerializedMessage message);
     }
+#endif
 
     internal class CompletedMessageArgs : EventArgs
     {
@@ -1378,131 +1431,358 @@ namespace Naiad.Dataflow.Channels
         void Flush();
         event EventHandler<CompletedMessageArgs> CompletedMessage;
     }
-
-    internal enum AutoSerializationMode
-    {
-        Basic,
-        OneTimePerMessage
-    }
-
-
-    internal interface SubEncoder<T>
-    {
-        bool Write(T element);
-        void FinishMessage();
-    }
-
-    internal class BasicAutoSerializedMessageEncoder<S, T> : SubEncoder<Pair<S, T>>
+  
+    internal class AutoSerializedMessageEncoder<S, T> : SerializedMessageEncoder<Pair<S, T>>
         where T : Time<T>
     {
-        private readonly SendBufferPage page;
-        private readonly NaiadSerialization<Pair<S, T>> serializer;
+        private readonly int destVertexId;
+        private readonly int destMailboxId;
+        private readonly SerializedMessageType messageType;
+        
+        private NaiadSerialization<S> payloadSerializer;
+        private NaiadSerialization<T> timeSerializer;
+        private NaiadSerialization<MessageHeader> headerSerializer;
+        private NaiadSerialization<int> intSerializer;
+        private SendBufferPage page;
 
-        public bool Write(Pair<S, T> element)
+        private BufferPool<byte> pool;
+
+        private readonly Func<int> sequenceNumberGenerator;
+        private int currentSequenceNumber;
+        public int CurrentSequenceNumber { get { return currentSequenceNumber; } }
+
+        private readonly int pageSize;
+
+        public event EventHandler<CompletedMessageArgs> CompletedMessage;
+
+        private readonly SerializationCodeGenerator CodeGenerator;
+
+        public int RecordSizeHint
         {
-            bool success = this.page.WriteRecord(this.serializer, element);
-            return success;
-        }
-
-        public void FinishMessage()
-        {
-            // No-op.
-        }
-
-        internal static IEnumerable<Pair<S, T>> Elements(RecvBuffer messageBody, NaiadSerialization<Pair<S, T>> deserializer)
-        {
-#if MESSAGE_HEADER_SENTINEL
-            int dummy;
-            PrimitiveSerializers.Int32.TryDeserialize(ref messageBody, out dummy);
-            Debug.Assert(dummy == -1);
-            PrimitiveSerializers.Int32.TryDeserialize(ref messageBody, out dummy);
-            Debug.Assert(dummy == -1);
-            PrimitiveSerializers.Int32.TryDeserialize(ref messageBody, out dummy);
-            Debug.Assert(dummy == -1);
-#endif
-
-            Pair<S, T> record;
-            while (deserializer.TryDeserialize(ref messageBody, out record))
+            get
             {
-                yield return record;
+                return this.pageSize - (MessageHeader.SizeOf + sizeof(int) + default(T).Coordinates() * sizeof(int) + sizeof(int));
             }
         }
 
-        internal static IEnumerable<Pair<T, int>> Times(RecvBuffer messageBody, NaiadSerialization<Pair<S, T>> deserializer)
+        public void Flush()
         {
-#if MESSAGE_HEADER_SENTINEL
-            int dummy;
-            PrimitiveSerializers.Int32.TryDeserialize(ref messageBody, out dummy);
-            Debug.Assert(dummy == -1);
-            PrimitiveSerializers.Int32.TryDeserialize(ref messageBody, out dummy);
-            Debug.Assert(dummy == -1);
-            PrimitiveSerializers.Int32.TryDeserialize(ref messageBody, out dummy);
-            Debug.Assert(dummy == -1);
-#endif
-
-            Pair<S, T> record;
-            while (deserializer.TryDeserialize(ref messageBody, out record))
-            {
-                yield return new Pair<T, int>(record.v2, 1);
-            }
+            this.SendCurrentPage();
         }
 
-        internal BasicAutoSerializedMessageEncoder(SendBufferPage page, int sourceShardId, int sequenceNumber, int destMailboxId, int destShardId, SerializedMessageType messageType, NaiadSerialization<Pair<S, T>> serializer)
+        private void SendCurrentPage()
         {
-            this.serializer = serializer;
-            this.page = page;
-            this.page.WriteHeader(new MessageHeader(sourceShardId,
-                sequenceNumber, destMailboxId, destShardId, messageType));
-            this.page.Write(PrimitiveSerializers.Int32, (int)AutoSerializationMode.Basic);
+            if (this.page != null)
+            {
+                this.page.WriteReserved<int>(this.intSerializer, this.currentMessageWritten);
+                MessageHeader hdr = page.FinalizeLastMessage(this.headerSerializer);
+                BufferSegment segment = page.Consume();
+
+                if (segment.Length > 0 && this.currentMessageWritten > 0)
+                {
+                    this.CompletedMessage(this, new CompletedMessageArgs(hdr, segment));
+                }
+                else
+                {
+                    segment.Dispose();
+                }
+                this.page.Release();
+                this.page = null;
+            }            
+        }
+
+        // This overload allows us to create a message header that holds the source vertex id.
+        // Required for tracing.
+        private void CreateNextPage(int srcVertexId, int size)
+        {
+            Debug.Assert(this.page == null);
+            this.page = new SendBufferPage(size == this.pageSize ? this.pool : DummyBufferPool<byte>.Pool, size);
+            //Console.Error.WriteLine("Next page mode (for mailbox {1}:{2}) is {0}", this.currentMode, this.destMailboxId, this.destVertexId);
+            this.currentSequenceNumber = this.sequenceNumberGenerator();
+            if (this.payloadSerializer == null)
+                this.payloadSerializer = this.CodeGenerator.GetSerializer<S>();
+            if (this.timeSerializer == null)
+                this.timeSerializer = this.CodeGenerator.GetSerializer<T>();
+            if (this.headerSerializer == null)
+                this.headerSerializer = this.CodeGenerator.GetSerializer<MessageHeader>();
+            if (this.intSerializer == null)
+                this.intSerializer = this.CodeGenerator.GetSerializer<int>();
+
+            this.page.WriteHeader(new MessageHeader(srcVertexId,
+                this.currentSequenceNumber, this.destMailboxId, this.destVertexId, this.messageType), this.headerSerializer);
+
+#if MESSAGE_HEADER_SENTINEL
+            this.page.Write(PrimitiveSerializers.Int32, -1);
+            this.page.Write(PrimitiveSerializers.Int32, -1);
+            this.page.Write(PrimitiveSerializers.Int32, -1);
+#endif
+
+            bool timeSuccess = this.page.Write(this.timeSerializer, this.currentMessageTime);
+            Debug.Assert(timeSuccess);
+            this.page.ReserveBytes(sizeof(int));
+
+            //this.currentMessageTimeSet = false;
+            this.currentMessageWritten = 0;
+        }
+
+        public void Write(ArraySegment<S> records, int srcVertexId)
+        {
+            int numToWrite = records.Count;
+            do
+            {
+                int numWritten = this.WriteElements(records, srcVertexId);
+                numToWrite -= numWritten;
+                records = new ArraySegment<S>(records.Array, records.Offset + numWritten, records.Count - numWritten); 
+            } 
+            while (numToWrite > 0);
+        }
+
+        public int WriteElements(ArraySegment<S> records, int srcVertexId)
+        {
+            if (this.page == null)
+            {
+                this.CreateNextPage(srcVertexId, this.pageSize);
+            }
+
+            int numWritten = this.page.WriteElements(this.payloadSerializer, records);
             
-#if MESSAGE_HEADER_SENTINEL
-            this.page.Write(PrimitiveSerializers.Int32, -1);
-            this.page.Write(PrimitiveSerializers.Int32, -1);
-            this.page.Write(PrimitiveSerializers.Int32, -1);
-#endif
-        }
-    }
+            this.currentMessageWritten += numWritten;
 
-    internal class OneTimePerMessageAutoSerializedMessageEncoder<S, T> : SubEncoder<Pair<S, T>>
-        where T : Time<T>
-    {
-        private readonly SendBufferPage page;
-        private readonly NaiadSerialization<S> payloadSerializer;
-        private readonly NaiadSerialization<T> timeSerializer;
-
-        private bool timeSet = false;
-        private T time;
-        private int written = 0;
-
-        public bool Write(Pair<S, T> element)
-        {
-            if (!this.timeSet)
+            if (numWritten > 0 && numWritten < records.Count)
             {
-                this.time = element.v2;
-                this.timeSet = true;
-                bool timeSuccess = this.page.Write(this.timeSerializer, element.v2);
-                Debug.Assert(timeSuccess);
-                this.page.ReserveBytes(sizeof(int));
+                // We didn't manage to send all elements, so the page must be full.
+                this.SendCurrentPage();
             }
-            else if (!this.time.Equals(element.v2))
-                return false;
+            else if (numWritten == 0)
+            {
+                // We didn't manage to send any elements.
+                
+                // The first possibility is that the page was full, so allocate a new one.
+                this.SendCurrentPage();
+                int size = this.pageSize;
+                this.CreateNextPage(srcVertexId, size);
+                numWritten = this.page.WriteElements(this.payloadSerializer, records);
 
-            bool success = this.page.Write(this.payloadSerializer, element.v1);
+                // If writing to an empty page failed, repeatedly double the size of the page until at least
+                // one record fits.
+                while (numWritten == 0)
+                {
+                    this.page.Release();
+                    this.page = null;
+                    size <<= 1;
+                    Logging.Info("Doubling send buffer size due to long record (new size = {0}) in channel {0}", size, this.ToString());
+                    this.CreateNextPage(srcVertexId, size);
+                    numWritten = this.page.WriteElements(this.payloadSerializer, records);
+                }
+
+                this.currentMessageWritten += numWritten;
+            }
+
+            return numWritten;
+        }
+
+        public void Write(S record, int srcVertexId)
+        {
+            if (this.page == null)
+            {
+                this.CreateNextPage(srcVertexId, this.pageSize);
+            }
+
+            if (!this.WriteElement(record))
+            {
+                this.SendCurrentPage();
+
+                // Allocate new page
+                int size = this.pageSize;
+                this.CreateNextPage(srcVertexId, size);
+                while (!this.WriteElement(record))
+                {
+                    this.page.Release();
+                    this.page = null;
+                    size <<= 1;
+                    Logging.Info("Doubling send buffer size due to long record (new size = {0}) in channel {0}", size, this.ToString());
+                    this.CreateNextPage(srcVertexId, size);
+                }
+            }
+        }
+
+        // This overload allows us to create a message header that holds the source vertex id.
+        // Required for tracing.
+        public void Write(Pair<S, T> element, int srcVertexId)
+        {
+            this.SetCurrentTime(element.v2);
+            this.Write(element.v1, srcVertexId);
+        }
+
+        private bool currentMessageTimeSet;
+        private T currentMessageTime;
+        private int currentMessageWritten;
+
+        public void SetCurrentTime(T time)
+        {
+            if (this.currentMessageTimeSet && !this.currentMessageTime.Equals(time))
+            {
+                this.SendCurrentPage();
+            }
+
+            if (!(this.currentMessageTimeSet && this.currentMessageTime.Equals(time)))
+            {
+                this.currentMessageTime = time;
+                this.currentMessageTimeSet = true;
+            }
+        }
+
+        private bool WriteElement(S record)
+        {
+            bool success = this.page.Write(this.payloadSerializer, record);
 
             if (success)
-                this.written++;
+                this.currentMessageWritten++;
 
             return success;
         }
 
-        public void FinishMessage()
+        public void Write(Pair<S, T> element) 
         {
-            this.page.WriteReserved<int>(PrimitiveSerializers.Int32, this.written);
+            this.Write(element, 0);
         }
 
-        internal static IEnumerable<Pair<S, T>> Elements(RecvBuffer messageBody, NaiadSerialization<S> payloadDeserializer, NaiadSerialization<T> timeDeserializer)
+        public AutoSerializedMessageEncoder(int destVertexId, int destMailboxId, BufferPool<byte> pool, int pageSize, SerializationCodeGenerator codeGenerator, SerializedMessageType messageType = SerializedMessageType.Data, Func<int> seqNumGen = null)
         {
+            this.destVertexId = destVertexId;
+            this.destMailboxId = destMailboxId;
+            this.messageType = messageType;
+
+            if (pool == null)
+                this.pool = DummyBufferPool<byte>.Pool;
+            else
+               this.pool = pool;
+
+
+            this.page = null;
+
+            this.pageSize = pageSize;
+
+            // If not given a sequence number generator function, always use 0
+            this.currentSequenceNumber = 0;
+            this.sequenceNumberGenerator = seqNumGen != null ? seqNumGen : () => 0;
+
+            this.CodeGenerator = codeGenerator;
+        }
+    }
+
+#if false
+    internal class NewMessageCodec<S, T> : SerializedMessageEncoder<Pair<S, T>>, SerializedMessageDecoder<Message<S, T>>
+        where T : Time<T>
+    {
+        private NaiadSerialization<S> payloadSerializer;
+        private NaiadSerialization<T> timeSerializer;
+
+        private bool isCurrentTimeValid;
+        private T currentTime;
+
+        private SendBufferPage page;
+        private int currentSequenceNumber;
+        private BufferPool<byte> pool;
+        private int pageSize;
+
+        private readonly Func<int> sequenceNumberGenerator;
+
+        public void Write(Pair<S, T> element, int srcVertexId)
+        {
+            // flush if we have a new time
+            if (isCurrentTimeValid && !element.v2.Equals(currentTime))
+            {
+                this.Flush();
+                this.currentTime = element.v2;
+
+                if (this.page == null)
+                {
+                    this.CreateNextPage(srcVertexId, this.pageSize);
+                }
+
+                var success = this.page.Write(timeSerializer, element.v2);
+
+                Debug.Assert(success);
+
+                {
+                    this.SendCurrentPage();
+
+                    // Allocate new page
+                    int size = this.pageSize;
+                    this.CreateNextPage(srcVertexId, size);
+                    while (!this.currentSubEncoder.Write(element))
+                    {
+                        this.page.Release();
+                        this.page = null;
+                        size <<= 1;
+                        Logging.Info("Doubling send buffer size due to long record (new size = {0}) in channel {0}", size, this.ToString());
+                        this.CreateNextPage(srcVertexId, size);
+                    }
+                }
+                timeSerializer.Serialize();
+            }
+
+            // set if this is the first time
+            if (!isCurrentTimeValid)
+            {
+                this.currentTime = element.v2;
+                this.isCurrentTimeValid = true;            
+            }
+
+
+
+
+            throw new NotImplementedException();
+        }
+
+        private void CreateNextPage(int srcVertexId, int size)
+        {
+            Debug.Assert(this.page == null);
+            this.page = new SendBufferPage(size == this.pageSize ? this.pool : DummyBufferPool<byte>.Pool, size);
             
+            this.currentSequenceNumber = this.sequenceNumberGenerator();
+            
+            if (this.payloadSerializer == null)
+                this.payloadSerializer = AutoSerialization.GetSerializer<S>();
+            if (this.timeSerializer == null)
+                this.timeSerializer = AutoSerialization.GetSerializer<T>();
+        }
+
+        public void Flush()
+        {
+            throw new NotImplementedException();
+        }
+
+        public event EventHandler<CompletedMessageArgs> CompletedMessage;
+
+        public IEnumerable<Message<S, T>> Elements(SerializedMessage message)
+        {
+            throw new NotImplementedException();
+        }
+    }
+#endif
+
+    internal class AutoSerializedMessageDecoder<S, T> // : SerializedMessageDecoder<Pair<S, T>>
+        where T : Time<T>
+    {
+        private NaiadSerialization<S> payloadDeserializer;
+        private NaiadSerialization<T> timeDeserializer;
+        private NaiadSerialization<Int32> intDeserializer;
+
+        private readonly SerializationCodeGenerator CodeGenerator;
+
+#if false
+        private IEnumerable<Pair<S, T>> Elements(SerializedMessage message)
+        {
+            RecvBuffer messageBody = message.Body;
+            if (this.payloadDeserializer == null)
+                this.payloadDeserializer = this.CodeGenerator.GetSerializer<S>();
+            if (this.timeDeserializer == null)
+                this.timeDeserializer = this.CodeGenerator.GetSerializer<T>();
+            if (this.intDeserializer == null)
+                this.intDeserializer = this.CodeGenerator.GetSerializer<Int32>();
+
 #if MESSAGE_HEADER_SENTINEL
             int dummy;
             PrimitiveSerializers.Int32.TryDeserialize(ref messageBody, out dummy);
@@ -1518,16 +1798,81 @@ namespace Naiad.Dataflow.Channels
             Debug.Assert(timeSuccess);
 
             int count;
-            bool countSuccess = PrimitiveSerializers.Int32.TryDeserialize(ref messageBody, out count);
+            bool countSuccess = intDeserializer.TryDeserialize(ref messageBody, out count);
             Debug.Assert(countSuccess);
 
             S payload;
             while (payloadDeserializer.TryDeserialize(ref messageBody, out payload))
                 yield return new Pair<S, T>(payload, time);
         }
+#endif
 
-        internal static IEnumerable<Pair<T, int>> Times(RecvBuffer messageBody, NaiadSerialization<S> payloadDeserializer, NaiadSerialization<T> timeDeserializer)
+        public IEnumerable<Message<S, T>> AsTypedMessages(SerializedMessage message)
         {
+            RecvBuffer messageBody = message.Body;
+            if (this.payloadDeserializer == null)
+                this.payloadDeserializer = this.CodeGenerator.GetSerializer<S>();
+            if (this.timeDeserializer == null)
+                this.timeDeserializer = this.CodeGenerator.GetSerializer<T>();
+            if (this.intDeserializer == null)
+                this.intDeserializer = this.CodeGenerator.GetSerializer<Int32>();
+
+#if MESSAGE_HEADER_SENTINEL
+            int dummy;
+            PrimitiveSerializers.Int32.TryDeserialize(ref messageBody, out dummy);
+            Debug.Assert(dummy == -1);
+            PrimitiveSerializers.Int32.TryDeserialize(ref messageBody, out dummy);
+            Debug.Assert(dummy == -1); 
+            PrimitiveSerializers.Int32.TryDeserialize(ref messageBody, out dummy);
+            Debug.Assert(dummy == -1);
+#endif
+
+            T time;
+            bool timeSuccess = timeDeserializer.TryDeserialize(ref messageBody, out time);
+            Debug.Assert(timeSuccess);
+
+            int count;
+            bool countSuccess = intDeserializer.TryDeserialize(ref messageBody, out count);
+            Debug.Assert(countSuccess);
+
+            var targetMessage = new Message<S, T>(time);
+            targetMessage.Allocate();
+
+            S payload;
+            while (payloadDeserializer.TryDeserialize(ref messageBody, out payload))
+            {
+                targetMessage.payload[targetMessage.length++] = payload;
+
+                if (targetMessage.length == targetMessage.payload.Length)
+                {
+                    yield return targetMessage;
+
+                    targetMessage = new Message<S, T>(time);
+                    targetMessage.Allocate();
+                }
+            }
+
+            // if data remain, transfer message and ownership. otherwise, release the buffer.
+            if (targetMessage.length > 0)
+            {
+                yield return targetMessage;
+            }
+            else
+            {
+                targetMessage.Release();
+            }
+
+        }
+
+        public Pair<T, int> Time(SerializedMessage message)
+        {
+            RecvBuffer messageBody = message.Body;
+            if (this.payloadDeserializer == null)
+                this.payloadDeserializer = this.CodeGenerator.GetSerializer<S>();
+            if (this.timeDeserializer == null)
+                this.timeDeserializer = this.CodeGenerator.GetSerializer<T>();
+            if (this.intDeserializer == null)
+                this.intDeserializer = this.CodeGenerator.GetSerializer<Int32>();
 #if MESSAGE_HEADER_SENTINEL
             int dummy;
             PrimitiveSerializers.Int32.TryDeserialize(ref messageBody, out dummy);
@@ -1543,294 +1888,15 @@ namespace Naiad.Dataflow.Channels
             Debug.Assert(timeSuccess);
 
             int count;
-            bool countSuccess = PrimitiveSerializers.Int32.TryDeserialize(ref messageBody, out count);
+            bool countSuccess = intDeserializer.TryDeserialize(ref messageBody, out count);
             Debug.Assert(countSuccess);
 
-            return new Pair<T, int>[] { new Pair<T, int>(time, count) };
+            return new Pair<T, int>(time, count);
         }
 
-        internal OneTimePerMessageAutoSerializedMessageEncoder(SendBufferPage page, int sourceShardId, int sequenceNumber, int destMailboxId, int destShardId, SerializedMessageType messageType, NaiadSerialization<S> payloadSerializer, NaiadSerialization<T> timeSerializer)
+        public AutoSerializedMessageDecoder(SerializationCodeGenerator codeGenerator)
         {
-            this.payloadSerializer = payloadSerializer;
-            this.timeSerializer = timeSerializer;
-            this.page = page;
-            this.page.WriteHeader(new MessageHeader(sourceShardId,
-                sequenceNumber, destMailboxId, destShardId, messageType));
-            this.page.Write(PrimitiveSerializers.Int32, (int)AutoSerializationMode.OneTimePerMessage);
-      
-#if MESSAGE_HEADER_SENTINEL
-            this.page.Write(PrimitiveSerializers.Int32, -1);
-            this.page.Write(PrimitiveSerializers.Int32, -1);
-            this.page.Write(PrimitiveSerializers.Int32, -1);
-#endif
-        }
-    }
-
-    internal class AutoSerializedMessageEncoder<S, T> : SerializedMessageEncoder<Pair<S, T>>
-        where T : Time<T>
-    {
-        private readonly int destShardId;
-        private readonly int destMailboxId;
-        private readonly SerializedMessageType messageType;
-
-        private NaiadSerialization<Pair<S, T>> serializer;
-        private NaiadSerialization<S> payloadSerializer;
-        private NaiadSerialization<T> timeSerializer;
-        private SendBufferPage page;
-
-        private BufferPool<byte> pool;
-
-        private readonly Func<int> sequenceNumberGenerator;
-        private int currentSequenceNumber;
-        public int CurrentSequenceNumber { get { return currentSequenceNumber; } }
-
-        private readonly int pageSize;
-
-        private AutoSerializationMode currentMode;
-        private SubEncoder<Pair<S, T>> currentSubEncoder;
-
-        private readonly AutoSerializationMode defaultMode;
-
-        public event EventHandler<CompletedMessageArgs> CompletedMessage;
-
-        public int RecordSizeHint
-        {
-            get
-            {
-                switch (this.defaultMode)
-                {
-                    case AutoSerializationMode.Basic:
-                        // Header, (int)mode, T.
-                        return this.pageSize - (MessageHeader.SizeOf + sizeof(int) + default(T).Coordinates() * sizeof(int));
-                    case AutoSerializationMode.OneTimePerMessage:
-                        // Header, (int)mode, T, (int)count.
-                        return this.pageSize - (MessageHeader.SizeOf + sizeof(int) + default(T).Coordinates() * sizeof(int) + sizeof(int));
-                    default:
-                        throw new NotImplementedException(string.Format("Unsupported mode: {0}", this.defaultMode));
-                }
-            }
-        }
-
-        public void Flush()
-        {
-            this.SendCurrentPage();
-        }
-
-        private void SendCurrentPage()
-        {
-            if (this.page != null)
-            {
-                this.currentSubEncoder.FinishMessage();
-                MessageHeader hdr = page.FinalizeLastMessage();
-                BufferSegment segment = page.Consume();
-
-                if (segment.Length > 0)
-                {
-                    this.CompletedMessage(this, new CompletedMessageArgs(hdr, segment));
-                }
-                else
-                {
-                    segment.Dispose();
-                }
-                this.page.Release();
-                this.page = null;
-            }            
-        }
-
-        // This overload allows us to create a message header that holds the source shard id.
-        // Required for tracing.
-        private void CreateNextPage(int srcShardId, int size)
-        {
-            Debug.Assert(this.page == null);
-            this.page = new SendBufferPage(size == this.pageSize ? this.pool : DummyBufferPool<byte>.Pool, size);
-            this.currentMode = this.ChooseNextPageMode();
-            //Console.Error.WriteLine("Next page mode (for mailbox {1}:{2}) is {0}", this.currentMode, this.destMailboxId, this.destShardId);
-            this.currentSequenceNumber = this.sequenceNumberGenerator();
-            switch (this.currentMode)
-            {
-                case AutoSerializationMode.Basic:
-                    if (this.serializer == null)
-                        this.serializer = AutoSerialization.GetSerializer<Pair<S, T>>();
-                    this.currentSubEncoder = new BasicAutoSerializedMessageEncoder<S, T>(this.page, 
-                        srcShardId, this.currentSequenceNumber,
-                        this.destMailboxId, this.destShardId,
-                        this.messageType, this.serializer);
-                    break;
-                case AutoSerializationMode.OneTimePerMessage:
-                    if (this.payloadSerializer == null)
-                        this.payloadSerializer = AutoSerialization.GetSerializer<S>();
-                    if (this.timeSerializer == null)
-                        this.timeSerializer = AutoSerialization.GetSerializer<T>();
-                    this.currentSubEncoder = new OneTimePerMessageAutoSerializedMessageEncoder<S, T>(this.page,
-                        srcShardId, this.currentSequenceNumber,
-                        this.destMailboxId, this.destShardId,
-                        this.messageType, this.payloadSerializer, this.timeSerializer);
-                    break;
-            }
-
-        }
-
-        // This overload allows us to create a message header that holds the source shard id.
-        // Required for tracing.
-        public void Write(Pair<S, T> element, int srcShardId)
-        {
-            
-            if (this.page == null)
-            {
-                this.CreateNextPage(srcShardId, this.pageSize);
-            }
-
-            if (!this.currentSubEncoder.Write(element))
-            {
-                this.SendCurrentPage();
-
-                // Allocate new page
-                int size = this.pageSize;
-                this.CreateNextPage(srcShardId, size);
-                while (!this.currentSubEncoder.Write(element))
-                {
-                    this.page.Release();
-                    this.page = null;
-                    size <<= 1;
-                    Logging.Info("Doubling send buffer size due to long record (new size = {0}) in channel {0}", size, this.ToString());
-                    this.CreateNextPage(srcShardId, size);
-                }
-            }
-
-        }
-
-        private bool lastTimeSet = false;
-        private T lastTime = default(T);
-        private bool lastTimeChanged = false;
-
-        private void UpdateNextModeChoice(Pair<S, T> element)
-        {
-            if (this.lastTimeSet && !element.v2.Equals(this.lastTime))
-                lastTimeChanged = true;
-
-            this.lastTime = element.v2;
-            this.lastTimeSet = true;
-        }
-
-        private AutoSerializationMode ChooseNextPageMode()
-        {
-            return this.defaultMode;
-#if false
-            this.lastTimeChanged = false;
-            this.lastTimeSet = false;
-            if (this.lastTimeChanged)
-                return AutoSerializationMode.Basic;
-            else
-                return AutoSerializationMode.OneTimePerMessage;
-#endif
-        }
-
-        public void Write(Pair<S, T> element) 
-        {
-            this.Write(element, 0);
-        }
-
-        public AutoSerializedMessageEncoder(int destShardId, int destMailboxId, BufferPool<byte> pool, int pageSize, AutoSerializationMode defaultMode, SerializedMessageType messageType = SerializedMessageType.Data, Func<int> seqNumGen = null)
-        {
-            this.destShardId = destShardId;
-            this.destMailboxId = destMailboxId;
-            this.messageType = messageType;
-
-            if (pool == null)
-                this.pool = DummyBufferPool<byte>.Pool;
-            else
-               this.pool = pool;
-
-
-            this.serializer = null;
-            this.page = null;
-
-            this.pageSize = pageSize;
-
-            // If not given a sequence number generator function, always use 0
-            this.currentSequenceNumber = 0;
-            this.sequenceNumberGenerator = seqNumGen != null ? seqNumGen : () => 0;
-
-            this.defaultMode = defaultMode;
-            this.currentMode = defaultMode;
-        }
-    }
-
-    internal class AutoSerializedMessageDecoder<S, T> : SerializedMessageDecoder<Pair<S, T>>
-        where T : Time<T>
-    {
-
-        private NaiadSerialization<Pair<S, T>> deserializer;
-        private NaiadSerialization<S> payloadDeserializer;
-        private NaiadSerialization<T> timeDeserializer;
-
-        public IEnumerable<Pair<S, T>> Elements(SerializedMessage message)
-        {
-            
-            RecvBuffer messageBody = message.Body;
-            int modeInt;
-            bool success = PrimitiveSerializers.Int32.TryDeserialize(ref messageBody, out modeInt);
-
-            if (success)
-            {
-                AutoSerializationMode mode = (AutoSerializationMode)modeInt;
-                switch (mode)
-                {
-                    case AutoSerializationMode.Basic:
-                        if (this.deserializer == null)
-                            this.deserializer = AutoSerialization.GetSerializer<Pair<S, T>>();
-                        return BasicAutoSerializedMessageEncoder<S, T>.Elements(messageBody, this.deserializer);
-                    case AutoSerializationMode.OneTimePerMessage:
-                        if (this.payloadDeserializer == null)
-                            this.payloadDeserializer = AutoSerialization.GetSerializer<S>();
-                        if (this.timeDeserializer == null)
-                            this.timeDeserializer = AutoSerialization.GetSerializer<T>();
-                        return OneTimePerMessageAutoSerializedMessageEncoder<S, T>.Elements(messageBody, this.payloadDeserializer, this.timeDeserializer);
-                    default:
-                        Debug.Assert(false);
-                        throw new NotImplementedException(string.Format("Unrecognized mode enum: {0}", modeInt));
-                }
-            }
-            else
-                return Enumerable.Empty<Pair<S, T>>();
-            
-            
-        }
-
-        public IEnumerable<Pair<T, int>> Times(SerializedMessage message)
-        {
-
-            RecvBuffer messageBody = message.Body;
-            int modeInt;
-            bool success = PrimitiveSerializers.Int32.TryDeserialize(ref messageBody, out modeInt);
-
-            if (success)
-            {
-                AutoSerializationMode mode = (AutoSerializationMode)modeInt;
-                switch (mode)
-                {
-                    case AutoSerializationMode.Basic:
-                        if (this.deserializer == null)
-                            this.deserializer = AutoSerialization.GetSerializer<Pair<S, T>>();
-                        return BasicAutoSerializedMessageEncoder<S, T>.Times(messageBody, this.deserializer);
-                    case AutoSerializationMode.OneTimePerMessage:
-                        if (this.payloadDeserializer == null)
-                            this.payloadDeserializer = AutoSerialization.GetSerializer<S>();
-                        if (this.timeDeserializer == null)
-                            this.timeDeserializer = AutoSerialization.GetSerializer<T>();
-                        return OneTimePerMessageAutoSerializedMessageEncoder<S, T>.Times(messageBody, this.payloadDeserializer, this.timeDeserializer);
-                    default:
-                        throw new NotImplementedException(string.Format("Unrecognized mode enum: {0}", modeInt));
-                }
-            }
-            else
-                return Enumerable.Empty<Pair<T, int>>();
-            
-        }
-
-        public AutoSerializedMessageDecoder()
-        {
-
+            this.CodeGenerator = codeGenerator;
         }
     }
 }

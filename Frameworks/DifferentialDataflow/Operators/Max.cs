@@ -23,30 +23,30 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Linq.Expressions;
-using Naiad.DataStructures;
-using Naiad.Dataflow;
+using Microsoft.Research.Naiad.DataStructures;
+using Microsoft.Research.Naiad.Dataflow;
 
-namespace Naiad.Frameworks.DifferentialDataflow.Operators
+namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Operators
 {
-    internal class Max<K, V, S, T> : OperatorImplementations.UnaryStatefulOperator<K, V, S, T, S>
+    internal class Max<K, V, M, S, T> : OperatorImplementations.ConservativeUnaryStatefulOperator<K, V, S, T, S>
         where K : IEquatable<K>
         where V : IEquatable<V>
         where S : IEquatable<S>
-        where T : Naiad.Time<T>
+        where M : IComparable<M>
+        where T : Microsoft.Research.Naiad.Time<T>
     {
-        Func<K, V, int> valueSelector;
+        Func<K, V, M> valueSelector;
         Func<K, V, S> resultSelector;
 
         protected override void Reduce(K key, UnaryKeyIndices keyIndices, int timeIndex)
         {
             var maxFound = false;
-            var maxValue = Int32.MaxValue;
+            var maxValue = default(M);
             var maxEntry = default(V);
 
             collection.Clear();
             inputTrace.EnumerateCollectionAt(keyIndices.processed, timeIndex, collection);
-            //while (collection.AdvanceToValid())
-            //foreach (var element in inputTrace.EnumerateCollectionAt(keyIndices.processed, timeIndex))
+
             for (int i = 0; i < collection.Count; i++)
             {
                 var element = collection.Array[i];
@@ -54,7 +54,7 @@ namespace Naiad.Frameworks.DifferentialDataflow.Operators
                 if (element.weight > 0)
                 {
                     var value = valueSelector(key, element.record);
-                    if (maxValue < value || maxFound == false)
+                    if (maxFound == false || maxValue.CompareTo(value) < 0)
                     {
                         maxFound = true;
                         maxValue = value;
@@ -67,7 +67,7 @@ namespace Naiad.Frameworks.DifferentialDataflow.Operators
                 outputTrace.Introduce(ref outputWorkspace, resultSelector(key, maxEntry), 1, timeIndex);
         }
 
-        public Max(int index, Stage<T> collection, bool inputImmutable, Expression<Func<S, K>> k, Expression<Func<S, V>> e, Expression<Func<K, V, int>> v, Expression<Func<K, V, S>> r)
+        public Max(int index, Stage<T> collection, bool inputImmutable, Expression<Func<S, K>> k, Expression<Func<S, V>> e, Expression<Func<K, V, M>> v, Expression<Func<K, V, S>> r)
             : base(index, collection, inputImmutable, k, e)
         {
             valueSelector = v.Compile();

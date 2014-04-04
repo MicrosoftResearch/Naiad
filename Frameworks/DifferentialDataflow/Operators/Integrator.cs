@@ -22,17 +22,17 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Naiad;
-using Naiad.Dataflow.Channels;
-using Naiad.Runtime.Controlling;
-using Naiad.Dataflow;
-using Naiad.Frameworks;
-using Naiad.Scheduling;
-using Naiad.Frameworks.DifferentialDataflow;
+using Microsoft.Research.Naiad;
+using Microsoft.Research.Naiad.Dataflow.Channels;
+using Microsoft.Research.Naiad.Runtime.Controlling;
+using Microsoft.Research.Naiad.Dataflow;
+using Microsoft.Research.Naiad.Frameworks;
+using Microsoft.Research.Naiad.Scheduling;
+using Microsoft.Research.Naiad.Frameworks.DifferentialDataflow;
 
-namespace Naiad.Frameworks.DifferentialDataflow.Operators
+namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Operators
 {
-    public class IntegratorShard<R> : Vertex<Epoch>
+    public class IntegratorVertex<R> : Vertex<Epoch>
         where R : IEquatable<R>
     {
         private readonly VertexInputBuffer<Weighted<R>, Epoch> input;
@@ -42,14 +42,14 @@ namespace Naiad.Frameworks.DifferentialDataflow.Operators
 
         public static Stream<Weighted<R>, Epoch> NewStage(Stream<Weighted<R>, Epoch> source)
         {
-            var stage = Foundry.NewStage(source.Context, (i, v) => new IntegratorShard<R>(i, v), "Integrator");
+            var stage = Foundry.NewStage(source.Context, (i, v) => new IntegratorVertex<R>(i, v), "Integrator");
 
-            stage.NewInput(source, shard => shard.input, source.PartitionedBy);
+            stage.NewInput(source, vertex => vertex.input, source.PartitionedBy);
 
-            return stage.NewOutput(shard => shard.output, source.PartitionedBy);
+            return stage.NewOutput(vertex => vertex.output, source.PartitionedBy);
         }
 
-        public override void OnDone(Epoch time)
+        public override void OnNotify(Epoch time)
         {
             var newRecords = this.input.GetRecordsAt(time);
 
@@ -63,15 +63,12 @@ namespace Naiad.Frameworks.DifferentialDataflow.Operators
                     this.currentIntegration[record.record] = currentWeight + record.weight;
             }
 
+            var output = this.output.GetBufferForTime(time);
             foreach (var pair in this.currentIntegration)
-            {
-                this.output.Send(pair.Key.ToWeighted(pair.Value), time);
-            }
-
-            this.output.Flush();
+                output.Send(pair.Key.ToWeighted(pair.Value));
         }
 
-        public IntegratorShard(int index, Stage<Epoch> stage)
+        public IntegratorVertex(int index, Stage<Epoch> stage)
             : base(index, stage)
         {
             this.input = new VertexInputBuffer<Weighted<R>, Epoch>(this);

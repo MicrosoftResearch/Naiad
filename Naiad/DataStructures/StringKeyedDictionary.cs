@@ -24,7 +24,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Naiad.DataStructures
+namespace Microsoft.Research.Naiad.DataStructures
 {
     internal struct StringKey
     {

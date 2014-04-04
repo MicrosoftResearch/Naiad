@@ -22,11 +22,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Naiad.DataStructures;
+using Microsoft.Research.Naiad.DataStructures;
 using System.Diagnostics;
-using Naiad.Scheduling;
+using Microsoft.Research.Naiad.Scheduling;
 
-namespace Naiad.Dataflow.Channels
+namespace Microsoft.Research.Naiad.Dataflow.Channels
 {
     internal class PipelineChannel<S, T> : Cable<S, T>
         where T : Time<T>
@@ -37,26 +37,14 @@ namespace Naiad.Dataflow.Channels
             private readonly int index;
             private VertexInput<S, T> receiver;
 
-            public int RecordSizeHint
-            {
-                get
-                {
-                    return int.MaxValue;
-                }
-            }
+            public int RecordSizeHint { get { return int.MaxValue; } }
 
             public void Drain() 
             { 
                 //throw new Exception("Attempting to Drain a pipeline channel"); 
             }
 
-            public Cable<S, T> ChannelBundle
-            {
-                get
-                {
-                    return this.bundle;
-                }
-            }
+            public Cable<S, T> ChannelBundle { get { return this.bundle; } }
 
             public Fiber(PipelineChannel<S, T> bundle, VertexInput<S, T> receiver, int index)
             {
@@ -65,14 +53,9 @@ namespace Naiad.Dataflow.Channels
                 this.receiver = receiver;
             }
 
-            public void Send(Pair<S, T> record)
+            public void Send(Message<S, T> records)
             {
-                this.receiver.RecordReceived(record, new RemotePostbox());
-            }
-
-            public void Send(Message<Pair<S, T>> records)
-            {
-                this.receiver.MessageReceived(records, new RemotePostbox());
+                this.receiver.OnReceive(records, new RemotePostbox());
             }
 
             public override string ToString()
@@ -80,6 +63,7 @@ namespace Naiad.Dataflow.Channels
                 return string.Format("Pipeline({0} => {1})", this.bundle.SourceStage, this.bundle.DestinationStage);
             }
 
+#if false
             public bool Recv(ref Message<Pair<S, T>> message)
             {
                 ThreadLocalBufferPools<Pair<S, T>>.pool.Value.CheckIn(message.payload);
@@ -87,7 +71,7 @@ namespace Naiad.Dataflow.Channels
                 message.length = -1;
                 return message.length >= 0;
             }
-
+#endif
             public void Flush()
             {
                 this.receiver.Flush();

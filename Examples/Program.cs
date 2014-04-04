@@ -24,7 +24,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using Naiad;
+using Microsoft.Research.Naiad;
 
 namespace Examples
 {
@@ -46,7 +46,9 @@ namespace Examples
             examples.Add("wordcount", new WordCount.WordCount());
             examples.Add("lookup", new KeyValueLookup.KeyValueLookup());
             examples.Add("connectedcomponents", new ConnectedComponents.ConnectedComponents());
-            examples.Add("throughput", new Throughput.Throughput());
+
+            examples.Add("benchmark-throughput", new Throughput.Throughput());
+            examples.Add("benchmark-latency", new Latency.Latency());
 
             // also load up some differential dataflow examples
             examples.Add("dd-stronglyconnectedcomponents", new DifferentialDataflow.SCC());
@@ -55,6 +57,10 @@ namespace Examples
             examples.Add("dd-searchindex", new DifferentialDataflow.SearchIndex());
             examples.Add("dd-graphcoloring", new DifferentialDataflow.GraphColoring());
             
+            // and some Azure examples
+            examples.Add("azure-graphgenerator", new Examples.Azure.GraphGenerator());
+            examples.Add("azure-connectedcomponents", new Examples.Azure.ConnectedComponents());
+
             // determine which exmample was asked for
             if (args.Length == 0 || !examples.ContainsKey(args[0].ToLower()))
             {
@@ -71,12 +77,13 @@ namespace Examples
                 var example = args[0].ToLower();
                 if (args.Contains("--help") || args.Contains("/?") || args.Contains("--usage"))
                 {
-                    Console.Error.WriteLine("Usage: NaiadExamples.exe {0} {1} [naiad options]", example, examples[example].Usage);
+                    Console.Error.WriteLine("Usage: Examples.exe {0} {1} [naiad options]", example, examples[example].Usage);
                     Configuration.Usage();
                 }
                 else
                 {
-                    Logging.LogLevel = LoggingLevel.Off;
+                    Logging.LogLevel = LoggingLevel.Error;
+                    Logging.LogStyle = LoggingStyle.Console;
 
                     examples[example].Execute(args);
                 }

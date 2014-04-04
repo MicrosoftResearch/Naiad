@@ -26,15 +26,15 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Net.Sockets;
 using System.Text;
-using Naiad.Dataflow.Channels;
-using Naiad.FaultTolerance;
-using Naiad.Frameworks;
-using Naiad.Scheduling;
+using Microsoft.Research.Naiad.Dataflow.Channels;
+using Microsoft.Research.Naiad.FaultTolerance;
+using Microsoft.Research.Naiad.Frameworks;
+using Microsoft.Research.Naiad.Scheduling;
 using System.Collections.Concurrent;
-using Naiad.Runtime.Networking;
+using Microsoft.Research.Naiad.Runtime.Networking;
 using System.Threading;
 
-namespace Naiad.Runtime.Controlling
+namespace Microsoft.Research.Naiad.Runtime.Controlling
 {
     internal interface InternalWorkerGroup : WorkerGroup
     {

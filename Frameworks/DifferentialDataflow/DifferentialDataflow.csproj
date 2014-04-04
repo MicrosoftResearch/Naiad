@@ -7,8 +7,8 @@
     <ProjectGuid>{A6BEE749-A036-4A34-80CD-689C496D1A56}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>DifferentialDataflow</RootNamespace>
-    <AssemblyName>DifferentialDataflow</AssemblyName>
+    <RootNamespace>Microsoft.Research.Naiad.Frameworks.DifferentialDataflow</RootNamespace>
+    <AssemblyName>Microsoft.Research.Naiad.DifferentialDataflow</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile>Client</TargetFrameworkProfile>
@@ -38,6 +38,7 @@
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Prefer32Bit>false</Prefer32Bit>
+    <DocumentationFile>bin\Release\Microsoft.Research.Naiad.DifferentialDataflow.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup>
     <SignAssembly>true</SignAssembly>
@@ -110,6 +111,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="Microsoft.Research.Naiad.DifferentialDataflow.nuspec" />
     <None Include="NaiadLINQ.snk" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

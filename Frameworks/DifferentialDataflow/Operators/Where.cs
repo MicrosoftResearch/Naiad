@@ -25,23 +25,24 @@ using System.Text;
 
 using System.Collections.Concurrent;
 using System.Linq.Expressions;
-using Naiad.Dataflow;
+using Microsoft.Research.Naiad.Dataflow;
 
-namespace Naiad.Frameworks.DifferentialDataflow.Operators
+namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Operators
 {
 
-    internal class Where<S, T> : Naiad.Frameworks.UnaryVertex<Weighted<S>, Weighted<S>, T>
+    internal class Where<S, T> : Microsoft.Research.Naiad.Frameworks.UnaryVertex<Weighted<S>, Weighted<S>, T>
         //OperatorImplementations.UnaryStatelessOperator<S, S, T>
         where S : IEquatable<S>
-        where T : Naiad.Time<T> 
+        where T : Microsoft.Research.Naiad.Time<T> 
     {
         protected Func<S, bool> predicate;
         
-        public override void MessageReceived(Naiad.Dataflow.Message<Naiad.Pair<Weighted<S>, T>> elements)
+        public override void OnReceive(Message<Weighted<S>, T> message)
         {
-            for (int i = 0; i < elements.length; i++)
-                if (predicate(elements.payload[i].v1.record))
-                    this.Output.Send(elements.payload[i].v1, elements.payload[i].v2);
+            var output = this.Output.GetBufferForTime(message.time);
+            for (int i = 0; i < message.length; i++)
+                if (predicate(message.payload[i].record))
+                    output.Send(message.payload[i]);
         }
 
         public Where(int index, Stage<T> collection, Expression<Func<S, bool>> pred)

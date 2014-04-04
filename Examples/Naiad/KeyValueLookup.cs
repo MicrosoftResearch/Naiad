@@ -24,8 +24,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using Naiad;
-using Naiad.Dataflow;
+using Microsoft.Research.Naiad;
+using Microsoft.Research.Naiad.Dataflow;
 
 namespace Examples.KeyValueLookup
 {
@@ -34,34 +34,34 @@ namespace Examples.KeyValueLookup
         // key-value pairs on the first input are retrieved via the second input.
         public static Stream<Pair<TKey, TValue>, Epoch> KeyValueLookup<TKey, TValue>(this Stream<Pair<TKey, TValue>, Epoch> kvpairs, Stream<TKey, Epoch> requests)
         {
-            return Naiad.Frameworks.Foundry.NewBinaryStage(kvpairs, requests, (i, s) => new KeyValueLookupVertex<TKey, TValue>(i, s), x => x.v1.GetHashCode(), y => y.GetHashCode(), null, "Lookup");
+            return Microsoft.Research.Naiad.Frameworks.Foundry.NewBinaryStage(kvpairs, requests, (i, s) => new KeyValueLookupVertex<TKey, TValue>(i, s), x => x.v1.GetHashCode(), y => y.GetHashCode(), null, "Lookup");
         }
 
         /// <summary>
         /// A vertex storing (key, value) pairs received on one input, and reporting pairs requested on the other.
-        /// Note: no attempt made at consistency; queueing updates or requests and using OnDone could help out here.
+        /// Note: no attempt made at consistency; queueing updates or requests and using OnNotify could help out here.
         /// </summary>
         /// <typeparam name="TKey">key type</typeparam>
         /// <typeparam name="TValue">value type</typeparam>
-        public class KeyValueLookupVertex<TKey, TValue> : Naiad.Frameworks.BinaryVertex<Pair<TKey, TValue>, TKey, Pair<TKey, TValue>, Epoch>
+        public class KeyValueLookupVertex<TKey, TValue> : Microsoft.Research.Naiad.Frameworks.BinaryVertex<Pair<TKey, TValue>, TKey, Pair<TKey, TValue>, Epoch>
         {
             private readonly Dictionary<TKey, TValue> Values = new Dictionary<TKey, TValue>();
 
-            public override void MessageReceived1(Message<Pair<Pair<TKey, TValue>, Epoch>> message)
+            public override void OnReceive1(Message<Pair<TKey, TValue>, Epoch> message)
             {
                 for (int i = 0; i < message.length; i++)
-                    this.Values[message.payload[i].v1.v1] = message.payload[i].v1.v2;
+                    this.Values[message.payload[i].v1] = message.payload[i].v2;
             }
 
-            public override void MessageReceived2(Message<Pair<TKey, Epoch>> message)
+            public override void OnReceive2(Message<TKey, Epoch> message)
             {
+                var output = this.Output.GetBufferForTime(message.time);
+
                 for (int i = 0; i < message.length; i++)
                 {
-                    var key = message.payload[i].v1;
-                    var time = message.payload[i].v2;
-
+                    var key = message.payload[i];
                     if (this.Values.ContainsKey(key))
-                        this.Output.Send(key.PairWith(this.Values[key]), time);
+                        output.Send(key.PairWith(this.Values[key]));
                 }
             }
 
@@ -75,18 +75,18 @@ namespace Examples.KeyValueLookup
 
         public void Execute(string[] args)
         {
-            using (var controller = Naiad.NewController.FromArgs(ref args))
+            using (var controller = Microsoft.Research.Naiad.NewController.FromArgs(ref args))
             {
-                using (var graph = controller.NewGraph())
+                using (var manager = controller.NewComputation())
                 {
                     var keyvals = new BatchedDataSource<Pair<string, string>>();
                     var queries = new BatchedDataSource<string>();
 
-                    graph.NewInput(keyvals)
-                         .KeyValueLookup(graph.NewInput(queries))
+                    manager.NewInput(keyvals)
+                         .KeyValueLookup(manager.NewInput(queries))
                          .Subscribe(list => { foreach (var l in list) Console.WriteLine("value[\"{0}\"]:\t\"{1}\"", l.v1, l.v2); });
 
-                    graph.Activate();
+                    manager.Activate();
 
                     if (controller.Configuration.ProcessID == 0)
                     {
@@ -117,7 +117,7 @@ namespace Examples.KeyValueLookup
                     keyvals.OnCompleted();
                     queries.OnCompleted();
 
-                    graph.Join();
+                    manager.Join();
                 }
 
                 controller.Join();

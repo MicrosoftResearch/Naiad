@@ -24,9 +24,9 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 
-using Naiad.Dataflow.Channels;
+using Microsoft.Research.Naiad.Dataflow.Channels;
 
-namespace Naiad.Dataflow
+namespace Microsoft.Research.Naiad.Dataflow
 {
     /// <summary>
     /// Represents a stream of records each tagged with a time.

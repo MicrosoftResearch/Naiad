@@ -24,7 +24,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Naiad.Util
+namespace Microsoft.Research.Naiad.Util
 {
     public class DependencyLister : MarshalByRefObject
     {

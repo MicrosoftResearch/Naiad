@@ -23,11 +23,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
-using Naiad.Dataflow.Channels;
-using Naiad.Dataflow;
-using Naiad.Frameworks;
+using Microsoft.Research.Naiad.Dataflow.Channels;
+using Microsoft.Research.Naiad.Dataflow;
+using Microsoft.Research.Naiad.Frameworks;
 
-namespace Naiad.Dataflow.PartitionBy
+namespace Microsoft.Research.Naiad.Dataflow.PartitionBy
 {
     public static class ExtensionMethods
     {
@@ -35,7 +35,7 @@ namespace Naiad.Dataflow.PartitionBy
             where T : Time<T>
         {
             // if the data are already partitioned correctly (or claim to be) just return the stream.
-            if (partitionBy == null || Naiad.CodeGeneration.ExpressionComparer.Instance.Equals(stream.PartitionedBy, partitionBy))
+            if (partitionBy == null || Microsoft.Research.Naiad.CodeGeneration.ExpressionComparer.Instance.Equals(stream.PartitionedBy, partitionBy))
                 return stream;
 
             return Foundry.NewUnaryStage(stream, (i, v) => new PartitionByVertex<R, T>(i, v, null), partitionBy, partitionBy, "PartitionBy");
@@ -54,17 +54,17 @@ namespace Naiad.Dataflow.PartitionBy
         }
     }
 
-    internal class PartitionByVertex<R, T> : Naiad.Frameworks.UnaryVertex<R, R, T>
+    internal class PartitionByVertex<R, T> : Microsoft.Research.Naiad.Frameworks.UnaryVertex<R, R, T>
         where T : Time<T>
     {
         private readonly Func<R,int> key;
-        private readonly int Shards;
+        private readonly int Vertices;
 
-        public override void MessageReceived(Message<Pair<R, T>> message)
+        public override void OnReceive(Message<R, T> message)
         {
             for (int i = 0; i < message.length; ++i)
-                if (key != null && (key(message.payload[i].v1) % this.Shards != this.VertexId))
-                    Console.Error.WriteLine("Partitioning error {0} in shard {1}", message.payload[i], this.VertexId);
+                if (key != null && (key(message.payload[i]) % this.Vertices != this.VertexId))
+                    Console.Error.WriteLine("Partitioning error {0} in vertex {1}", message.payload[i], this.VertexId);
 
             this.Output.Send(message);
         }
@@ -75,7 +75,7 @@ namespace Naiad.Dataflow.PartitionBy
             : base(index, stage)
         {
             this.key = keyFunc == null ? null : keyFunc.Compile();
-            this.Shards = this.Stage.Placement.Count;
+            this.Vertices = this.Stage.Placement.Count;
         }
     }
 }

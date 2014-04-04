@@ -24,7 +24,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Naiad
+namespace Microsoft.Research.Naiad
 {
     public static class NativeSASerializers {
         
@@ -294,6 +294,7 @@ namespace Naiad
             return target;
         }
 
+#if false
         public static SubArray<byte> Serialize<K, V>(this SubArray<byte> target, Dictionary<K, V> dictionary)
         {
             var temp = dictionary.Select(x => new Pair<K, V>(x.Key, x.Value)).ToArray();
@@ -301,6 +302,7 @@ namespace Naiad
             serializer.Serialize(ref target, temp);
             return target;
         }
+#endif
 
         public static unsafe SubArray<byte> Serialize(this SubArray<byte> target, string source)
         {
@@ -486,6 +488,7 @@ namespace Naiad
 
     public static class Deserializers
     {
+#if false
         public static bool TryDeserialize<K, V>(ref RecvBuffer source, out Dictionary<K, V> dictionary)
         {
             var thingy = default(Pair<K, V>[]);
@@ -498,6 +501,7 @@ namespace Naiad
 
             return result;
         }
+#endif
 
         public unsafe static bool TryDeserialize(ref RecvBuffer source, out bool value)
         {

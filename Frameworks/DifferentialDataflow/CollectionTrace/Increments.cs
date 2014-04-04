@@ -23,7 +23,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Naiad.Frameworks.DifferentialDataflow.CollectionTrace
+namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.CollectionTrace
 {
 
     public struct CollectionTraceWithHeapIncrement : IEquatable<CollectionTraceWithHeapIncrement>

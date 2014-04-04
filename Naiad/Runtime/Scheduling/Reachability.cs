@@ -22,10 +22,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Naiad.Runtime.Controlling;
-using Naiad.DataStructures;
+using Microsoft.Research.Naiad.Runtime.Controlling;
+using Microsoft.Research.Naiad.DataStructures;
 
-namespace Naiad.Scheduling
+namespace Microsoft.Research.Naiad.Scheduling
 {
     internal class Reachability
     {

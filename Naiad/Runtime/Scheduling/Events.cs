@@ -23,7 +23,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Naiad.Scheduling
+namespace Microsoft.Research.Naiad.Scheduling
 {
     public class SchedulerStartArgs : EventArgs
     {
@@ -62,14 +62,14 @@ namespace Naiad.Scheduling
     {
         public readonly int ThreadId;
         public readonly Dataflow.Stage Stage;
-        public readonly int ShardId;
+        public readonly int VertexId;
         public readonly Pointstamp Pointstamp;
 
-        public OperatorStartArgs(int threadId, Dataflow.Stage stage, int shardId, Pointstamp pointstamp)
+        public OperatorStartArgs(int threadId, Dataflow.Stage stage, int vertexId, Pointstamp pointstamp)
         {
             this.ThreadId = threadId;
             this.Stage = stage;
-            this.ShardId = shardId;
+            this.VertexId = vertexId;
             this.Pointstamp = pointstamp;
         }
     }
@@ -77,14 +77,14 @@ namespace Naiad.Scheduling
     {
         public readonly int ThreadId;
         public readonly Dataflow.Stage Stage;
-        public readonly int ShardId;
+        public readonly int VertexId;
         public readonly Pointstamp Pointstamp;
 
-        public OperatorEndArgs(int threadId, Dataflow.Stage stage, int shardId, Pointstamp pointstamp)
+        public OperatorEndArgs(int threadId, Dataflow.Stage stage, int vertexId, Pointstamp pointstamp)
         {
             this.ThreadId = threadId;
             this.Stage = stage;
-            this.ShardId = shardId;
+            this.VertexId = vertexId;
             this.Pointstamp = pointstamp;
         }
     }
@@ -92,14 +92,14 @@ namespace Naiad.Scheduling
     {
         public readonly int ThreadId;
         public readonly Dataflow.Stage Stage;
-        public readonly int ShardId;
+        public readonly int VertexId;
         public readonly Pointstamp Pointstamp;
 
-        public OperatorEnqArgs(int threadId, Dataflow.Stage stage, int shardId, Pointstamp pointstamp)
+        public OperatorEnqArgs(int threadId, Dataflow.Stage stage, int vertexId, Pointstamp pointstamp)
         {
             this.ThreadId = threadId;
             this.Stage = stage;
-            this.ShardId = shardId;
+            this.VertexId = vertexId;
             this.Pointstamp = pointstamp;
         }
     }
@@ -107,13 +107,13 @@ namespace Naiad.Scheduling
     public class OperatorReceiveArgs : EventArgs
     {
         public readonly Dataflow.Stage Stage;
-        public readonly int ShardId;
+        public readonly int VertexId;
         public readonly int ChannelId;
         public readonly int Count;
-        public OperatorReceiveArgs(Dataflow.Stage stage, int shardId, int channelId, int count)
+        public OperatorReceiveArgs(Dataflow.Stage stage, int vertexId, int channelId, int count)
         {
             this.Stage = stage;
-            this.ShardId = shardId;
+            this.VertexId = vertexId;
             this.ChannelId = channelId;
             this.Count = count;
         }
@@ -121,13 +121,13 @@ namespace Naiad.Scheduling
     public class OperatorSendArgs : EventArgs
     {
         public readonly Dataflow.Stage Stage;
-        public readonly int ShardId;
+        public readonly int VertexId;
         public readonly int ChannelId;
         public readonly int Count;
-        public OperatorSendArgs(Dataflow.Stage stage, int shardId, int channelId, int count)
+        public OperatorSendArgs(Dataflow.Stage stage, int vertexId, int channelId, int count)
         {
             this.Stage = stage;
-            this.ShardId = shardId;
+            this.VertexId = vertexId;
             this.ChannelId = channelId;
             this.Count = count;
         }

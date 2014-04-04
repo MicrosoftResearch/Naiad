@@ -23,8 +23,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-using Naiad;
-using Naiad.Frameworks.DifferentialDataflow;
+using Microsoft.Research.Naiad;
+using Microsoft.Research.Naiad.Frameworks.DifferentialDataflow;
 
 namespace Examples.DifferentialDataflow
 {
@@ -130,7 +130,7 @@ namespace Examples.DifferentialDataflow
 
                 #endregion
 
-                using (var manager = controller.NewGraph())
+                using (var manager = controller.NewComputation())
                 {
                     // declare inputs for documents and queries.
                     var documents = new IncrementalCollection<Document>(manager);
@@ -166,7 +166,7 @@ namespace Examples.DifferentialDataflow
 
                     //Console.WriteLine("Example SearchIndex in Naiad. Step 1: indexing documents, step 2: issuing queries.");
                     Console.WriteLine("Indexing {0} random documents, {1} terms (please wait)", documentCount, 10 * documentCount);
-                    subscription.Sync(0);
+                    subscription.Sync(new Epoch(0));
 
                     #endregion
 
@@ -186,8 +186,8 @@ namespace Examples.DifferentialDataflow
                         else
                             queries.OnNext();
 
-                        documents.OnNext();         // indicate no new docs.
-                        subscription.Sync(i + 1);          // block until round is done.
+                        documents.OnNext();                     // indicate no new docs.
+                        subscription.Sync(new Epoch(i + 1));    // block until round is done.
                     }
 
                     documents.OnCompleted();

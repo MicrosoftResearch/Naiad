@@ -18,31 +18,33 @@
  * permissions and limitations under the License.
  */
 
-using Naiad.Dataflow;
+using Microsoft.Research.Naiad.Dataflow;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Naiad.Frameworks.DifferentialDataflow.Operators
+namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Operators
 {
     internal class Except<S,T> : BinaryVertex<Weighted<S>, Weighted<S>, Weighted<S>, T>
         where S : IEquatable<S>
-        where T : Naiad.Time<T>
+        where T : Microsoft.Research.Naiad.Time<T>
     {
-        public override void MessageReceived1(Naiad.Dataflow.Message<Naiad.Pair<Weighted<S>, T>> message)
+        public override void OnReceive1(Message<Weighted<S>, T> message)
         {
             this.Output.Send(message);
         }
 
-        public override void MessageReceived2(Naiad.Dataflow.Message<Naiad.Pair<Weighted<S>, T>> message)
+        public override void OnReceive2(Message<Weighted<S>, T> message)
         {
+            var outputBuffer = this.Output.GetBufferForTime(message.time);
+
             for (int i = 0; i < message.length; i++)
             {
                 var record = message.payload[i];
-                record.v1.weight *= -1;
+                record.weight *= -1;
 
-                this.Output.Send(record.v1, record.v2);
+                outputBuffer.Send(record);
             }
         }
 

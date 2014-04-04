@@ -22,15 +22,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Naiad.Dataflow.Channels;
-using Naiad.CodeGeneration;
-using Naiad.DataStructures;
-using Naiad.FaultTolerance;
-using Naiad.Scheduling;
+using Microsoft.Research.Naiad.Dataflow.Channels;
+using Microsoft.Research.Naiad.CodeGeneration;
+using Microsoft.Research.Naiad.DataStructures;
+using Microsoft.Research.Naiad.FaultTolerance;
+using Microsoft.Research.Naiad.Scheduling;
 
-namespace Naiad.Runtime.Progress
+namespace Microsoft.Research.Naiad.Runtime.Progress
 {
-    internal class PointstampCountSet : ICheckpointable
+    internal class PointstampCountSet
     {
         internal readonly Dictionary<Pointstamp, Int64> Counts = new Dictionary<Pointstamp, Int64>();
         private readonly PointstampFrontier actualFrontier;
@@ -73,19 +73,19 @@ namespace Naiad.Runtime.Progress
             return Frontier != oldFrontier;
         }
 
-        public void Checkpoint(NaiadWriter writer)
+        public void Checkpoint(NaiadWriter writer, NaiadSerialization<Int64> longSerializer, NaiadSerialization<Pointstamp> pointstampSerializer, NaiadSerialization<int> intSerializer)
         {
 
-            this.Counts.Checkpoint(writer, Pointstamp.Serializer, PrimitiveSerializers.Int64);
-            this.actualFrontier.Checkpoint(writer, Pointstamp.Serializer);
-            this.Frontier.Checkpoint(this.Frontier.Length, writer, Pointstamp.Serializer);
+            this.Counts.Checkpoint(writer);
+            this.actualFrontier.Checkpoint(writer);
+            this.Frontier.Checkpoint(this.Frontier.Length, writer);
         }
 
-        public void Restore(NaiadReader reader)
+        public void Restore(NaiadReader reader, NaiadSerialization<Int64> longSerializer, NaiadSerialization<Pointstamp> pointstampSerializer, NaiadSerialization<int> intSerializer)
         {
-            this.Counts.Restore(reader, Pointstamp.Serializer, PrimitiveSerializers.Int64);
-            this.actualFrontier.Restore(reader, Pointstamp.Serializer);
-            this.Frontier = FaultToleranceExtensionMethods.RestoreArray<Pointstamp>(reader, n => new Pointstamp[n], Pointstamp.Serializer);
+            this.Counts.Restore(reader);
+            this.actualFrontier.Restore(reader);
+            this.Frontier = FaultToleranceExtensionMethods.RestoreArray<Pointstamp>(reader, n => new Pointstamp[n]);
         }
 
         public bool Stateful { get { return true; } }

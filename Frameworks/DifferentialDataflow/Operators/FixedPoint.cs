@@ -25,9 +25,9 @@ using System.Text;
 
 using System.Collections.Concurrent;
 using System.IO;
-using Naiad;
+using Microsoft.Research.Naiad;
 
-namespace Naiad.Frameworks.DifferentialDataflow.Operators.FixedPoint
+namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Operators.FixedPoint
 {
 #if false
     internal class Ingress<S, T> : OperatorImplementations.UnaryStatelessOperator<S, T, S, IntPartialLattice<T>>

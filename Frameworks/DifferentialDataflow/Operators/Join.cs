@@ -25,15 +25,15 @@ using System.Text;
 
 using System.Collections.Concurrent;
 using System.Linq.Expressions;
-using Naiad.DataStructures;
-using Naiad.FaultTolerance;
-using Naiad.Dataflow.Channels;
-using Naiad.CodeGeneration;
-using Naiad;
-using Naiad.Dataflow;
-using Naiad.Frameworks;
+using Microsoft.Research.Naiad.DataStructures;
+using Microsoft.Research.Naiad.FaultTolerance;
+using Microsoft.Research.Naiad.Dataflow.Channels;
+using Microsoft.Research.Naiad.CodeGeneration;
+using Microsoft.Research.Naiad;
+using Microsoft.Research.Naiad.Dataflow;
+using Microsoft.Research.Naiad.Frameworks;
 
-namespace Naiad.Frameworks.DifferentialDataflow.Operators
+namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Operators
 {
     internal class Join<K, V1, V2, S1, S2, T, R> : OperatorImplementations.BinaryStatefulOperator<K, V1, V2, S1, S2, T, R>
         where K : IEquatable<K>
@@ -86,14 +86,11 @@ namespace Naiad.Frameworks.DifferentialDataflow.Operators
                     inputTrace2.EnumerateDifferenceAt(state.processed2, times.Array[i], differences2);
                     var newTime = time.Join(internTable.times[times.Array[i]]);
 
+                    var output = this.Output.GetBufferForTime(newTime);
+
                     for (int j = 0; j < differences2.Count; j++)
                         if (differences2.Array[j].weight != 0)
-                        {
-                            var result = resultSelector(k, v, differences2.Array[j].record);
-                            var weight = entry.weight * differences2.Array[j].weight;
-
-                            this.Output.Send(new Weighted<R>(result, weight), newTime);
-                        }
+                            output.Send(resultSelector(k, v, differences2.Array[j].record).ToWeighted(entry.weight * differences2.Array[j].weight));
                 }
             }
 
@@ -112,7 +109,7 @@ namespace Naiad.Frameworks.DifferentialDataflow.Operators
             if (!JoinKeys.TryGetValue(k, out state))
                 state = new JoinKeyIndices();
 
-            if (!inputShutdown1)//!this.inputImmutable1)
+            if (!inputShutdown1)
             {
                 inputTrace2.EnsureStateIsCurrentWRTAdvancedTimes(ref state.processed2);
                 inputTrace2.Introduce(ref state.processed2, v, entry.weight, internTable.Intern(time));
@@ -134,15 +131,11 @@ namespace Naiad.Frameworks.DifferentialDataflow.Operators
                     inputTrace1.EnumerateDifferenceAt(state.processed1, times.Array[i], differences1);
                     var newTime = time.Join(internTable.times[times.Array[i]]);
 
+                    var output = this.Output.GetBufferForTime(newTime);
+
                     for (int j = 0; j < differences1.Count; j++)
                         if (differences1.Array[j].weight != 0)
-                        {
-                            //Send(resultSelector(k, differences1.Array[j].record, v).ToNaiadRecord(entry.weight * differences1.Array[j].weight, newTime));
-                            var result = resultSelector(k, differences1.Array[j].record, v);
-                            var weight = entry.weight * differences1.Array[j].weight;
-
-                            this.Output.Send(new Weighted<R>(result, weight), newTime);
-                        }
+                            output.Send(resultSelector(k, differences1.Array[j].record, v).ToWeighted(entry.weight * differences1.Array[j].weight));
                 }
             }
 
@@ -166,7 +159,7 @@ namespace Naiad.Frameworks.DifferentialDataflow.Operators
         bool inputShutdown1 = false;    // set once an input is drained (typically: immutable, read once)
         bool inputShutdown2 = false;    // set once an input is drained (typically: immutable, read once)
 
-        public override void OnDone(T workTime)
+        public override void OnNotify(T workTime)
         {
             // if input is immutable, we can shut down the other trace
             if (this.inputImmutable1 && !inputShutdown1)
@@ -183,7 +176,7 @@ namespace Naiad.Frameworks.DifferentialDataflow.Operators
                 inputShutdown2 = true;
             }
 
-            base.OnDone(workTime);
+            base.OnNotify(workTime);
         }
 
         #region Checkpointing
@@ -199,7 +192,7 @@ namespace Naiad.Frameworks.DifferentialDataflow.Operators
             base.Checkpoint(writer);
             if (!this.isShutdown)
             {
-                this.JoinKeys.Checkpoint(writer, keySerializer, JoinKeyIndices.Serializer);
+                this.JoinKeys.Checkpoint(writer);
             }
         }
 
@@ -208,28 +201,24 @@ namespace Naiad.Frameworks.DifferentialDataflow.Operators
             base.Restore(reader);
             if (!this.isShutdown)
             {
-                this.JoinKeys.Restore(reader, keySerializer, JoinKeyIndices.Serializer);
+                this.JoinKeys.Restore(reader);
             }
         }
 
         #endregion
 
-        public override void MessageReceived1(Message<Pair<Weighted<S1>, T>> message)
+        public override void OnReceive1(Message<Weighted<S1>, T> message)
         {
+            this.NotifyAt(message.time);
             for (int i = 0; i < message.length; i++)
-            {
-                this.OnInput1(message.payload[i].v1, message.payload[i].v2);
-                this.NotifyAt(message.payload[i].v2);
-            }
+                this.OnInput1(message.payload[i], message.time);
         }
 
-        public override void MessageReceived2(Message<Pair<Weighted<S2>, T>> message)
+        public override void OnReceive2(Message<Weighted<S2>, T> message)
         {
+            this.NotifyAt(message.time);
             for (int i = 0; i < message.length; i++)
-            {
-                this.OnInput2(message.payload[i].v1, message.payload[i].v2);
-                this.NotifyAt(message.payload[i].v2);
-            }            
+                this.OnInput2(message.payload[i], message.time);
         }
 
         public Join(int index, Stage<T> collection, bool input1Immutable, bool input2Immutable, Expression<Func<S1, K>> k1, Expression<Func<S2, K>> k2, Expression<Func<S1, V1>> v1, Expression<Func<S2, V2>> v2, Expression<Func<K, V1, V2, R>> r)
@@ -300,9 +289,11 @@ namespace Naiad.Frameworks.DifferentialDataflow.Operators
                     inputTrace2.EnumerateDifferenceAt(state.processed2, times.Array[i], differences2);
                     var newTime = time.Join(internTable.times[times.Array[i]]);
 
+                    var output = this.Output.GetBufferForTime(newTime);
+
                     for (int j = 0; j < differences2.Count; j++)
                         if (differences2.Array[j].weight != 0)
-                            this.Output.Send(resultSelector(k, v, differences2.Array[j].record).ToWeighted(entry.weight * differences2.Array[j].weight), newTime);
+                            output.Send(resultSelector(k, v, differences2.Array[j].record).ToWeighted(entry.weight * differences2.Array[j].weight));
                 }
             }
 
@@ -343,43 +334,17 @@ namespace Naiad.Frameworks.DifferentialDataflow.Operators
                     inputTrace1.EnumerateDifferenceAt(state.processed1, times.Array[i], differences1);
                     var newTime = time.Join(internTable.times[times.Array[i]]);
 
+                    var output = this.Output.GetBufferForTime(newTime);
+
                     for (int j = 0; j < differences1.Count; j++)
                         if (differences1.Array[j].weight != 0)
-                            this.Output.Send(resultSelector(k, differences1.Array[j].record, v).ToWeighted(entry.weight * differences1.Array[j].weight), newTime);
+                            output.Send(resultSelector(k, differences1.Array[j].record, v).ToWeighted(entry.weight * differences1.Array[j].weight));
                 }
             }
 
             JoinKeys[index / 65536][index % 65536] = state;
         }
 
-#if false
-        public override void DoWork(Naiad.Scheduling.VertexVersion version)
-        {
-            base.DoWork(version);
-
-            if (!inputShutdown1)
-            {
-                var immutable1 = inputTrace1 as CollectionTrace.CollectionTraceImmutable<V1>;
-                if (immutable1 != null)
-                {
-                    //Console.Error.WriteLine("Join: Shutting down input1");
-                    inputShutdown1 = true;
-                    inputTrace2 = null;
-                }
-            }
-
-            if (!inputShutdown2)
-            {
-                var immutable2 = inputTrace2 as CollectionTrace.CollectionTraceImmutable<V2>;
-                if (immutable2 != null)
-                {
-                    //Console.Error.WriteLine("Join: Shutting down input2");
-                    inputShutdown2 = true;
-                    inputTrace1 = null;
-                }
-            }
-        }
-#endif
         protected override void OnShutdown()
         {
             base.OnShutdown();
@@ -394,7 +359,7 @@ namespace Naiad.Frameworks.DifferentialDataflow.Operators
         bool inputShutdown1 = false;    // set once an input is drained (typically: immutable, read once)
         bool inputShutdown2 = false;    // set once an input is drained (typically: immutable, read once)
 
-        public override void OnDone(T workTime)
+        public override void OnNotify(T workTime)
         {
             if (this.inputImmutable1 && this.inputTrace1 != null)
                 this.inputTrace1.Compact();
@@ -419,7 +384,7 @@ namespace Naiad.Frameworks.DifferentialDataflow.Operators
                 inputShutdown2 = true;
             }
 
-            base.OnDone(workTime);
+            base.OnNotify(workTime);
         }
 
         #region Checkpointing
@@ -439,12 +404,12 @@ namespace Naiad.Frameworks.DifferentialDataflow.Operators
                 for (int i = 0; i < this.JoinKeys.Length; ++i)
                 {
                     if (this.JoinKeys[i] == null)
-                        writer.Write(-1, PrimitiveSerializers.Int32);
+                        writer.Write(-1);
                     else
                     {
-                        writer.Write(this.JoinKeys[i].Length, PrimitiveSerializers.Int32);
+                        writer.Write(this.JoinKeys[i].Length);
                         for (int j = 0; j < this.JoinKeys[i].Length; ++j)
-                            writer.Write(this.JoinKeys[i][j], JoinIntKeyIndices.Serializer);
+                            writer.Write(this.JoinKeys[i][j]);
                     }
                 }
             }
@@ -457,12 +422,12 @@ namespace Naiad.Frameworks.DifferentialDataflow.Operators
             {
                 for (int i = 0; i < this.JoinKeys.Length; ++i)
                 {
-                    int count = reader.Read<int>(PrimitiveSerializers.Int32);
+                    int count = reader.Read<int>();
                     if (count >= 0)
                     {
                         this.JoinKeys[i] = new JoinIntKeyIndices[count];
                         for (int j = 0; j < this.JoinKeys[i].Length; ++j)
-                            this.JoinKeys[i][j] = reader.Read<JoinIntKeyIndices>(JoinIntKeyIndices.Serializer);
+                            this.JoinKeys[i][j] = reader.Read<JoinIntKeyIndices>();
                     }
                     else
                         this.JoinKeys[i] = null;
@@ -472,22 +437,18 @@ namespace Naiad.Frameworks.DifferentialDataflow.Operators
 
         #endregion
 
-        public override void MessageReceived1(Message<Pair<Weighted<S1>, T>> message)
+        public override void OnReceive1(Message<Weighted<S1>, T> message)
         {
+            this.NotifyAt(message.time);
             for (int i = 0; i < message.length; i++)
-            {
-                this.OnInput1(message.payload[i].v1, message.payload[i].v2);
-                this.NotifyAt(message.payload[i].v2);
-            }
+                this.OnInput1(message.payload[i], message.time);
         }
 
-        public override void MessageReceived2(Message<Pair<Weighted<S2>, T>> message)
+        public override void OnReceive2(Message<Weighted<S2>, T> message)
         {
+            this.NotifyAt(message.time);
             for (int i = 0; i < message.length; i++)
-            {
-                this.OnInput2(message.payload[i].v1, message.payload[i].v2);
-                this.NotifyAt(message.payload[i].v2);
-            }
+                this.OnInput2(message.payload[i], message.time);
         }
 
         public JoinIntKeyed(int index, Stage<T> collection, bool input1Immutable, bool input2Immutable, Expression<Func<S1, Int32>> k1, Expression<Func<S2, Int32>> k2, Expression<Func<S1, V1>> v1, Expression<Func<S2, V2>> v2, Expression<Func<Int32, V1, V2, R>> r)

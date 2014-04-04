@@ -18,14 +18,14 @@
  * permissions and limitations under the License.
  */
 
-using Naiad.Runtime.Networking;
+using Microsoft.Research.Naiad.Runtime.Networking;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace Naiad.Dataflow.Channels
+namespace Microsoft.Research.Naiad.Dataflow.Channels
 {
     internal interface SerializedMessageSender
     {

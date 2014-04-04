@@ -23,26 +23,26 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Linq.Expressions;
-using Naiad.Dataflow;
+using Microsoft.Research.Naiad.Dataflow;
 
-namespace Naiad.Frameworks.DifferentialDataflow.Operators
+namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Operators
 {
     internal class SelectMany<S, T, R> : UnaryVertex<Weighted<S>, Weighted<R>, T>
         //OperatorImplementations.UnaryStatelessOperator<S, R, T>
         where S : IEquatable<S>
-        where T : Naiad.Time<T>
+        where T : Microsoft.Research.Naiad.Time<T>
         where R : IEquatable<R>
     {
         protected Func<S, IEnumerable<R>> selector;
 
-        public override void MessageReceived(Message<Pair<Weighted<S>, T>> message)
+        public override void OnReceive(Message<Weighted<S>, T> message)
         {
+            var output = this.Output.GetBufferForTime(message.time);
             for (int i = 0; i < message.length; i++)
             {
-                var record = message.payload[i].v1;
-                var time = message.payload[i].v2;
+                var record = message.payload[i];
                 foreach (var r in selector(record.record))
-                    this.Output.Send(new Weighted<R>(r, record.weight), time);
+                    output.Send(new Weighted<R>(r, record.weight));
             }
         }
         
@@ -60,21 +60,20 @@ namespace Naiad.Frameworks.DifferentialDataflow.Operators
 
     internal class SelectManyBatch<S, T, R> : UnaryVertex<Weighted<S>, Weighted<R>, T>
         where S : IEquatable<S>
-        where T : Naiad.Time<T>
+        where T : Microsoft.Research.Naiad.Time<T>
         where R : IEquatable<R>
     {
         protected Func<S, IEnumerable<ArraySegment<R>>> selector;
 
-        public override void MessageReceived(Message<Pair<Weighted<S>, T>> message)
+        public override void OnReceive(Message<Weighted<S>, T> message)
         {
+            var output = this.Output.GetBufferForTime(message.time);
             for (int i = 0; i < message.length; i++)
             {
-                var record = message.payload[i].v1;
-                var time = message.payload[i].v2;
-
+                var record = message.payload[i];
                 foreach (var r in selector(record.record))
                     for (int ii = 0; ii < r.Count; ii++)
-                        this.Output.Send(new Weighted<R>(r.Array[r.Offset + i], record.weight), time);
+                        output.Send(new Weighted<R>(r.Array[r.Offset + i], record.weight));
             }
         }
 

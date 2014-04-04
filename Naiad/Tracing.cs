@@ -27,10 +27,10 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
-using Naiad.Dataflow.Channels;
-using Naiad.Scheduling;
+using Microsoft.Research.Naiad.Dataflow.Channels;
+using Microsoft.Research.Naiad.Scheduling;
 
-namespace Naiad
+namespace Microsoft.Research.Naiad
 {
     /// <summary>
     /// ETW provider for Naiad 
@@ -76,7 +76,7 @@ namespace Naiad
         public void DataSend(MessageHeader msg)
         {
             if (Trace.IsEnabled(EventLevel.LogAlways, (Keywords.Network | Keywords.Viz)))
-                DataSend(msg.SequenceNumber, msg.Length, msg.FromShardID, msg.DestShardID);
+                DataSend(msg.SequenceNumber, msg.Length, msg.FromVertexID, msg.DestVertexID);
         }
 
         [Event(1, Task = Tasks.Channels, Opcode = EventOpcode.Send, Keywords = (Keywords.Network | Keywords.Viz))]
@@ -94,7 +94,7 @@ namespace Naiad
         public void DataRecv(MessageHeader msg)
         {
             if (Trace.IsEnabled(EventLevel.LogAlways, (Keywords.Network | Keywords.Viz)))
-                DataRecv(msg.SequenceNumber, msg.Length, msg.FromShardID, msg.DestShardID);
+                DataRecv(msg.SequenceNumber, msg.Length, msg.FromVertexID, msg.DestVertexID);
         }
 
         [Event(2, Task = Tasks.Channels, Opcode = EventOpcode.Receive, Keywords = (Keywords.Network | Keywords.Viz))]
@@ -112,7 +112,7 @@ namespace Naiad
         public void ProgressSend(MessageHeader msg)
         {
             if (Trace.IsEnabled(EventLevel.LogAlways, (Keywords.Network | Keywords.Viz)))
-                ProgressSend(msg.SequenceNumber, msg.Length, msg.FromShardID, msg.DestShardID);
+                ProgressSend(msg.SequenceNumber, msg.Length, msg.FromVertexID, msg.DestVertexID);
         }
 
         [Event(3, Task = Tasks.Channels, Opcode = EventOpcode.Send, Keywords = (Keywords.Network | Keywords.Viz))]
@@ -130,7 +130,7 @@ namespace Naiad
         public void ProgressRecv(MessageHeader msg)
         {
             if (Trace.IsEnabled(EventLevel.LogAlways, (Keywords.Network | Keywords.Viz)))
-                ProgressRecv(msg.SequenceNumber, msg.Length, msg.FromShardID, msg.DestShardID);
+                ProgressRecv(msg.SequenceNumber, msg.Length, msg.FromVertexID, msg.DestVertexID);
         }
 
         [Event(4, Task = Tasks.Channels, Opcode = EventOpcode.Receive, Keywords = (Keywords.Network | Keywords.Viz))]
@@ -152,7 +152,7 @@ namespace Naiad
         internal void StartSched(int schedulerid, Scheduler.WorkItem workitem)
         {
             if (Trace.IsEnabled(EventLevel.LogAlways, Keywords.Viz))
-                StartSched(schedulerid, workitem.Shard.Stage.StageId, workitem.Shard.Stage.Name, workitem.Requirement.Timestamp.ToString());
+                StartSched(schedulerid, workitem.Vertex.Stage.StageId, workitem.Vertex.Stage.Name, workitem.Requirement.Timestamp.ToString());
         }
 
         [Event(5, Task = Tasks.Scheduling, Opcode = EventOpcode.Start, Keywords = Keywords.Viz)]
@@ -172,7 +172,7 @@ namespace Naiad
         {
             //Console.WriteLine("]Sched {0} {1}", id, workitem.ToString());
             if (Trace.IsEnabled(EventLevel.LogAlways, Keywords.Viz))
-                StopSched(schedulerid, workitem.Shard.Stage.StageId, workitem.Shard.Stage.Name, workitem.Requirement.Timestamp.ToString());
+                StopSched(schedulerid, workitem.Vertex.Stage.StageId, workitem.Vertex.Stage.Name, workitem.Requirement.Timestamp.ToString());
             }
 
         [Event(6, Task = Tasks.Scheduling, Opcode = EventOpcode.Stop, Keywords = Keywords.Viz)]

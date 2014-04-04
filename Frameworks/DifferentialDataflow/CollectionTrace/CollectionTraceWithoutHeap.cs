@@ -22,10 +22,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Naiad.Dataflow.Channels;
-using Naiad.DataStructures;
+using Microsoft.Research.Naiad.Dataflow.Channels;
+using Microsoft.Research.Naiad.DataStructures;
 
-namespace Naiad.Frameworks.DifferentialDataflow.CollectionTrace
+namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.CollectionTrace
 {
     internal class CollectionTraceWithoutHeap<S> : CollectionTraceCheckpointable<S>
         where S : IEquatable<S>

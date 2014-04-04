@@ -25,79 +25,73 @@ using System.Text;
 
 using System.IO;
 using System.Collections.Concurrent;
-using Naiad.DataStructures;
-using Naiad.Dataflow.Channels;
+using Microsoft.Research.Naiad.DataStructures;
+using Microsoft.Research.Naiad.Dataflow.Channels;
 using System.Diagnostics;
 using System.Linq.Expressions;
 
-namespace Naiad.Dataflow
+namespace Microsoft.Research.Naiad.Dataflow
 {
-    public struct Message<T>
+    /// <summary>
+    /// A message containing typed records all with a common time
+    /// </summary>
+    /// <typeparam name="S">record type</typeparam>
+    /// <typeparam name="T">time type</typeparam>
+    public struct Message<S, T>
+        where T : Time<T>
     {
         private const int DEFAULT_MESSAGE_LENGTH = 256;
+        internal static S[] Empty = new S[] { };
 
-        public T[] payload;
+        /// <summary>
+        /// Payload of typed records
+        /// </summary>
+        public S[] payload;
+
+        /// <summary>
+        /// Number of valid typed records
+        /// </summary>
         public int length;
 
-        public IEnumerable<T> AsEnumerable() { return this.payload.Take(this.length); }
-
         /// <summary>
-        /// Construct a typed message using preallocated buffers
+        /// Time common to all records
         /// </summary>
-        /// <param name="payload">Message body</param>
-        /// 
-        /// 
-        public Message(T[] payload)
+        public T time;
+
+        internal bool Unallocated { get { return this.payload == null || this.payload == Message<S,T>.Empty; } }
+
+        internal void Allocate()
         {
-            this.payload = payload;
+            if (!this.Unallocated)
+                throw new Exception("Attempting to allocate an already allocated message.");
+
+            // acquire from a shared queue.
+            this.payload = ThreadLocalBufferPools<S>.pool.Value.CheckOut(DEFAULT_MESSAGE_LENGTH);                
+        }
+
+        internal void Release()
+        {
+            if (this.Unallocated)
+                throw new Exception("Attempting to release an unallocated message.");
+
+            // return to a shared queue.
+            ThreadLocalBufferPools<S>.pool.Value.CheckIn(this.payload);
+            
+            this.payload = Message<S, T>.Empty;
             this.length = 0;
         }
 
-        /// <summary>
-        /// Construct a typed message of default size
-        /// </summary>
-        /// <param name="pool">Pool from which to acquire message buffers</param>
-        /// 
-        /// 
-        public Message(BufferPool<T> pool)
-            : this(pool, DEFAULT_MESSAGE_LENGTH)
+        internal Message(T time)
         {
-
-        }
-
-        /// <summary>
-        /// Construct a typed message of specified size
-        /// </summary>
-        /// <param name="pool">Pool from which to acquire message buffers</param>
-        /// <param name="size">Required size in number of elements</param>
-        /// 
-        /// 
-        public Message(BufferPool<T> pool, int size)
-        {
-            this.payload = pool != null ? pool.CheckOut(size) : new T[size];
+            this.payload = Message<S, T>.Empty;
             this.length = 0;
-        }
-
-        public void Enable(int size = DEFAULT_MESSAGE_LENGTH, BufferPool<T> bufferPool = null)
-        {
-            if (bufferPool == null)
-                bufferPool = ThreadLocalBufferPools<T>.pool.Value;
-
-            this.payload = bufferPool.CheckOut(size);
-            this.length = 0;
-        }
-
-        public void Disable()
-        {
-            this.payload = ThreadLocalBufferPools<T>.pool.Value.Empty;
-            this.length = 0;
+            this.time = time;
         }
     }
 }
 
-namespace Naiad.Dataflow.Channels
-{
-    
+namespace Microsoft.Research.Naiad.Dataflow.Channels
+{    
     /// <summary>
     /// The external interface for the receiver side of a channel.
     /// 
@@ -126,31 +120,23 @@ namespace Naiad.Dataflow.Channels
     /// </summary>
     /// <typeparam name="T">The element type in a channel message.</typeparam>
     public interface SendChannel<T> : SendChannel
-    {
-        
+    {        
         /// <summary>
         /// Inserts a single element into the channel.
         /// </summary>
         /// <param name="elem">The element to be inserted.</param>
         void Send(T elem);
-        
-        /// <summary>
-        /// Inserts multilpe elements into the channel.
-        /// </summary>
-        /// <param name="elems"></param>
-        void Send(Message<T> elems);
-    
     }
 
 
 
-    public interface SendWire<S, T> : SendChannel<Pair<S, T>>
+    public interface SendWire<S, T> : SendChannel<Message<S, T>>
         where T : Time<T>
     {
         int RecordSizeHint { get; }
     }
 
-    public interface RecvWire<S, T> : RecvChannel<Pair<S, T>>
+    public interface RecvWire<S, T> : RecvChannel<Message<S, T>>
         where T : Time<T>
     { 
     }

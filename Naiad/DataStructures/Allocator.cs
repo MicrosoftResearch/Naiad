@@ -22,12 +22,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Naiad.Dataflow.Channels;
-using Naiad.CodeGeneration;
-using Naiad.DataStructures;
-using Naiad.FaultTolerance;
+using Microsoft.Research.Naiad.Dataflow.Channels;
+using Microsoft.Research.Naiad.CodeGeneration;
+using Microsoft.Research.Naiad.DataStructures;
+using Microsoft.Research.Naiad.FaultTolerance;
 
-namespace Naiad.DataStructures
+namespace Microsoft.Research.Naiad.DataStructures
 {
     public struct Handle<T>
     {
@@ -87,7 +87,7 @@ namespace Naiad.DataStructures
     // emulates a flat array using a spine of fixed size.
     // each region has a fixed length, and integers index 
     // the region rather than the array offset.
-    internal struct FixedLengthHeap<T> : ICheckpointable
+    internal struct FixedLengthHeap<T>
     {
         internal NaiadList<T[]> Spine;          //  
         internal NaiadList<int> FreeList;       // consider making this a priority queue...
@@ -136,29 +136,21 @@ namespace Naiad.DataStructures
          * int            Allocated
          */
 
-        private static NaiadSerialization<T> tSerializer = null;
-
         public void Checkpoint(NaiadWriter writer)
         {
-            if (tSerializer == null)
-                tSerializer = AutoSerialization.GetSerializer<T>();
-
-            writer.Write(this.Spine.Count, PrimitiveSerializers.Int32);
+            writer.Write(this.Spine.Count);
             for (int i = 0; i < this.Spine.Count; ++i)
                 for (int j = 0; j < this.SegmentLength; ++j)
-                    writer.Write(this.Spine.Array[i][j], tSerializer);
+                    writer.Write(this.Spine.Array[i][j]);
 
-            this.FreeList.Checkpoint(writer, PrimitiveSerializers.Int32);
+            this.FreeList.Checkpoint(writer);
 
-            writer.Write(this.Allocated, PrimitiveSerializers.Int32);
+            writer.Write(this.Allocated);
         }
 
         public void Restore(NaiadReader reader)
         {
-            if (tSerializer == null)
-                tSerializer = AutoSerialization.GetSerializer<T>();
-
-            int spineCount = reader.Read<int>(PrimitiveSerializers.Int32);
+            int spineCount = reader.Read<int>();
             this.Spine.Clear();
             this.Spine.EnsureCapacity(spineCount);
             this.Spine.Count = spineCount;
@@ -166,12 +158,12 @@ namespace Naiad.DataStructures
             {
                 this.Spine.Array[i] = new T[this.SegmentLength];
                 for (int j = 0; j < this.Spine.Array[i].Length; ++j)
-                    this.Spine.Array[i][j] = reader.Read<T>(tSerializer);
+                    this.Spine.Array[i][j] = reader.Read<T>();
             }
 
-            this.FreeList.Restore(reader, PrimitiveSerializers.Int32);
+            this.FreeList.Restore(reader);
 
-            this.Allocated = reader.Read<int>(PrimitiveSerializers.Int32);
+            this.Allocated = reader.Read<int>();
         }
 
         public bool Stateful { get { return true; } }

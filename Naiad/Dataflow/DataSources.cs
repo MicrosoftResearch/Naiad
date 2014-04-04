@@ -18,14 +18,14 @@
  * permissions and limitations under the License.
  */
 
-using Naiad.Runtime;
+using Microsoft.Research.Naiad.Runtime;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Naiad.Dataflow
+namespace Microsoft.Research.Naiad.Dataflow
 {
     /// <summary>
     /// Can be activated by a graph manager, and joined to block until complete.
@@ -254,18 +254,18 @@ namespace Naiad.Dataflow
         private readonly List<Pair<int, TRecord[]>>[] FrozenStates;
         private readonly bool[] Completed;
 
-        private void OnRecv(Message<Pair<TRecord, Epoch>> message, int fromWorker)
+        private void OnRecv(Message<TRecord, Epoch> message, int fromWorker)
         {
             lock (this)
             {
-                for (int i = 0; i < message.length; i++)
-                {
-                    var dictionary = this.StatesByWorker[fromWorker];
-                    if (!dictionary.ContainsKey(message.payload[i].v2.t))
-                        dictionary.Add(message.payload[i].v2.t, new List<TRecord>());
+                var dictionary = this.StatesByWorker[fromWorker];
+                if (!dictionary.ContainsKey(message.time.t))
+                    dictionary.Add(message.time.t, new List<TRecord>());
 
-                    dictionary[message.payload[i].v2.t].Add(message.payload[i].v1);
-                }
+                var dictionaryTime = dictionary[message.time.t];
+
+                for (int i = 0; i < message.length; i++)
+                    dictionaryTime.Add(message.payload[i]);
             }
         }
 

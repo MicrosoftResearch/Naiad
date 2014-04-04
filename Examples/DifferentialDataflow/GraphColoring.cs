@@ -23,10 +23,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-using Naiad;
-using Naiad.Dataflow;
-using Naiad.Frameworks;
-using Naiad.Frameworks.DifferentialDataflow;
+using Microsoft.Research.Naiad;
+using Microsoft.Research.Naiad.Dataflow;
+using Microsoft.Research.Naiad.Frameworks;
+using Microsoft.Research.Naiad.Frameworks.DifferentialDataflow;
 
 namespace Examples.DifferentialDataflow
 {
@@ -99,7 +99,7 @@ namespace Examples.DifferentialDataflow
                 for (int i = 0; i < edgeCount; i++)
                     graph[i] = new IntPair(random.Next(nodeCount), random.Next(nodeCount));
 
-                using (var manager = controller.NewGraph())
+                using (var manager = controller.NewComputation())
                 {
                     // set up the CC computation
                     var edges = new IncrementalCollection<IntPair>(manager);
@@ -132,7 +132,7 @@ namespace Examples.DifferentialDataflow
 
                     edges.OnNext(controller.Configuration.ProcessID == 0 ? graph : Enumerable.Empty<IntPair>());
 
-                    output.Sync(0);
+                    output.Sync(new Epoch(0));
 
                     // if we are up for interactive access ...
                     if (controller.Configuration.Processes == 1)
@@ -147,7 +147,7 @@ namespace Examples.DifferentialDataflow
                             var newEdge = new IntPair(random.Next(nodeCount), random.Next(nodeCount));
                             Console.WriteLine("Rewiring edge: {0} -> {1}", graph[i], newEdge);
                             edges.OnNext(new[] { new Weighted<IntPair>(graph[i], -1), new Weighted<IntPair>(newEdge, 1) });
-                            output.Sync(i + 1);
+                            output.Sync(new Epoch(i + 1));
                         }
                     }
 

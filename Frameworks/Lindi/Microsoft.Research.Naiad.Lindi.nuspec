@@ -1,0 +1,34 @@
+﻿<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>Microsoft.Research.Naiad.Lindi</id>
+    <title>Naiad - Lindi framework</title>
+    <version>0.3.1-beta</version>
+    <authors>naiadquestions@microsoft.com</authors>
+    <owners>naiadquestions@microsoft.com,Microsoft</owners>
+    <licenseUrl>http://www.apache.org/licenses/LICENSE-2.0.html</licenseUrl>
+    <projectUrl>http://research.microsoft.com/naiad/</projectUrl>
+    <!--<iconUrl>http://ICON_URL_HERE_OR_DELETE_THIS_LINE</iconUrl>-->
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <description>Lindi is a simple LINQ-like programming framework for Naiad.</description>
+    <copyright>Microsoft Corporation</copyright>
+    <language>en-US</language>
+    <frameworkAssemblies>
+      <frameworkAssembly assemblyName="System" targetFramework="net40-Client" />
+      <frameworkAssembly assemblyName="System.Core" targetFramework="net40-Client" />
+    </frameworkAssemblies>
+    <dependencies>
+      <group targetFramework="net40-Client">
+        <dependency id="Microsoft.Research.Naiad" version="0.3.1-beta" />
+      </group>
+    </dependencies>
+    <references>
+      <reference file="Microsoft.Research.Naiad.Lindi.dll" />
+    </references>
+  </metadata>
+  <files>
+    <file src="bin\Release\Microsoft.Research.Naiad.Lindi.dll" target="lib\net40-Client\Microsoft.Research.Naiad.Lindi.dll" />
+    <file src="bin\Release\Microsoft.Research.Naiad.Lindi.pdb" target="lib\net40-Client\Microsoft.Research.Naiad.Lindi.pdb" />
+    <file src="bin\Release\Microsoft.Research.Naiad.Lindi.xml" target="lib\net40-Client\Microsoft.Research.Naiad.Lindi.xml" />
+  </files>
+</package>

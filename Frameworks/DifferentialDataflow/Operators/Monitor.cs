@@ -27,15 +27,15 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
 
-using Naiad.Util;
-using Naiad.Dataflow;
+using Microsoft.Research.Naiad.Util;
+using Microsoft.Research.Naiad.Dataflow;
 
-namespace Naiad.Frameworks.DifferentialDataflow.Operators
+namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Operators
 {
     internal class Monitor<R, T> : UnaryVertex<Weighted<R>, Weighted<R>, T>
         //OperatorImplementations.UnaryStatefulOperator<R, R, R, T, R>
         where R : IEquatable<R>
-        where T : Naiad.Time<T>
+        where T : Microsoft.Research.Naiad.Time<T>
     {
         public Action<int, List<NaiadRecord<R,T>>> action;
         public List<NaiadRecord<R,T>> list;
@@ -43,29 +43,25 @@ namespace Naiad.Frameworks.DifferentialDataflow.Operators
         Int64 count;
         T leastTime;
 
-        private void OnInput(Weighted<R> entry, T time)
+
+        public override void OnReceive(Message<Weighted<R>, T> message)
         {
-            this.Output.Send(entry, time);
+            this.NotifyAt(message.time);
+            if (count == 0 || leastTime.CompareTo(message.time) > 0)
+                leastTime = message.time;
 
-            if (action != null)
-                list.Add(entry.ToNaiadRecord(time));
-
-            if (count == 0 || leastTime.CompareTo(time) > 0)
-                leastTime = time;
-
-            count++;
-        }
-
-        public override void MessageReceived(Message<Pair<Weighted<R>, T>> message)
-        {
             for (int i = 0; i < message.length; i++)
             {
-                this.OnInput(message.payload[i].v1, message.payload[i].v2);
-                this.NotifyAt(message.payload[i].v2);
+                if (action != null)
+                    list.Add(message.payload[i].ToNaiadRecord(message.time));
+
+                count++;
             }
+
+            this.Output.Send(message);
         }
 
-        public override void OnDone(T time)
+        public override void OnNotify(T time)
         {
             if (action != null)
             {
@@ -74,7 +70,7 @@ namespace Naiad.Frameworks.DifferentialDataflow.Operators
             }
             else
             { 
-                Console.WriteLine("{0}\t{1}\t{2}", this.VertexId, count, leastTime, Logging.Stopwatch.Elapsed);
+                Console.WriteLine("{0}\t{1}\t{2}\t{3}", this.VertexId, count, leastTime, Logging.Stopwatch.Elapsed);
 
                 count = 0;
             }

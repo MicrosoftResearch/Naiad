@@ -26,14 +26,14 @@ using System.Diagnostics;
 using System.Collections.Concurrent;
 using System.Threading;
 
-using Naiad.DataStructures;
-using Naiad.Dataflow.Channels;
-using Naiad.Scheduling;
-using Naiad.Runtime.Controlling;
-using Naiad.CodeGeneration;
-using Naiad;
+using Microsoft.Research.Naiad.DataStructures;
+using Microsoft.Research.Naiad.Dataflow.Channels;
+using Microsoft.Research.Naiad.Scheduling;
+using Microsoft.Research.Naiad.Runtime.Controlling;
+using Microsoft.Research.Naiad.CodeGeneration;
+using Microsoft.Research.Naiad;
 
-namespace Naiad.Frameworks.DifferentialDataflow
+namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
 {
     public class RecordObserver<R> : IObserver<R> where R : IEquatable<R>
     {
@@ -75,10 +75,10 @@ namespace Naiad.Frameworks.DifferentialDataflow
         where R : IEquatable<R>
     {
         //private readonly Naiad.Dataflow.InputStage<Weighted<R>> inputVertex;
-        private readonly Naiad.Dataflow.BatchedDataSource<Weighted<R>> inputVertex;
-        private readonly Naiad.Dataflow.Stream<Weighted<R>, Epoch> stream;
+        private readonly Microsoft.Research.Naiad.Dataflow.BatchedDataSource<Weighted<R>> inputVertex;
+        private readonly Microsoft.Research.Naiad.Dataflow.Stream<Weighted<R>, Epoch> stream;
 
-        public override Naiad.Dataflow.Stream<Weighted<R>, Epoch> Output
+        public override Microsoft.Research.Naiad.Dataflow.Stream<Weighted<R>, Epoch> Output
         {
             get { return this.stream; }
         }
@@ -118,9 +118,9 @@ namespace Naiad.Frameworks.DifferentialDataflow
             inputVertex.OnNext(value);
         }
 
-        internal override Naiad.Dataflow.OpaqueTimeContext<Epoch> Statistics { get { return this.stream.Context; } }
+        internal override Microsoft.Research.Naiad.Dataflow.OpaqueTimeContext<Epoch> Statistics { get { return this.stream.Context; } }
 
-        public IncrementalCollection(Naiad.GraphManager manager)
+        public IncrementalCollection(Microsoft.Research.Naiad.GraphManager manager)
         {
             this.inputVertex = new Dataflow.BatchedDataSource<Weighted<R>>();
             this.stream = manager.NewInput(inputVertex);

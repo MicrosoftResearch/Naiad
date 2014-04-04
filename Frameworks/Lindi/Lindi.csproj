@@ -7,8 +7,8 @@
     <ProjectGuid>{BDC6546C-7BA0-472B-B260-0D596B6152E4}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Lindi</RootNamespace>
-    <AssemblyName>Lindi</AssemblyName>
+    <RootNamespace>Microsoft.Research.Naiad.Frameworks.Lindi</RootNamespace>
+    <AssemblyName>Microsoft.Research.Naiad.Lindi</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <SccProjectName>SAK</SccProjectName>
@@ -33,15 +33,11 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <DocumentationFile>bin\Release\Microsoft.Research.Naiad.Lindi.XML</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Lindi.cs" />
@@ -52,6 +48,9 @@
       <Project>{a6221415-1283-4c04-8d2c-e25a857e1fe9}</Project>
       <Name>Naiad</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Microsoft.Research.Naiad.Lindi.nuspec" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

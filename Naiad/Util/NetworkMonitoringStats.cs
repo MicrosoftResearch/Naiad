@@ -27,7 +27,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Naiad.Util
+namespace Microsoft.Research.Naiad.Util
 {
     internal class StateForStats
     {

@@ -26,23 +26,23 @@ using System.Linq;
 using System.Text;
 
 using System.Threading;
-using Naiad.DataStructures;
-using Naiad.Dataflow.Channels;
-using Naiad.CodeGeneration;
-using Naiad.Frameworks;
+using Microsoft.Research.Naiad.DataStructures;
+using Microsoft.Research.Naiad.Dataflow.Channels;
+using Microsoft.Research.Naiad.CodeGeneration;
+using Microsoft.Research.Naiad.Frameworks;
 using System.IO;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
 using System.Net.Sockets;
 using System.Net;
-using Naiad.Util;
-using Naiad.Scheduling;
-using Naiad.Runtime.Controlling;
-using Naiad.FaultTolerance;
-using Naiad.Runtime.Networking;
-using Naiad.Runtime.Progress;
+using Microsoft.Research.Naiad.Util;
+using Microsoft.Research.Naiad.Scheduling;
+using Microsoft.Research.Naiad.Runtime.Controlling;
+using Microsoft.Research.Naiad.FaultTolerance;
+using Microsoft.Research.Naiad.Runtime.Networking;
+using Microsoft.Research.Naiad.Runtime.Progress;
 
-namespace Naiad
+namespace Microsoft.Research.Naiad
 {
 
     public enum RuntimeStatistic
@@ -150,6 +150,13 @@ namespace Naiad
         /// </summary>
         public int Replication { get { return this.replication; } set { this.replication = value; } }
 
+        private bool readEndpointsFromPPM = false;
+        /// <summary>
+        /// Setting this to true causes the server to assume it has been spawned by a Peloponnese manager, and
+        /// contact the manager to find out the endpoints of the other processes in the system
+        /// </summary>
+        public bool ReadEndpointsFromPPM { get { return this.readEndpointsFromPPM; } set { this.readEndpointsFromPPM = value; } }
+
         private IPEndPoint[] endpoints = null;
         /// <summary>
         /// The network addresses of the processes in this computation, indexed by process ID.
@@ -256,14 +263,17 @@ namespace Naiad
         /// </summary>
         public BroadcastProtocol Broadcast { get { return this.broadcast; } set { this.broadcast = value; } }
 
+        private Pair<int, int> serializerVersion = new Pair<int, int>(1, 0);
+        public Pair<int, int> SerializerVersion { get { return this.serializerVersion; } set { this.serializerVersion = value; } }
+
+
         private bool variableLengthSerialization = false;
         public bool VariableLengthSerialization { get { return this.variableLengthSerialization; } set { this.variableLengthSerialization = value; } }
 
-        private bool useInlineSerialization = false;
         /// <summary>
         /// EXPERIMENTAL: Uses a new code generation technique to generate more efficient code for serialization.
         /// </summary>
-        public bool UseInlineSerialization { get { return this.useInlineSerialization; } set { this.useInlineSerialization = value; } }
+        public bool UseInlineSerialization { get { return this.serializerVersion.v1 == 2; } set { this.SerializerVersion = new Pair<int, int>(2, 0); } }
 
         private bool oneTimePerMessageSerialization = true;
         public bool OneTimePerMessageSerialization { get { return this.oneTimePerMessageSerialization; } set { this.oneTimePerMessageSerialization = value; } }
@@ -334,6 +344,7 @@ namespace Naiad
             bool procIDSet = false;
             bool numProcsSet = false;
             bool hostsSet = false;
+            bool usePPM = false;
             
             bool multipleProcsSingleMachine = true;
 
@@ -365,6 +376,12 @@ namespace Naiad
                         break;
                     case "--procid":
                     case "-p":
+                        if (usePPM)
+                        {
+                            Logging.Error("Error: --procid can't be used with --ppm");
+                            Usage();
+                            System.Environment.Exit(-1);
+                        }
                         config.ProcessID = Int32.Parse(args[i + 1]);
                         i += 2;
                         procIDSet = true;
@@ -388,6 +405,12 @@ namespace Naiad
                         break;
                     case "--numprocs":
                     case "-n":
+                        if (usePPM)
+                        {
+                            Logging.Error("Error: --numprocs can't be used with --ppm");
+                            Usage();
+                            System.Environment.Exit(-1);
+                        }
                         Processes = Int32.Parse(args[i + 1]);
                         i += 2;
                         numProcsSet = true;
@@ -402,7 +425,7 @@ namespace Naiad
                         }
                         if (hostsSet)
                         {
-                            Logging.Error("Error: --local cannot be combined with --hosts");
+                            Logging.Error("Error: --hosts cannot be combined with --local or --ppm");
                             Usage();
                             System.Environment.Exit(-1);
                         }
@@ -448,13 +471,25 @@ namespace Naiad
                         }
                         if (hostsSet)
                         {
-                            Logging.Error("Error: --local cannot be combined with --hosts");
+                            Logging.Error("Error: --local cannot be combined with --hosts or --ppm");
                             Usage();
                             System.Environment.Exit(-1);
                         }
                         Prefixes = Enumerable.Range(2101, Processes).Select(x => string.Format("localhost:{0}", x)).ToArray();
                         i++;
                         hostsSet = true;
+                        break;
+                    case "--ppm":
+                        if (hostsSet || numProcsSet || procIDSet)
+                        {
+                            Logging.Error("Error: --ppm cannot be combined with --hosts or --local, or --numprocs or --procid");
+                            Usage();
+                            System.Environment.Exit(-1);
+                        }
+                        config.ReadEndpointsFromPPM = true;
+                        hostsSet = true;
+                        usePPM = true;
+                        i++;
                         break;
                     case "--reachability":
                         config.CompactionInterval = Convert.ToInt32(args[i + 1]);
@@ -623,37 +658,41 @@ namespace Naiad
                 System.Environment.Exit(-1);
             }
 
+            //TOCHECK: names isn't used: can we delete it?
             var names = Prefixes.Select(x => x.Split(':')).ToArray();
 
-            IPEndPoint[] endpoints = new IPEndPoint[Processes];
-
-            // Check whether we have multiple processes on the same machine (used for affinitizing purposes)
-            string prevHostName = Prefixes[0].Split(':')[0];
-
-            for (int j = 0; j < endpoints.Length; ++j)
+            if (!usePPM)
             {
-                string hostname;
-                int port = 2101;
-                bool success = ParseName(Prefixes[j], out hostname, ref port);
-                if (!success)
-                    System.Environment.Exit(-1);
-                if (hostname != prevHostName)
-                    multipleProcsSingleMachine = false;
-                else prevHostName = hostname;
+                IPEndPoint[] endpoints = new IPEndPoint[Processes];
 
-                IPAddress ipv4Address = GetIPAddressForHostname(hostname);
+                // Check whether we have multiple processes on the same machine (used for affinitizing purposes)
+                string prevHostName = Prefixes[0].Split(':')[0];
 
-                try
+                for (int j = 0; j < endpoints.Length; ++j)
                 {
-                    endpoints[j] = new System.Net.IPEndPoint(ipv4Address, port);
+                    string hostname;
+                    int port = 2101;
+                    bool success = ParseName(Prefixes[j], out hostname, ref port);
+                    if (!success)
+                        System.Environment.Exit(-1);
+                    if (hostname != prevHostName)
+                        multipleProcsSingleMachine = false;
+                    else prevHostName = hostname;
+
+                    IPAddress ipv4Address = GetIPAddressForHostname(hostname);
+
+                    try
+                    {
+                        endpoints[j] = new System.Net.IPEndPoint(ipv4Address, port);
+                    }
+                    catch (ArgumentOutOfRangeException)
+                    {
+                        Logging.Error("Error: invalid port ({0}) for process {1}", port, j);
+                        System.Environment.Exit(-1);
+                    }
                 }
-                catch (ArgumentOutOfRangeException)
-                {
-                    Logging.Error("Error: invalid port ({0}) for process {1}", port, j);
-                    System.Environment.Exit(-1);
-                }
+                config.Endpoints = endpoints;
             }
-            config.Endpoints = endpoints;
 
             args = strippedArgs.ToArray();
 

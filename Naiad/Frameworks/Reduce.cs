@@ -24,16 +24,16 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 
-using Naiad;
-using Naiad.Dataflow.Channels;
-using Naiad.CodeGeneration;
-using Naiad.Runtime.Controlling;
-using Naiad.DataStructures;
-using Naiad.FaultTolerance;
+using Microsoft.Research.Naiad;
+using Microsoft.Research.Naiad.Dataflow.Channels;
+using Microsoft.Research.Naiad.CodeGeneration;
+using Microsoft.Research.Naiad.Runtime.Controlling;
+using Microsoft.Research.Naiad.DataStructures;
+using Microsoft.Research.Naiad.FaultTolerance;
 
-using Naiad.Dataflow;
+using Microsoft.Research.Naiad.Dataflow;
 
-namespace Naiad.Frameworks.Reduction
+namespace Microsoft.Research.Naiad.Frameworks.Reduction
 {
     public static class ExtensionMethods
     {
@@ -41,14 +41,14 @@ namespace Naiad.Frameworks.Reduction
             where TReducer : IReducer<TState, TInput, TOutput>
             where TTime : Time<TTime>
         {
-            return Foundry.NewUnaryStage(stream, (i, v) => new LocalReduceShard<TReducer, TState, TInput, TOutput, TTime>(i, v, factory), null, null, name);
+            return Foundry.NewUnaryStage(stream, (i, v) => new LocalReduceVertex<TReducer, TState, TInput, TOutput, TTime>(i, v, factory), null, null, name);
         }
 
         public static Stream<TOutput, TTime> LocalCombine<TReducer, TState, TInput, TOutput, TTime>(this Stream<TState, TTime> stream, Func<TReducer> factory, string name)
             where TReducer : IReducer<TState, TInput, TOutput>
             where TTime : Time<TTime>
         {
-            return Foundry.NewUnaryStage(stream, (i, v) => new LocalCombineShard<TReducer, TState, TInput, TOutput, TTime>(i, v, factory), null, null, name);
+            return Foundry.NewUnaryStage(stream, (i, v) => new LocalCombineVertex<TReducer, TState, TInput, TOutput, TTime>(i, v, factory), null, null, name);
         }
 
         public static Stream<Pair<TKey, TState>, TTime> LocalReduce<TReducer, TState, TValue, TOutput, TKey, TInput, TTime>(
@@ -57,7 +57,7 @@ namespace Naiad.Frameworks.Reduction
             where TReducer : IReducer<TState, TValue, TOutput>
             where TTime : Time<TTime>
         {
-            return Foundry.NewUnaryStage(stream, (i, v) => new LocalKeyedReduceShard<TReducer, TState, TValue, TOutput, TKey, TInput, TTime>(i, v, key, val, factory), inPlacement, outPlacement, name);
+            return Foundry.NewUnaryStage(stream, (i, v) => new LocalKeyedReduceVertex<TReducer, TState, TValue, TOutput, TKey, TInput, TTime>(i, v, key, val, factory), inPlacement, outPlacement, name);
         }
 
         public static Stream<Pair<K, X>, T> LocalTimeReduce<A, X, R, S, K, I, T>(
@@ -66,7 +66,7 @@ namespace Naiad.Frameworks.Reduction
             where A : IReducer<X, R, S>
             where T : Time<T>
         {
-            return Foundry.NewUnaryStage(stream, (i, v) => new LocalTimeKeyedReduceShard<A, X, R, S, K, I, T>(i, v, key, val, factory), inPlacement, outPlacement, name);
+            return Foundry.NewUnaryStage(stream, (i, v) => new LocalTimeKeyedReduceVertex<A, X, R, S, K, I, T>(i, v, key, val, factory), inPlacement, outPlacement, name);
         }
 
         public static Stream<Pair<K, X>, T> LocalReduce<A, X, R, S, K, I, T>(
@@ -90,7 +90,7 @@ namespace Naiad.Frameworks.Reduction
                 inPlacement = x => x.v1.GetHashCode();
             }
 
-            return Foundry.NewUnaryStage(stream, (i, v) => new LocalKeyedCombineShard<A, X, R, S, K, T>(i, v, factory), inPlacement, outPlacement, name);
+            return Foundry.NewUnaryStage(stream, (i, v) => new LocalKeyedCombineVertex<A, X, R, S, K, T>(i, v, factory), inPlacement, outPlacement, name);
         }
 
         public static Stream<Pair<K, S>, T> LocalTimeCombine<A, X, R, S, K, T>(
@@ -105,7 +105,7 @@ namespace Naiad.Frameworks.Reduction
                 inPlacement = x => x.v1.GetHashCode();
             }
 
-            return Foundry.NewUnaryStage(stream, (i, v) => new LocalTimeKeyedCombineShard<A, X, R, S, K, T>(i, v, factory), inPlacement, outPlacement, name);
+            return Foundry.NewUnaryStage(stream, (i, v) => new LocalTimeKeyedCombineVertex<A, X, R, S, K, T>(i, v, factory), inPlacement, outPlacement, name);
         }
 
         public static Stream<Pair<K, S>, T> LocalCombine<A, X, R, S, K, T>(
@@ -140,7 +140,7 @@ namespace Naiad.Frameworks.Reduction
 
             var processDests = stream.ForStage.InternalGraphManager.DefaultPlacement.Where(x => x.ThreadId == 0).Select(x => x.VertexId).ToArray();
 
-            var boutput = Foundry.NewUnaryStage(stream, (i, v) => new BroadcastSendShard<R, T>(i, v, processDests), null, null, "BroadcastProcessSend");
+            var boutput = Foundry.NewUnaryStage(stream, (i, v) => new BroadcastSendVertex<R, T>(i, v, processDests), null, null, "BroadcastProcessSend");
 
             var collectable = boutput;
             if (stream.ForStage.InternalGraphManager.DefaultPlacement.Where(x => x.ProcessId == controller.Configuration.ProcessID).Count() > 1)
@@ -150,7 +150,7 @@ namespace Naiad.Frameworks.Reduction
                                             .Select(x => x.VertexId)
                                             .ToArray();
 
-                collectable = Foundry.NewUnaryStage(boutput, (i, v) => new BroadcastForwardShard<R, T>(i, v, threadDests), x => x.v1, null, "BroadcastShardSend");
+                collectable = Foundry.NewUnaryStage(boutput, (i, v) => new BroadcastForwardVertex<R, T>(i, v, threadDests), x => x.v1, null, "BroadcastVertexSend");
             }
 
             // TODO : fix this to use a streaming expression
@@ -176,7 +176,7 @@ namespace Naiad.Frameworks.Reduction
 }
 
 
-namespace Naiad.Frameworks.Reduction
+namespace Microsoft.Research.Naiad.Frameworks.Reduction
 {
     public interface IReducer<TState, TInput, TOutput>
     {
@@ -362,7 +362,7 @@ namespace Naiad.Frameworks.Reduction
         private T value;
     }
 
-    public class LocalReduceShard<A, X, R, S, T> : Naiad.Frameworks.UnaryVertex<R, X, T>
+    public class LocalReduceVertex<A, X, R, S, T> : Microsoft.Research.Naiad.Frameworks.UnaryVertex<R, X, T>
         where A : IReducer<X, R, S>
         where T : Time<T>
     {
@@ -390,19 +390,21 @@ namespace Naiad.Frameworks.Reduction
             }
         }
 
-        public override void MessageReceived(Message<Pair<R, T>> message)
+        public override void OnReceive(Message<R, T> message)
         {
             for (int i = 0; i < message.length; i++)
-                this.OnRecv(message.payload[i]);
+                this.OnRecv(message.payload[i].PairWith(message.time));
         }
 
-        public override void OnDone(T time)
+        public override void OnNotify(T time)
         {
-            Output.Send(reducer.State(), time);
+            var output = this.Output.GetBufferForTime(time);
+
+            output.Send(reducer.State());
             valid = false;
         }
 
-        public LocalReduceShard(int index, Stage<T> stage, Func<A> factory)
+        public LocalReduceVertex(int index, Stage<T> stage, Func<A> factory)
             : base(index, stage)
         {
             valid = false;
@@ -410,7 +412,7 @@ namespace Naiad.Frameworks.Reduction
         }
     }
 
-    public class LocalCombineShard<A, X, R, S, T> : Naiad.Frameworks.UnaryVertex<X, S, T>
+    public class LocalCombineVertex<A, X, R, S, T> : Microsoft.Research.Naiad.Frameworks.UnaryVertex<X, S, T>
         where A : IReducer<X, R, S>
         where T : Time<T>
     {
@@ -438,19 +440,19 @@ namespace Naiad.Frameworks.Reduction
             }
         }
 
-        public override void MessageReceived(Message<Pair<X, T>> message)
+        public override void OnReceive(Message<X, T> message)
         {
             for (int i = 0; i < message.length; i++)
-                this.OnRecv(message.payload[i]);
+                this.OnRecv(message.payload[i].PairWith(message.time));
         }
 
-        public override void OnDone(T time)
+        public override void OnNotify(T time)
         {
-            Output.Send(reducer.Value(), time);
+            this.Output.GetBufferForTime(time).Send(reducer.Value());
             valid = false;
         }
 
-        public LocalCombineShard(int index, Stage<T> stage, Func<A> factory)
+        public LocalCombineVertex(int index, Stage<T> stage, Func<A> factory)
             : base(index, stage)
         {
             valid = false;
@@ -458,7 +460,7 @@ namespace Naiad.Frameworks.Reduction
         }
     }
 
-    public class LocalKeyedReduceShard<A, X, R, S, K, I, T> : Naiad.Frameworks.UnaryVertex<I, Pair<K, X>, T>
+    public class LocalKeyedReduceVertex<A, X, R, S, K, I, T> : Microsoft.Research.Naiad.Frameworks.UnaryVertex<I, Pair<K, X>, T>
         where A : IReducer<X, R, S>
         where T : Time<T>
     {
@@ -477,7 +479,7 @@ namespace Naiad.Frameworks.Reduction
             if (reducers == null)
             {
                 //reducers = new A[4];
-                Console.Error.WriteLine("Making a SpinedList in reducer");
+                // Console.Error.WriteLine("Making a SpinedList in reducer");
                 reducers = new SpinedList<A>();
                 nextReducer = 0;
                 index = new Dictionary<K, int>(2000000);
@@ -518,17 +520,17 @@ namespace Naiad.Frameworks.Reduction
             ++recordsIn;
         }
 
-        public override void MessageReceived(Message<Pair<I, T>> message)
+        public override void OnReceive(Message<I, T> message)
         {
             for (int i = 0; i < message.length; i++)
-                this.OnRecv(message.payload[i]);
+                this.OnRecv(message.payload[i].PairWith(message.time));
         }
 
-        public override void OnDone(T time)
+        public override void OnNotify(T time)
         {
             if (reducers != null)
             {
-                Console.Error.WriteLine("{0} OnDone Reducers.count={1}", this.ToString(), reducers.Count);
+                // Console.Error.WriteLine("{0} OnNotify Reducers.count={1}", this.ToString(), reducers.Count);
                 if (!time.Equals(lastTime))
                 {
                     throw new Exception("One time at a time please!");
@@ -537,11 +539,10 @@ namespace Naiad.Frameworks.Reduction
                 Context.Reporting.LogAggregate("RecordsIn", Dataflow.Reporting.AggregateType.Sum, recordsIn, time);
                 Context.Reporting.LogAggregate("RecordsOut", Dataflow.Reporting.AggregateType.Sum, index.Count, time);
 
+                var output = this.Output.GetBufferForTime(time);
+
                 foreach (var r in index)
-                {
-                    //Console.WriteLine("{1}\t{0}", r.Key, reducers[r.Value].State());
-                    Output.Send(new Pair<K, X>(r.Key, reducers[r.Value].State()), time);
-                }
+                    output.Send(new Pair<K, X>(r.Key, reducers[r.Value].State()));
 
                 reducers = null;
                 index = null;
@@ -549,7 +550,7 @@ namespace Naiad.Frameworks.Reduction
             }
         }
 
-        public LocalKeyedReduceShard(
+        public LocalKeyedReduceVertex(
             int i, Stage<T> stage, Func<I, K> k, Func<I, R> v, Func<A> f)
             : base(i, stage)
         {
@@ -563,7 +564,7 @@ namespace Naiad.Frameworks.Reduction
         }
     }
 
-    public class LocalTimeKeyedReduceShard<A, X, R, S, K, I, T> : Naiad.Frameworks.UnaryVertex<I, Pair<K, X>, T>
+    public class LocalTimeKeyedReduceVertex<A, X, R, S, K, I, T> : Microsoft.Research.Naiad.Frameworks.UnaryVertex<I, Pair<K, X>, T>
         where A : IReducer<X, R, S>
         where T : Time<T>
     {
@@ -617,25 +618,25 @@ namespace Naiad.Frameworks.Reduction
             }
         }
 
-        public override void MessageReceived(Message<Pair<I, T>> message)
+        public override void OnReceive(Message<I, T> message)
         {
             for (int i = 0; i < message.length; i++)
-                this.OnRecv(message.payload[i]);
+                this.OnRecv(message.payload[i].PairWith(message.time));
         }
 
-        public override void OnDone(T time)
+        public override void OnNotify(T time)
         {
             Time rt = reducers[time];
 
+            var output = this.Output.GetBufferForTime(time);
+
             foreach (var r in rt.index)
-            {
-                Output.Send(new Pair<K, X>(r.Key, rt.reducers[r.Value].State()), time);
-            }
+                output.Send(new Pair<K, X>(r.Key, rt.reducers[r.Value].State()));
 
             reducers.Remove(time);
         }
 
-        public LocalTimeKeyedReduceShard(
+        public LocalTimeKeyedReduceVertex(
             int i, Stage<T> stage, Func<I, K> k, Func<I, R> v, Func<A> f)
             : base(i, stage)
         {
@@ -646,7 +647,7 @@ namespace Naiad.Frameworks.Reduction
         }
     }
 
-    public class LocalKeyedCombineShard<A, X, R, S, K, T> : Naiad.Frameworks.UnaryVertex<Pair<K, X>, Pair<K, S>, T>
+    public class LocalKeyedCombineVertex<A, X, R, S, K, T> : Microsoft.Research.Naiad.Frameworks.UnaryVertex<Pair<K, X>, Pair<K, S>, T>
         where A : IReducer<X, R, S>
         where T : Time<T>
     {
@@ -696,15 +697,15 @@ namespace Naiad.Frameworks.Reduction
             ++recordsIn;
         }
 
-        public override void MessageReceived(Message<Pair<Pair<K, X>, T>> message)
+        public override void OnReceive(Message<Pair<K, X>, T> message)
         {
             for (int i = 0; i < message.length; i++)
-                this.OnRecv(message.payload[i]);
+                this.OnRecv(message.payload[i].PairWith(message.time));
         }
 
 
 
-        public override void OnDone(T time)
+        public override void OnNotify(T time)
         {
             if (reducers != null)
             {
@@ -716,10 +717,9 @@ namespace Naiad.Frameworks.Reduction
                 Context.Reporting.LogAggregate("RecordsIn", Dataflow.Reporting.AggregateType.Sum, recordsIn, time);
                 Context.Reporting.LogAggregate("RecordsOut", Dataflow.Reporting.AggregateType.Sum, index.Count, time);
 
+                var output = this.Output.GetBufferForTime(time);
                 foreach (var r in index)
-                {
-                    Output.Send(new Pair<K, S>(r.Key, reducers[r.Value].Value()), time);
-                }
+                    output.Send(new Pair<K, S>(r.Key, reducers[r.Value].Value()));
 
                 reducers = null;
                 index = null;
@@ -727,7 +727,7 @@ namespace Naiad.Frameworks.Reduction
             }
         }
 
-        public LocalKeyedCombineShard(
+        public LocalKeyedCombineVertex(
             int i, Stage<T> stage, Func<A> f)
             : base(i, stage)
         {
@@ -739,7 +739,7 @@ namespace Naiad.Frameworks.Reduction
         }
     }
 
-    public class LocalTimeKeyedCombineShard<A, X, R, S, K, T> : Naiad.Frameworks.UnaryVertex<Pair<K, X>, Pair<K, S>, T>
+    public class LocalTimeKeyedCombineVertex<A, X, R, S, K, T> : Microsoft.Research.Naiad.Frameworks.UnaryVertex<Pair<K, X>, Pair<K, S>, T>
         where A : IReducer<X, R, S>
         where T : Time<T>
     {
@@ -791,25 +791,24 @@ namespace Naiad.Frameworks.Reduction
             }
         }
 
-        public override void MessageReceived(Message<Pair<Pair<K, X>, T>> message)
+        public override void OnReceive(Message<Pair<K, X>, T> message)
         {
             for (int i = 0; i < message.length; i++)
-                this.OnRecv(message.payload[i]);
+                this.OnRecv(message.payload[i].PairWith(message.time));
         }
 
-        public override void OnDone(T time)
+        public override void OnNotify(T time)
         {
             Time rt = reducers[time];
 
+            var output = this.Output.GetBufferForTime(time);
             foreach (var r in rt.index)
-            {
-                Output.Send(new Pair<K, S>(r.Key, rt.reducers[r.Value].Value()), time);
-            }
+                output.Send(new Pair<K, S>(r.Key, rt.reducers[r.Value].Value()));
 
             reducers.Remove(time);
         }
 
-        public LocalTimeKeyedCombineShard(
+        public LocalTimeKeyedCombineVertex(
             int i, Stage<T> stage, Func<A> f)
             : base(i, stage)
         {
@@ -825,72 +824,73 @@ namespace Naiad.Frameworks.Reduction
         T MakeCopy();
     }
 
-    internal class BroadcastSendShard<R, T> : UnaryVertex<R, Pair<int, R>, T>
+    internal class BroadcastSendVertex<R, T> : UnaryVertex<R, Pair<int, R>, T>
         where R : Cloneable<R>
         where T : Time<T>
     {
         private readonly int[] destinations;
 
-        private void OnRecv(Pair<R, T> record)
+        public override void OnReceive(Message<R, T> message)
         {
-            for (int i = 0; i < destinations.Length; ++i)
+            var output = this.Output.GetBufferForTime(message.time);
+            for (int i = 0; i < message.length; i++)
             {
-                if (i < destinations.Length - 1)
+                //this.OnRecv(message.payload[i].PairWith(message.time));
+                var record = message.payload[i];
+                for (int j = 0; j < destinations.Length; ++i)
                 {
-                    Output.Send(new Pair<int, R>(destinations[i], record.v1.MakeCopy()), record.v2);
+                    if (j < destinations.Length - 1)
+                    {
+                        output.Send(new Pair<int, R>(destinations[j], record.MakeCopy()));
+                    }
+                    else
+                    {
+                        output.Send(new Pair<int, R>(destinations[j], record));
+                    }
                 }
-                else
-                {
-                    Output.Send(new Pair<int, R>(destinations[i], record.v1), record.v2);
-                }
+
             }
         }
 
-        public override void MessageReceived(Message<Pair<R, T>> message)
-        {
-            for (int i = 0; i < message.length; i++)
-                this.OnRecv(message.payload[i]);
-        }
+        public override void OnNotify(T time) { }
 
-        public override void OnDone(T time) { }
-
-        public BroadcastSendShard(int index, Stage<T> stage, int[] dest)
+        public BroadcastSendVertex(int index, Stage<T> stage, int[] dest)
             : base(index, stage)
         {
             destinations = dest;
         }
     }
 
-    public class BroadcastForwardShard<R, T> : UnaryVertex<Pair<int, R>, Pair<int, R>, T>
+    public class BroadcastForwardVertex<R, T> : UnaryVertex<Pair<int, R>, Pair<int, R>, T>
         where R : Cloneable<R>
         where T : Time<T>
     {
         private readonly int[] destinations;
 
-        private void OnRecv(Pair<Pair<int, R>, T> record)
+        public override void OnReceive(Message<Pair<int, R>, T> message)
         {
-            for (int i = 0; i < destinations.Length; ++i)
+            var output = this.Output.GetBufferForTime(message.time);
+            for (int i = 0; i < message.length; i++)
             {
-                if (i < destinations.Length - 1)
+                var record = message.payload[i];
+                for (int j = 0; j < destinations.Length; ++j)
                 {
-                    Output.Send(new Pair<int, R>(destinations[i], record.v1.v2.MakeCopy()), record.v2);
+                    if (j < destinations.Length - 1)
+                    {
+                        output.Send(new Pair<int, R>(destinations[j], record.v2.MakeCopy()));
+                    }
+                    else
+                    {
+                        output.Send(new Pair<int, R>(destinations[j], record.v2));
+                    }
                 }
-                else
-                {
-                    Output.Send(new Pair<int, R>(destinations[i], record.v1.v2), record.v2);
-                }
+
             }
         }
 
-        public override void MessageReceived(Message<Pair<Pair<int, R>, T>> message)
-        {
-            for (int i = 0; i < message.length; i++)
-                this.OnRecv(message.payload[i]);
-        }
+        public override void OnNotify(T time) { }
 
-        public override void OnDone(T time) { }
-
-        public BroadcastForwardShard(int index, Stage<T> stage, int[] dest)
+        public BroadcastForwardVertex(int index, Stage<T> stage, int[] dest)
             : base(index, stage)
         {
             destinations = dest;

@@ -23,9 +23,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Naiad.CodeGeneration;
+using Microsoft.Research.Naiad.CodeGeneration;
 
-namespace Naiad.DataStructures
+namespace Microsoft.Research.Naiad.DataStructures
 {
     public class NaiadList<S> : IEquatable<NaiadList<S>>, IList<S>
     {

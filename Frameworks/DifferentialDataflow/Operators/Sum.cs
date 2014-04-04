@@ -23,15 +23,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Linq.Expressions;
-using Naiad;
-using Naiad.Dataflow;
+using Microsoft.Research.Naiad;
+using Microsoft.Research.Naiad.Dataflow;
 
-namespace Naiad.Frameworks.DifferentialDataflow.Operators
+namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Operators
 {
     internal class SumInt32<K, S, T, R> : Aggregate<K, S, T, R, int>
         where K : IEquatable<K>
         where S : IEquatable<S>
-        where T : Naiad.Time<T>
+        where T : Microsoft.Research.Naiad.Time<T>
         where R : IEquatable<R>
     {
         public SumInt32(int index, Stage<T> collection, bool inputImmutable, Expression<Func<S, K>> k, Expression<Func<S, int>> v, Expression<Func<K, int, R>> r)

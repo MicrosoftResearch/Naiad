@@ -23,18 +23,18 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Linq.Expressions;
-using Naiad.DataStructures;
-using Naiad.Dataflow;
+using Microsoft.Research.Naiad.DataStructures;
+using Microsoft.Research.Naiad.Dataflow;
 
-namespace Naiad.Frameworks.DifferentialDataflow.Operators
+namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Operators
 {
-    internal class CoGroupBy<K, V1, V2, S1, S2, T, R> : OperatorImplementations.BinaryStatefulOperator<K, V1, V2, S1, S2, T, R>
+    internal class CoGroupBy<K, V1, V2, S1, S2, T, R> : OperatorImplementations.ConservativeBinaryStatefulOperator<K, V1, V2, S1, S2, T, R>
         where K : IEquatable<K>
         where V1 : IEquatable<V1>
         where V2 : IEquatable<V2>
         where S1 : IEquatable<S1>
         where S2 : IEquatable<S2>
-        where T : Naiad.Time<T>
+        where T : Microsoft.Research.Naiad.Time<T>
         where R : IEquatable<R>
     {
         public Func<K, IEnumerable<Weighted<V1>>, IEnumerable<Weighted<V2>>, IEnumerable<Weighted<R>>> weightedReducer;

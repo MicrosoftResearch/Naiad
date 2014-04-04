@@ -23,61 +23,62 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
-using Naiad;
-using Naiad.Dataflow.Channels;
-using Naiad.Runtime.Controlling;
-using Naiad.Dataflow;
-using Naiad.DataStructures;
-using Naiad.Dataflow.Reporting;
-using Naiad.Frameworks;
+using Microsoft.Research.Naiad;
+using Microsoft.Research.Naiad.Dataflow.Channels;
+using Microsoft.Research.Naiad.Runtime.Controlling;
+using Microsoft.Research.Naiad.Dataflow;
+using Microsoft.Research.Naiad.DataStructures;
+using Microsoft.Research.Naiad.Dataflow.Reporting;
+using Microsoft.Research.Naiad.Frameworks;
 
-namespace Naiad.Dataflow.Iteration
+namespace Microsoft.Research.Naiad.Dataflow.Iteration
 {
-    internal class IngressShard<R, T> : Vertex<IterationIn<T>>
+    internal class IngressVertex<R, T> : Vertex<IterationIn<T>>
         where T : Time<T>
     {
-        private readonly VertexOutputBuffer<R, IterationIn<T>> outputs;
+        private readonly VertexOutputBuffer<R, IterationIn<T>> Output;
 
         private readonly Func<R, int> InitialIteration;
 
-        public void MessageReceived(Message<Pair<R, T>> message)
+        public void MessageReceived(Message<R, T> message)
         {
-            for (int i = 0; i < message.length; i++)
+            if (this.InitialIteration == null)
             {
-#if true
-                this.outputs.Send(message.payload[i].v1, new IterationIn<T>(message.payload[i].v2, InitialIteration(message.payload[i].v1)));
-#else
-                this.outputs.Buffer.payload[this.outputs.Buffer.length++] = new Pair<R, IterationIn<T>>(message.payload[i].v1, new IterationIn<T>(message.payload[i].v2, InitialIteration(message.payload[i].v1)));
-                if (this.outputs.Buffer.length == this.outputs.Buffer.payload.Length)
-                    this.outputs.SendBuffer();
-#endif
+                var output = this.Output.GetBufferForTime(new IterationIn<T>(message.time, 0));
+                for (int i = 0; i < message.length; i++)
+                    output.Send(message.payload[i]);
+            }
+            else
+            {
+                for (int i = 0; i < message.length; i++)
+                    this.Output.GetBufferForTime(new IterationIn<T>(message.time, InitialIteration(message.payload[i]))).Send(message.payload[i]);
             }
         }
 
         public override string ToString()
         {
-            return "FixedPoint.Ingress";
+            return "Ingress";
         }
 
         internal static Stream<R, IterationIn<T>> NewStage(Stream<R, T> input, ITimeContext<IterationIn<T>> internalContext)
         {
-            return NewStage(input, internalContext, x => 0);
+            return NewStage(input, internalContext, null);
         }
 
 
         internal static Stream<R, IterationIn<T>> NewStage(Stream<R, T> input, ITimeContext<IterationIn<T>> internalContext, Func<R, int> initialIteration)
         {
-            var stage = new Stage<IngressShard<R, T>, IterationIn<T>>(new OpaqueTimeContext<IterationIn<T>>(internalContext), Stage.OperatorType.IterationIngress, (i, v) => new IngressShard<R, T>(i, v, initialIteration), "FixedPoint.Ingress");
+            var stage = new Stage<IngressVertex<R, T>, IterationIn<T>>(new OpaqueTimeContext<IterationIn<T>>(internalContext), Stage.OperatorType.IterationIngress, (i, v) => new IngressVertex<R, T>(i, v, initialIteration), "FixedPoint.Ingress");
 
-            stage.NewSurprisingTimeTypeInput(input, shard => new ActionReceiver<R, T>(shard, m => shard.MessageReceived(m)), input.PartitionedBy);
+            stage.NewSurprisingTimeTypeInput(input, vertex => new ActionReceiver<R, T>(vertex, m => vertex.MessageReceived(m)), input.PartitionedBy);
 
-            return stage.NewOutput(shard => shard.outputs, input.PartitionedBy);
+            return stage.NewOutput(vertex => vertex.Output, input.PartitionedBy);
         }
 
-        internal IngressShard(int index, Stage<IterationIn<T>> stage, Func<R, int> initialIteration)
+        internal IngressVertex(int index, Stage<IterationIn<T>> stage, Func<R, int> initialIteration)
             : base(index, stage)
         {
-            outputs = new VertexOutputBuffer<R, IterationIn<T>>(this);
+            Output = new VertexOutputBuffer<R, IterationIn<T>>(this);
             this.InitialIteration = initialIteration;
         }
     }
@@ -94,7 +95,7 @@ namespace Naiad.Dataflow.Iteration
         private readonly Expression<Func<R, int>> PartitionedBy;
         private readonly int MaxIterations;
 
-        private readonly Stage<AdvanceShard<R, T>, IterationIn<T>> stage;
+        private readonly Stage<AdvanceVertex<R, T>, IterationIn<T>> stage;
 
         private void AttachInput(Stream<R, IterationIn<T>> stream)
         {
@@ -104,90 +105,81 @@ namespace Naiad.Dataflow.Iteration
         internal Feedback(ITimeContext<IterationIn<T>> context,
             Expression<Func<R, int>> partitionedBy, int maxIterations)
         {
-            this.stage = new Stage<AdvanceShard<R, T>, IterationIn<T>>(new OpaqueTimeContext<IterationIn<T>>(context), Stage.OperatorType.IterationAdvance, (i, v) => new AdvanceShard<R, T>(i, v, maxIterations),  "Iterate.Advance");
+            this.stage = new Stage<AdvanceVertex<R, T>, IterationIn<T>>(new OpaqueTimeContext<IterationIn<T>>(context), Stage.OperatorType.IterationAdvance, (i, v) => new AdvanceVertex<R, T>(i, v, maxIterations),  "Iterate.Advance");
 
-            this.input = this.stage.NewUnconnectedInput((message, shard) => shard.MessageReceived(message), partitionedBy);
-            this.output = this.stage.NewOutput(shard => shard.ShardOutput, partitionedBy);
+            this.input = this.stage.NewUnconnectedInput((message, vertex) => vertex.OnReceive(message), partitionedBy);
+            this.output = this.stage.NewOutput(vertex => vertex.VertexOutput, partitionedBy);
             
             this.PartitionedBy = partitionedBy;
             this.MaxIterations = maxIterations;
         }
     }
 
-    internal class AdvanceShard<R, T> : UnaryVertex<R, R, IterationIn<T>>
+    internal class AdvanceVertex<R, T> : UnaryVertex<R, R, IterationIn<T>>
         where T : Time<T>
     {
-        //internal ShardInput<R, IterationIn<T>> ShardInput { get { return this.Input; } }
-        internal VertexOutput<R, IterationIn<T>> ShardOutput { get { return this.Output; } }
+        internal VertexOutput<R, IterationIn<T>> VertexOutput { get { return this.Output; } }
 
         private readonly int MaxIterations;
 
-        public override void MessageReceived(Message<Pair<R, IterationIn<T>>> message)
+        public override void OnReceive(Message<R, IterationIn<T>> message)
         {
-            for (int i = 0; i < message.length; i++)
+            if (message.time.t < this.MaxIterations)
             {
-                var record = message.payload[i];
-                if (record.v2.t < this.MaxIterations)
-                {
-#if true
-                    this.Output.Send(record.v1, new IterationIn<T>(record.v2.s, record.v2.t + 1));
-#else
-                    this.Output.Buffer.payload[this.Output.Buffer.length++] = new Pair<R, IterationIn<T>>(record.v1, new IterationIn<T>(record.v2.s, record.v2.t + 1));
-                    if (this.Output.Buffer.length == this.Output.Buffer.payload.Length)
-                        this.Output.SendBuffer();
-#endif
-                }
+                var output = this.Output.GetBufferForTime(new IterationIn<T>(message.time.s, message.time.t + 1));
+                for (int i = 0; i < message.length; i++)
+                    output.Send(message.payload[i]);
             }
         }
 
-        public override void OnDone(IterationIn<T> time)
+        public override void OnNotify(IterationIn<T> time)
         {
             // nothing to do here
         }
 
         public override string ToString()
         {
-            return "FixedPoint.Advance";
+            return "Advance";
         }
 
-        public AdvanceShard(int index, Stage<IterationIn<T>> stage, int maxIterations)
+        public AdvanceVertex(int index, Stage<IterationIn<T>> stage, int maxIterations)
             : base(index, stage)
         {
             this.MaxIterations = maxIterations;
         }
     }
 
-    internal class EgressShard<R, T> : Vertex<T>
+    internal class EgressVertex<R, T> : Vertex<T>
         where T : Time<T>
     {
         private readonly VertexOutputBuffer<R, T> outputs;
         private readonly int releaseAfter;
 
-        public void MessageReceived(Message<Pair<R, IterationIn<T>>> message)
+        public void MessageReceived(Message<R, IterationIn<T>> message)
         {
-            for (int i = 0; i < message.length; i++)
+            if (message.time.t >= releaseAfter)
             {
-                var record = message.payload[i];
-                if (record.v2.t >= releaseAfter)
-                    this.outputs.Send(record.v1, record.v2.s);
-            }    
+                var output = this.outputs.GetBufferForTime(message.time.s);
+                for (int i = 0; i < message.length; i++)
+                    output.Send(message.payload[i]);
+            }
         }
 
         public override string ToString()
         {
-            return "FixedPoint.Egress";
+            return "Egress";
         }
 
         internal static Stream<R, T> NewStage(Stream<R, IterationIn<T>> input, ITimeContext<T> externalContext, int iterationNumber)
         {
-            var stage = new Stage<EgressShard<R, T>, T>(new OpaqueTimeContext<T>(externalContext), Stage.OperatorType.IterationEgress, (i, v) => new EgressShard<R, T>(i, v, iterationNumber), "FixedPoint.Egress");
+            var stage = new Stage<EgressVertex<R, T>, T>(new OpaqueTimeContext<T>(externalContext), Stage.OperatorType.IterationEgress, (i, v) => new EgressVertex<R, T>(i, v, iterationNumber), "FixedPoint.Egress");
 
-            stage.NewSurprisingTimeTypeInput(input, shard => new ActionReceiver<R, IterationIn<T>>(shard, m => shard.MessageReceived(m)), input.PartitionedBy);
+            stage.NewSurprisingTimeTypeInput(input, vertex => new ActionReceiver<R, IterationIn<T>>(vertex, m => vertex.MessageReceived(m)), input.PartitionedBy);
 
-            return stage.NewOutput<R>(shard => shard.outputs, input.PartitionedBy);
+            return stage.NewOutput<R>(vertex => vertex.outputs, input.PartitionedBy);
         }
 
-        internal EgressShard(int index, Stage<T> stage, int iterationNumber)
+        internal EgressVertex(int index, Stage<T> stage, int iterationNumber)
             : base(index, stage)
         {
             outputs = new VertexOutputBuffer<R, T>(this);
@@ -196,7 +188,7 @@ namespace Naiad.Dataflow.Iteration
     }
 
 
-    internal class ReportingEgressShard<T> : Vertex<T>
+    internal class ReportingEgressVertex<T> : Vertex<T>
         where T : Time<T>
     {
         public void RecordReceived(Pair<string, IterationIn<T>> record)
@@ -204,43 +196,43 @@ namespace Naiad.Dataflow.Iteration
             Context.Reporting.ForwardLog(new [] { new Pair<string, T>(record.v1, record.v2.s) });
         }
 
-        public void MessageReceived(Message<Pair<string, IterationIn<T>>> message, RemotePostbox sender)
+        public void MessageReceived(Message<string, IterationIn<T>> message, RemotePostbox sender)
         {
             var stripped = new Pair<string, T>[message.length];
 
             for (int i = 0; i < message.length; i++)
             {
-                stripped[i].v1 = message.payload[i].v1;
-                stripped[i].v2 = message.payload[i].v2.s;
+                stripped[i].v1 = message.payload[i];
+                stripped[i].v2 = message.time.s;
             }
 
             Context.Reporting.ForwardLog(stripped);
         }
 
-        public void ForwardIntAggregate(Message<Pair<Pair<string, ReportingRecord<Int64>>, IterationIn<T>>> message, RemotePostbox sender)
+        public void ForwardIntAggregate(Message<Pair<string, ReportingRecord<Int64>>, IterationIn<T>> message, RemotePostbox sender)
         {
             for (int i = 0; i < message.length; ++i)
             {
-                ReportingRecord<Int64> r = message.payload[i].v1.v2;
-                Context.Reporting.LogAggregate(message.payload[i].v1.v1, r.type, r.payload, r.count, message.payload[i].v2.s);
+                ReportingRecord<Int64> r = message.payload[i].v2;
+                Context.Reporting.LogAggregate(message.payload[i].v1, r.type, r.payload, r.count, message.time.s);
             }
         }
 
-        public void ForwardDoubleAggregate(Message<Pair<Pair<string, ReportingRecord<double>>, IterationIn<T>>> message, RemotePostbox sender)
+        public void ForwardDoubleAggregate(Message<Pair<string, ReportingRecord<double>>, IterationIn<T>> message, RemotePostbox sender)
         {
             for (int i = 0; i < message.length; ++i)
             {
-                ReportingRecord<double> r = message.payload[i].v1.v2;
-                Context.Reporting.LogAggregate(message.payload[i].v1.v1, r.type, r.payload, r.count, message.payload[i].v2.s);
+                ReportingRecord<double> r = message.payload[i].v2;
+                Context.Reporting.LogAggregate(message.payload[i].v1, r.type, r.payload, r.count, message.time.s);
             }
         }
 
         public override string ToString()
         {
-            return "FixedPoint.ReportingEgress";
+            return "ReportingEgress";
         }
 
-        public ReportingEgressShard(int index, Stage<T> parent)
+        public ReportingEgressVertex(int index, Stage<T> parent)
             : base(index, parent)
         {
         }
@@ -249,7 +241,7 @@ namespace Naiad.Dataflow.Iteration
     internal class ReportingEgressStage<T> : IReportingConnector<IterationIn<T>>
         where T : Time<T>
     {
-        private readonly Stage<ReportingEgressShard<T>, T> stage;
+        private readonly Stage<ReportingEgressVertex<T>, T> stage;
 
         public readonly NaiadList<StageInput<string, IterationIn<T>>> receivers;
         internal IEnumerable<StageInput<string, IterationIn<T>>> Receivers
@@ -271,19 +263,19 @@ namespace Naiad.Dataflow.Iteration
 
         public void ConnectInline(Stream<string, IterationIn<T>> sender)
         {
-            receivers.Add(stage.NewSurprisingTimeTypeInput(sender, shard => new ActionReceiver<string, IterationIn<T>>(shard, (m,p) => shard.MessageReceived(m, p)), null));
+            receivers.Add(stage.NewSurprisingTimeTypeInput(sender, vertex => new ActionReceiver<string, IterationIn<T>>(vertex, (m,p) => vertex.MessageReceived(m, p)), null));
         }
 
         public void ConnectIntAggregator(Stream<Pair<string, ReportingRecord<Int64>>, IterationIn<T>> sender)
         {
             System.Diagnostics.Debug.Assert(intAggregator == null);
-            intAggregator = stage.NewSurprisingTimeTypeInput(sender, shard => new ActionReceiver<Pair<string, ReportingRecord<Int64>>, IterationIn<T>>(shard, (m,p) => shard.ForwardIntAggregate(m, p)), null);
+            intAggregator = stage.NewSurprisingTimeTypeInput(sender, vertex => new ActionReceiver<Pair<string, ReportingRecord<Int64>>, IterationIn<T>>(vertex, (m,p) => vertex.ForwardIntAggregate(m, p)), null);
         }
 
         public void ConnectDoubleAggregator(Stream<Pair<string, ReportingRecord<double>>, IterationIn<T>> sender)
         {
             System.Diagnostics.Debug.Assert(doubleAggregator == null);
-            doubleAggregator = stage.NewSurprisingTimeTypeInput(sender, shard => new ActionReceiver<Pair<string, ReportingRecord<double>>, IterationIn<T>>(shard, (m,p) => shard.ForwardDoubleAggregate(m, p)), null);
+            doubleAggregator = stage.NewSurprisingTimeTypeInput(sender, vertex => new ActionReceiver<Pair<string, ReportingRecord<double>>, IterationIn<T>>(vertex, (m,p) => vertex.ForwardDoubleAggregate(m, p)), null);
         }
 
         internal ReportingEgressStage(ITimeContext<T> externalContext)
@@ -292,7 +284,7 @@ namespace Naiad.Dataflow.Iteration
             intAggregator = null;
             doubleAggregator = null;
 
-            this.stage = new Stage<ReportingEgressShard<T>, T>(new OpaqueTimeContext<T>(externalContext), Stage.OperatorType.IterationEgress, (i, v) => new ReportingEgressShard<T>(i, v), "FixedPoint.ReportingEgress");
+            this.stage = new Stage<ReportingEgressVertex<T>, T>(new OpaqueTimeContext<T>(externalContext), Stage.OperatorType.IterationEgress, (i, v) => new ReportingEgressVertex<T>(i, v), "FixedPoint.ReportingEgress");
         }
     }
 
@@ -304,17 +296,17 @@ namespace Naiad.Dataflow.Iteration
 
         public Stream<R, IterationIn<T>> EnterLoop<R>(Stream<R, T> stream)
         {
-            return IngressShard<R, T>.NewStage(stream, internalContext);
+            return IngressVertex<R, T>.NewStage(stream, internalContext);
         }
 
         public Stream<R, IterationIn<T>> EnterLoop<R>(Stream<R, T> stream, Func<R, int> initialIteration)
         {
-            return IngressShard<R, T>.NewStage(stream, internalContext, initialIteration);
+            return IngressVertex<R, T>.NewStage(stream, internalContext, initialIteration);
         }
 
         public Stream<R, T> ExitLoop<R>(Stream<R, IterationIn<T>> stream, int iterationNumber)
         {
-            return EgressShard<R, T>.NewStage(stream, externalContext, iterationNumber);
+            return EgressVertex<R, T>.NewStage(stream, externalContext, iterationNumber);
         }
 
         public Stream<R, T> ExitLoop<R>(Stream<R, IterationIn<T>> stream)

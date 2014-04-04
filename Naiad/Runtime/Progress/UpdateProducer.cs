@@ -22,14 +22,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Naiad.Dataflow.Channels;
-using Naiad.CodeGeneration;
-using Naiad.Scheduling;
-using Naiad.FaultTolerance;
-using Naiad.Frameworks;
-using Naiad.Dataflow;
+using Microsoft.Research.Naiad.Dataflow.Channels;
+using Microsoft.Research.Naiad.CodeGeneration;
+using Microsoft.Research.Naiad.Scheduling;
+using Microsoft.Research.Naiad.FaultTolerance;
+using Microsoft.Research.Naiad.Frameworks;
+using Microsoft.Research.Naiad.Dataflow;
 
-namespace Naiad.Runtime.Progress
+namespace Microsoft.Research.Naiad.Runtime.Progress
 {
     internal class ProgressUpdateProducer
     {
@@ -94,12 +94,12 @@ namespace Naiad.Runtime.Progress
 
         public void Checkpoint(NaiadWriter writer)
         {
-            this.outstandingRecords.Checkpoint(writer, Pointstamp.Serializer, PrimitiveSerializers.Int64);
+            this.outstandingRecords.Checkpoint(writer);
         }
 
         public void Restore(NaiadReader reader)
         {
-            this.outstandingRecords.Restore(reader, Pointstamp.Serializer, PrimitiveSerializers.Int64);
+            this.outstandingRecords.Restore(reader);
         }
 
         internal ProgressUpdateProducer(InternalGraphManager manager, ProgressUpdateAggregator aggregator)

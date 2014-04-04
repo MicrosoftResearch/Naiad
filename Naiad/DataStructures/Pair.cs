@@ -23,7 +23,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Naiad
+namespace Microsoft.Research.Naiad
 {
 
     public static class PairExtensionMethods

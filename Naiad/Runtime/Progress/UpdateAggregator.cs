@@ -23,20 +23,20 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using Naiad.Dataflow.Channels;
-using Naiad.Dataflow;
-using Naiad.Frameworks;
-using Naiad.Scheduling;
+using Microsoft.Research.Naiad.Dataflow.Channels;
+using Microsoft.Research.Naiad.Dataflow;
+using Microsoft.Research.Naiad.Frameworks;
+using Microsoft.Research.Naiad.Scheduling;
 
-namespace Naiad.Runtime.Progress
+namespace Microsoft.Research.Naiad.Runtime.Progress
 {
     /// <summary>
     /// The aggregator takes progress updates (pointstamp, delta) and accumulates them until it is required to flush the accumulation.
     /// The requirement is based on a liveness constraint: the possibility than any delta in the accumulation might advance the frontier.
     /// </summary>
-    internal class ProgressUpdateAggregator : Dataflow.Vertex<Pointstamp>
+    internal class ProgressUpdateAggregator : Dataflow.Vertex<Empty>
     {
-        internal readonly VertexOutputBuffer<Int64, Pointstamp> Output;
+        internal readonly VertexOutputBuffer<Update, Empty> Output; //Int64, Pointstamp> Output;
 
         internal override void PerformAction(Scheduler.WorkItem workItem)
         {
@@ -115,15 +115,10 @@ namespace Naiad.Runtime.Progress
                 {
                     // get exclusive access and swap the update buffer.
                     Tracing.Trace("(AggLock"); 
-
                     lock (this.Lock)
                     {
                         PrivateBufferedUpdates = this.BufferedUpdates;
                         this.BufferedUpdates = FreshBufferedUpdates;
-
-                        //var temp = this.BufferedUpdates2;
-                        //this.BufferedUpdates2 = this.BufferedUpdates;
-                        //this.BufferedUpdates = temp;
                     }
                     Tracing.Trace(")AggLock");
 
@@ -142,15 +137,17 @@ namespace Naiad.Runtime.Progress
                         }
                     }
 
+                    var output = this.Output.GetBufferForTime(new Empty());
+
                     // send positive updates first.
                     foreach (var pair in PrivateBufferedUpdates)
                         if (pair.Value > 0)
-                            this.Output.Send(pair.Value, pair.Key);
+                            output.Send(new Update(pair.Key, pair.Value));
 
                     // send negative updates second.
                     foreach (var pair in PrivateBufferedUpdates)
                         if (pair.Value < 0)
-                            this.Output.Send(pair.Value, pair.Key);
+                            output.Send(new Update(pair.Key, pair.Value));
 
                     // here we might return it to a shared queue of dictionaries
                     PrivateBufferedUpdates.Clear();
@@ -160,10 +157,10 @@ namespace Naiad.Runtime.Progress
             }
         }
 
-        public ProgressUpdateAggregator(int index, Stage<Pointstamp> stage)
+        public ProgressUpdateAggregator(int index, Stage<Empty> stage)
             : base(index, stage)
         {
-            this.Output = new VertexOutputBuffer<long, Pointstamp>(this);
+            this.Output = new VertexOutputBuffer<Update, Empty>(this);
         }
     }
 }

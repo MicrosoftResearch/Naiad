@@ -25,14 +25,14 @@ using System.Text;
 
 using System.Linq.Expressions;
 
-using Naiad.DataStructures;
-using Naiad.Dataflow.Channels;
-using Naiad.Scheduling;
-using Naiad.Frameworks.DifferentialDataflow.CollectionTrace;
-using Naiad;
-using Naiad.Dataflow;
+using Microsoft.Research.Naiad.DataStructures;
+using Microsoft.Research.Naiad.Dataflow.Channels;
+using Microsoft.Research.Naiad.Scheduling;
+using Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.CollectionTrace;
+using Microsoft.Research.Naiad;
+using Microsoft.Research.Naiad.Dataflow;
 
-namespace Naiad.Frameworks.DifferentialDataflow.OperatorImplementations
+namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.OperatorImplementations
 {
     internal class UnaryStatefulOperatorWithAggregation<K, V, S, T, R> : OperatorImplementations.UnaryStatefulOperator<K, V, S, T, R>
         where K : IEquatable<K>
@@ -54,6 +54,8 @@ namespace Naiad.Frameworks.DifferentialDataflow.OperatorImplementations
         {
             axpy = a.Compile();
             isZero = i.Compile();
+
+            inputTrace = createInputTrace();
         }
     }
 

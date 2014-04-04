@@ -25,9 +25,9 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 
-using Naiad.Dataflow.Channels;
+using Microsoft.Research.Naiad.Dataflow.Channels;
 
-namespace Naiad.Dataflow
+namespace Microsoft.Research.Naiad.Dataflow
 {
     internal interface Edge
     {
@@ -98,7 +98,7 @@ namespace Naiad.Dataflow
         public Edge(StageOutput<R, T> stream, StageInput<R, T> recvPort, Expression<Func<R, int>> partitionFunction, Dataflow.Channels.Channel.Flags flags)
         {
             if (recvPort.PartitionedBy != partitionFunction)
-                Console.Error.WriteLine("Constructing Edge where recvPort.PartitionedBy is incorrect.");
+                Logging.Error("Constructing Edge where recvPort.PartitionedBy is incorrect.");
 
             this.Source = stream;
             this.Target = recvPort;

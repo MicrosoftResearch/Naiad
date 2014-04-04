@@ -24,9 +24,9 @@ using System.Linq;
 using System.Text;
 
 using System.IO;
-using Naiad;
+using Microsoft.Research.Naiad;
 
-namespace Naiad.Frameworks.DifferentialDataflow
+namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
 {
     public struct Weighted<T> : IEquatable<Weighted<T>> where T : IEquatable<T>
     {

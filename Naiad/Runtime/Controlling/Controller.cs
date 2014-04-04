@@ -26,27 +26,27 @@ using System.Text;
 using System.Threading.Tasks;
 
 using System.Threading;
-using Naiad.DataStructures;
-using Naiad.Dataflow.Channels;
-using Naiad.CodeGeneration;
-using Naiad.Frameworks;
+using Microsoft.Research.Naiad.DataStructures;
+using Microsoft.Research.Naiad.Dataflow.Channels;
+using Microsoft.Research.Naiad.CodeGeneration;
+using Microsoft.Research.Naiad.Frameworks;
 using System.IO;
 using System.Collections.Concurrent;
 using System.Net.Sockets;
 using System.Net;
-using Naiad.Util;
-using Naiad.Scheduling;
-using Naiad.Runtime.Controlling;
-using Naiad.FaultTolerance;
-using Naiad.Runtime.Networking;
-using Naiad.Runtime.Progress;
-using Naiad.Runtime;
+using Microsoft.Research.Naiad.Util;
+using Microsoft.Research.Naiad.Scheduling;
+using Microsoft.Research.Naiad.Runtime.Controlling;
+using Microsoft.Research.Naiad.FaultTolerance;
+using Microsoft.Research.Naiad.Runtime.Networking;
+using Microsoft.Research.Naiad.Runtime.Progress;
+using Microsoft.Research.Naiad.Runtime;
 
 using System.Diagnostics;
-using Naiad.Dataflow;
+using Microsoft.Research.Naiad.Dataflow;
 using System.Net.NetworkInformation;
 
-namespace Naiad
+namespace Microsoft.Research.Naiad
 {
     /// <summary>
     /// Manages the execution of a Naiad runtime
@@ -62,7 +62,7 @@ namespace Naiad
         /// Allocates a new inactive GraphManager.
         /// </summary>
         /// <returns>The new GraphManager</returns>
-        GraphManager NewGraph();
+        GraphManager NewComputation();
 
         string QueryStatistic(RuntimeStatistic stat);
 
@@ -92,6 +92,8 @@ namespace Naiad
         void Join();
 
         Task JoinAsync();
+
+        SerializationCodeGenerator CodeGenerator { get; }
     }
 
     internal interface InternalController
@@ -102,20 +104,21 @@ namespace Naiad
 
         Stopwatch Stopwatch { get; }
 
-        int ProcessID { get; }
-        int Processes { get; }
-
         Placement DefaultPlacement { get; }
 
         Object GlobalLock { get; }
 
-        Stream GetLoggingOutputStream(Dataflow.Vertex shard);
+        SerializationCodeGenerator CodeGenerator { get; }
+
+        Stream GetLoggingOutputStream(Dataflow.Vertex vertex);
 
         NetworkChannel NetworkChannel { get; }
 
         void DoStartupBarrier();
 
         InternalGraphManager GetInternalGraph(int index);
+
+        Controller ExternalController { get; }
     }
 
     /// <summary>
@@ -151,6 +154,8 @@ namespace Naiad
     {
         private readonly List<BaseGraphManager> graphManagers;
 
+        public Controller ExternalController { get { return this; } }
+
         public InternalGraphManager GetInternalGraph(int index)
         {
             return this.graphManagers[index];
@@ -183,11 +188,11 @@ namespace Naiad
 
 
         int streamCounter = 0;
-        public Stream GetLoggingOutputStream(Dataflow.Vertex shard)
+        public Stream GetLoggingOutputStream(Dataflow.Vertex vertex)
         {
             int streamNumber = Interlocked.Increment(ref this.streamCounter);
 
-            return File.OpenWrite(string.Format("log_{0}_{1}-{2}.nad", streamNumber, shard.Stage.StageId, shard.VertexId));
+            return File.OpenWrite(string.Format("log_{0}_{1}-{2}.nad", streamNumber, vertex.Stage.StageId, vertex.VertexId));
         }
 
         private readonly Configuration configuration;
@@ -199,100 +204,96 @@ namespace Naiad
         private readonly System.Diagnostics.Stopwatch stopwatch = System.Diagnostics.Stopwatch.StartNew();
         public System.Diagnostics.Stopwatch Stopwatch { get { return this.stopwatch; } }
 
-        public virtual int ProcessID
-        {
-            get { return this.configuration.ProcessID; }
-        }
-
-        public virtual int Processes
-        {
-            get { return this.configuration.Endpoints == null ? 1 : this.configuration.Endpoints.Length; }
-        }
-        
         private readonly Object globalLock = new object();
         public Object GlobalLock { get { return this.globalLock; } }
-        
+
+        public SerializationCodeGenerator CodeGenerator { get; private set; }
+
         #region Checkpoint / Restore
 
         public void Checkpoint(bool major)
         {
             throw new NotImplementedException();
 
+#if false
             Stopwatch checkpointWatch = Stopwatch.StartNew();
 
-#if false
-            foreach (var shard in this.currentGraphManager.Stages.Values.SelectMany(x => x.Shards.Where(s => s.Stateful)))
+            foreach (var vertex in this.currentGraphManager.Stages.Values.SelectMany(x => x.Vertices.Where(s => s.Stateful)))
             {
-                shard.Checkpoint(major);
+                vertex.Checkpoint(major);
             }
-#endif
+
             Console.Error.WriteLine("!! Total checkpoint took time = {0}", checkpointWatch.Elapsed);
+#endif
         }
 
         public void Checkpoint(string path, int epoch)
         {
             throw new NotImplementedException();
 
+            
+#if false
             Stopwatch checkpointWatch = Stopwatch.StartNew();
 
-#if false
             foreach (var input in this.currentGraphManager.Inputs)
             {
-                using (FileStream collectionFile = File.OpenWrite(Path.Combine(path, string.Format("input_{0}_{1}.shard", input.InputId, epoch))))
+                using (FileStream collectionFile = File.OpenWrite(Path.Combine(path, string.Format("input_{0}_{1}.vertex", input.InputId, epoch))))
                 using (NaiadWriter collectionWriter = new NaiadWriter(collectionFile))
                 {
                     input.Checkpoint(collectionWriter);
                     Console.Error.WriteLine("Read  {0}: {1} objects", input.ToString(), collectionWriter.objectsWritten);
                 }
             }
-            foreach (var shard in this.currentGraphManager.Stages.Values.SelectMany(x => x.Shards.Where(s => s.Stateful)))
+            foreach (var vertex in this.currentGraphManager.Stages.Values.SelectMany(x => x.Vertices.Where(s => s.Stateful)))
             {
-                shard.Checkpoint(false);
-                using (FileStream shardFile = File.OpenWrite(Path.Combine(path, string.Format("{0}_{1}_{2}.shard", shard.Stage.StageId, shard.VertexId, epoch))))
-                using (NaiadWriter shardWriter = new NaiadWriter(shardFile))
+                vertex.Checkpoint(false);
+                using (FileStream vertexFile = File.OpenWrite(Path.Combine(path, string.Format("{0}_{1}_{2}.vertex", vertex.Stage.StageId, vertex.VertexId, epoch))))
+                using (NaiadWriter vertexWriter = new NaiadWriter(vertexFile))
                 {
-                    shard.Checkpoint(shardWriter);
-                    Console.Error.WriteLine("Wrote {0}: {1} objects", shard.ToString(), shardWriter.objectsWritten);
+                    vertex.Checkpoint(vertexWriter);
+                    Console.Error.WriteLine("Wrote {0}: {1} objects", vertex.ToString(), vertexWriter.objectsWritten);
                 }
             }
-#endif
 
             Console.Error.WriteLine("!! Total checkpoint took time = {0}", checkpointWatch.Elapsed);
+#endif
+
         }
 
         public void Restore(string path, int epoch)
         {
             throw new NotImplementedException();
 
+#if false
             Stopwatch checkpointWatch = Stopwatch.StartNew();
             
-#if false
             // Need to do this to ensure that all stages exist.
             this.currentGraphManager.MaterializeAll();
 
             foreach (var input in this.currentGraphManager.Inputs)
             {
-                using (FileStream collectionFile = File.OpenRead(Path.Combine(path, string.Format("input_{0}_{1}.shard", input.InputId, epoch))))
+                using (FileStream collectionFile = File.OpenRead(Path.Combine(path, string.Format("input_{0}_{1}.vertex", input.InputId, epoch))))
                 using (NaiadReader collectionReader = new NaiadReader(collectionFile))
                 {
                     input.Restore(collectionReader);
                     Console.Error.WriteLine("Read  {0}: {1} objects", input.ToString(), collectionReader.objectsRead);
                 }
             }
-            foreach (var shard in this.currentGraphManager.Stages.Values.SelectMany(x => x.Shards.Where(s => s.Stateful)))
+            foreach (var vertex in this.currentGraphManager.Stages.Values.SelectMany(x => x.Vertices.Where(s => s.Stateful)))
             {
-                using (FileStream shardFile = File.OpenRead(Path.Combine(path, string.Format("{0}_{1}_{2}.shard", shard.Stage.StageId, shard.VertexId, epoch))))
-                using (NaiadReader shardReader = new NaiadReader(shardFile))
+                using (FileStream vertexFile = File.OpenRead(Path.Combine(path, string.Format("{0}_{1}_{2}.vertex", vertex.Stage.StageId, vertex.VertexId, epoch))))
+                using (NaiadReader vertexReader = new NaiadReader(vertexFile))
                 {
-                    shard.Restore(shardReader);
-                    Console.Error.WriteLine("Read  {0}: {1} objects", shard.ToString(), shardReader.objectsRead);
+                    vertex.Restore(vertexReader);
+                    Console.Error.WriteLine("Read  {0}: {1} objects", vertex.ToString(), vertexReader.objectsRead);
                 }
             }
             this.Workers.Activate();
             this.currentGraphManager.Activate();
-#endif
+            
             Console.Error.WriteLine("!! Total restore took time = {0}", checkpointWatch.Elapsed);
             Logging.Info("! Reactivated the controller");
+#endif
         }
 
         public void Restore(NaiadReader reader)
@@ -310,7 +311,7 @@ namespace Naiad
             this.Workers.Activate();
             this.currentGraphManager.Activate();
 #endif
-            Logging.Info("! Reactivated the controller");
+            //Logging.Info("! Reactivated the controller");
         }
 
         #endregion
@@ -428,7 +429,7 @@ namespace Naiad
             public void NotifyOperatorStarting(Scheduler scheduler, Scheduler.WorkItem work)
             {
                 if (this.WorkItemStarting != null)
-                    this.WorkItemStarting(this, new OperatorStartArgs(scheduler.Index, work.Shard.Stage, work.Shard.VertexId, work.Requirement));
+                    this.WorkItemStarting(this, new OperatorStartArgs(scheduler.Index, work.Vertex.Stage, work.Vertex.VertexId, work.Requirement));
             }
 
             /// <summary>
@@ -438,7 +439,7 @@ namespace Naiad
             public void NotifyOperatorEnding(Scheduler scheduler, Scheduler.WorkItem work)
             {
                 if (this.WorkItemEnding != null)
-                    this.WorkItemEnding(this, new OperatorEndArgs(scheduler.Index, work.Shard.Stage, work.Shard.VertexId, work.Requirement));
+                    this.WorkItemEnding(this, new OperatorEndArgs(scheduler.Index, work.Vertex.Stage, work.Vertex.VertexId, work.Requirement));
             }
 
             /// <summary>
@@ -448,7 +449,7 @@ namespace Naiad
             public void NotifyOperatorEnqueued(Scheduler scheduler, Scheduler.WorkItem work)
             {
                 if (this.WorkItemEnqueued != null)
-                    this.WorkItemEnqueued(this, new OperatorEnqArgs(scheduler.Index, work.Shard.Stage, work.Shard.VertexId, work.Requirement));
+                    this.WorkItemEnqueued(this, new OperatorEnqArgs(scheduler.Index, work.Vertex.Stage, work.Vertex.VertexId, work.Requirement));
             }
 
             /// <summary>
@@ -633,27 +634,57 @@ namespace Naiad
         {
             this.configuration = config;
 
-            this.localEndpoint = config.Endpoints == null ? new IPEndPoint(IPAddress.Any, 2101) : config.Endpoints[this.ProcessID];
+            this.CodeGenerator = Serialization.GetCodeGeneratorForVersion(config.SerializerVersion.v1, config.SerializerVersion.v2);
+
+            // set up an initial endpoint to try starting the server listening on. If endpoint is null
+            // when we call the server constructor, it will choose one by picking an available port to listen on
+            IPEndPoint endpoint = null;
+
+            if (this.configuration.Endpoints != null)
+            {
+                endpoint = this.configuration.Endpoints[this.configuration.ProcessID];
+            }
+
+            // if we pass in a null endpoint the server will pick one and return it in the ref arg
+            this.server = new NaiadServer(ref endpoint);
+            this.localEndpoint = endpoint;
+
             this.workerGroup = new BaseWorkerGroup(this, config.WorkerCount);
 
             this.workerGroup.Start();
             this.workerGroup.Activate();
 
-            if (this.Processes > 1)
+            if (this.configuration.ReadEndpointsFromPPM || this.configuration.Processes > 1)
             {
-                this.defaultPlacement = new RoundRobinPlacement(this.Processes, this.workerGroup.Count);
+                this.server.Start();
 
-                this.networkChannel = new TcpNetworkChannel(0, this, config);
+                if (this.configuration.ReadEndpointsFromPPM)
+                {
+                    int pId;
+                    this.configuration.Endpoints = RegisterAndWaitForPPM(out pId);
+                    this.configuration.ProcessID = pId;
+                }
 
-                this.EnsureServerRunning();
-                this.networkChannel.WaitForAllConnections();
+                if (this.configuration.Processes > 1)
+                {
+                    TcpNetworkChannel networkChannel = new TcpNetworkChannel(0, this, config);
+                    this.networkChannel = networkChannel;
 
-                Logging.Info("Network channel activated");
+                    this.server.RegisterNetworkChannel(networkChannel);
+
+                    this.server.AcceptPeerConnections();
+
+                    this.networkChannel.WaitForAllConnections();
+
+                    Logging.Info("Network channel activated");
+                }
+                else
+                {
+                    Logging.Info("Configured for single-process operation");
+                }
             }
-            else
-            {
-                this.defaultPlacement = new RoundRobinPlacement(1, this.workerGroup.Count);
-            }
+
+            this.defaultPlacement = new RoundRobinPlacement(this.configuration.Processes, this.workerGroup.Count);
 
 #if DEBUG
             Logging.Progress("Warning: DEBUG build. Not for performance measurements.");
@@ -686,7 +717,7 @@ namespace Naiad
             this.graphManagers = new List<BaseGraphManager>();
         }
 
-        public GraphManager NewGraph()
+        public GraphManager NewComputation()
         {
             var result = new BaseGraphManager(this, this.graphsManaged++);
 
@@ -733,15 +764,13 @@ namespace Naiad
 
         private NaiadServer server;
 
-        internal void EnsureServerRunning()
-        {
-            if (this.server == null)
+        private IPEndPoint[] RegisterAndWaitForPPM(out int processID)
             {
-                this.server = new NaiadServer(this.localEndpoint);
-                this.server.RegisterNetworkChannel((TcpNetworkChannel)this.networkChannel);
-
-                this.server.Start();
-            }
+            PeloponneseClient client = new PeloponneseClient(this.localEndpoint);
+            client.WaitForAllWorkers();
+            client.NotifyCleanShutdown();
+            processID = client.ThisWorkerIndex;
+            return client.WorkerEndpoints;
         }
 
         public void DoStartupBarrier()

@@ -22,19 +22,19 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Naiad.DataStructures;
+using Microsoft.Research.Naiad.DataStructures;
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using Naiad.CodeGeneration;
+using Microsoft.Research.Naiad.CodeGeneration;
 using System.Threading;
 using System.Net.Sockets;
-using Naiad.Scheduling;
+using Microsoft.Research.Naiad.Scheduling;
 using System.Net;
 using System.IO;
-using Naiad.Runtime.Controlling;
-using Naiad.Runtime.Networking;
+using Microsoft.Research.Naiad.Runtime.Controlling;
+using Microsoft.Research.Naiad.Runtime.Networking;
 
-namespace Naiad.Dataflow.Channels
+namespace Microsoft.Research.Naiad.Dataflow.Channels
 {
     internal class PostOfficeChannel<S, T> : Cable<S, T>
         where T : Time<T>
@@ -71,7 +71,8 @@ namespace Naiad.Dataflow.Channels
 
                     if ((flags & Channel.Flags.SpillOnRecv) == Channel.Flags.SpillOnRecv)
                     {
-                        localMailbox = new SpillingLocalMailbox<S, T>(postOffice, this.recvBundle.GetPin(loc.VertexId), channelID, loc.VertexId, progressBuffer);
+                        //localMailbox = new SpillingLocalMailbox<S, T>(postOffice, this.recvBundle.GetPin(loc.VertexId), channelID, loc.VertexId, progressBuffer);
+                        throw new Exception("SpillingLocalMailbox not currently supported");
                     }
                     else
                     {
@@ -119,7 +120,7 @@ namespace Naiad.Dataflow.Channels
     public interface UntypedPostbox
     {
         int ThreadIndex { get; }
-        int ShardID { get; }
+        int VertexID { get; }
         int ProcessID { get; }
     }
 
@@ -130,7 +131,7 @@ namespace Naiad.Dataflow.Channels
             get { return 0; }
         }
 
-        public int ShardID
+        public int VertexID
         {
             get { return 0; }
         }
@@ -147,21 +148,21 @@ namespace Naiad.Dataflow.Channels
     {
         private readonly int threadIndex;
         public int ThreadIndex { get { return this.threadIndex; } }
-        private readonly int shardId;
-        public int ShardID { get { return this.shardId; } }
+        private readonly int vertexId;
+        public int VertexID { get { return this.vertexId; } }
         private readonly int processId;
         public int ProcessID { get { return this.processId; } }
 
-        public RemotePostbox(int processId, int shardId)
+        public RemotePostbox(int processId, int vertexId)
         {
-            this.shardId = shardId;
+            this.vertexId = vertexId;
             this.processId = processId;
             this.threadIndex = 0;
         }
 
-        public RemotePostbox(int processId, int shardId, int threadIndex)
+        public RemotePostbox(int processId, int vertexId, int threadIndex)
         {
-            this.shardId = shardId;
+            this.vertexId = vertexId;
             this.processId = processId;
             this.threadIndex = threadIndex;
         }
@@ -187,8 +188,8 @@ namespace Naiad.Dataflow.Channels
 
         private readonly int channelID;
         private readonly VertexOutput<S, T> sender;
-        private readonly int shardid;
-        public int ShardID { get { return this.shardid; } }
+        private readonly int vertexid;
+        public int VertexID { get { return this.vertexid; } }
 
         public int ProcessID { get { return this.sender.Vertex.Stage.InternalGraphManager.Controller.Configuration.ProcessID; } }
         
@@ -219,63 +220,97 @@ namespace Naiad.Dataflow.Channels
             this.threadindex = sender.Vertex.Scheduler.Index;
             this.channelID = channelID;
             this.sender = sender;
-            this.shardid = sender.Vertex.VertexId;
+            this.vertexid = sender.Vertex.VertexId;
             this.receiverBundle = receiverBundle;
             this.routingHashcodeFunction = routingHashcodeFunction;
             this.networkChannel = networkChannel;
             this.mailboxes = mailboxes;
-            this.remotePostbox = new RemotePostbox(this.ProcessID, this.shardid, this.threadindex);
-            
+            this.remotePostbox = new RemotePostbox(this.ProcessID, this.vertexid, this.threadindex);
+
+            this.localTempBuffer = new Message<S, T>();
+
             //this.sendSequenceNumbers = new int[Naiad.Processes, this.receiverBundle.LocalParallelism];
         }
 
+        private Message<S, T>? localTempBuffer;
+
+#if false
         /// <summary>
         /// Sends a record
         /// </summary>
         /// <param name="record"></param>
         public void Send(Pair<S, T> record)
         {
-            int destShardID;
+            int destVertexID;
             if (this.routingHashcodeFunction == null)
             {
-                destShardID = this.shardid % this.mailboxes.Length;
+                destVertexID = this.vertexid % this.mailboxes.Length;
             }
             else
             {
                 int hashcode = this.routingHashcodeFunction(record.v1);
-                destShardID = (hashcode & int.MaxValue) % this.mailboxes.Length; // this.routingTable.GetRoute(hashcode);
+                destVertexID = (hashcode & int.MaxValue) % this.mailboxes.Length; // this.routingTable.GetRoute(hashcode);
             }
 
-            Debug.Assert(destShardID < this.mailboxes.Length);
-            this.mailboxes[destShardID].Send(record, new RemotePostbox(this.ProcessID, this.ShardID, this.ThreadIndex));
+            Debug.Assert(destVertexID < this.mailboxes.Length);
+            this.mailboxes[destVertexID].Send(record, new RemotePostbox(this.ProcessID, this.VertexID, this.ThreadIndex));
 
             if (progressBuffer != null)
                 progressBuffer.Update(record.v2, +1);
         } 
-
-        public void Send(Message<Pair<S, T>> records)
+#endif
+        public void Send(Message<S, T> records)
         {
+            if (progressBuffer != null)
+                progressBuffer.Update(records.time, records.length);
+
+            int lastDestID = -1;
+
+            Message<S, T> tempBuffer = localTempBuffer.HasValue ? localTempBuffer.Value : new Message<S, T>();
+            localTempBuffer = null; // XXX: Perhaps overly cautious if we disable channel re-entrancy.
+
+            if (tempBuffer.Unallocated)
+                tempBuffer.Allocate();
+
+            tempBuffer.time = records.time;
+
             for (int i = 0; i < records.length; i++)
             {
                 var record = records.payload[i];
 
-                int destShardID;
+                int destVertexID;
                 if (this.routingHashcodeFunction == null)
                 {
-                    destShardID = this.shardid % this.mailboxes.Length;
+                    destVertexID = this.vertexid % this.mailboxes.Length;
                 }
                 else
                 {
-                    int hashcode = this.routingHashcodeFunction(record.v1);
-                    destShardID = (hashcode & int.MaxValue) % this.mailboxes.Length; // this.routingTable.GetRoute(hashcode);
+                    int hashcode = this.routingHashcodeFunction(record);
+                    destVertexID = (hashcode & int.MaxValue) % this.mailboxes.Length; // this.routingTable.GetRoute(hashcode);
                 }
 
-                Debug.Assert(destShardID < this.mailboxes.Length);
-                this.mailboxes[destShardID].Send(record, this.remotePostbox);
+                Debug.Assert(destVertexID < this.mailboxes.Length);
 
-                if (progressBuffer != null)
-                    progressBuffer.Update(record.v2, +1);
+                if (tempBuffer.length > 0 && lastDestID != destVertexID)
+                {
+                    this.mailboxes[lastDestID].Send(tempBuffer, this.remotePostbox);
+                    tempBuffer.length = 0;
+                }
+
+                lastDestID = destVertexID;
+                tempBuffer.payload[tempBuffer.length++] = record;
+
+                //this.mailboxes[destVertexID].Send(record.PairWith(records.time), this.remotePostbox);
             }
+
+            if (tempBuffer.length > 0)
+                this.mailboxes[lastDestID].Send(tempBuffer, this.remotePostbox);
+
+            tempBuffer.length = 0;
+            if (this.localTempBuffer.HasValue)
+                tempBuffer.Release();
+            else
+                this.localTempBuffer = tempBuffer;
         }
 
         /// <summary>
@@ -288,7 +323,7 @@ namespace Naiad.Dataflow.Channels
             {
                 if (this.mailboxes[i].ThreadIndex != this.threadindex)
                 {
-                    this.mailboxes[i].Flush(new RemotePostbox(this.ProcessID, this.ShardID, this.ThreadIndex));
+                    this.mailboxes[i].Flush(new RemotePostbox(this.ProcessID, this.VertexID, this.ThreadIndex));
                 }
             }
 
@@ -297,7 +332,7 @@ namespace Naiad.Dataflow.Channels
             {
                 if (this.mailboxes[i].ThreadIndex == this.threadindex)
                 {
-                    this.mailboxes[i].Flush(new RemotePostbox(this.ProcessID, this.ShardID, this.ThreadIndex));
+                    this.mailboxes[i].Flush(new RemotePostbox(this.ProcessID, this.VertexID, this.ThreadIndex));
                 }
             }
 
@@ -311,8 +346,6 @@ namespace Naiad.Dataflow.Channels
 
     internal class PostOffice
     {
-        private static int nextChannelId = 0;
-        
         private readonly Scheduler scheduler;
         public readonly InternalController Controller;
         private readonly List<UntypedLocalMailbox> mailboxes;
@@ -350,7 +383,7 @@ namespace Naiad.Dataflow.Channels
 
         int GraphId { get; }
         int Id { get; }
-        int ShardId { get; }
+        int VertexId { get; }
     }
 
     public interface UntypedLocalMailbox : UntypedMailbox
@@ -362,7 +395,10 @@ namespace Naiad.Dataflow.Channels
     internal interface Mailbox<S, T> : UntypedMailbox
         where T : Time<T>
     {
-        void Send(Pair<S, T> record, RemotePostbox from);
+        // void Send(Pair<S, T> record, RemotePostbox from);
+
+        void Send(Message<S, T> message, RemotePostbox from);
+
         void Flush(RemotePostbox from);
         // returns the ThreadId for mailboxes on the same computer, and -1 for remote ones
         int ThreadIndex { get; }
@@ -386,53 +422,51 @@ namespace Naiad.Dataflow.Channels
         protected readonly VertexInput<S, T> endpoint;
 
         public readonly int id;         // mailbox id (== channel id?)
-        public readonly int shardId;    // receiver
+        public readonly int vertexId;    // receiver
         public readonly int graphId;
 
         public int Id { get { return this.id; } }
-        public int ShardId { get { return this.shardId; } }
+        public int VertexId { get { return this.vertexId; } }
         public int GraphId { get { return this.graphId; } }
         public int ThreadIndex { get { return this.endpoint.Vertex.scheduler.Index; } }
 
         protected Runtime.Progress.ProgressUpdateBuffer<T> progressBuffer;
 
-        public LocalMailbox(PostOffice postOffice, VertexInput<S, T> endpoint, int id, int shardId)
+        public LocalMailbox(PostOffice postOffice, VertexInput<S, T> endpoint, int id, int vertexId)
         {
             this.postOffice = postOffice;
             this.dirty = false;
             this.endpoint = endpoint;
             this.id = id;
-            this.shardId = shardId;
+            this.vertexId = vertexId;
             this.graphId = endpoint.Vertex.Stage.InternalGraphManager.Index;
         }
 
         public abstract void DeliverSerializedMessage(SerializedMessage message, RemotePostbox from);
         public abstract void Flush(RemotePostbox from);
         public abstract void Flush();
-        public abstract void Send(Pair<S, T> record, RemotePostbox from);
+
+        public abstract void Send(Message<S, T> message, RemotePostbox from);
         public abstract void Drain();
     }
 
     internal class LegacyLocalMailbox<S, T> : LocalMailbox<S, T>
         where T : Time<T>
     {
-
-        //private NaiadSerialization<Pair<S, T>> deserializer;
-
-        private readonly ConcurrentQueue<Message<Pair<S, T>>> sharedQueue;
+        private readonly ConcurrentQueue<Message<S, T>> sharedQueue;
         private readonly ConcurrentQueue<SerializedMessage> sharedSerializedQueue;
-        private readonly Queue<Message<Pair<S, T>>> privateQueue;
+        private readonly Queue<Message<S, T>> privateQueue;
         
-        private readonly Message<Pair<S, T>>[] messagesFromLocalShards;
+        private readonly Message<S, T>[] messagesFromLocalVertices;
 
-        private readonly AutoSerializedMessageDecoder<S, T> decoder = new AutoSerializedMessageDecoder<S, T>();
+        private readonly AutoSerializedMessageDecoder<S, T> decoder;
 
         /// <summary>
         /// Move records from the private queue into the operator state by giving them to the endpoint.
         /// </summary>
         public override void Drain()
         {
-            // I believe entrancy is checked before hand in LLM, and not needed when called from the scheduler. 
+            // entrancy is checked beforehand in LLM, and not needed when called from the scheduler. 
             if (this.dirty)
             {
                 this.dirty = false;
@@ -443,27 +477,24 @@ namespace Naiad.Dataflow.Channels
                 {
                     this.endpoint.SerializedMessageReceived(superChannelMessage, new RemotePostbox());
                     if (progressBuffer != null)
-                        foreach (Pair<T, int> delta in this.decoder.Times(superChannelMessage))
-                            progressBuffer.Update(delta.v1, -delta.v2);
+                    {
+                        Pair<T, int> delta = this.decoder.Time(superChannelMessage);
+                        progressBuffer.Update(delta.v1, -delta.v2);
+                    }
 
                     // superChannelMessage.Dispose();
                 }
 
                 // Pull messages received from the local process
-                var message = new Message<Pair<S, T>>();
+                var message = new Message<S, T>();
                 while (this.sharedQueue.TryDequeue(out message))
                 {
-                    this.endpoint.MessageReceived(message, new RemotePostbox());
+                    this.endpoint.OnReceive(message, new RemotePostbox());
 
                     if (progressBuffer != null)
-                        for (int i = 0; i < message.length; i++)
-                            progressBuffer.Update(message.payload[i].v2, -1);
+                        progressBuffer.Update(message.time, -message.length);
 
-                    if (message.length == 0)
-                        Logging.Info("Dequeued empty message");
-
-                    // message.Disable() ?
-                    ThreadLocalBufferPools<Pair<S, T>>.pool.Value.CheckIn(message.payload);
+                    message.Release();
                 }
             }
         }
@@ -481,7 +512,7 @@ namespace Naiad.Dataflow.Channels
         /// Forwards a local message by moving it to the shared queue.  This makes the message visible to the receiver.
         /// </summary>
         /// <param name="message"></param>
-        private void Post(Message<Pair<S, T>> message)
+        private void Post(Message<S, T> message)
         {
             typedMessageCount++;
             typedMessageLength += message.length;
@@ -505,38 +536,24 @@ namespace Naiad.Dataflow.Channels
         int typedMessageLength = 0;
 
         // if you provide a destinationCollectionId for the mailbox, it will use progress magic. 
-        public LegacyLocalMailbox(PostOffice postOffice, VertexInput<S, T> endpoint, int id, int shardId, Runtime.Progress.ProgressUpdateBuffer<T> progressBuffer)
-            : this(postOffice, endpoint, id, shardId)
+        public LegacyLocalMailbox(PostOffice postOffice, VertexInput<S, T> endpoint, int id, int vertexId, Runtime.Progress.ProgressUpdateBuffer<T> progressBuffer)
+            : this(postOffice, endpoint, id, vertexId)
         {
             this.progressBuffer = progressBuffer;
         }
         
-        public LegacyLocalMailbox(PostOffice postOffice, VertexInput<S, T> endpoint, int id, int shardId)
-            : base(postOffice, endpoint, id, shardId)
+        public LegacyLocalMailbox(PostOffice postOffice, VertexInput<S, T> endpoint, int id, int vertexId)
+            : base(postOffice, endpoint, id, vertexId)
         {
-            this.sharedQueue = new ConcurrentQueue<Message<Pair<S, T>>>();
+            this.sharedQueue = new ConcurrentQueue<Message<S, T>>();
             this.sharedSerializedQueue = new ConcurrentQueue<SerializedMessage>();
-            this.privateQueue = new Queue<Message<Pair<S, T>>>();
+            this.privateQueue = new Queue<Message<S, T>>();
 
-            this.messagesFromLocalShards = new Message<Pair<S, T>>[this.postOffice.Controller.Workers.Count];
+            this.messagesFromLocalVertices = new Message<S, T>[this.postOffice.Controller.Workers.Count];
             for (int i = 0; i < this.postOffice.Controller.Workers.Count; ++i)
-                this.messagesFromLocalShards[i] = new Message<Pair<S, T>>(ThreadLocalBufferPools<Pair<S, T>>.pool.Value.Empty);
-        }
+                this.messagesFromLocalVertices[i] = new Message<S, T>();
 
-        private bool Recv(ref Message<Pair<S, T>> message)
-        {
-            ThreadLocalBufferPools<Pair<S, T>>.pool.Value.CheckIn(message.payload);
-            if (this.privateQueue.Count > 0)
-            {
-                message = this.privateQueue.Dequeue();
-            }
-            else
-            {
-                message.Disable();
-                message.length = -1;
-            }
-
-            return message.length >= 0;
+            this.decoder = new AutoSerializedMessageDecoder<S, T>(endpoint.Vertex.CodeGenerator);
         }
 
         int SerializedQueueHighWatermark = 10;
@@ -565,41 +582,10 @@ namespace Naiad.Dataflow.Channels
         /// <param name="from">Postbox of the upstream operator</param>
         public override void Flush(RemotePostbox from)
         {
-            int i = from.ThreadIndex;
+            if (this.messagesFromLocalVertices[from.ThreadIndex].length > 0)
+                this.PostBufferAndPossiblyCutThrough(from);
 
-            if (this.messagesFromLocalShards[i].length > 0)
-            {
-                if (this.endpoint.Vertex.Scheduler.Index == from.ThreadIndex && this.endpoint.AvailableEntrancy >= 0)
-                {
-                    for (int j = 0; j < this.messagesFromLocalShards[from.ThreadIndex].length; j++)
-                        if (progressBuffer != null)
-                            progressBuffer.Update(this.messagesFromLocalShards[from.ThreadIndex].payload[j].v2, -1);
-
-
-                    // capturing buffer to avoid writing to it in reentrancy.
-                    var buffer = this.messagesFromLocalShards[from.ThreadIndex];
-
-                    this.messagesFromLocalShards[from.ThreadIndex].Disable();
-
-                    this.endpoint.AvailableEntrancy = this.endpoint.AvailableEntrancy - 1;
-
-                    this.endpoint.MessageReceived(buffer, from);
-
-                    this.Drain();
-
-                    this.endpoint.AvailableEntrancy = this.endpoint.AvailableEntrancy + 1;
-
-                    ThreadLocalBufferPools<Pair<S, T>>.pool.Value.CheckIn(buffer.payload);
-                    buffer.Disable();
-                }
-                else
-                {
-                    this.Post(this.messagesFromLocalShards[i]);
-                    this.messagesFromLocalShards[i].Disable();
-                }
-            }
-
-            if (this.ShardId == from.ShardID)
+            if (this.VertexId == from.VertexID)
             {
                 if (this.endpoint.AvailableEntrancy >= 0)
                 {
@@ -612,46 +598,60 @@ namespace Naiad.Dataflow.Channels
             }
         }
 
-        public override void Send(Pair<S, T> record, RemotePostbox from)
+        //public override void Send(Pair<S, T> record, RemotePostbox from)
+        public override void Send(Message<S, T> records, RemotePostbox from)
         {
-            if (this.messagesFromLocalShards[from.ThreadIndex].payload.Length == 0)
-                // Message has been disabled to conserve memory.
-                this.messagesFromLocalShards[from.ThreadIndex].Enable();
-
-            this.messagesFromLocalShards[from.ThreadIndex].payload[this.messagesFromLocalShards[from.ThreadIndex].length++] = record;
-            if (this.messagesFromLocalShards[from.ThreadIndex].length == this.messagesFromLocalShards[from.ThreadIndex].payload.Length)
+            for (int i = 0; i < records.length; i++)
             {
-                if (this.endpoint.Vertex.Scheduler.Index == from.ThreadIndex && this.endpoint.AvailableEntrancy >= 0)
+                // Message has been disabled to conserve memory.
+                if (this.messagesFromLocalVertices[from.ThreadIndex].Unallocated)
                 {
-                    for (int i = 0; i < this.messagesFromLocalShards[from.ThreadIndex].length; i++)
-                        if (progressBuffer != null)
-                            progressBuffer.Update(this.messagesFromLocalShards[from.ThreadIndex].payload[i].v2, -1);
-
-                    // capturing buffer to avoid writing to it in reentrancy.
-                    var buffer = this.messagesFromLocalShards[from.ThreadIndex];
-
-                    this.messagesFromLocalShards[from.ThreadIndex].Disable();
-
-                    this.endpoint.AvailableEntrancy = this.endpoint.AvailableEntrancy - 1;
-
-                    this.endpoint.MessageReceived(buffer, from);
-
-                    ThreadLocalBufferPools<Pair<S, T>>.pool.Value.CheckIn(buffer.payload);
-                    buffer.Disable();
-
-                    this.Drain();
-
-                    this.endpoint.AvailableEntrancy = this.endpoint.AvailableEntrancy + 1;
+                    this.messagesFromLocalVertices[from.ThreadIndex].Allocate();
+                    this.messagesFromLocalVertices[from.ThreadIndex].time = records.time;
                 }
-                else
+
+                // we may need to flush the buffered message because it has a different time.
+                if (!this.messagesFromLocalVertices[from.ThreadIndex].time.Equals(records.time))
                 {
-                    this.Post(this.messagesFromLocalShards[from.ThreadIndex]);
-                    this.messagesFromLocalShards[from.ThreadIndex].Disable();                    
+                    PostBufferAndPossiblyCutThrough(from);
+
+                    // it is possible that cut through (and re-entrancy) results in records still present here.
+                    if (!this.messagesFromLocalVertices[from.ThreadIndex].Unallocated)
+                    {
+                        this.Post(this.messagesFromLocalVertices[from.ThreadIndex]);
+                        this.messagesFromLocalVertices[from.ThreadIndex] = new Message<S, T>();
+                    }
+
+                    this.messagesFromLocalVertices[from.ThreadIndex].Allocate();
+                    this.messagesFromLocalVertices[from.ThreadIndex].time = records.time;
                 }
+
+                // actually put the record into the buffer
+                this.messagesFromLocalVertices[from.ThreadIndex].payload[this.messagesFromLocalVertices[from.ThreadIndex].length++] = records.payload[i];
+
+                // if the buffer is now full, might as well ship the data [and consider cutting through to other dataflow vertices]
+                if (this.messagesFromLocalVertices[from.ThreadIndex].length == this.messagesFromLocalVertices[from.ThreadIndex].payload.Length)
+                    PostBufferAndPossiblyCutThrough(from);
+            }
+        }
+
+        private void PostBufferAndPossiblyCutThrough(RemotePostbox from)
+        {
+            // no matter what, post the buffer and refresh local storage.
+            this.Post(this.messagesFromLocalVertices[from.ThreadIndex]);
+            this.messagesFromLocalVertices[from.ThreadIndex] = new Message<S, T>();
+
+            // we may want to cut-through. 
+            if (this.endpoint.Vertex.Scheduler.Index == from.ThreadIndex && this.endpoint.AvailableEntrancy >= 0)
+            {
+                this.endpoint.AvailableEntrancy = this.endpoint.AvailableEntrancy - 1;
+                this.Drain();
+                this.endpoint.AvailableEntrancy = this.endpoint.AvailableEntrancy + 1;
             }
         }
     }
 
+#if false
     internal class SpillFile<T> : IDisposable
     {
         private class CircularBuffer<U>
@@ -706,9 +706,6 @@ namespace Naiad.Dataflow.Channels
         private readonly FileStream consumeStream;
 
         private readonly CircularBuffer<T> typedBuffer;
-        private readonly CircularBuffer<SerializedMessage> incomingMessageBuffer;
-
-        private readonly SerializedMessage[] inMemoryMessageBuffer;
 
         private readonly SerializedMessageEncoder<T> encoder;
         private readonly SerializedMessageEncoder<T> logEncoder;
@@ -722,13 +719,13 @@ namespace Naiad.Dataflow.Channels
 
         private readonly bool logAllElements;
 
-        private readonly SendBufferPage currentSpillPage;
+        private readonly NaiadSerialization<MessageHeader> headerSerializer;
 
-        public SpillFile(string filename, int bufferLength, SerializedMessageEncoder<T> encoder, SerializedMessageDecoder<T> decoder, int pageSize)
-            : this(filename, bufferLength, encoder, null, decoder, pageSize)
+        public SpillFile(string filename, int bufferLength, SerializedMessageEncoder<T> encoder, SerializedMessageDecoder<T> decoder, int pageSize, NaiadSerialization<MessageHeader> headerSerializer)
+            : this(filename, bufferLength, encoder, null, decoder, pageSize, headerSerializer)
         {}
 
-        public SpillFile(string filename, int bufferLength, SerializedMessageEncoder<T> spillEncoder, SerializedMessageEncoder<T> logEncoder, SerializedMessageDecoder<T> decoder, int pageSize)
+        public SpillFile(string filename, int bufferLength, SerializedMessageEncoder<T> spillEncoder, SerializedMessageEncoder<T> logEncoder, SerializedMessageDecoder<T> decoder, int pageSize, NaiadSerialization<MessageHeader> headerSerializer)
         {
             this.typedBuffer = new CircularBuffer<T>(bufferLength);
 
@@ -749,6 +746,8 @@ namespace Naiad.Dataflow.Channels
                 this.logEncoder = logEncoder;
                 this.logEncoder.CompletedMessage += logEncoder_CompletedMessage;
             }
+
+            this.headerSerializer = headerSerializer;
         }
 
         void logEncoder_CompletedMessage(object sender, CompletedMessageArgs e)
@@ -788,7 +787,7 @@ namespace Naiad.Dataflow.Channels
             else
             {
                 // Write the message directly to the file.
-                MessageHeader.WriteHeaderToBuffer(this.rereadMessageHeaderBuffer, 0, message.Header);
+                MessageHeader.WriteHeaderToBuffer(this.rereadMessageHeaderBuffer, 0, message.Header, this.headerSerializer);
                 this.spillStream.Write(this.rereadMessageHeaderBuffer, 0, this.rereadMessageHeaderBuffer.Length);
                 this.spillStream.Write(message.Body.Buffer, message.Body.CurrentPos, message.Body.End - message.Body.CurrentPos);
             }
@@ -857,7 +856,7 @@ namespace Naiad.Dataflow.Channels
                 return false;
             }
 
-            MessageHeader.ReadHeaderFromBuffer(this.rereadMessageHeaderBuffer, 0, ref nextMessageHeader);
+            MessageHeader.ReadHeaderFromBuffer(this.rereadMessageHeaderBuffer, 0, ref nextMessageHeader, headerSerializer);
 
             if (nextMessageHeader.Type == SerializedMessageType.CheckpointData)
             {
@@ -882,7 +881,9 @@ namespace Naiad.Dataflow.Channels
             return true;
         }
     }
+#endif
 
+#if false
     internal class SpillingLocalMailbox<S, T> : LocalMailbox<S, T>
         where T : Time<T>
     {
@@ -989,7 +990,7 @@ namespace Naiad.Dataflow.Channels
             {
                 this.messagesFromLocalThreads[from.ThreadIndex] = new SendBufferPage(GlobalBufferPool<byte>.pool, this.pageSize);
                 page = this.messagesFromLocalThreads[from.ThreadIndex];
-                page.WriteHeader(new MessageHeader(from.ShardID, /* TODO FIXME: this.sendSequenceNumbers[destProcessID, destShardID]++ */ 0, this.Id, this.ShardId, SerializedMessageType.Data));                
+                page.WriteHeader(new MessageHeader(from.VertexID, /* TODO FIXME: this.sendSequenceNumbers[destProcessID, destVertexID]++ */ 0, this.Id, this.VertexId, SerializedMessageType.Data));                
             }
 
             if (!page.WriteRecord(this.serializer, record))
@@ -997,7 +998,7 @@ namespace Naiad.Dataflow.Channels
                 this.Flush(from);
                 this.messagesFromLocalThreads[from.ThreadIndex] = new SendBufferPage(GlobalBufferPool<byte>.pool, this.pageSize);
                 page = this.messagesFromLocalThreads[from.ThreadIndex];
-                page.WriteHeader(new MessageHeader(from.ShardID, /* TODO FIXME: this.sendSequenceNumbers[destProcessID, destShardID]++ */ 0, this.Id, this.ShardId, SerializedMessageType.Data));
+                page.WriteHeader(new MessageHeader(from.VertexID, /* TODO FIXME: this.sendSequenceNumbers[destProcessID, destVertexID]++ */ 0, this.Id, this.VertexId, SerializedMessageType.Data));
 
                 bool success = page.WriteRecord(this.serializer, record);
                 if (!success)
@@ -1068,8 +1069,8 @@ namespace Naiad.Dataflow.Channels
 
         private readonly int pageSize;
 
-        public SpillingLocalMailbox(PostOffice postoffice, VertexInput<S, T> endpoint, int id, int shardId, Runtime.Progress.ProgressUpdateBuffer<T> progressBuffer)
-            : base(postoffice, endpoint, id, shardId)
+        public SpillingLocalMailbox(PostOffice postoffice, VertexInput<S, T> endpoint, int id, int vertexId, Runtime.Progress.ProgressUpdateBuffer<T> progressBuffer)
+            : base(postoffice, endpoint, id, vertexId)
         {
             this.pageSize = this.endpoint.Vertex.Stage.InternalGraphManager.Controller.Configuration.SendPageSize;
 
@@ -1088,7 +1089,7 @@ namespace Naiad.Dataflow.Channels
             this.pagesFlushed = 0;
         }
     }
-
+#endif
     internal class RemoteMailbox<S, T> : Mailbox<S, T>
         where T : Time<T>
     {
@@ -1097,55 +1098,61 @@ namespace Naiad.Dataflow.Channels
 
         private readonly int processID;
 
-        private readonly int shardID;
-        public int ShardId { get { return this.shardID; } }
+        private readonly int vertexID;
+        public int VertexId { get { return this.vertexID; } }
 
         private readonly int graphID;
         public int GraphId { get { return this.graphID; } }
 
         private readonly NetworkChannel networkChannel;
-        private readonly AutoSerializedMessageEncoder<S, T>[] encodersFromLocalShards;
-        //private readonly SendBufferPage[] messagesFromLocalShards;
+        private readonly AutoSerializedMessageEncoder<S, T>[] encodersFromLocalVertices;
 
         public int RecordSizeHint
         {
             get
             {
-                return this.encodersFromLocalShards[0].RecordSizeHint;
+                return this.encodersFromLocalVertices[0].RecordSizeHint;
             }
         }
 
         public int ThreadIndex { get { return -1; } }
 
-        public RemoteMailbox(int channelID, int processID, int shardID, InternalGraphManager manager)
+        public RemoteMailbox(int channelID, int processID, int vertexID, InternalGraphManager manager)
         {
             this.channelID = channelID;
             this.processID = processID;
-            this.shardID = shardID;
+            this.vertexID = vertexID;
             this.graphID = manager.Index;
 
             this.networkChannel = manager.Controller.NetworkChannel;
 
             var controller = manager.Controller;
-            this.encodersFromLocalShards = new AutoSerializedMessageEncoder<S, T>[controller.Workers.Count];
-            AutoSerializationMode mode = controller.Configuration.OneTimePerMessageSerialization ? AutoSerializationMode.OneTimePerMessage : AutoSerializationMode.Basic;
+            this.encodersFromLocalVertices = new AutoSerializedMessageEncoder<S, T>[controller.Workers.Count];
 
             for (int i = 0; i < controller.Workers.Count; ++i )
-            {                
-                this.encodersFromLocalShards[i] = new AutoSerializedMessageEncoder<S, T>(this.shardID, this.graphID << 16 | this.channelID, this.networkChannel.GetBufferPool(this.processID, i), this.networkChannel.SendPageSize, mode, SerializedMessageType.Data, () => this.networkChannel.GetSequenceNumber(this.processID));
-                this.encodersFromLocalShards[i].CompletedMessage += (o, a) => { this.networkChannel.SendBufferSegment(a.Hdr, this.processID, a.Segment); };
+            {
+                this.encodersFromLocalVertices[i] = new AutoSerializedMessageEncoder<S, T>(this.vertexID, this.graphID << 16 | this.channelID, this.networkChannel.GetBufferPool(this.processID, i), this.networkChannel.SendPageSize, manager.CodeGenerator, SerializedMessageType.Data, () => this.networkChannel.GetSequenceNumber(this.processID));
+                this.encodersFromLocalVertices[i].CompletedMessage += (o, a) => { this.networkChannel.SendBufferSegment(a.Hdr, this.processID, a.Segment); };
             }
         }
 
         public void Flush(RemotePostbox from)
         {
 
-            this.encodersFromLocalShards[from.ThreadIndex].Flush();
+            this.encodersFromLocalVertices[from.ThreadIndex].Flush();
         }
 
         public void Send(Pair<S, T> record, RemotePostbox from)
         {
-            this.encodersFromLocalShards[from.ThreadIndex].Write(record, from.ShardID);
+            this.encodersFromLocalVertices[from.ThreadIndex].Write(record, from.VertexID);
+        }
+
+        public void Send(Message<S, T> message, RemotePostbox from)
+        {
+            this.encodersFromLocalVertices[from.ThreadIndex].SetCurrentTime(message.time);
+            this.encodersFromLocalVertices[from.ThreadIndex].Write(new ArraySegment<S>(message.payload, 0, message.length), from.VertexID);
+            //for (int i = 0; i < message.length; ++i)
+            //    this.encodersFromLocalVertices[from.ThreadIndex].Write(message.payload[i], from.VertexID);
         }
 
         public void DeliverSerializedMessage(SerializedMessage message, RemotePostbox from)

@@ -22,9 +22,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Naiad.Scheduling;
+using Microsoft.Research.Naiad.Scheduling;
 
-namespace Naiad.Runtime.Progress
+namespace Microsoft.Research.Naiad.Runtime.Progress
 {
     internal class ProgressUpdateBuffer<T>
         where T : Time<T>

@@ -23,8 +23,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-using Naiad;
-using Naiad.Frameworks.DifferentialDataflow;
+using Microsoft.Research.Naiad;
+using Microsoft.Research.Naiad.Frameworks.DifferentialDataflow;
 
 namespace Examples.DifferentialDataflow
 {
@@ -43,7 +43,7 @@ namespace Examples.DifferentialDataflow
             // first, construct a Naiad controller.
             using (var controller = NewController.FromArgs(ref args))
             {
-                using (var graph = controller.NewGraph())
+                using (var graph = controller.NewComputation())
                 {
                     // create an incrementally updateable collection
                     var text = new IncrementalCollection<string>(graph);//.NewInput<string>();

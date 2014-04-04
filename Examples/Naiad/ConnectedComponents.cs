@@ -24,11 +24,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using Naiad;
-using Naiad.Dataflow;
-using Naiad.Dataflow.PartitionBy;
+using Microsoft.Research.Naiad;
+using Microsoft.Research.Naiad.Dataflow;
+using Microsoft.Research.Naiad.Dataflow.PartitionBy;
 
-using Naiad.Frameworks.Lindi;
+using Microsoft.Research.Naiad.Frameworks.Lindi;
 using System.Diagnostics;
 
 namespace Examples.ConnectedComponents
@@ -51,7 +51,7 @@ namespace Examples.ConnectedComponents
             // emits all exchanged labels; a BlockingAggregate reduces this to one per node.
             return labels.IterateAndAccumulate((lc, z) => z.GraphJoin(lc.EnterLoop(edges))
                                                            .StreamingAggregate((x, y) => x.CompareTo(y) > 0 ? x : y)
-                                                        // .Synchronize()  // optionally sync up everything each iteration
+                                                           //.Synchronize()  // optionally sync up everything each iteration
                                                            ,
                                                x => x.v1.GetHashCode(), Int32.MaxValue, "Iteration")
                          .BlockingAggregate((x, y) => x.CompareTo(y) > 0 ? x : y);
@@ -68,11 +68,11 @@ namespace Examples.ConnectedComponents
         /// <param name="input">input key-value stream</param>
         /// <param name="aggregate">aggregation function</param>
         /// <returns>aggregated key-value pairs</returns>
-        public static Stream<Pair<TKey, TValue>, TTime> StreamingAggregate<TKey, TValue, TTime>(this Stream<Pair<TKey, TValue>, TTime> input, Func<TValue, TValue, TValue> aggregate)
+        public static Stream<Pair<TKey, TValue>, IterationIn<TTime>> StreamingAggregate<TKey, TValue, TTime>(this Stream<Pair<TKey, TValue>, IterationIn<TTime>> input, Func<TValue, TValue, TValue> aggregate)
             where TTime : Time<TTime>
             where TValue : IEquatable<TValue>
         {
-            return Naiad.Frameworks.Foundry.NewUnaryStage(input, (i, s) => new StreamingAggregateVertex<TKey, TValue, TTime>(i, s, aggregate), x => x.v1.GetHashCode(), x => x.v1.GetHashCode(), "StreamingAggregate");
+            return Microsoft.Research.Naiad.Frameworks.Foundry.NewUnaryStage(input, (i, s) => new StreamingAggregateVertex<TKey, TValue, IterationIn<TTime>>(i, s, aggregate), x => x.v1.GetHashCode(), x => x.v1.GetHashCode(), "StreamingAggregate");
         }
 
         /// <summary>
@@ -81,34 +81,35 @@ namespace Examples.ConnectedComponents
         /// <typeparam name="TKey">Key type</typeparam>
         /// <typeparam name="TValue">Value type</typeparam>
         /// <typeparam name="TTime">Time type</typeparam>
-        public class StreamingAggregateVertex<TKey, TValue, TTime> : Naiad.Frameworks.UnaryVertex<Pair<TKey, TValue>, Pair<TKey, TValue>, TTime>
+        public class StreamingAggregateVertex<TKey, TValue, TTime> : Microsoft.Research.Naiad.Frameworks.UnaryVertex<Pair<TKey, TValue>, Pair<TKey, TValue>, TTime>
             where TTime : Time<TTime>
             where TValue : IEquatable<TValue>
         {
             private readonly Dictionary<TKey, TValue> Values;
             private readonly Func<TValue, TValue, TValue> Aggregate;
 
-            public override void MessageReceived(Message<Pair<Pair<TKey, TValue>, TTime>> message)
+            public override void OnReceive(Message<Pair<TKey, TValue>, TTime> message)
             {
+                var output = this.Output.GetBufferForTime(message.time);
                 for (int j = 0; j < message.length; j++)
                 {
                     var record = message.payload[j];
 
                     // if the key is new, install the new value.
-                    if (!this.Values.ContainsKey(record.v1.v1))
+                    if (!this.Values.ContainsKey(record.v1))
                     {
-                        this.Values[record.v1.v1] = record.v1.v2;
-                        this.Output.Send(record.v1, record.v2);
+                        this.Values[record.v1] = record.v2;
+                        output.Send(record);
                     }
                     // else update value and send if it changes.
                     else
                     {
-                        var oldValue = this.Values[record.v1.v1];
-                        var newValue = this.Aggregate(oldValue, record.v1.v2);
+                        var oldValue = this.Values[record.v1];
+                        var newValue = this.Aggregate(oldValue, record.v2);
                         if (!oldValue.Equals(newValue))
                         {
-                            this.Values[record.v1.v1] = newValue;
-                            this.Output.Send(new Pair<TKey, TValue>(record.v1.v1, newValue), record.v2);
+                            this.Values[record.v1] = newValue;
+                            output.Send(new Pair<TKey, TValue>(record.v1, newValue));
                         }
                     }
                 }
@@ -141,7 +142,7 @@ namespace Examples.ConnectedComponents
             where TTime : Time<TTime>
             where TValue : IEquatable<TValue>
         {
-            return Naiad.Frameworks.Foundry.NewUnaryStage(input, (i, s) => new BlockingAggregateVertex<TKey, TValue, TTime>(i, s, aggregate), x => x.v1.GetHashCode(), x => x.v1.GetHashCode(), "BlockingAggregate");
+            return Microsoft.Research.Naiad.Frameworks.Foundry.NewUnaryStage(input, (i, s) => new BlockingAggregateVertex<TKey, TValue, TTime>(i, s, aggregate), x => x.v1.GetHashCode(), x => x.v1.GetHashCode(), "BlockingAggregate");
         }
 
         /// <summary>
@@ -150,7 +151,7 @@ namespace Examples.ConnectedComponents
         /// <typeparam name="TKey">Key type</typeparam>
         /// <typeparam name="TValue">Value type</typeparam>
         /// <typeparam name="TTime">Time type</typeparam>
-        public class BlockingAggregateVertex<TKey, TValue, TTime> : Naiad.Frameworks.UnaryVertex<Pair<TKey, TValue>, Pair<TKey, TValue>, TTime>
+        public class BlockingAggregateVertex<TKey, TValue, TTime> : Microsoft.Research.Naiad.Frameworks.UnaryVertex<Pair<TKey, TValue>, Pair<TKey, TValue>, TTime>
             where TTime : Time<TTime>
             where TValue : IEquatable<TValue>
         {
@@ -158,12 +159,12 @@ namespace Examples.ConnectedComponents
             private readonly Dictionary<TKey, TValue> Values = new Dictionary<TKey, TValue>();
             private readonly Func<TValue, TValue, TValue> Aggregate;
 
-            public override void MessageReceived(Message<Pair<Pair<TKey, TValue>, TTime>> message)
+            public override void OnReceive(Message<Pair<TKey, TValue>, TTime> message)
             {
                 for (int j = 0; j < message.length; j++)
                 {
-                    var record = message.payload[j].v1;
-                    var time = message.payload[j].v2;
+                    var record = message.payload[j];
+                    var time = message.time;
 
                     // if the key is new, install the value.
                     if (!this.Values.ContainsKey(record.v1))
@@ -187,10 +188,11 @@ namespace Examples.ConnectedComponents
                 }
             }
 
-            public override void OnDone(TTime time)
+            public override void OnNotify(TTime time)
             {
+                var output = this.Output.GetBufferForTime(time);
                 foreach (var key in this.Active)
-                    this.Output.Send(key.PairWith(this.Values[key]), time);
+                    output.Send(key.PairWith(this.Values[key]));
 
                 this.Active.Clear();
             }
@@ -209,65 +211,67 @@ namespace Examples.ConnectedComponents
         public static Stream<Pair<TVertex, TState>, TTime> GraphJoin<TVertex, TState, TTime>(this Stream<Pair<TVertex, TState>, TTime> values, Stream<Pair<TVertex, TVertex>, TTime> edges) 
             where TTime : Time<TTime>
         {
-            return Naiad.Frameworks.Foundry.NewBinaryStage(edges, values, (i, s) => new GraphJoinVertex<TVertex, TState, TTime>(i, s), x => x.v1.GetHashCode(), y => y.v1.GetHashCode(), null, "GraphJoin");
+            return Microsoft.Research.Naiad.Frameworks.Foundry.NewBinaryStage(edges, values, (i, s) => new GraphJoinVertex<TVertex, TState, TTime>(i, s), x => x.v1.GetHashCode(), y => y.v1.GetHashCode(), null, "GraphJoin");
         }
 
-        public class GraphJoinVertex<TVertex, TState, TTime> : Naiad.Frameworks.BinaryVertex<Pair<TVertex, TVertex>, Pair<TVertex, TState>, Pair<TVertex, TState>, TTime>
+        public class GraphJoinVertex<TVertex, TState, TTime> : Microsoft.Research.Naiad.Frameworks.BinaryVertex<Pair<TVertex, TVertex>, Pair<TVertex, TState>, Pair<TVertex, TState>, TTime>
             where TTime : Time<TTime>
         {
             private readonly Dictionary<TVertex, List<TVertex>> edges = new Dictionary<TVertex, List<TVertex>>();
             private readonly List<Pair<TVertex, TState>> enqueued = new List<Pair<TVertex, TState>>();
             private bool graphReceived = false;
 
-            public override void MessageReceived1(Message<Pair<Pair<TVertex, TVertex>, TTime>> message)
+            public override void OnReceive1(Message<Pair<TVertex, TVertex>, TTime> message)
             {
+                this.NotifyAt(message.time);
+
                 for (int i = 0; i < message.length; i++)
                 {
-                    var edge = message.payload[i].v1;
-                    var time = message.payload[i].v2;
+                    var edge = message.payload[i];
 
                     if (!this.edges.ContainsKey(edge.v1))
                         this.edges.Add(edge.v1, new List<TVertex>());
 
                     this.edges[edge.v1].Add(edge.v2);
-
-                    this.NotifyAt(time);
                 }
             }
 
-            public override void MessageReceived2(Message<Pair<Pair<TVertex, TState>, TTime>> message)
+            public override void OnReceive2(Message<Pair<TVertex, TState>, TTime> message)
             {
                 if (!this.graphReceived)
                 {
                     // add each record to a queue of work todo.
                     for (int i = 0; i < message.length; i++)
-                        this.enqueued.Add(message.payload[i].v1);
+                        this.enqueued.Add(message.payload[i]);
                 }
                 else
                 {
+                    var output = this.Output.GetBufferForTime(message.time);
+
                     for (int i = 0; i < message.length; i++)
                     {
-                        var data = message.payload[i].v1;
-                        var time = message.payload[i].v2;
+                        var data = message.payload[i];
 
                         // send data to any matching neighbors.
                         if (this.edges.ContainsKey(data.v1))
                             foreach (var destination in this.edges[data.v1])
-                                this.Output.Send(destination.PairWith(data.v2), time);
+                                output.Send(destination.PairWith(data.v2));
                     }
                 }
             }
 
-            public override void OnDone(TTime time)
+            public override void OnNotify(TTime time)
             {
                 // we've received the entire graph (put this at the end of the method to see re-entrancy at work / crashing!)
                 this.graphReceived = true;
+
+                var output = this.Output.GetBufferForTime(time);
 
                 // send matches with enqueued data.
                 foreach (var data in this.enqueued)
                     if (this.edges.ContainsKey(data.v1))
                         foreach (var destination in this.edges[data.v1])
-                            this.Output.Send(destination.PairWith(data.v2), time);
+                            output.Send(destination.PairWith(data.v2));
 
                 this.enqueued.Clear();
             }
@@ -294,8 +298,8 @@ namespace Examples.ConnectedComponents
             // allocate a new controller from command line arguments.
             using (var controller = NewController.FromArgs(ref args))
             {
-                var nodeCount = args.Length == 3 ? Convert.ToInt32(args[1]) : 100000;
-                var edgeCount = args.Length == 3 ? Convert.ToInt32(args[2]) : 200000;
+                var nodeCount = args.Length == 3 ? Convert.ToInt32(args[1]) : 1000;
+                var edgeCount = args.Length == 3 ? Convert.ToInt32(args[2]) : 2000;
 
                 #region Generate a local fraction of input data
 
@@ -312,7 +316,7 @@ namespace Examples.ConnectedComponents
                 Stopwatch stopwatch = new Stopwatch();
 
                 // allocate a new graph manager for the computation.
-                using (var manager = controller.NewGraph())
+                using (var manager = controller.NewComputation())
                 {
                     // convert array of edges to single-epoch stream.
                     var edges = graphFragment.AsNaiadStream(manager)

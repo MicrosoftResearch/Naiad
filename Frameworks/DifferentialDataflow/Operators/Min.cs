@@ -23,12 +23,60 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Linq.Expressions;
-using Naiad.DataStructures;
-using Naiad;
-using Naiad.Dataflow;
+using Microsoft.Research.Naiad.DataStructures;
+using Microsoft.Research.Naiad;
+using Microsoft.Research.Naiad.Dataflow;
 
-namespace Naiad.Frameworks.DifferentialDataflow.Operators
+namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Operators
 {
+#if true
+    internal class Min<K, V, M, S, T> : OperatorImplementations.ConservativeUnaryStatefulOperator<K, V, S, T, S>
+        where K : IEquatable<K>
+        where V : IEquatable<V>
+        where S : IEquatable<S>
+        where M : IComparable<M>
+        where T : Microsoft.Research.Naiad.Time<T>
+    {
+        Func<K, V, M> valueSelector;
+        Func<K, V, S> resultSelector;
+
+        protected override void Reduce(K key, UnaryKeyIndices keyIndices, int timeIndex)
+        {
+            var minFound = false;
+            var minValue = default(M);
+            var minEntry = default(V);
+
+            collection.Clear();
+            inputTrace.EnumerateCollectionAt(keyIndices.processed, timeIndex, collection);
+
+            for (int i = 0; i < collection.Count; i++)
+            {
+                var element = collection.Array[i];
+
+                if (element.weight > 0)
+                {
+                    var value = valueSelector(key, element.record);
+                    if (minFound == false || minValue.CompareTo(value) > 0)
+                    {
+                        minFound = true;
+                        minValue = value;
+                        minEntry = element.record;
+                    }
+                }
+            }
+
+            if (minFound)
+                outputTrace.Introduce(ref outputWorkspace, resultSelector(key, minEntry), 1, timeIndex);
+        }
+
+        public Min(int index, Stage<T> collection, bool inputImmutable, Expression<Func<S, K>> k, Expression<Func<S, V>> e, Expression<Func<K, V, M>> v, Expression<Func<K, V, S>> r)
+            : base(index, collection, inputImmutable, k, e)
+        {
+            valueSelector = v.Compile();
+            resultSelector = r.Compile();
+        }
+    }
+#else
     internal class Min<K, V, M, S, T> : OperatorImplementations.UnaryStatefulOperator<K, V, S, T, S>
         where K : IEquatable<K>
         where V : IEquatable<V>
@@ -120,7 +168,7 @@ namespace Naiad.Frameworks.DifferentialDataflow.Operators
             resultSelector = r.Compile();
         }
     }
-
+#endif
     internal class MinIntKeyed<V, M, S, T> : OperatorImplementations.UnaryStatefulIntKeyedOperator<V, S, T, S>
         where V : IEquatable<V>
         where M : IEquatable<M>, IComparable<M>

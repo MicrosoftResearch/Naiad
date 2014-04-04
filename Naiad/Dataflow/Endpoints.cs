@@ -18,8 +18,8 @@
  * permissions and limitations under the License.
  */
 
-using Naiad.Dataflow.Channels;
-using Naiad.FaultTolerance;
+using Microsoft.Research.Naiad.Dataflow.Channels;
+using Microsoft.Research.Naiad.FaultTolerance;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,7 +27,7 @@ using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Naiad.Dataflow
+namespace Microsoft.Research.Naiad.Dataflow
 {
     /// <summary>
     /// Defines an output of a vertex, which only needs to respond to requests to receive messages from the output.
@@ -78,18 +78,11 @@ namespace Naiad.Dataflow
         void Flush();
 
         /// <summary>
-        /// Callback for a single record. 
-        /// </summary>
-        /// <param name="record">the record</param>
-        /// <param name="from">the source of the record</param>
-        void RecordReceived(Pair<TRecord, TTime> record, RemotePostbox from);
-
-        /// <summary>
         /// Callback for a message containing several records.
         /// </summary>
         /// <param name="message">the message</param>
         /// <param name="from">the source of the message</param>
-        void MessageReceived(Message<Pair<TRecord, TTime>> message, RemotePostbox from);
+        void OnReceive(Message<TRecord, TTime> message, RemotePostbox from);
 
         /// <summary>
         /// Callback for a serialized message. 
@@ -138,6 +131,7 @@ namespace Naiad.Dataflow
         { }
     }
 
+#if false
     public class RecvFiberSpillBank<S, T> : VertexInput<S, T>, ICheckpointable
         where T : Time<T>
     {
@@ -149,7 +143,7 @@ namespace Naiad.Dataflow
         public int AvailableEntrancy { get { return this.Vertex.Entrancy; } set { this.Vertex.Entrancy = value; } }
         private  SpillFile<Pair<S, T>> spillFile;
 
-        private readonly Vertex<T> Shard;
+        private readonly Vertex<T> vertex;
 
         public IEnumerable<Pair<S, T>> GetRecords()
         {
@@ -158,44 +152,48 @@ namespace Naiad.Dataflow
                 yield return record;
         }
 
-        public RecvFiberSpillBank(Vertex<T> shard)
-            : this(shard, 1 << 20)
+        public RecvFiberSpillBank(Vertex<T> vertex)
+            : this(vertex, 1 << 20)
         {
         }
 
-        public RecvFiberSpillBank(Vertex<T> shard, int bufferSize)
+        public RecvFiberSpillBank(Vertex<T> vertex, int bufferSize)
         {
-            this.Shard = shard;
-            this.spillFile = new SpillFile<Pair<S, T>>(System.IO.Path.GetRandomFileName(), bufferSize, new AutoSerializedMessageEncoder<S, T>(1, 1, DummyBufferPool<byte>.Pool, shard.Stage.InternalGraphManager.Controller.Configuration.SendPageSize, AutoSerializationMode.OneTimePerMessage), new AutoSerializedMessageDecoder<S, T>(), shard.Stage.InternalGraphManager.Controller.Configuration.SendPageSize);
+            this.vertex = vertex;
+            this.spillFile = new SpillFile<Pair<S, T>>(System.IO.Path.GetRandomFileName(), bufferSize, new AutoSerializedMessageEncoder<S, T>(1, 1, DummyBufferPool<byte>.Pool, vertex.Stage.InternalGraphManager.Controller.Configuration.SendPageSize, vertex.CodeGenerator), new AutoSerializedMessageDecoder<S, T>(vertex.CodeGenerator), vertex.Stage.InternalGraphManager.Controller.Configuration.SendPageSize, vertex.CodeGenerator.GetSerializer<MessageHeader>());
         }
 
-        public Naiad.Dataflow.Vertex Vertex { get { return this.Shard; } }
+        public Microsoft.Research.Naiad.Dataflow.Vertex Vertex { get { return this.vertex; } }
 
         public void Flush() { this.spillFile.Flush(); }
 
         public void RecordReceived(Pair<S, T> record, RemotePostbox sender)
         {
             this.spillFile.Write(record);
-            this.Shard.NotifyAt(record.v2);
+            this.vertex.NotifyAt(record.v2);
         }
 
-        public void MessageReceived(Message<Pair<S, T>> message, RemotePostbox sender)
+        public void MessageReceived(Message<S, T> message, RemotePostbox sender)
         {
             for (int i = 0; i < message.length; ++i)
-                this.RecordReceived(message.payload[i], sender);
+                this.RecordReceived(message.payload[i].PairWith(message.time), sender);
         }
 
         private AutoSerializedMessageDecoder<S, T> decoder = null;
-        public void SerializedMessageReceived(SerializedMessage message, RemotePostbox sender)
+        public void SerializedMessageReceived(SerializedMessage serializedMessage, RemotePostbox sender)
         {
-            if (this.decoder == null) this.decoder = new AutoSerializedMessageDecoder<S, T>();
-            foreach (Pair<S, T> record in this.decoder.Elements(message))
-                this.RecordReceived(record, sender);
+            if (this.decoder == null) this.decoder = new AutoSerializedMessageDecoder<S, T>(this.Vertex.CodeGenerator);
+            
+            foreach (Message<S, T> message in this.decoder.AsTypedMessages(serializedMessage))
+            {
+                this.MessageReceived(message, sender);
+                message.Release();
+            }
         }
 
         public override string ToString()
         {
-            return string.Format("<{0}L>", this.Shard.Stage.StageId);
+            return string.Format("<{0}L>", this.vertex.Stage.StageId);
         }
 
         public void Restore(NaiadReader reader)
@@ -212,6 +210,8 @@ namespace Naiad.Dataflow
         public virtual bool Stateful { get { return true; } }
     }
 
+#endif
+
     internal abstract class Receiver<S, T> : VertexInput<S, T>
         where T : Time<T>
     {
@@ -227,89 +227,52 @@ namespace Naiad.Dataflow
             set { this.Vertex.Entrancy = value; }
         }
 
-        protected Vertex Shard;
+        protected Vertex vertex;
 
         public Vertex Vertex
         {
-            get { return this.Shard; }
+            get { return this.vertex; }
         }
 
         public void Flush()
         {
             System.Diagnostics.Debug.Assert(this.AvailableEntrancy >= -1);
-            this.Shard.Flush();
+            this.vertex.Flush();
         }
 
-        public abstract void RecordReceived(Pair<S, T> record, RemotePostbox from);
-
-        public virtual void MessageReceived(Message<Pair<S, T>> message, RemotePostbox from)
+        public abstract void OnReceive(Message<S, T> message, RemotePostbox from);
+#if false
         {
             System.Diagnostics.Debug.Assert(this.AvailableEntrancy >= -1);
             for (int i = 0; i < message.length; i++)
                 RecordReceived(message.payload[i], from);
         }
+#endif
+
+        private Queue<Message<S, T>> SpareBuffers; // used for reentrancy.
 
 
-        private Queue<Message<Pair<S, T>>> SpareBuffers; // used for reentrancy.
-
-
-        private Message<Pair<S, T>> Buffer;
+        // private Message<S, T> Buffer;
         private AutoSerializedMessageDecoder<S, T> decoder = null;
 
-        public void SerializedMessageReceived(SerializedMessage message, RemotePostbox from)
+        public void SerializedMessageReceived(SerializedMessage serializedMessage, RemotePostbox from)
         {
             System.Diagnostics.Debug.Assert(this.AvailableEntrancy >= -1);
-            if (this.decoder == null) this.decoder = new AutoSerializedMessageDecoder<S, T>();
+            if (this.decoder == null) this.decoder = new AutoSerializedMessageDecoder<S, T>(this.Vertex.CodeGenerator);
 
             if (this.loggingEnabled)
-                this.LogMessage(message);
-            foreach (Pair<S, T> record in this.decoder.Elements(message))
+                this.LogMessage(serializedMessage);
+
+            foreach (Message<S, T> message in this.decoder.AsTypedMessages(serializedMessage))
             {
-                this.Buffer.payload[this.Buffer.length++] = record;
-                if (this.Buffer.length == this.Buffer.payload.Length)
-                {
-                    var temp = Buffer;
-                    Buffer.Disable();
-
-                    if (SpareBuffers.Count > 0)
-                        Buffer = SpareBuffers.Dequeue();
-                    else
-                        Buffer.Enable();
-
-                    this.MessageReceived(temp, from);
-
-                    temp.length = 0;
-                    SpareBuffers.Enqueue(temp);
-
-                    System.Diagnostics.Debug.Assert(this.Buffer.length == 0);
-                    //this.Buffer.length = 0;
-                }
-            }
-
-            if (this.Buffer.length > 0)
-            {
-
-                var temp = Buffer;
-                Buffer.Disable();
-
-                if (SpareBuffers.Count > 0)
-                    Buffer = SpareBuffers.Dequeue();
-                else
-                    Buffer.Enable();
-
-                this.MessageReceived(temp, from);
-
-                temp.length = 0;
-                SpareBuffers.Enqueue(temp);
-
-                System.Diagnostics.Debug.Assert(this.Buffer.length == 0);
-                //this.Buffer.length = 0;
+                this.OnReceive(message, from);
+                message.Release();
             }
         }
 
-        protected void LogMessage(Message<Pair<S, T>> message)
+        protected void LogMessage(Message<S, T> message)
         {
-            var encoder = new AutoSerializedMessageEncoder<S, T>(this.Vertex.VertexId, this.channelId, DummyBufferPool<byte>.Pool, this.Vertex.Stage.InternalGraphManager.Controller.Configuration.SendPageSize, AutoSerializationMode.OneTimePerMessage);
+            var encoder = new AutoSerializedMessageEncoder<S, T>(this.Vertex.VertexId, this.channelId, DummyBufferPool<byte>.Pool, this.Vertex.Stage.InternalGraphManager.Controller.Configuration.SendPageSize, this.Vertex.CodeGenerator);
             encoder.CompletedMessage += (o, a) =>
             {
                 ArraySegment<byte> messageSegment = a.Segment.ToArraySegment();
@@ -317,7 +280,7 @@ namespace Naiad.Dataflow
             };
 
             for (int i = 0; i < message.length; ++i)
-                encoder.Write(message.payload[i]);
+                encoder.Write(message.payload[i].PairWith(message.time));
 
             encoder.Flush();
         }
@@ -325,52 +288,44 @@ namespace Naiad.Dataflow
         protected void LogMessage(SerializedMessage message)
         {
             byte[] messageHeaderBuffer = new byte[MessageHeader.SizeOf];
-            MessageHeader.WriteHeaderToBuffer(messageHeaderBuffer, 0, message.Header);
+            MessageHeader.WriteHeaderToBuffer(messageHeaderBuffer, 0, message.Header, this.Vertex.CodeGenerator.GetSerializer<MessageHeader>());
             this.Vertex.LoggingOutput.Write(messageHeaderBuffer, 0, messageHeaderBuffer.Length);
             this.Vertex.LoggingOutput.Write(message.Body.Buffer, message.Body.CurrentPos, message.Body.End - message.Body.CurrentPos);
         }
 
-        public Receiver(Vertex shard)
+        public Receiver(Vertex vertex)
         {
-            this.Shard = shard;
-            this.Buffer = new Message<Pair<S, T>>();
-            this.Buffer.Enable();
-
-            this.SpareBuffers = new Queue<Message<Pair<S, T>>>();
+            this.vertex = vertex;
+            this.SpareBuffers = new Queue<Message<S, T>>();
         }
     }
 
     internal class ActionReceiver<S, T> : Receiver<S, T>
         where T : Time<T>
     {
-        private readonly Action<Message<Pair<S, T>>, RemotePostbox> MessageCallback;
+        private readonly Action<Message<S, T>, RemotePostbox> MessageCallback;
 
-        public override void RecordReceived(Pair<S, T> record, RemotePostbox from)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override void MessageReceived(Message<Pair<S, T>> message, RemotePostbox from)
+        public override void OnReceive(Message<S, T> message, RemotePostbox from)
         {
             if (this.LoggingEnabled)
                 this.LogMessage(message);
             this.MessageCallback(message, from);
         }
 
-        public ActionReceiver(Vertex shard, Action<Message<Pair<S, T>>, RemotePostbox> messagecallback)
-            : base(shard)
+        public ActionReceiver(Vertex vertex, Action<Message<S, T>, RemotePostbox> messagecallback)
+            : base(vertex)
         {
             this.MessageCallback = messagecallback;
         }
-        public ActionReceiver(Vertex shard, Action<Message<Pair<S, T>>> messagecallback)
-            : base(shard)
+        public ActionReceiver(Vertex vertex, Action<Message<S, T>> messagecallback)
+            : base(vertex)
         {
             this.MessageCallback = (m, u) => messagecallback(m);
         }
-        public ActionReceiver(Vertex shard, Action<Pair<S, T>> recordcallback)
-            : base(shard)
+        public ActionReceiver(Vertex vertex, Action<S, T> recordcallback)
+            : base(vertex)
         {
-            this.MessageCallback = ((m, u) => { for (int i = 0; i < m.length; i++) recordcallback(m.payload[i]); });
+            this.MessageCallback = ((m, u) => { for (int i = 0; i < m.length; i++) recordcallback(m.payload[i], m.time); });
         }
     }
 

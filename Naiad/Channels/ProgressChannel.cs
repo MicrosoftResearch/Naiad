@@ -22,38 +22,36 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Naiad.Scheduling;
-using Naiad.Frameworks;
+using Microsoft.Research.Naiad.Scheduling;
+using Microsoft.Research.Naiad.Frameworks;
 using System.Collections.Concurrent;
-using Naiad.CodeGeneration;
+using Microsoft.Research.Naiad.CodeGeneration;
 using System.Diagnostics;
 
-using Naiad.Dataflow;
-using Naiad.Runtime.Networking;
-using Naiad.Runtime.Controlling;
-using Naiad.Runtime.Progress;
+using Microsoft.Research.Naiad.Dataflow;
+using Microsoft.Research.Naiad.Runtime.Networking;
+using Microsoft.Research.Naiad.Runtime.Controlling;
+using Microsoft.Research.Naiad.Runtime.Progress;
 
-namespace Naiad.Dataflow.Channels
+namespace Microsoft.Research.Naiad.Dataflow.Channels
 {
-    internal class ProgressChannel : Cable<Int64, Pointstamp>
+    internal class ProgressChannel : Cable<Update, Empty>
     {
-        private class Mailbox : Mailbox<Int64, Pointstamp>, UntypedLocalMailbox, RecvWire<Int64, Pointstamp>
+        private class Mailbox : Mailbox<Update, Empty>, UntypedLocalMailbox, RecvWire<Update, Empty>
         {
             private readonly PostOffice postOffice;
             private readonly Runtime.Progress.ProgressUpdateConsumer consumer; 
             private readonly int id;
-            private readonly int shardId;
+            private readonly int vertexId;
             private readonly int graphid;
 
             public int GraphId { get { return this.graphid; } }
 
             public int Id { get { return this.id; } }
-            public int ShardId { get { return this.shardId; } }
+            public int VertexId { get { return this.vertexId; } }
             public int ThreadIndex { get { return this.consumer.scheduler.Index; } }
 
-            private AutoSerializedMessageDecoder<Int64, Pointstamp> decoder = new AutoSerializedMessageDecoder<long,Pointstamp>();
-
-            private int nextSequenceNumber = 0;
+            private readonly AutoSerializedMessageDecoder<Update, Empty> decoder;
 
             private int[] nextSequenceNumbers;
 
@@ -61,20 +59,19 @@ namespace Naiad.Dataflow.Channels
             {
                 lock (this)
                 {
-                    if (message.Header.SequenceNumber == this.nextSequenceNumbers[from.ShardID])
+                    if (message.Header.SequenceNumber == this.nextSequenceNumbers[from.VertexID])
                     {
                         //Console.Error.WriteLine("Delivering message {0} L = {1} A = {2}", message.Header.SequenceNumber, message.Header.Length, message.Body.Available);
                         //foreach (Pair<Int64, Pointstamp> currentRecord in this.decoder.Elements(message))
                         //    Console.Error.WriteLine("-- {0}", currentRecord); 
 
                         //this.nextSequenceNumber++;
-                        this.nextSequenceNumbers[from.ShardID]++;
+                        this.nextSequenceNumbers[from.VertexID]++;
 
-                        var counter = 0;
-                        foreach (Pair<Int64, Pointstamp> currentRecord in this.decoder.Elements(message))
+                        foreach (var typedMessage in this.decoder.AsTypedMessages(message))
                         {
-                            this.consumer.ProcessCountChange(currentRecord.v2, currentRecord.v1);
-                            counter++;
+                            this.consumer.ProcessCountChange(typedMessage);
+                            typedMessage.Release();
                         }
 
                         this.Flush(from);
@@ -90,14 +87,11 @@ namespace Naiad.Dataflow.Channels
 
             internal long recordsReceived = 0;
 
-            /// <summary>
-            /// "Sends" a progress message by poking the consumer directly.
-            /// </summary>
-            public void Send(Pair<Int64, Pointstamp> record, RemotePostbox from)
+            public void Send(Message<Update, Empty> message, RemotePostbox from)
             {
-                this.recordsReceived += 1;
-                this.consumer.scheduler.statistics[(int)RuntimeStatistic.ProgressLocalRecords] += 1;
-                this.consumer.ProcessCountChange(record.v2, record.v1);
+                this.recordsReceived += message.length;
+                this.consumer.scheduler.statistics[(int)RuntimeStatistic.ProgressLocalRecords] += message.length;
+                this.consumer.ProcessCountChange(message);
             }
 
             public void Drain() { }
@@ -105,41 +99,43 @@ namespace Naiad.Dataflow.Channels
             public void Flush(RemotePostbox from) { }
             public void Flush() { }
 
-            public Mailbox(PostOffice postOffice, Runtime.Progress.ProgressUpdateConsumer consumer, int id, int shardId, int numProducers)
+            public Mailbox(PostOffice postOffice, Runtime.Progress.ProgressUpdateConsumer consumer, int id, int vertexId, int numProducers)
             {
                 this.postOffice = postOffice;
                 this.consumer = consumer;
                 this.graphid = this.consumer.Stage.InternalGraphManager.Index;
 
                 this.id = id;
-                this.shardId = shardId;
+                this.vertexId = vertexId;
 
                 this.nextSequenceNumbers = new int[numProducers];
+
+                this.decoder = new AutoSerializedMessageDecoder<Update, Empty>(consumer.CodeGenerator);
             }
         }
         
-        private class Fiber : SendWire<Int64, Pointstamp>
+        private class Fiber : SendWire<Update, Empty>
         {
             private readonly NetworkChannel networkChannel;
 
             private readonly int channelID;
-            private readonly int shardID;
+            private readonly int vertexID;
 
-            private readonly VertexOutput<Int64, Pointstamp> sender;
+            private readonly VertexOutput<Update, Empty> sender;
             private readonly ProgressChannel.Mailbox localMailbox;
 
             private readonly int numProcesses;
             private readonly int processId;
 
-            private AutoSerializedMessageEncoder<Int64, Pointstamp> encoder;
+            private AutoSerializedMessageEncoder<Update, Empty> encoder;
 
             public int RecordSizeHint { get { return int.MaxValue; } }
 
-            public Fiber(int channelID, int shardID, VertexOutput<Int64, Pointstamp> sender, ProgressChannel.Mailbox localMailbox, InternalController controller)
+            public Fiber(int channelID, int vertexID, VertexOutput<Update, Empty> sender, ProgressChannel.Mailbox localMailbox, InternalController controller)
             {
                 this.processId = controller.Configuration.ProcessID;
                 this.channelID = channelID;
-                this.shardID = shardID;
+                this.vertexID = vertexID;
                 this.sender = sender;
                 this.localMailbox = localMailbox;
                 this.networkChannel = controller.NetworkChannel;
@@ -147,7 +143,7 @@ namespace Naiad.Dataflow.Channels
                 int processID = controller.Configuration.ProcessID;
                 if (this.networkChannel != null)
                 {
-                    this.encoder = new AutoSerializedMessageEncoder<Int64, Pointstamp>(-1, this.sender.Vertex.Stage.InternalGraphManager.Index << 16 | this.channelID, this.networkChannel.GetBufferPool(-1, -1), this.networkChannel.SendPageSize, AutoSerializationMode.Basic, SerializedMessageType.Data, () => this.GetNextSequenceNumber());
+                    this.encoder = new AutoSerializedMessageEncoder<Update, Empty>(-1, this.sender.Vertex.Stage.InternalGraphManager.Index << 16 | this.channelID, this.networkChannel.GetBufferPool(-1, -1), this.networkChannel.SendPageSize, controller.CodeGenerator, SerializedMessageType.Data, () => this.GetNextSequenceNumber());
                     this.encoder.CompletedMessage += (o, a) => { this.BroadcastPageContents(a.Hdr, a.Segment); /* Console.WriteLine("Sending progress message"); */};
                 }
             }
@@ -158,21 +154,17 @@ namespace Naiad.Dataflow.Channels
                 return nextSequenceNumber++;
             }
 
-            public void Send(Pair<Int64, Pointstamp> record)
+
+            public void Send(Message<Update, Empty> records)
             {
                 if (this.networkChannel != null)
-                {
-                    this.encoder.Write(record, this.shardID);
-                }
-                
-                // Fortunately, this particular local mailbox doesn't look at the postbox argument
-                this.localMailbox.Send(record, new RemotePostbox());
-            }
-
-            public void Send(Message<Pair<Int64, Pointstamp>> records)
-            {
-                for (int i = 0; i < records.length; i++)
-                    this.Send(records.payload[i]);
+#if false
+                    for (int i = 0; i < records.length; i++)
+                        this.encoder.Write(records.payload[i].PairWith(records.time));
+#else
+                this.encoder.Write(new ArraySegment<Update>(records.payload, 0, records.length), 0);
+#endif
+                this.localMailbox.Send(records, new RemotePostbox());
             }
 
             internal long bytesSent = 0;
@@ -202,16 +194,16 @@ namespace Naiad.Dataflow.Channels
         private readonly int channelID;
         public int ChannelId { get { return channelID; } }
 
-        private readonly StageOutput<Int64, Pointstamp> sendBundle;
-        private readonly StageInput<Int64, Pointstamp> recvBundle;
+        private readonly StageOutput<Update, Empty> sendBundle;
+        private readonly StageInput<Update, Empty> recvBundle;
 
         private readonly Dictionary<int, Fiber> postboxes;
         private readonly Mailbox mailbox;
 
         public ProgressChannel(int producerPlacementCount, 
                             ProgressUpdateConsumer consumerVertex, 
-                            StageOutput<Int64, Pointstamp> stream, 
-                            StageInput<Int64, Pointstamp> recvPort, 
+                            StageOutput<Update, Empty> stream, 
+                            StageInput<Update, Empty> recvPort, 
                             InternalController controller,
                             int channelId)
         {
@@ -239,12 +231,12 @@ namespace Naiad.Dataflow.Channels
         public Dataflow.Stage SourceStage       { get { return this.sendBundle.ForStage; } }
         public Dataflow.Stage DestinationStage  { get { return this.recvBundle.ForStage; } }
 
-        public SendWire<Int64, Pointstamp> GetSendFiber(int i)
+        public SendWire<Update, Empty> GetSendFiber(int i)
         {
             return this.postboxes[i];
         }
 
-        public RecvWire<Int64, Pointstamp> GetRecvFiber(int i)
+        public RecvWire<Update, Empty> GetRecvFiber(int i)
         {
             Debug.Assert(i == this.sendBundle.ForStage.InternalGraphManager.Controller.Configuration.ProcessID);
             return this.mailbox;

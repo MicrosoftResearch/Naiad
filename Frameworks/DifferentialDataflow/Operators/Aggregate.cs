@@ -23,15 +23,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Linq.Expressions;
-using Naiad.DataStructures;
-using Naiad.Dataflow;
+using Microsoft.Research.Naiad.DataStructures;
+using Microsoft.Research.Naiad.Dataflow;
 
-namespace Naiad.Frameworks.DifferentialDataflow.Operators
+namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Operators
 {
     internal class Aggregate<K, S, T, R, V> : OperatorImplementations.UnaryStatefulOperatorWithAggregation<K, V, S, T, R>
         where S : IEquatable<S>
         where R : IEquatable<R>
-        where T : Naiad.Time<T>
+        where T : Microsoft.Research.Naiad.Time<T>
         where K : IEquatable<K>
         where V : IEquatable<V>
     {

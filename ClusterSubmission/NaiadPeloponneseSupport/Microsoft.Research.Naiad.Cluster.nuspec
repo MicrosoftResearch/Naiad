@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/01/nuspec.xsd">
+  <metadata minClientVersion="2.5">
+    <id>Microsoft.Research.Naiad.Cluster</id>
+    <version>0.3.1-beta</version>
+    <title>Naiad - Cluster Support</title>
+    <authors>naiadquestions@microsoft.com</authors>
+    <owners>naiadquestions@microsoft.com,Microsoft</owners>
+    <licenseUrl>http://www.apache.org/licenses/LICENSE-2.0.html</licenseUrl>
+    <projectUrl>http://research.microsoft.com/naiad/</projectUrl>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <description>
+      Support for running Naiad programs using Peloponnese.
+    </description>
+    <copyright>Microsoft Corporation</copyright>
+    <language>en-US</language>
+    <dependencies>
+      <group targetFramework=".NETFramework4.5">
+        <dependency id="Microsoft.Research.Peloponnese" version="0.7.1-beta" />
+      </group>
+    </dependencies>
+    <frameworkAssemblies>
+      <frameworkAssembly assemblyName="System" targetFramework=".NETFramework4.5" />
+      <frameworkAssembly assemblyName="System.Core" targetFramework=".NETFramework4.5" />
+      <frameworkAssembly assemblyName="System.Web" targetFramework=".NETFramework4.5" />
+      <frameworkAssembly assemblyName="System.Xml" targetFramework=".NETFramework4.5" />
+      <frameworkAssembly assemblyName="System.Xml.Linq" targetFramework=".NETFramework4.5" />
+    </frameworkAssemblies>
+    <references>
+      <reference file="Microsoft.Research.Naiad.Cluster.dll" />
+    </references>
+  </metadata>
+  <files>
+    <file src="bin\x64\Release\Microsoft.Research.Naiad.Cluster.dll" target="lib\net45\Microsoft.Research.Naiad.Cluster.dll" />
+    <file src="bin\x64\Release\Microsoft.Research.Naiad.Cluster.pdb" target="lib\net45\Microsoft.Research.Naiad.Cluster.pdb" />
+  </files>
+</package>

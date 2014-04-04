@@ -36,13 +36,14 @@ using System.Collections.Concurrent;
 using System.Net.Sockets;
 using System.Diagnostics;
 using System.IO;
-using Naiad.Util;
-using Naiad.Scheduling;
-using Naiad.DataStructures;
-using Naiad.Runtime.Controlling;
-using Naiad.Dataflow.Channels;
+using Microsoft.Research.Naiad.Util;
+using Microsoft.Research.Naiad.Scheduling;
+using Microsoft.Research.Naiad.DataStructures;
+using Microsoft.Research.Naiad.Runtime.Controlling;
+using Microsoft.Research.Naiad.Dataflow.Channels;
+using Microsoft.Research.Naiad.CodeGeneration;
 
-namespace Naiad.Runtime.Networking
+namespace Microsoft.Research.Naiad.Runtime.Networking
 {
     /// <summary>
     /// Represents a mechanism for sending untyped messages to a distributed group of processes.
@@ -76,7 +77,7 @@ namespace Naiad.Runtime.Networking
         /// <summary>
         /// Registers the given mailbox to receive messages.
         /// </summary>
-        /// <param name="mailbox">The mailbox to which messages with the same channel and destination shard ID should be sent.</param>
+        /// <param name="mailbox">The mailbox to which messages with the same channel and destination vertex ID should be sent.</param>
         void RegisterMailbox(UntypedMailbox mailbox);
 
         /// <summary>
@@ -159,9 +160,6 @@ namespace Naiad.Runtime.Networking
         private readonly CountdownEvent sendConnectionCountdown;
         private readonly CountdownEvent recvConnectionCountdown;
 
-        private Thread startReceivingThread;
-        private Thread sendLoopThread;
-        
         private readonly UdpClient udpClient;
 
         private readonly ManualResetEvent startCommunicatingEvent;
@@ -314,11 +312,10 @@ namespace Naiad.Runtime.Networking
 
         public readonly InternalController Controller;
 
-        private int recordChannel = -1;
-
         private readonly bool useBroadcastWakeup;
         private readonly EventCount wakeUpEvent;
 
+        //TOCHECK: config is passed in but inside the method we use this.Controller.Configuration a lot
         internal TcpNetworkChannel(int id, InternalController controller, Configuration config)
         {
             this.id = id;
@@ -422,7 +419,7 @@ namespace Naiad.Runtime.Networking
 
                 Tracing.Trace("Recv");
 
-                MessageHeader.ReadHeaderFromBuffer(bytes, 0, ref header);
+                MessageHeader.ReadHeaderFromBuffer(bytes, 0, ref header, this.HeaderSerializer);
                 //Console.Error.WriteLine("UdpReceiveThread: got {0} bytes from {1}. Sequence number = {2}, count = {3}", bytes.Length, from, header.SequenceNumber, count++);
 
                 SerializedMessage message = new SerializedMessage(0, header, new RecvBuffer(bytes, MessageHeader.SizeOf, bytes.Length));
@@ -533,16 +530,16 @@ namespace Naiad.Runtime.Networking
             if (mailboxes[mailbox.Id] == null)
                 mailboxes[mailbox.Id] = new List<UntypedMailbox>();
 
-            while (mailboxes[mailbox.Id].Count <= mailbox.ShardId)
+            while (mailboxes[mailbox.Id].Count <= mailbox.VertexId)
                 mailboxes[mailbox.Id].Add(null);
-            mailboxes[mailbox.Id][mailbox.ShardId] = mailbox;
-            //Logging.Info("Registered Mailbox {0} Shard {1}", mailbox.Id, mailbox.ShardID);
+            mailboxes[mailbox.Id][mailbox.VertexId] = mailbox;
+            //Logging.Info("Registered Mailbox {0} Vertex {1}", mailbox.Id, mailbox.VertexID);
         }
 
         public void AnnounceCheckpoint()
         {
             int seqno = this.GetSequenceNumber(-1);
-            SendBufferPage checkpointPage = SendBufferPage.CreateSpecialPage(MessageHeader.Checkpoint, seqno);
+            SendBufferPage checkpointPage = SendBufferPage.CreateSpecialPage(MessageHeader.Checkpoint, seqno, this.Controller.CodeGenerator.GetSerializer<MessageHeader>());
             BufferSegment checkpointSegment = checkpointPage.Consume();
 
             for (int i = 0; i < this.connections.Count - 2; ++i)
@@ -574,11 +571,22 @@ namespace Naiad.Runtime.Networking
                     this.connections[i].CheckpointResumeEvent.Set();
         }
 
+        private NaiadSerialization<MessageHeader> _headerSerializer;
+        private NaiadSerialization<MessageHeader> HeaderSerializer
+        {
+            get
+            {
+                if (this._headerSerializer == null)
+                    this._headerSerializer = this.Controller.CodeGenerator.GetSerializer<MessageHeader>();
+                return this._headerSerializer;
+            }
+        }
+
         private void AnnounceShutdown()
         {
             Logging.Progress("Announcing shutdown");
             int seqno = this.GetSequenceNumber(-1);
-            SendBufferPage shutdownPage = SendBufferPage.CreateShutdownMessagePage(seqno);
+            SendBufferPage shutdownPage = SendBufferPage.CreateShutdownMessagePage(seqno, this.HeaderSerializer);
             BufferSegment shutdownSegment = shutdownPage.Consume();
 
             for (int i = 0; i < this.connections.Count - 2; ++i)
@@ -609,7 +617,7 @@ namespace Naiad.Runtime.Networking
         private void AnnounceStartup(int barrierId)
         {
             int seqno = this.GetSequenceNumber(-1);
-            SendBufferPage startupPage = SendBufferPage.CreateSpecialPage(MessageHeader.GenerateBarrierMessageHeader(barrierId), seqno);
+            SendBufferPage startupPage = SendBufferPage.CreateSpecialPage(MessageHeader.GenerateBarrierMessageHeader(barrierId), seqno, this.HeaderSerializer);
             BufferSegment startupSegment = startupPage.Consume();
 
             for (int i = 0; i < this.connections.Count - 2; ++i)
@@ -668,14 +676,14 @@ namespace Naiad.Runtime.Networking
             if (header.SequenceNumber < 0)  // progress message
             {
                 //NaiadTracing.Trace.ProgressSend(header);
-                //Tracing.Trace("$SendC {0} {1} {2} {3}", header.SequenceNumber, segment.Length, header.FromShardID, header.DestShardID);
-                //Console.Error.WriteLine("$SendC {0} {1} {2} {3}", header.SequenceNumber, segment.Length, header.FromShardID, header.DestShardID);
+                //Tracing.Trace("$SendC {0} {1} {2} {3}", header.SequenceNumber, segment.Length, header.FromVertexID, header.DestVertexID);
+                //Console.Error.WriteLine("$SendC {0} {1} {2} {3}", header.SequenceNumber, segment.Length, header.FromVertexID, header.DestVertexID);
             }
             else
             {
                 //NaiadTracing.Trace.DataSend(header);
-                //Tracing.Trace("$SendD {0} {1} {2} {3}", header.SequenceNumber, segment.Length, header.FromShardID, header.DestShardID);
-                //Console.Error.WriteLine("$SendD {0} {1} {2} {3}", header.SequenceNumber, segment.Length, header.FromShardID, header.DestShardID);
+                //Tracing.Trace("$SendD {0} {1} {2} {3}", header.SequenceNumber, segment.Length, header.FromVertexID, header.DestVertexID);
+                //Console.Error.WriteLine("$SendD {0} {1} {2} {3}", header.SequenceNumber, segment.Length, header.FromVertexID, header.DestVertexID);
             }
 
             if (Controller.Configuration.DontUseHighPriorityQueue)
@@ -694,8 +702,6 @@ namespace Naiad.Runtime.Networking
                 this.connections[destProcessID].SendEvent.Set();
             }
         }
-
-        private long bytesSent = 0;
 
         private static SocketError SendAllBytes(Socket dest, ArraySegment<byte> segment)
         {
@@ -789,16 +795,16 @@ namespace Naiad.Runtime.Networking
             if (this.Controller.Configuration.KeepAlives)
             {
                 socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
-                Win32.SetKeepaliveOptions(socket.Handle);
+                Microsoft.Research.Naiad.Util.Win32.SetKeepaliveOptions(socket.Handle);
             } 
 
             long wakeupCount = 0;
 
             Stopwatch sw = new Stopwatch();
             sw.Start();
-            long before, after;
+            
 
-           bool shuttingDown = false;
+            bool shuttingDown = false;
             while (true)
             {
                 BufferSegment seg;
@@ -875,12 +881,6 @@ namespace Naiad.Runtime.Networking
 #endif
         }
 
-        private enum RecvThreadState
-        {
-            Running,
-            Checkpointing
-        }
-
 #if SYNC_RECV
         private void PerProcessRecvThread(int srcProcessID)
         {
@@ -918,8 +918,6 @@ namespace Naiad.Runtime.Networking
 
             int nextConnectionSequenceNumber = 0;
 
-            RecvThreadState state = RecvThreadState.Running;
-
             long recvBytesIn = 0;
             long recvBytesOut = 0;
 
@@ -954,7 +952,7 @@ namespace Naiad.Runtime.Networking
                 }
                 this.connections[srcProcessID].RecvBufferSheaf.OnBytesProduced(bytesRecvd);
 
-                foreach (SerializedMessage message in this.connections[srcProcessID].RecvBufferSheaf.ConsumeMessages())
+                foreach (SerializedMessage message in this.connections[srcProcessID].RecvBufferSheaf.ConsumeMessages(this.HeaderSerializer))
                 {
                     message.ConnectionSequenceNumber = nextConnectionSequenceNumber++;
 
@@ -973,7 +971,7 @@ namespace Naiad.Runtime.Networking
                             break;
                         case SerializedMessageType.Shutdown:
                             Logging.Progress("Received shutdown message from {0}", srcProcessID);
-                            Logging.Info("PerProcessRecvThread[{0}]: numRecvs {1} avgBytesIn {2} avgBytesOut {3}", srcProcessID, recvBytesIn / numRecvs, recvBytesOut / numRecvs);
+                            Logging.Info("PerProcessRecvThread[{0}]: numRecvs {1} avgBytesIn {2} avgBytesOut {3}", srcProcessID, numRecvs, recvBytesIn / numRecvs, recvBytesOut / numRecvs);
                             this.shutdownRecvCountdown.Signal();
                             return;
                         case SerializedMessageType.Checkpoint:
@@ -1025,17 +1023,17 @@ namespace Naiad.Runtime.Networking
             int graphId = message.Header.ChannelID >> 16;
             int channelId = message.Header.ChannelID & 0xFFFF;                    
 
-            if (message.Header.DestShardID == -1)
+            if (message.Header.DestVertexID == -1)
             {
                 if (message.Header.ChannelID < 0 || this.localProcessID < 0)    // debug check
                     throw new Exception("This shouldn't happen");
                     
-                // Special-cased logic for the progress channel, where we know that each process uses its process ID as the shard ID.
+                // Special-cased logic for the progress channel, where we know that each process uses its process ID as the vertex ID.
                 try
                 {
-                    this.graphmailboxes[graphId][channelId][this.localProcessID].DeliverSerializedMessage(message, new RemotePostbox(peerID, message.Header.FromShardID));
+                    this.graphmailboxes[graphId][channelId][this.localProcessID].DeliverSerializedMessage(message, new RemotePostbox(peerID, message.Header.FromVertexID));
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     Console.Error.WriteLine("AttemptDelivery of progress message on ChannelId={0}, localProcessID={1}",
                         message.Header.ChannelID, this.localProcessID);
@@ -1049,15 +1047,15 @@ namespace Naiad.Runtime.Networking
                 this.graphmailboxes[graphId] == null ||
                 channelId >= this.graphmailboxes[graphId].Count ||
                 this.graphmailboxes[graphId][channelId] == null ||
-                message.Header.DestShardID >= this.graphmailboxes[graphId][channelId].Count ||
-                this.graphmailboxes[graphId][channelId][message.Header.DestShardID] == null)
+                message.Header.DestVertexID >= this.graphmailboxes[graphId][channelId].Count ||
+                this.graphmailboxes[graphId][channelId][message.Header.DestVertexID] == null)
             {
                 Console.Error.WriteLine("Graphs: {0}/{1}", graphId, this.graphmailboxes.Count);
                 throw new InvalidOperationException(String.Format("Failed delivery attempt"));
 
 #if false
-                to {0}:{1} (#channels = {2}, #shards = {3}) from {4}",
-                                        message.Header.ChannelID, message.Header.DestShardID, this.mailboxes.Count,
+                to {0}:{1} (#channels = {2}, #vertices = {3}) from {4}",
+                                        message.Header.ChannelID, message.Header.DestVertexID, this.mailboxes.Count,
                                         this.mailboxes.Count > message.Header.ChannelID
                                             ? this.mailboxes[message.Header.ChannelID].Count.ToString()
                                             : "NaN", peerID));
@@ -1065,7 +1063,7 @@ namespace Naiad.Runtime.Networking
             }
             else
             {
-                this.graphmailboxes[graphId][channelId][message.Header.DestShardID].DeliverSerializedMessage(message, new RemotePostbox(peerID, message.Header.FromShardID));
+                this.graphmailboxes[graphId][channelId][message.Header.DestVertexID].DeliverSerializedMessage(message, new RemotePostbox(peerID, message.Header.FromVertexID));
                 return true;
             }
         }

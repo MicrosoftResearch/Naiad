@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>Microsoft.Research.Naiad</id>
+    <title>Naiad - Core</title>
+    <version>0.3.1-beta</version>
+    <authors>naiadquestions@microsoft.com</authors>
+    <owners>naiadquestions@microsoft.com,Microsoft</owners>
+    <licenseUrl>http://www.apache.org/licenses/LICENSE-2.0.html</licenseUrl>
+    <projectUrl>http://research.microsoft.com/naiad/</projectUrl>
+    <!--<iconUrl>http://ICON_URL_HERE_OR_DELETE_THIS_LINE</iconUrl>-->
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <description>Naiad: a distributed framework for incremental, iterative, and interactive programs.</description>
+    <copyright>Microsoft Corporation</copyright>
+    <language>en-US</language>
+    <frameworkAssemblies>
+      <frameworkAssembly assemblyName="System" targetFramework="net40-Client" />
+      <frameworkAssembly assemblyName="System.Core" targetFramework="net40-Client" />
+      <frameworkAssembly assemblyName="System.Runtime.Serialization" targetFramework="net40-Client" />
+      <frameworkAssembly assemblyName="System.Xml" targetFramework="net40-Client" />
+      <frameworkAssembly assemblyName="System.Xml.Linq" targetFramework="net40-Client" />
+    </frameworkAssemblies>
+    <references>
+      <reference file="Microsoft.Research.Naiad.dll" />
+    </references>
+  </metadata>
+  <files>
+    <file src="bin\Release\Microsoft.Research.Naiad.dll" target="lib\net40-Client\Microsoft.Research.Naiad.dll" />
+    <file src="bin\Release\Microsoft.Research.Naiad.pdb" target="lib\net40-Client\Microsoft.Research.Naiad.pdb" />
+    <file src="bin\Release\Microsoft.Research.Naiad.xml" target="lib\net40-Client\Microsoft.Research.Naiad.xml" />
+  </files>
+</package>

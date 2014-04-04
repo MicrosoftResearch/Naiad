@@ -18,17 +18,19 @@
  * permissions and limitations under the License.
  */
 
-using Naiad.Dataflow;
-using Naiad.Dataflow.Channels;
-using Naiad.Runtime.Progress;
+using Microsoft.Research.Naiad.CodeGeneration;
+using Microsoft.Research.Naiad.Dataflow;
+using Microsoft.Research.Naiad.Dataflow.Channels;
+using Microsoft.Research.Naiad.Runtime.Progress;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
-namespace Naiad
+namespace Microsoft.Research.Naiad
 {
     /// <summary>
     /// Manages the construction and execution of individual dataflow graphs.
@@ -55,7 +57,7 @@ namespace Naiad
         /// <summary>
         /// Returns a frontier with which one can register frontier change events.
         /// </summary>
-        Naiad.Runtime.Progress.Frontier Frontier { get; }
+        Microsoft.Research.Naiad.Runtime.Progress.Frontier Frontier { get; }
 
         /// <summary>
         /// An event that is called once the graph is started.
@@ -82,6 +84,11 @@ namespace Naiad
         /// Enables the graph for execution, and disables further stage construction.
         /// </summary>
         void Activate();
+
+        /// <summary>
+        /// Returns the controller that hosts this graph.
+        /// </summary>
+        Controller Controller { get; }
     }
 
     /// <summary>
@@ -103,8 +110,10 @@ namespace Naiad
 
         InternalController Controller { get; }
 
+        SerializationCodeGenerator CodeGenerator { get; }
+
         Runtime.Progress.ProgressTracker ProgressTracker { get; }
-        
+
         Scheduling.Reachability Reachability { get; }
 
         // TODO these are only used for reporting; could swap over to new DataSource-based approach.
@@ -119,10 +128,12 @@ namespace Naiad
         void Register(Subscription sub);
         int Register(Dataflow.Stage stage);
         int Register(Dataflow.Edge edge);
-        
-        Scheduling.Placement DefaultPlacement { get; }        
+
+        Scheduling.Placement DefaultPlacement { get; }
 
         Dataflow.ITimeContextManager ContextManager { get; }
+
+        void SignalShutdown();
 
         int AllocateNewGraphIdentifier();
 
@@ -132,12 +143,18 @@ namespace Naiad
         void Connect<S, T>(Dataflow.StageOutput<S, T> stream, Dataflow.StageInput<S, T> recvPort, Expression<Func<S, int>> key, Channel.Flags flags) where T : Time<T>;
         void Connect<S, T>(Dataflow.StageOutput<S, T> stream, Dataflow.StageInput<S, T> recvPort, Expression<Func<S, int>> key) where T : Time<T>;
         void Connect<S, T>(Dataflow.StageOutput<S, T> stream, Dataflow.StageInput<S, T> recvPort) where T : Time<T>;
+
+        GraphManager ExternalGraphManager { get; }
     }
 
     internal class BaseGraphManager : GraphManager, InternalGraphManager, IDisposable
     {
         private readonly int index;
         public int Index { get { return this.index; } }
+
+        public SerializationCodeGenerator CodeGenerator { get { return this.Controller.CodeGenerator; } }
+
+        public GraphManager ExternalGraphManager { get { return this; } }
 
         public void Cancel(Exception e)
         {
@@ -151,13 +168,17 @@ namespace Naiad
                 this.currentState = InternalGraphManagerState.Failed;
                 this.Exception = e;
 
-                MessageHeader header = MessageHeader.GraphFailure(this.index);
-                SendBufferPage page = SendBufferPage.CreateSpecialPage(header, 0);
-                BufferSegment segment = page.Consume();
-                
-                Logging.Error("Broadcasting graph failure message");
-                            
-                this.Controller.NetworkChannel.BroadcastBufferSegment(header, segment);
+
+                if (this.Controller.NetworkChannel != null)
+                {
+                    MessageHeader header = MessageHeader.GraphFailure(this.index);
+                    SendBufferPage page = SendBufferPage.CreateSpecialPage(header, 0, this.CodeGenerator.GetSerializer<MessageHeader>());
+                    BufferSegment segment = page.Consume();
+
+                    Logging.Error("Broadcasting graph failure message");
+
+                    this.Controller.NetworkChannel.BroadcastBufferSegment(header, segment);
+                }
 
                 this.ProgressTracker.Cancel();
             }
@@ -167,15 +188,15 @@ namespace Naiad
         public InternalGraphManagerState CurrentState { get { return this.currentState; } }
 
         private Exception exception = null;
-        public Exception Exception 
+        public Exception Exception
         {
             get
             {
-                return this.exception; 
+                return this.exception;
             }
             private set
             {
-                lock (this) 
+                lock (this)
                 {
                     if (this.exception == null)
                         this.exception = value;
@@ -194,11 +215,13 @@ namespace Naiad
         private readonly InternalController controller;
         public InternalController Controller { get { return this.controller; } }
 
+        Controller GraphManager.Controller { get { return this.controller.ExternalController; } }
+
         private readonly ProgressTracker progressTracker;
 
-        public Naiad.Runtime.Progress.ProgressTracker ProgressTracker { get { return this.progressTracker; } }
+        public Microsoft.Research.Naiad.Runtime.Progress.ProgressTracker ProgressTracker { get { return this.progressTracker; } }
 
-        public Naiad.Runtime.Progress.Frontier Frontier { get { return this.progressTracker; } }
+        public Microsoft.Research.Naiad.Runtime.Progress.Frontier Frontier { get { return this.progressTracker; } }
 
         private readonly Scheduling.Reachability reachability = new Scheduling.Reachability();
         public Scheduling.Reachability
@@ -336,8 +359,8 @@ namespace Naiad
         private bool isJoined = false;
 
 
-        private readonly bool DomainReporting;
-        
+        private readonly bool DomainReporting = false;
+
         protected Dataflow.InputStage<string> RootDomainStatisticsStage
         {
             get { return this.contextManager.Reporting.domainReportingIngress; }
@@ -382,7 +405,8 @@ namespace Naiad
                 }
 
                 // wait for all progress updates to drain.
-                this.ProgressTracker.BlockUntilComplete();
+                // this.ProgressTracker.BlockUntilComplete();
+                this.ShutdownCounter.Wait();
 
                 if (this.exception != null)
                     throw new Exception("Error during Naiad execution", this.exception);
@@ -394,7 +418,6 @@ namespace Naiad
             }
         }
 
-
         private Scheduling.Placement defaultPlacement;
         public Scheduling.Placement DefaultPlacement { get { return this.defaultPlacement; } }
 
@@ -404,7 +427,9 @@ namespace Naiad
             this.defaultPlacement = this.controller.DefaultPlacement;
             this.index = index;
 
-            this.contextManager = new Naiad.Dataflow.TimeContextManager(this);
+            this.ShutdownCounter = new CountdownEvent(defaultPlacement.Where(x => x.ProcessId == controller.Configuration.ProcessID).Count());
+
+            this.contextManager = new Microsoft.Research.Naiad.Dataflow.TimeContextManager(this);
 
             if (this.controller.Configuration.DistributedProgressTracker)
                 this.progressTracker = new DistributedProgressTracker(this);
@@ -429,7 +454,7 @@ namespace Naiad
             }
 
             foreach (var subscription in this.Outputs)
-                subscription.Sync(epoch);
+                subscription.Sync(new Epoch(epoch));
         }
 
         bool activated = false;
@@ -470,7 +495,14 @@ namespace Naiad
             foreach (var edge in this.Edges)
                 edge.Value.Materialize();
 
-            this.materialized = true; 
+            this.materialized = true;
+        }
+
+        private CountdownEvent ShutdownCounter;
+
+        public void SignalShutdown()
+        {
+            this.ShutdownCounter.Signal();
         }
 
         public Dataflow.ITimeContextManager ContextManager

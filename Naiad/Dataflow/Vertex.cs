@@ -18,12 +18,12 @@
  * permissions and limitations under the License.
  */
 
-using Naiad.CodeGeneration;
-using Naiad.Dataflow.Channels;
-using Naiad.Dataflow.Reporting;
-using Naiad.DataStructures;
-using Naiad.FaultTolerance;
-using Naiad.Scheduling;
+using Microsoft.Research.Naiad.CodeGeneration;
+using Microsoft.Research.Naiad.Dataflow.Channels;
+using Microsoft.Research.Naiad.Dataflow.Reporting;
+using Microsoft.Research.Naiad.DataStructures;
+using Microsoft.Research.Naiad.FaultTolerance;
+using Microsoft.Research.Naiad.Scheduling;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -31,15 +31,17 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Naiad.Dataflow
+namespace Microsoft.Research.Naiad.Dataflow
 {
     /// <summary>
-    /// Base class for shards without a time type
+    /// Base class for vertices without a time type
     /// </summary>
     public abstract class Vertex : ICheckpointable
     {
         private int entrancy;
         public int Entrancy { get { return this.entrancy; } set { this.entrancy = value; } }
+
+        public SerializationCodeGenerator CodeGenerator { get { return this.Stage.InternalGraphManager.CodeGenerator; } }
 
         private List<Action> OnFlushActions;
 
@@ -95,7 +97,7 @@ namespace Naiad.Dataflow
             if (isMajor)
             {
                 currentCheckpointStart = stream.Position;
-                using (NaiadWriter writer = new NaiadWriter(stream))
+                using (NaiadWriter writer = new NaiadWriter(stream, this.CodeGenerator))
                 {
                     this.Checkpoint(writer);
                 }
@@ -149,27 +151,27 @@ namespace Naiad.Dataflow
     }
 
     /// <summary>
-    /// Shard with a time time, supporting Contexts and NotifyAt(time) for OnDone(time) calls.
+    /// Vertex with a time time, supporting Contexts and NotifyAt(time) for OnNotify(time) calls.
     /// </summary>
     /// <typeparam name="TTime"></typeparam>
     public class Vertex<TTime> : Dataflow.Vertex
         where TTime : Time<TTime>
     {
-        private IShardContext<TTime> shardContext;
+        private IVertexContext<TTime> vertexContext;
 
-        internal IShardContext<TTime> Context
+        internal IVertexContext<TTime> Context
         {
-            get { return shardContext; }
-            set { this.shardContext = value; }
+            get { return vertexContext; }
+            set { this.vertexContext = value; }
         }
 
-        protected IReporting<TTime> Reporting { get { return this.shardContext.Reporting; } }
+        protected IReporting<TTime> Reporting { get { return this.vertexContext.Reporting; } }
 
         private HashSet<TTime> OutstandingResumes = new HashSet<TTime>();
-        private Naiad.Runtime.Progress.ProgressUpdateBuffer<TTime> progressBuffer;
+        private Microsoft.Research.Naiad.Runtime.Progress.ProgressUpdateBuffer<TTime> progressBuffer;
 
-        private TTime lastTime;
-        private bool lastTimeValid;
+        //private TTime lastTime;
+        //private bool lastTimeValid;
 
         protected override void OnShutdown()
         {
@@ -181,41 +183,58 @@ namespace Naiad.Dataflow
 
         public void NotifyAt(TTime time)
         {
-            System.Diagnostics.Debug.Assert(!this.isShutdown);
-            if (this.isShutdown)
-                Console.Error.WriteLine("Scheduling {0} at {1} but already shut down", this, time);
+            this.NotifyAt(time, time);
+        }
 
-            if (!(lastTimeValid && time.Equals(lastTime)) && !OutstandingResumes.Contains(time))
+        /// <summary>
+        /// Requests a notification once all records of time requirement have been delivered.
+        /// </summary>
+        /// <param name="requirement">Requirement on incoming message deliveries</param>
+        /// <param name="capability">Capability to send outgoing messages</param>
+        public void NotifyAt(TTime requirement, TTime capability)
+        {
+            if (!requirement.LessThan(capability))
+                Console.Error.WriteLine("Requesting a notification with a requirement not less than the capability");
+            else
             {
-                OutstandingResumes.Add(time);
-                lastTime = time;
-                lastTimeValid = true;
+                System.Diagnostics.Debug.Assert(!this.isShutdown);
+                if (this.isShutdown)
+                    Console.Error.WriteLine("Scheduling {0} at {1} but already shut down", this, capability);
 
-                // do some progress magic 
-                progressBuffer.Update(time, 1);
-                progressBuffer.Flush();
+                if (!OutstandingResumes.Contains(capability))
+                {
+                    OutstandingResumes.Add(capability);
 
-                // inform the scheduler
-                this.Scheduler.EnqueueNotify(this, time, true);
+                    // do some progress magic 
+                    progressBuffer.Update(capability, 1);
+                    progressBuffer.Flush();
+
+                    // inform the scheduler
+                    this.Scheduler.EnqueueNotify(this, requirement, capability, true);
+                }
             }
         }
 
         internal override void PerformAction(Scheduling.Scheduler.WorkItem workItem)
         {
-            var time = default(TTime).InitializeFrom(workItem.Requirement, workItem.Requirement.Timestamp.Length);
+            if (this.isShutdown)
+                Console.Error.WriteLine("Scheduling {0} at {1} but already shut down", this, workItem);
+            else
+            {
+                var time = default(TTime).InitializeFrom(workItem.Requirement, workItem.Requirement.Timestamp.Length);
 
-            OutstandingResumes.Remove(time);
-            lastTimeValid = !time.Equals(lastTime);
+                OutstandingResumes.Remove(time);
 
-            progressBuffer.Update(time, -1);
+                progressBuffer.Update(time, -1);
 
-            this.Entrancy = this.Entrancy - 1;
+                this.Entrancy = this.Entrancy - 1;
 
-            this.OnDone(time);
+                this.OnNotify(time);
 
-            this.Entrancy = this.Entrancy + 1;
+                this.Entrancy = this.Entrancy + 1;
 
-            this.Flush();
+                this.Flush();
+            }
         }
 
         public override void Flush()
@@ -225,7 +244,7 @@ namespace Naiad.Dataflow
                 this.progressBuffer.Flush();
         }
 
-        public virtual void OnDone(TTime time)
+        public virtual void OnNotify(TTime time)
         {
             throw new NotImplementedException();
         }
@@ -235,19 +254,19 @@ namespace Naiad.Dataflow
 
         public override void Checkpoint(NaiadWriter writer)
         {
-            IList<Scheduler.WorkItem> workItems = this.Scheduler.GetWorkItemsForShard(this);
-            writer.Write(workItems.Count, PrimitiveSerializers.Int32);
+            IList<Scheduler.WorkItem> workItems = this.Scheduler.GetWorkItemsForVertex(this);
+            writer.Write(workItems.Count, this.CodeGenerator.GetSerializer<Int32>());
             foreach (Scheduler.WorkItem workItem in workItems)
-                writer.Write(workItem.Requirement, Pointstamp.Serializer);
+                writer.Write(workItem.Requirement,  this.CodeGenerator.GetSerializer<Pointstamp>());
         }
 
         public override void Restore(NaiadReader reader)
         {
-            int workItemsCount = reader.Read<int>(PrimitiveSerializers.Int32);
+            int workItemsCount = reader.Read<int>(this.CodeGenerator.GetSerializer<Int32>());
             for (int i = 0; i < workItemsCount; ++i)
             {
-                Pointstamp version = reader.Read<Pointstamp>(Pointstamp.Serializer);
-                this.Scheduler.EnqueueNotify(this, version, version);
+                Pointstamp version = reader.Read<Pointstamp>(this.CodeGenerator.GetSerializer<Pointstamp>());
+                this.Scheduler.EnqueueNotify(this, version, version, false);    // could be set to true if we are sure this executes under the worker
             }
         }
 

@@ -23,17 +23,17 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.IO;
-using Naiad.Dataflow.Channels;
-using Naiad.CodeGeneration;
-using Naiad.Runtime.Controlling;
-using Naiad.DataStructures;
-using Naiad.FaultTolerance;
-using Naiad.Scheduling;
+using Microsoft.Research.Naiad.Dataflow.Channels;
+using Microsoft.Research.Naiad.CodeGeneration;
+using Microsoft.Research.Naiad.Runtime.Controlling;
+using Microsoft.Research.Naiad.DataStructures;
+using Microsoft.Research.Naiad.FaultTolerance;
+using Microsoft.Research.Naiad.Scheduling;
 //using Naiad.Frameworks.Lindi;
-using Naiad.Frameworks.Reduction;
-using Naiad.Frameworks;
+using Microsoft.Research.Naiad.Frameworks.Reduction;
+using Microsoft.Research.Naiad.Frameworks;
 
-namespace Naiad.Dataflow
+namespace Microsoft.Research.Naiad.Dataflow
 {
     namespace Reporting
     {
@@ -54,7 +54,7 @@ namespace Naiad.Dataflow
             /// <summary>
             /// Sends a log message to be written immediately to the 'out-of-band' logging subsystem. If
             /// Configuration.DomainReporting is true, this will be written to a file called rtdomain.txt
-            /// at the root shard's computer, otherwise it will be written to the console at the vertex's
+            /// at the root vertex's computer, otherwise it will be written to the console at the vertex's
             /// local computer.
             /// </summary>
             void Log(string entry);
@@ -62,7 +62,7 @@ namespace Naiad.Dataflow
             /// <summary>
             /// Sends a log message to be written immediately to the inline logging subsystem that uses the graph's
             /// time domain. If Configuration.InlineReporting is true, this will be written to a file called rtinline.txt
-            /// at the root shard's computer, otherwise it will be written to the console at the vertex's
+            /// at the root vertex's computer, otherwise it will be written to the console at the vertex's
             /// local computer. The log message is written out in the form "<time>.entry"
             /// </summary>
             void Log(string entry, T time);
@@ -70,7 +70,7 @@ namespace Naiad.Dataflow
             /// <summary>
             /// Incorporates value into the logical-time-based aggregation called name. If Configuration.InlineReporting and
             /// Configuration.AggregateReporting are both true, then the final aggregate of all values with the same time will
-            /// be written to rtinline.txt at the root shard's computer once all computation with that time has drained from
+            /// be written to rtinline.txt at the root vertex's computer once all computation with that time has drained from
             /// the system. This call is identical to logging an integer aggregate with a count of 1.
             /// </summary>
             void LogAggregate(string name, Reporting.AggregateType type, Int64 value, T time);
@@ -78,7 +78,7 @@ namespace Naiad.Dataflow
             /// <summary>
             /// Incorporates (value,count) into the logical-time-based aggregation called name. If Configuration.InlineReporting and
             /// Configuration.AggregateReporting are both true, then the final aggregate of all values with the same time will
-            /// be written to rtinline.txt at the root shard's computer once all computation with that time has drained from
+            /// be written to rtinline.txt at the root vertex's computer once all computation with that time has drained from
             /// the system. count is used only for aggregates of type Reporting.AggregateType.Average, for which the final
             /// aggregate is Sum(values)/Sum(counts).
             /// </summary>
@@ -87,7 +87,7 @@ namespace Naiad.Dataflow
             /// <summary>
             /// Incorporates value into the logical-time-based aggregation called name. If Configuration.InlineReporting and
             /// Configuration.AggregateReporting are both true, then the final aggregate of all values with the same time will
-            /// be written to rtinline.txt at the root shard's computer once all computation with that time has drained from
+            /// be written to rtinline.txt at the root vertex's computer once all computation with that time has drained from
             /// the system. This call is identical to logging a double aggregate with a count of 1.0.
             /// </summary>
             void LogAggregate(string name, Reporting.AggregateType type, double value, T time);
@@ -95,7 +95,7 @@ namespace Naiad.Dataflow
             /// <summary>
             /// Incorporates (value,count) into the logical-time-based aggregation called name. If Configuration.InlineReporting and
             /// Configuration.AggregateReporting are both true, then the final aggregate of all values with the same time will
-            /// be written to rtinline.txt at the root shard's computer once all computation with that time has drained from
+            /// be written to rtinline.txt at the root vertex's computer once all computation with that time has drained from
             /// the system. count is used only for aggregates of type Reporting.AggregateType.Average, for which the final
             /// aggregate is Sum(values)/Sum(counts).
             /// </summary>
@@ -136,7 +136,7 @@ namespace Naiad.Dataflow
             }
         }
 
-        internal class IntReportingReducer : Naiad.Frameworks.Reduction.IReducer<ReportingRecord<Int64>, ReportingRecord<Int64>, ReportingRecord<Int64>>
+        internal class IntReportingReducer : Microsoft.Research.Naiad.Frameworks.Reduction.IReducer<ReportingRecord<Int64>, ReportingRecord<Int64>, ReportingRecord<Int64>>
         {
             ReportingRecord<Int64> value;
 
@@ -191,7 +191,7 @@ namespace Naiad.Dataflow
             }
         }
 
-        internal class DoubleReportingReducer : Naiad.Frameworks.Reduction.IReducer<ReportingRecord<double>, ReportingRecord<double>, ReportingRecord<double>>
+        internal class DoubleReportingReducer : Microsoft.Research.Naiad.Frameworks.Reduction.IReducer<ReportingRecord<double>, ReportingRecord<double>, ReportingRecord<double>>
         {
             ReportingRecord<double> value;
 
@@ -248,41 +248,41 @@ namespace Naiad.Dataflow
 
         internal class Reporting<T> : IReporting<T> where T : Time<T>
         {
-            private readonly ShardContext<T> context;
-            private readonly InputVertex<string> rootShard;
-            private readonly Naiad.Frameworks.VertexOutputBuffer<string, T> inlineStatistics;
-            private readonly Naiad.Frameworks.VertexOutputBuffer<Pair<string, ReportingRecord<double>>, T> aggregateDouble;
-            private readonly Naiad.Frameworks.VertexOutputBuffer<Pair<string, ReportingRecord<Int64>>, T> aggregateInt;
+            private readonly VertexContext<T> context;
+            private readonly InputVertex<string> rootVertex;
+            private readonly Microsoft.Research.Naiad.Frameworks.VertexOutputBuffer<string, T> inlineStatistics;
+            private readonly Microsoft.Research.Naiad.Frameworks.VertexOutputBuffer<Pair<string, ReportingRecord<double>>, T> aggregateDouble;
+            private readonly Microsoft.Research.Naiad.Frameworks.VertexOutputBuffer<Pair<string, ReportingRecord<Int64>>, T> aggregateInt;
 
             public void Log(string s)
             {
-                if (rootShard == null)
+                if (rootVertex == null)
                 {
                     Console.WriteLine(s);
                 }
                 else
                 {
-                    rootShard.OnNext(new[] { s });
+                    rootVertex.OnNext(new[] { s });
                 }
             }
 
             public void Log(string s, T t)
             {
-                string decorated = context.Shard.ToString() + "<" + t.ToString() + ">" + ":" + s;
+                string decorated = context.Vertex.ToString() + "<" + t.ToString() + ">" + ":" + s;
                 if (inlineStatistics == null)
                 {
                     Console.WriteLine(decorated);
                 }
                 else
                 {
-                    inlineStatistics.Send(decorated, t);
+                    inlineStatistics.GetBufferForTime(t).Send(decorated);
                 }
             }
 
             public void ForwardLog(Pair<string, T>[] message)
             {
                 for (int i = 0; i < message.Length; i++)
-                    this.inlineStatistics.Send(message[i].v1, message[i].v2);
+                    this.inlineStatistics.GetBufferForTime(message[i].v2).Send(message[i].v1);
 
                 this.inlineStatistics.Flush();
             }
@@ -291,7 +291,7 @@ namespace Naiad.Dataflow
             {
                 if (this.aggregateInt != null)
                 {
-                    this.aggregateInt.Send(new Pair<string, ReportingRecord<Int64>>(name, new ReportingRecord<Int64>(value, count, type)), time);
+                    this.aggregateInt.GetBufferForTime(time).Send(name.PairWith(new ReportingRecord<Int64>(value, count, type)));
                 }
             }
 
@@ -304,7 +304,7 @@ namespace Naiad.Dataflow
             {
                 if (this.aggregateDouble != null)
                 {
-                    this.aggregateDouble.Send(new Pair<string, ReportingRecord<double>>(name, new ReportingRecord<double>(value, count, type)), time);
+                    this.aggregateDouble.GetBufferForTime(time).Send(name.PairWith(new ReportingRecord<double>(value, count, type)));
                 }
             }
 
@@ -314,18 +314,18 @@ namespace Naiad.Dataflow
             }
 
             public Reporting(
-                ShardContext<T> c, Stream<string, T> inlineStats,
+                VertexContext<T> c, Stream<string, T> inlineStats,
                 Stream<Pair<string, ReportingRecord<Int64>>, T> aggInt, Stream<Pair<string, ReportingRecord<double>>, T> aggDouble)
             {
                 context = c;
 
                 if (c.parent.parent.manager.Reporting.HasDomain)
                 {
-                    rootShard = c.parent.parent.manager.Reporting.RootDomainShard(c.Shard.VertexId);
+                    rootVertex = c.parent.parent.manager.Reporting.RootDomainVertex(c.Vertex.VertexId);
                 }
                 else
                 {
-                    rootShard = null;
+                    rootVertex = null;
                 }
 
                 if (inlineStats == null)
@@ -334,7 +334,7 @@ namespace Naiad.Dataflow
                 }
                 else
                 {
-                    inlineStatistics = new Frameworks.VertexOutputBuffer<string, T>(c.Shard);
+                    inlineStatistics = new Frameworks.VertexOutputBuffer<string, T>(c.Vertex);
                     inlineStats.StageOutput.Register(inlineStatistics);
                 }
 
@@ -345,9 +345,9 @@ namespace Naiad.Dataflow
                 }
                 else
                 {
-                    aggregateInt = new Frameworks.VertexOutputBuffer<Pair<string, ReportingRecord<long>>, T>(c.Shard);
+                    aggregateInt = new Frameworks.VertexOutputBuffer<Pair<string, ReportingRecord<long>>, T>(c.Vertex);
                     aggInt.StageOutput.Register(aggregateInt);
-                    aggregateDouble = new Frameworks.VertexOutputBuffer<Pair<string, ReportingRecord<double>>, T>(c.Shard);
+                    aggregateDouble = new Frameworks.VertexOutputBuffer<Pair<string, ReportingRecord<double>>, T>(c.Vertex);
                     aggDouble.StageOutput.Register(aggregateDouble);
                 }
             }
@@ -389,9 +389,9 @@ namespace Naiad.Dataflow
                 // do nothing since this is the head of the chain
             }
 
-            public InputVertex<string> RootDomainShard(int index)
+            public InputVertex<string> RootDomainVertex(int index)
             {
-                return domainReportingIngress.GetInputShard(index);
+                return domainReportingIngress.GetInputVertex(index);
             }
 
             public void ShutDown()
@@ -442,20 +442,20 @@ namespace Naiad.Dataflow
             }
         }
 
-        internal class RootStatisticsShard : Naiad.Dataflow.Vertex<Epoch>
+        internal class RootStatisticsVertex : Microsoft.Research.Naiad.Dataflow.Vertex<Epoch>
         {
             private readonly StreamWriter output;
             private readonly System.Diagnostics.Stopwatch timer;
 
-            public void OnRecv(Message<Pair<string, Epoch>> message)
+            public void OnRecv(Message<string, Epoch> message)
             {
                 for (int i = 0; i < message.length; i++)
                 {
-                    output.WriteLine("{0:D8}: {1}", timer.ElapsedMilliseconds, message.payload[i].v1);
+                    output.WriteLine("{0:D8}: {1}", timer.ElapsedMilliseconds, message.payload[i]);
                 }
             }
 
-            public override void OnDone(Epoch time)
+            public override void OnNotify(Epoch time)
             {
                 // do nothing since epochs mean nothing in this context
             }
@@ -465,7 +465,7 @@ namespace Naiad.Dataflow
                 output.Close();
             }
 
-            public RootStatisticsShard(int index, Stage<Epoch> parent, string outputFileName)
+            public RootStatisticsVertex(int index, Stage<Epoch> parent, string outputFileName)
                 : base(index, parent)
             {
 
@@ -477,7 +477,7 @@ namespace Naiad.Dataflow
 
         internal class RootStatisticsStage : IReportingConnector<Epoch>
         {
-            private Stage<RootStatisticsShard, Epoch> stage;
+            private Stage<RootStatisticsVertex, Epoch> stage;
 
             private readonly NaiadList<StageInput<string, Epoch>> receivers;
             public IEnumerable<StageInput<string, Epoch>> Receivers
@@ -487,15 +487,15 @@ namespace Naiad.Dataflow
 
             public void ShutDown()
             {
-                foreach (var s in stage.Shards)
+                foreach (var s in stage.Vertices)
                 {
-                    stage.GetShard(s.VertexId).FinalizeReporting();
+                    stage.GetVertex(s.VertexId).FinalizeReporting();
                 }
             }
 
             public void ConnectInline(Stream<string, Epoch> sender)
             {
-                this.stage.NewInput(sender, (message, shard) => shard.OnRecv(message), null);
+                this.stage.NewInput(sender, (message, vertex) => vertex.OnRecv(message), null);
             }
 
             public void ConnectIntAggregator(Stream<Pair<string, ReportingRecord<Int64>>, Epoch> sender)
@@ -509,42 +509,42 @@ namespace Naiad.Dataflow
 
             internal RootStatisticsStage(ITimeContext<Epoch> context, string name, string outputFile)
             {
-                this.stage = new Stage<RootStatisticsShard, Epoch>(new SingleVertexPlacement(0, 0), new OpaqueTimeContext<Epoch>(context), Stage.OperatorType.Default, (i, v) => new RootStatisticsShard(i, v, outputFile), name);
+                this.stage = new Stage<RootStatisticsVertex, Epoch>(new SingleVertexPlacement(0, 0), new OpaqueTimeContext<Epoch>(context), Stage.OperatorType.Default, (i, v) => new RootStatisticsVertex(i, v, outputFile), name);
 
                 receivers = new NaiadList<StageInput<string, Epoch>>();
             }
         }
 
-        internal class AggregateStatisticsShard<R, T> : Naiad.Dataflow.Vertex<T>
+        internal class AggregateStatisticsVertex<R, T> : Microsoft.Research.Naiad.Dataflow.Vertex<T>
             where T : Time<T>
         {
-            internal readonly Naiad.Frameworks.VertexOutputBuffer<Pair<string, ReportingRecord<R>>, T> output;
+            internal readonly Microsoft.Research.Naiad.Frameworks.VertexOutputBuffer<Pair<string, ReportingRecord<R>>, T> output;
 
-            public void OnRecv(Message<Pair<Pair<string, ReportingRecord<R>>, T>> message)
+            public void OnRecv(Message<Pair<string, ReportingRecord<R>>, T> message)
             {
                 for (int i = 0; i < message.length; i++)
                 {
-                    string name = message.payload[i].v1.v1;
-                    ReportingRecord<R> r = message.payload[i].v1.v2;
-                    if (r.type == Naiad.Dataflow.Reporting.AggregateType.Average)
+                    string name = message.payload[i].v1;
+                    ReportingRecord<R> r = message.payload[i].v2;
+                    if (r.type == Microsoft.Research.Naiad.Dataflow.Reporting.AggregateType.Average)
                     {
-                        Context.Reporting.Log(name + ": " + r.payload + "," + r.count, message.payload[i].v2);
+                        Context.Reporting.Log(name + ": " + r.payload + "," + r.count, message.time);
                     }
                     else
                     {
-                        Context.Reporting.Log(name + ": " + r.payload, message.payload[i].v2);
+                        Context.Reporting.Log(name + ": " + r.payload, message.time);
                     }
                 }
 
                 output.Send(message);
             }
 
-            public override void OnDone(T time)
+            public override void OnNotify(T time)
             {
                 // do nothing since epochs mean nothing in this context
             }
 
-            public AggregateStatisticsShard(int index, Stage<T> parent)
+            public AggregateStatisticsVertex(int index, Stage<T> parent)
                 : base(index, parent)
             {
                 output = new Frameworks.VertexOutputBuffer<Pair<string, ReportingRecord<R>>, T>(this);
@@ -554,7 +554,7 @@ namespace Naiad.Dataflow
         internal class AggregateStatisticsStage<R, T>
             where T : Time<T>
         {
-            private readonly Stage<AggregateStatisticsShard<R, T>, T> stage;
+            private readonly Stage<AggregateStatisticsVertex<R, T>, T> stage;
 
             private readonly NaiadList<StageInput<Pair<string, ReportingRecord<R>>, T>> inputs;
             public IEnumerable<StageInput<Pair<string, ReportingRecord<R>>, T>> Inputs
@@ -567,14 +567,14 @@ namespace Naiad.Dataflow
             public void ConnectTo(Stream<Pair<string, ReportingRecord<R>>, T> i)
             {
                 //inputs.Add(this.NewInput(i));
-                inputs.Add(stage.NewInput(i, (message, shard) => shard.OnRecv(message), null));
+                inputs.Add(stage.NewInput(i, (message, vertex) => vertex.OnRecv(message), null));
             }
 
             internal AggregateStatisticsStage(ITimeContext<T> context, string name)
             {
-                this.stage = new Stage<AggregateStatisticsShard<R, T>, T>(new OpaqueTimeContext<T>(context), (i, v) => new AggregateStatisticsShard<R, T>(i, v), name);
+                this.stage = new Stage<AggregateStatisticsVertex<R, T>, T>(new OpaqueTimeContext<T>(context), (i, v) => new AggregateStatisticsVertex<R, T>(i, v), name);
 
-                Output = this.stage.NewOutputWithoutSealing(shard => shard.output, null);
+                Output = this.stage.NewOutputWithoutSealing(vertex => vertex.output, null);
 
                 inputs = new NaiadList<StageInput<Pair<string, ReportingRecord<R>>, T>>();
             }
@@ -614,11 +614,11 @@ namespace Naiad.Dataflow
 
     internal interface IStageContext<T> where T : Time<T>
     {
-        IShardContext<T> MakeShardContext(Vertex shard);
+        IVertexContext<T> MakeVertexContext(Vertex vertex);
         ITimeContext<T> Parent { get; }
     }
 
-    internal interface IShardContext<T> where T : Time<T>
+    internal interface IVertexContext<T> where T : Time<T>
     {
         IStageContext<T> Parent { get; }
         Reporting.IReporting<T> Reporting { get; }
@@ -724,11 +724,11 @@ namespace Naiad.Dataflow
             var safeContext = this.CloneWithoutAggregate();
 
             intAggregator = new Reporting.AggregateStatisticsStage<Int64, T>(safeContext, scope + ".IRI");
-            //intAggregator.Factory = (i => new Reporting.AggregateStatisticsShard<Int64, T>(i, intAggregator));
+            //intAggregator.Factory = (i => new Reporting.AggregateStatisticsVertex<Int64, T>(i, intAggregator));
             downstreamConnector.ConnectIntAggregator(intAggregator.Output);
 
             doubleAggregator = new Reporting.AggregateStatisticsStage<double, T>(safeContext, scope + ".IRD");
-            //doubleAggregator.Factory = (i => new Reporting.AggregateStatisticsShard<double, T>(i, doubleAggregator));
+            //doubleAggregator.Factory = (i => new Reporting.AggregateStatisticsVertex<double, T>(i, doubleAggregator));
             downstreamConnector.ConnectDoubleAggregator(doubleAggregator.Output);
         }
 
@@ -761,9 +761,9 @@ namespace Naiad.Dataflow
             get { return parent; }
         }
 
-        public IShardContext<T> MakeShardContext(Vertex parentShard)
+        public IVertexContext<T> MakeVertexContext(Vertex parentVertex)
         {
-            return new ShardContext<T>(this, parentShard);
+            return new VertexContext<T>(this, parentVertex);
         }
 
         private void MakeAggregates(string name)
@@ -780,7 +780,7 @@ namespace Naiad.Dataflow
                 string, T>(() => new Reporting.IntReportingReducer(), name + ".IRILC", x => x.v1.GetHashCode());
 
             var intReporter = new Reporting.AggregateStatisticsStage<Int64, T>(safeContext, name + ".IRI");
-            //intReporter.Factory = (i => new Reporting.AggregateStatisticsShard<Int64, T>(i, intReporter));
+            //intReporter.Factory = (i => new Reporting.AggregateStatisticsVertex<Int64, T>(i, intReporter));
             intReporter.ConnectTo(intReduced);
             parent.intAggregator.ConnectTo(intReduced);
 
@@ -794,7 +794,7 @@ namespace Naiad.Dataflow
                 string, T>(() => new Reporting.DoubleReportingReducer(), name + ".IRDLC", x => x.v1.GetHashCode());
 
             var doubleReporter = new Reporting.AggregateStatisticsStage<double, T>(safeContext, name + ".IRD");
-            //doubleReporter.Factory = (i => new Reporting.AggregateStatisticsShard<double, T>(i, doubleReporter));
+            //doubleReporter.Factory = (i => new Reporting.AggregateStatisticsVertex<double, T>(i, doubleReporter));
             doubleReporter.ConnectTo(doubleReduced);
             parent.doubleAggregator.ConnectTo(doubleReduced);
         }
@@ -814,15 +814,15 @@ namespace Naiad.Dataflow
         }
     }
 
-    internal class ShardContext<T> : IShardContext<T> where T : Time<T>
+    internal class VertexContext<T> : IVertexContext<T> where T : Time<T>
     {
-        private readonly Vertex shard;
+        private readonly Vertex vertex;
         internal readonly StageContext<T> parent;
         private readonly Reporting.Reporting<T> reporting;
 
-        public Vertex Shard
+        public Vertex Vertex
         {
-            get { return shard; }
+            get { return vertex; }
         }
 
         public IStageContext<T> Parent
@@ -835,10 +835,10 @@ namespace Naiad.Dataflow
             get { return reporting; }
         }
 
-        public ShardContext(StageContext<T> p, Vertex s)
+        public VertexContext(StageContext<T> p, Vertex s)
         {
             parent = p;
-            shard = s;
+            vertex = s;
             if (parent.parent.manager.Reporting == null)
             {
                 reporting = null;
@@ -849,6 +849,5 @@ namespace Naiad.Dataflow
             }
         }
     }
-
 }
 

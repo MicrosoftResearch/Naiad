@@ -23,21 +23,22 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Linq.Expressions;
-using Naiad.Dataflow;
+using Microsoft.Research.Naiad.Dataflow;
 
-namespace Naiad.Frameworks.DifferentialDataflow.Operators
+namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Operators
 {
-    internal class Select<S, T, R> : Naiad.Frameworks.UnaryVertex<Weighted<S>, Weighted<R>, T>
+    internal class Select<S, T, R> : Microsoft.Research.Naiad.Frameworks.UnaryVertex<Weighted<S>, Weighted<R>, T>
         where S : IEquatable<S>
-        where T : Naiad.Time<T>
+        where T : Microsoft.Research.Naiad.Time<T>
         where R : IEquatable<R>
     {
         public Func<S, R> selector;
 
-        public override void MessageReceived(Message<Pair<Weighted<S>, T>> message)
+        public override void OnReceive(Message<Weighted<S>, T> message)
         {
+            var output = this.Output.GetBufferForTime(message.time);
             for (int i = 0; i < message.length; i++)
-                this.Output.Send(this.selector(message.payload[i].v1.record).ToWeighted(message.payload[i].v1.weight), message.payload[i].v2);
+                output.Send(this.selector(message.payload[i].record).ToWeighted(message.payload[i].weight));
         }
 
         public Select(int index, Stage<T> collection, Expression<Func<S, R>> transformation)

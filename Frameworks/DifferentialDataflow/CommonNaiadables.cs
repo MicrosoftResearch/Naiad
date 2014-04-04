@@ -23,9 +23,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-using Naiad;
+using Microsoft.Research.Naiad;
 
-namespace Naiad.Frameworks.DifferentialDataflow
+namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
 {
 #if false
     public struct WeightedNaiadable<T> : IEquatable<WeightedNaiadable<T>>

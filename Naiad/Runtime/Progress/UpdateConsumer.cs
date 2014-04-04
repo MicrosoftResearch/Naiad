@@ -24,16 +24,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using Naiad.Dataflow.Channels;
-using Naiad.CodeGeneration;
-using Naiad.DataStructures;
-using Naiad.Scheduling;
-using Naiad.FaultTolerance;
-using Naiad.Dataflow;
-using Naiad.Frameworks;
+using Microsoft.Research.Naiad.Dataflow.Channels;
+using Microsoft.Research.Naiad.CodeGeneration;
+using Microsoft.Research.Naiad.DataStructures;
+using Microsoft.Research.Naiad.Scheduling;
+using Microsoft.Research.Naiad.FaultTolerance;
+using Microsoft.Research.Naiad.Dataflow;
+using Microsoft.Research.Naiad.Frameworks;
 
 
-namespace Naiad.Runtime.Progress
+namespace Microsoft.Research.Naiad.Runtime.Progress
 {
     public class FrontierChangedEventArgs : System.EventArgs
     {
@@ -48,9 +48,9 @@ namespace Naiad.Runtime.Progress
     }
 
     // Consumes information about outstanding records in the system, and reports the least causal time known to exist.
-    internal class ProgressUpdateConsumer : Dataflow.Vertex<Pointstamp>, Frontier, LocalProgressInfo
+    internal class ProgressUpdateConsumer : Dataflow.Vertex<Empty>, Frontier, LocalProgressInfo
     {
-        private class VertexInput : Dataflow.VertexInput<Int64, Pointstamp>
+        private class VertexInput : Dataflow.VertexInput<Update, Empty>
         {
             private readonly ProgressUpdateConsumer op;
             public Dataflow.Vertex Vertex { get { return this.op; } }
@@ -59,14 +59,14 @@ namespace Naiad.Runtime.Progress
 
             // none of these are implemented, or ever used.
             public void Flush() { throw new NotImplementedException(); }
-            public void RecordReceived(Pair<Int64, Pointstamp> record, RemotePostbox sender) { throw new NotImplementedException(); }
-            public void MessageReceived(Message<Pair<Int64, Pointstamp>> message, RemotePostbox sender) { throw new NotImplementedException(); }
+            //public void RecordReceived(Pair<Int64, Pointstamp> record, RemotePostbox sender) { throw new NotImplementedException(); }
+            public void OnReceive(Message<Update, Empty> message, RemotePostbox sender) { throw new NotImplementedException(); }
             public void SerializedMessageReceived(SerializedMessage message, RemotePostbox sender) { throw new NotImplementedException(); }
             public bool LoggingEnabled { get { return false; } set { throw new NotImplementedException("Logging for RecvFiberBank"); } }
             public int AvailableEntrancy { get { throw new NotImplementedException(); } set { throw new NotImplementedException(); } }
         }
 
-        public Dataflow.VertexInput<Int64, Pointstamp> Input { get { return new VertexInput(this); } }
+        public Dataflow.VertexInput<Update, Empty> Input { get { return new VertexInput(this); } }
 
         public override string ToString() { return "ProgressUpdateConsumer"; }
 
@@ -84,11 +84,6 @@ namespace Naiad.Runtime.Progress
 
         public readonly PointstampCountSet PCS;
         public PointstampCountSet PointstampCountSet { get { return this.PCS; } }
-
-        public void OnRecv(Pair<Int64, Pointstamp> element)
-        {
-            ProcessCountChange(element.v2, element.v1);
-        }
 
         public ManualResetEvent FrontierEmpty = new ManualResetEvent(false);
 
@@ -119,7 +114,48 @@ namespace Naiad.Runtime.Progress
                 {
                     Tracing.Trace("Frontier advanced to <empty>");
                     this.FrontierEmpty.Set();
+                }
+                else
+                {
+                    Tracing.Trace("Frontier advanced to " + string.Join(" ", newFrontier.Select(x => x.ToString())));
+                }
 
+                // Wake up schedulers to run shutdown actions for the graph.
+                this.Stage.InternalGraphManager.Controller.Workers.WakeUp();
+            }
+        }
+
+        public void ProcessCountChange(Message<Update, Empty> updates)
+        {
+            // the PCS should not be touched outside this lock, other than by capturing PCS.Frontier.
+            Tracing.Trace("(PCSLock");
+            Monitor.Enter(this.PCS);
+
+            var oldFrontier = PCS.Frontier;
+
+            var frontierChanged = false;
+            for (int i = 0; i < updates.length; i++)
+                frontierChanged = PCS.UpdatePointstampCount(updates.payload[i].Pointstamp, updates.payload[i].Delta) || frontierChanged;
+
+            var newFrontier = PCS.Frontier;
+
+            Monitor.Exit(this.PCS);
+            Tracing.Trace(")PCSLock");
+
+            if (frontierChanged)
+            {
+                // aggregation may need to flush
+                this.Aggregator.ConsiderFlushingBufferedUpdates();
+
+                // fire any frontier changed events
+                if (this.OnFrontierChanged != null)
+                    this.OnFrontierChanged(this, new FrontierChangedEventArgs(newFrontier));
+
+                // no elements means done.
+                if (newFrontier.Length == 0)
+                {
+                    Tracing.Trace("Frontier advanced to <empty>");
+                    this.FrontierEmpty.Set();
                 }
                 else
                 {
@@ -143,17 +179,17 @@ namespace Naiad.Runtime.Progress
 
         public override void Checkpoint(NaiadWriter writer)
         {
-            this.PCS.Checkpoint(writer);
+            this.PCS.Checkpoint(writer, this.CodeGenerator.GetSerializer<long>(), this.CodeGenerator.GetSerializer<Pointstamp>(), this.CodeGenerator.GetSerializer<int>());
         }
 
         public override void Restore(NaiadReader reader)
         {
-            this.PCS.Restore(reader);
+            this.PCS.Restore(reader, this.CodeGenerator.GetSerializer<long>(), this.CodeGenerator.GetSerializer<Pointstamp>(), this.CodeGenerator.GetSerializer<int>());
         }
 
         #endregion 
 
-        internal ProgressUpdateConsumer(int index, Stage<Pointstamp> stage, ProgressUpdateAggregator aggregator)
+        internal ProgressUpdateConsumer(int index, Stage<Empty> stage, ProgressUpdateAggregator aggregator)
             : base(index, stage)
         {
             this.Aggregator = aggregator;
@@ -167,9 +203,9 @@ namespace Naiad.Runtime.Progress
         }
     }
 
-    internal class ProgressUpdateCentralizer : Dataflow.Vertex<Pointstamp>, Frontier, LocalProgressInfo
+    internal class ProgressUpdateCentralizer : Dataflow.Vertex<Empty>, Frontier, LocalProgressInfo
     {
-        private class VertexInput : Dataflow.VertexInput<Int64, Pointstamp>
+        private class VertexInput : Dataflow.VertexInput<Update, Empty>
         {
             private readonly ProgressUpdateCentralizer op;
             public Dataflow.Vertex Vertex { get { return this.op; } }
@@ -181,14 +217,13 @@ namespace Naiad.Runtime.Progress
 
             // none of these are implemented, or ever called.
             public void Flush() { throw new NotImplementedException(); }            
-            public void RecordReceived(Pair<Int64, Pointstamp> record, RemotePostbox sender) { throw new NotImplementedException(); }
-            public void MessageReceived(Message<Pair<Int64, Pointstamp>> message, RemotePostbox sender) { throw new NotImplementedException(); }
+            public void OnReceive(Message<Update, Empty> message, RemotePostbox sender) { throw new NotImplementedException(); }
             public void SerializedMessageReceived(SerializedMessage message, RemotePostbox sender) { throw new NotImplementedException(); }
             public bool LoggingEnabled { get { return false; } set { throw new NotImplementedException("Logging for RecvFiberBank"); } }
             public int AvailableEntrancy { get { throw new NotImplementedException(); } set { throw new NotImplementedException(); } }
         }
 
-        public Dataflow.VertexInput<Int64, Pointstamp> Input { get { return new VertexInput(this); } }
+        public Dataflow.VertexInput<Update, Empty> Input { get { return new VertexInput(this); } }
 
         public override string ToString() { return "ProgressUpdateCentralizer"; }
 
@@ -207,25 +242,22 @@ namespace Naiad.Runtime.Progress
         public readonly PointstampCountSet PCS;
         public PointstampCountSet PointstampCountSet { get { return this.PCS; } }
 
-        internal VertexOutputBuffer<Int64, Pointstamp> Output;
-
-        public void OnRecv(Pair<Int64, Pointstamp> element)
-        {
-            // only shard 0 should exist.
-            if (this.VertexId == 0)
-               ProcessCountChange(element.v2, element.v1);
-        }
+        internal VertexOutputBuffer<Update, Empty> Output;
 
         public ManualResetEvent FrontierEmpty = new ManualResetEvent(false);
 
-        public void ProcessCountChange(Pointstamp time, Int64 weight)
+        public void ProcessCountChange(Message<Update, Empty> updates)
         {
             // the PCS should not be touched outside this lock, other than by capturing PCS.Frontier.
             Tracing.Trace("(PCSLock");
             Monitor.Enter(this.PCS);
 
             var oldfrontier = PCS.Frontier;
-            var frontierChanged = PCS.UpdatePointstampCount(time, weight);
+
+            var frontierChanged = false;
+            for (int i = 0; i < updates.length; i++)
+                frontierChanged = PCS.UpdatePointstampCount(updates.payload[i].Pointstamp, updates.payload[i].Delta) || frontierChanged; ;
+
             var newfrontier = PCS.Frontier;
 
             Monitor.Exit(this.PCS);
@@ -237,11 +269,12 @@ namespace Naiad.Runtime.Progress
                 Tracing.Trace("(GlobalLock");
                 lock (this.scheduler.Controller.GlobalLock)
                 {
+                    var output = this.Output.GetBufferForTime(new Empty());
                     foreach (var pointstamp in newfrontier.Except(oldfrontier))
-                        this.Output.Send(+1, pointstamp);
+                        output.Send(new Update(pointstamp, +1));
 
                     foreach (var pointstamp in oldfrontier.Except(newfrontier))
-                        this.Output.Send(-1, pointstamp);
+                        output.Send(new Update(pointstamp, -1));
 
                     this.Output.Flush();
                 }
@@ -256,15 +289,15 @@ namespace Naiad.Runtime.Progress
 
         public event EventHandler<FrontierChangedEventArgs> OnFrontierChanged;
 
-        public override void Checkpoint(NaiadWriter writer) { this.PCS.Checkpoint(writer); }
-        public override void Restore(NaiadReader reader)    { this.PCS.Restore(reader); }
+        public override void Checkpoint(NaiadWriter writer) { this.PCS.Checkpoint(writer, this.CodeGenerator.GetSerializer<long>(), this.CodeGenerator.GetSerializer<Pointstamp>(), this.CodeGenerator.GetSerializer<int>()); }
+        public override void Restore(NaiadReader reader) { this.PCS.Restore(reader, this.CodeGenerator.GetSerializer<long>(), this.CodeGenerator.GetSerializer<Pointstamp>(), this.CodeGenerator.GetSerializer<int>()); }
 
-        internal ProgressUpdateCentralizer(int index, Stage<Pointstamp> stage, ProgressUpdateAggregator aggregator)
+        internal ProgressUpdateCentralizer(int index, Stage<Empty> stage, ProgressUpdateAggregator aggregator)
             : base(index, stage)
         {
             this.Aggregator = aggregator;
 
-            this.Output = new VertexOutputBuffer<long, Pointstamp>(this);
+            this.Output = new VertexOutputBuffer<Update, Empty>(this);
 
             this.PCS = new PointstampCountSet(this.Stage.InternalGraphManager.Reachability);
         }

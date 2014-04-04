@@ -23,124 +23,99 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
-using Naiad.Dataflow.Channels;
-using Naiad.CodeGeneration;
-using Naiad.DataStructures;
+using Microsoft.Research.Naiad.Dataflow.Channels;
+using Microsoft.Research.Naiad.CodeGeneration;
+using Microsoft.Research.Naiad.DataStructures;
 
-namespace Naiad.FaultTolerance
+namespace Microsoft.Research.Naiad.FaultTolerance
 {
     public static class FaultToleranceExtensionMethods
     {
-        private static NaiadSerialization<int> intSerializer = null;
-
+        
         /* Checkpoint format for NaiadList<S>:
          * int     Count
          * S*Count Array
          */
-        public static void Checkpoint<S>(this NaiadList<S> list, NaiadWriter writer, NaiadSerialization<S> serializer)
+        public static void Checkpoint<S>(this NaiadList<S> list, NaiadWriter writer)
         //    where S : IEquatable<S>
         {
-            if (intSerializer == null)
-                intSerializer = AutoSerialization.GetSerializer<int>();
-
-            writer.Write(list.Count, intSerializer);
+            writer.Write(list.Count);
             for (int i = 0; i < list.Count; ++i)
-                writer.Write(list.Array[i], serializer);
+                writer.Write(list.Array[i]);
         }
 
-        public static void Restore<S>(this NaiadList<S> list, NaiadReader reader, NaiadSerialization<S> serializer)
+        public static void Restore<S>(this NaiadList<S> list, NaiadReader reader)
         //    where S : IEquatable<S>
         {
-            if (intSerializer == null)
-                intSerializer = AutoSerialization.GetSerializer<int>();
-
             list.Clear();
-            int count = reader.Read<int>(intSerializer);
+            int count = reader.Read<int>();
             list.EnsureCapacity(count);
             list.Count = count;
             for (int i = 0; i < list.Count; ++i)
-                list.Array[i] = reader.Read<S>(serializer);
+                list.Array[i] = reader.Read<S>();
         }
 
         /* Checkpoint format for List<S>:
          * int     Count
          * S*Count Array
          */
-        public static void Checkpoint<S>(this List<S> list, NaiadWriter writer, NaiadSerialization<S> serializer)
+        public static void Checkpoint<S>(this List<S> list, NaiadWriter writer, NaiadSerialization<S> serializer, NaiadSerialization<int> intSerializer)
         //    where S : IEquatable<S>
         {
-            if (intSerializer == null)
-                intSerializer = AutoSerialization.GetSerializer<int>();
-
             writer.Write(list.Count, intSerializer);
             for (int i = 0; i < list.Count; ++i)
                 writer.Write(list[i], serializer);
         }
 
-        public static void Restore<S>(this List<S> list, NaiadReader reader, NaiadSerialization<S> serializer)
+        public static void Restore<S>(this List<S> list, NaiadReader reader, NaiadSerialization<S> serializer, NaiadSerialization<int> intSerializer)
         //    where S : IEquatable<S>
         {
-            if (intSerializer == null)
-                intSerializer = AutoSerialization.GetSerializer<int>();
-
             list.Clear();
             int count = reader.Read<int>(intSerializer);
             for (int i = 0; i < list.Count; ++i)
                 list.Add(reader.Read<S>(serializer));
         }
 
-        public static void Checkpoint<K, V>(this Dictionary<K, V> dictionary, NaiadWriter writer, NaiadSerialization<K> keySerializer, NaiadSerialization<V> valueSerializer)
+        public static void Checkpoint<K, V>(this Dictionary<K, V> dictionary, NaiadWriter writer)
             //where K : IEquatable<K>
             //where V : IEquatable<V>
         {
-            if (intSerializer == null)
-                intSerializer = AutoSerialization.GetSerializer<int>(); 
-           
-            writer.Write(dictionary.Count, intSerializer);
+            writer.Write(dictionary.Count);
             foreach (KeyValuePair<K, V> kvp in dictionary)
             {
-                writer.Write(kvp.Key, keySerializer);
-                writer.Write(kvp.Value, valueSerializer);
+                writer.Write(kvp.Key);
+                writer.Write(kvp.Value);
             }
         }
 
-        public static void Restore<K, V>(this Dictionary<K, V> dictionary, NaiadReader reader, NaiadSerialization<K> keySerializer, NaiadSerialization<V> valueSerializer)
+        public static void Restore<K, V>(this Dictionary<K, V> dictionary, NaiadReader reader)
             //where K : IEquatable<K>
             //where V : IEquatable<V>
         {
-            if (intSerializer == null)
-                intSerializer = AutoSerialization.GetSerializer<int>(); 
-
             dictionary.Clear();
-            int count = reader.Read<int>(intSerializer);
+            int count = reader.Read<int>();
             for (int i = 0; i < count; ++i)
             {
-                K key = reader.Read<K>(keySerializer);
-                V value = reader.Read<V>(valueSerializer);
+                K key = reader.Read<K>();
+                V value = reader.Read<V>();
                 dictionary[key] = value;
             }
         }
 
-        public static void Checkpoint<T>(this T[] array, int count, NaiadWriter writer, NaiadSerialization<T> serializer)
+        public static void Checkpoint<T>(this T[] array, int count, NaiadWriter writer)
         {
-            if (intSerializer == null)
-                intSerializer = AutoSerialization.GetSerializer<int>(); 
-            
             Debug.Assert(count <= array.Length);
-            writer.Write(count, intSerializer);
+            writer.Write(count);
             for (int i = 0; i < count; ++i)
-                writer.Write(array[i], serializer);
+                writer.Write(array[i]);
         }
 
-        public static T[] RestoreArray<T>(NaiadReader reader, Func<int, T[]> allocator, NaiadSerialization<T> serializer)
+        public static T[] RestoreArray<T>(NaiadReader reader, Func<int, T[]> allocator)
         {
-            if (intSerializer == null)
-                intSerializer = AutoSerialization.GetSerializer<int>(); 
-
-            int count = reader.Read<int>(intSerializer);
+            int count = reader.Read<int>();
             T[] ret = allocator(count);
             for (int i = 0; i < count; ++i)
-                ret[i] = reader.Read<T>(serializer);
+                ret[i] = reader.Read<T>();
             return ret;
         }
 

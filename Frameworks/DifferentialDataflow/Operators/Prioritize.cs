@@ -22,9 +22,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Naiad;
+using Microsoft.Research.Naiad;
 
-namespace Naiad.Frameworks.DifferentialDataflow.Operators.Prioritize
+namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Operators.Prioritize
 {
 #if false
     internal class Ingress<S, T> : OperatorImplementations.UnaryStatelessOperator<S, T, S, Naiad.IntTotalLattice<T>>

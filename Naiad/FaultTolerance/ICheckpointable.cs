@@ -22,9 +22,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Naiad.Dataflow.Channels;
+using Microsoft.Research.Naiad.Dataflow.Channels;
 
-namespace Naiad.FaultTolerance
+namespace Microsoft.Research.Naiad.FaultTolerance
 {
     public interface ICheckpointable
     {

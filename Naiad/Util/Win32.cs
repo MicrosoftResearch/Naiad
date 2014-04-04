@@ -25,45 +25,45 @@ using System.Text;
 using System.Runtime.InteropServices;
 using System.Threading;
 
-namespace Naiad.Util
+namespace Microsoft.Research.Naiad.Util
 {
     public class Win32
     {
         [DllImport("kernel32.dll")]
-        public static extern UInt32 GetLastError();
+        internal static extern UInt32 GetLastError();
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        public static extern IntPtr GetCurrentThread();
+        internal static extern IntPtr GetCurrentThread();
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        public static extern UInt32 GetCurrentThreadId();
+        internal static extern UInt32 GetCurrentThreadId();
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        public static extern IntPtr SetThreadAffinityMask(IntPtr hThread, IntPtr dwThreadAffinityMask);
+        internal static extern IntPtr SetThreadAffinityMask(IntPtr hThread, IntPtr dwThreadAffinityMask);
 
         [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        public static extern int SetThreadIdealProcessor(IntPtr handle, int processor);
+        internal static extern int SetThreadIdealProcessor(IntPtr handle, int processor);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        public static extern IntPtr OpenThread(uint DesiredAccess, bool InheritHandle, uint ThreadId);
+        internal static extern IntPtr OpenThread(uint DesiredAccess, bool InheritHandle, uint ThreadId);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        public static extern bool CloseHandle(IntPtr Handle);
+        internal static extern bool CloseHandle(IntPtr Handle);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        public static extern bool QueryThreadCycleTime([In] IntPtr ThreadHandle, [Out] out ulong CycleTime);
+        internal static extern bool QueryThreadCycleTime([In] IntPtr ThreadHandle, [Out] out ulong CycleTime);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        public static extern UInt32 GetCurrentProcessId();
+        internal static extern UInt32 GetCurrentProcessId();
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        public static extern IntPtr OpenProcess(uint DesiredAccess, bool InheritHandle, uint ProcessId);
+        internal static extern IntPtr OpenProcess(uint DesiredAccess, bool InheritHandle, uint ProcessId);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        public static extern bool GetProcessWorkingSetSize([In] IntPtr ProcessHandle, [Out] out ulong MinBytes, [Out] out ulong MaxBytes);
+        internal static extern bool GetProcessWorkingSetSize([In] IntPtr ProcessHandle, [Out] out ulong MinBytes, [Out] out ulong MaxBytes);
 
         [DllImport("ws2_32.dll", SetLastError = true)]
-        public static extern int WSAIoctl([In] IntPtr Socket, UInt32 controlcode,
+        internal static extern int WSAIoctl([In] IntPtr Socket, UInt32 controlcode,
             [In] byte[] inBuf, int cbInBuf,
             [In] IntPtr outBuf, int cbOutBuf, // Not used - nust be zero
             [Out] out UInt32 pBytesRet,
@@ -127,19 +127,18 @@ WSAIoctl(
         }
 
         [DllImport("winmm.dll", EntryPoint="timeBeginPeriod", SetLastError=true)]
-        public static extern uint TimeBeginPeriod(uint uMilliseconds);
+        internal static extern uint TimeBeginPeriod(uint uMilliseconds);
 
         [DllImport("winmm.dll", EntryPoint="timeEndPeriod", SetLastError=true)]
-        public static extern uint TimeEndPeriod(uint uMilliseconds);
+        internal static extern uint TimeEndPeriod(uint uMilliseconds);
     }
 
 
     public class PinnedThread : IDisposable
     {
-
-        public IntPtr processHandle;    // handle to the process object
+        internal IntPtr processHandle;    // handle to the process object
         public UInt32 processId;        // process id
-        public IntPtr OSThreadHandle;   // handle to the Windows thread object
+        internal IntPtr OSThreadHandle;   // handle to the Windows thread object
         public UInt32 OSThreadId;       // Windows thread id
         public int runtimeThreadId;  // .NET thread id
         public int cpu;

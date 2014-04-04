@@ -22,10 +22,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Naiad.Dataflow.Channels;
-using Naiad.DataStructures;
+using Microsoft.Research.Naiad.Dataflow.Channels;
+using Microsoft.Research.Naiad.DataStructures;
 
-namespace Naiad.Frameworks.DifferentialDataflow.CollectionTrace
+namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.CollectionTrace
 {
     internal static class RandomOffsets
     {
@@ -119,7 +119,7 @@ namespace Naiad.Frameworks.DifferentialDataflow.CollectionTrace
         protected int GetIntendedIndex(S element, int length)
         {
             //return (int.MaxValue & element.GetHashCode()) / (int.MaxValue / length);
-            return ((int.MaxValue & element.GetHashCode()) / this.numShards) % length;
+            return ((int.MaxValue & element.GetHashCode()) / this.numVertices) % length;
         }
 
         private const int HashTableThresholdCount = 32;
@@ -193,8 +193,8 @@ namespace Naiad.Frameworks.DifferentialDataflow.CollectionTrace
                     var idx = handle.Offset + ((Int32.MaxValue & (index + RandomOffsets.Offsets[into.Length][i])) % handle.Length);
                     if (idx < 0 || idx >= handle.Array.Length)
                     {
-                        Naiad.Logging.Error("IntroduceAsHashTable: trying to insert at bad index {0}", idx);
-                        Naiad.Logging.Error("handle.Array.Length={0}, handle.Offset={1}, handle.Length={2}, index={3}, randomOffsets[into.Length][i]={4}",
+                        Microsoft.Research.Naiad.Logging.Error("IntroduceAsHashTable: trying to insert at bad index {0}", idx);
+                        Microsoft.Research.Naiad.Logging.Error("handle.Array.Length={0}, handle.Offset={1}, handle.Length={2}, index={3}, randomOffsets[into.Length][i]={4}",
                             handle.Array.Length, handle.Offset, handle.Length, index, RandomOffsets.Offsets[into.Length][i]);
                     }
                     if (handle.Array[idx].weight == 0)
@@ -268,7 +268,10 @@ namespace Naiad.Frameworks.DifferentialDataflow.CollectionTrace
             else if (weight == 0 && handle.Array[handle.Offset + next].weight == 0)
             {
                 var nextnext = (next + 1) % handle.Length;
-                index = GetIntendedIndex(handle.Array[handle.Offset + nextnext].record, handle.Length);
+
+                // only evaluate hashcode on known valid data
+                if (handle.Array[handle.Offset + nextnext].weight != 0)
+                    index = GetIntendedIndex(handle.Array[handle.Offset + nextnext].record, handle.Length);
 
                 // as long as a slide would not introduce a new inversion...
                 while (index != nextnext && handle.Array[handle.Offset + nextnext].weight != 0)
@@ -278,7 +281,10 @@ namespace Naiad.Frameworks.DifferentialDataflow.CollectionTrace
 
                     next = nextnext;
                     nextnext = (next + 1) % handle.Length;
-                    index = GetIntendedIndex(handle.Array[handle.Offset + nextnext].record, handle.Length);
+
+                    // only evaluate hashcode on known valid data
+                    if (handle.Array[handle.Offset + nextnext].weight != 0)
+                        index = GetIntendedIndex(handle.Array[handle.Offset + nextnext].record, handle.Length);
                 }
             }
         }
@@ -771,12 +777,12 @@ namespace Naiad.Frameworks.DifferentialDataflow.CollectionTrace
 
         public bool Stateful { get { return true; } }
 
-        private readonly int numShards;
-        public CollectionTraceWithHeap(Func<int, int, bool> tCompare, Func<int, int> update, int numShards)
+        private readonly int numVertices;
+        public CollectionTraceWithHeap(Func<int, int, bool> tCompare, Func<int, int> update, int numVertices)
         {
             TimeLessThan = tCompare;
             UpdateTime = update;
-            this.numShards = numShards;
+            this.numVertices = numVertices;
 
             records = new VariableLengthHeap<Weighted<S>>(32);
             increments = new VariableLengthHeap<CollectionTraceWithHeapIncrement>(32);

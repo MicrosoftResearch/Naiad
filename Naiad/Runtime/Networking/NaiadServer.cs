@@ -25,12 +25,13 @@ using System.Text;
 using System.Net.Sockets;
 using System.Net;
 using System.Diagnostics;
-using Naiad.Dataflow.Channels;
+using Microsoft.Research.Naiad.Dataflow.Channels;
 using System.IO;
-using Naiad.Scheduling;
-using Naiad.Runtime.Networking;
+using System.Threading.Tasks;
+using Microsoft.Research.Naiad.Scheduling;
+using Microsoft.Research.Naiad.Runtime.Networking;
 
-namespace Naiad.Runtime.Networking
+namespace Microsoft.Research.Naiad.Runtime.Networking
 {
     internal enum NaiadProtocolOpcode
     {
@@ -58,25 +59,42 @@ namespace Naiad.Runtime.Networking
 
         private ServerState state;
 
+        private struct GuardedAction
+        {
+            public GuardedAction(Action<Socket> a, bool mustGuard)
+            {
+                guard = new Task(() => { });
+                if (!mustGuard)
+                {
+                    guard.RunSynchronously();
+                }
+                action = a;
+            }
+
+            public Task guard;
+            public Action<Socket> action;
+        }
+
         private readonly IPEndPoint endpoint;
         private readonly Socket listeningSocket;
-        private Dictionary<NaiadProtocolOpcode, Action<Socket>> serverActions;
+        private Dictionary<NaiadProtocolOpcode, GuardedAction> serverActions;
         private Dictionary<int, TcpNetworkChannel> networkChannels;
         
-        public NaiadServer(IPEndPoint endpoint)
+        public NaiadServer(ref IPEndPoint endpoint)
         {
-            Logging.Progress("Starting Naiad server at {0}", endpoint);
-                
-            this.endpoint = endpoint;
-            this.listeningSocket = new Socket(this.endpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            this.serverActions = new Dictionary<NaiadProtocolOpcode, Action<Socket>>();
+            this.serverActions = new Dictionary<NaiadProtocolOpcode, GuardedAction>();
             this.state = ServerState.Initalized;
-            this.serverActions[NaiadProtocolOpcode.Kill] = s => { using (TextWriter writer = new StreamWriter(new NetworkStream(s))) writer.WriteLine("Killed"); s.Close(); System.Environment.Exit(-9); };
+            this.serverActions[NaiadProtocolOpcode.Kill] = new GuardedAction(s => { using (TextWriter writer = new StreamWriter(new NetworkStream(s))) writer.WriteLine("Killed"); s.Close(); System.Environment.Exit(-9); }, false);
             //this.serverActions[NaiadProtocolOpcode.GetIngressSocket] = s => this.controller.AttachIngressSocketToRemoteCollection(s);
             //this.serverActions[NaiadProtocolOpcode.GetEgressSocket] = s => this.controller.AttachEgressSocketToRemoteOutput(s);
             this.networkChannels = new Dictionary<int, TcpNetworkChannel>();
-            this.serverActions[NaiadProtocolOpcode.PeerConnect] = s => { int channelId = ReceiveInt(s); this.networkChannels[channelId].PeerConnect(s); };
+            this.serverActions[NaiadProtocolOpcode.PeerConnect] = new GuardedAction(s => { int channelId = ReceiveInt(s); this.networkChannels[channelId].PeerConnect(s); }, true);
 
+            Socket socket;
+            endpoint = BindSocket(endpoint, out socket);
+
+            this.endpoint = endpoint;
+            this.listeningSocket = socket;
         }
 
         public void RegisterNetworkChannel(TcpNetworkChannel channel)
@@ -95,17 +113,76 @@ namespace Naiad.Runtime.Networking
         /// </summary>
         /// <param name="opcode">The opcode to handle.</param>
         /// <param name="serverAction"></param>
-        public void RegisterServerAction(NaiadProtocolOpcode opcode, Action<Socket> serverAction)
+        public void RegisterServerAction(NaiadProtocolOpcode opcode, Action<Socket> serverAction, bool mustGuard)
         {
-            this.serverActions[opcode] = serverAction;
+            this.serverActions[opcode] = new GuardedAction(serverAction, mustGuard);
+        }
+
+        private Socket TryToBind(IPEndPoint endpoint)
+        {
+            Logging.Progress("Trying to bind Naiad server at {0}", endpoint);
+
+            Socket s = new Socket(endpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+
+            try
+            {
+                s.Bind(endpoint);
+
+                return s;
+            }
+            catch (SocketException e)
+            {
+                if (e.SocketErrorCode == SocketError.AddressAlreadyInUse)
+                {
+                    // another process has bound to this socket: we'll pick a different port and try
+                    // again in the calling code
+                    return null;
+                }
+                else
+                {
+                    // unexpected error so we'll just let someone else deal with it
+                    throw;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Bind the server socket to an available port
+        /// </summary>
+        /// <param name="knownEndpoint">if non-null, try to listen on this endpoint, otherwise pick one</param>
+        /// <returns>the endpoint the server is listening on</returns>
+        private IPEndPoint BindSocket(IPEndPoint endpoint, out Socket socket)
+        {
+            socket = null;
+
+            if (endpoint == null)
+            {
+                int port = 2101;
+                for (int i = 0; socket == null && i < 1000; ++i)
+                {
+                    endpoint = new IPEndPoint(IPAddress.Any, port + i);
+                    socket = TryToBind(endpoint);
+                }
+            }
+            else
+            {
+                socket = TryToBind(endpoint);
+            }
+
+            if (socket == null)
+            {
+                throw new ApplicationException("Unable to find a socket to bind to");
+            }
+
+            Logging.Progress("Starting Naiad server at {0}", endpoint);
+
+            return endpoint;
         }
 
         public void Start()
         {
             Debug.Assert(this.state == ServerState.Initalized);
             this.state = ServerState.Started;
-
-            this.listeningSocket.Bind(this.endpoint);
 
             this.listeningSocket.Listen(100);
             IAsyncResult result = this.listeningSocket.BeginAccept(4, this.AcceptCallback, null);
@@ -114,6 +191,11 @@ namespace Naiad.Runtime.Networking
                 this.AcceptHandler(result);
                 result = this.listeningSocket.BeginAccept(4, this.AcceptCallback, null);
             }
+        }
+
+        public void AcceptPeerConnections()
+        {
+            this.serverActions[NaiadProtocolOpcode.PeerConnect].guard.RunSynchronously();
         }
 
         /// <summary>
@@ -137,24 +219,29 @@ namespace Naiad.Runtime.Networking
             }
         }
 
+        private void AcceptInternal(Action<Socket> action, Socket peerSocket, NaiadProtocolOpcode opcode)
+        {
+            try
+            {
+                action(peerSocket);
+            }
+            catch (Exception e)
+            {
+                Logging.Progress("Error handling a connection with opcode: {0}", opcode);
+                Logging.Progress(e.ToString());
+                peerSocket.Close();
+            }
+        }
+
         private void AcceptHandler(IAsyncResult result)
         {
             Debug.Assert(this.state == ServerState.Started);
             Socket peerSocket;
             NaiadProtocolOpcode opcode = this.GetOpcode(result, out peerSocket);
-            Action<Socket> acceptAction;
+            GuardedAction acceptAction;
             if (this.serverActions.TryGetValue(opcode, out acceptAction))
             {
-                try
-                {
-                    acceptAction(peerSocket);
-                }
-                catch (Exception e)
-                {
-                    Logging.Progress("Error handling a connection with opcode: {0}", opcode);
-                    Logging.Progress(e.ToString());
-                    peerSocket.Close();
-                }
+                acceptAction.guard.ContinueWith((task) => AcceptInternal(acceptAction.action, peerSocket, opcode));
             }
             else
             {

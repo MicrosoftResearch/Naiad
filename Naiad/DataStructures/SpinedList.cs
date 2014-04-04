@@ -23,10 +23,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
-using Naiad.Dataflow.Channels;
-using Naiad.CodeGeneration;
+using Microsoft.Research.Naiad.Dataflow.Channels;
+using Microsoft.Research.Naiad.CodeGeneration;
 
-namespace Naiad.DataStructures
+namespace Microsoft.Research.Naiad.DataStructures
 {
 #if false
     public class SpinedList<T>
@@ -156,6 +156,11 @@ namespace Naiad.DataStructures
                     this.Spine = new T[65536][];
                     extra += 8 * 65536;
 
+                    
+                    
+#if true
+                    Spine[0] = Small;
+#else
                     if (SmallLimit < 65536)
                     {
                         Spine[0] = new T[65536];
@@ -166,7 +171,7 @@ namespace Naiad.DataStructures
                     {
                         Spine[0] = Small;
                     }
-
+#endif
                     this.size += extra;
                 }
 
@@ -203,16 +208,16 @@ namespace Naiad.DataStructures
             }
         }
 
-        public void Checkpoint(NaiadWriter writer, NaiadSerialization<T> serializer)
+        public void Checkpoint(NaiadWriter writer, NaiadSerialization<T> serializer, NaiadSerialization<Int32> intSerializer)
         {
-            writer.Write(this.Count, PrimitiveSerializers.Int32);
+            writer.Write(this.Count, intSerializer);
             for (int i = 0; i < this.Count; ++i)
                 writer.Write(this.Spine[i / 65536][i % 65536], serializer);
         }
 
-        public void Restore(NaiadReader reader, NaiadSerialization<T> serializer)
+        public void Restore(NaiadReader reader, NaiadSerialization<T> serializer, NaiadSerialization<Int32> intSerializer)
         {
-            int readCount = reader.Read(PrimitiveSerializers.Int32);
+            int readCount = reader.Read(intSerializer);
             this.Count = 0;
             Array.Clear(this.Spine, 0, this.Spine.Length);
             for (int i = 0; i < readCount; ++i)
@@ -224,8 +229,7 @@ namespace Naiad.DataStructures
             if (T0 == 0) T0 = DateTime.Now.Ticks;
             this.Count = 0;
             this.Small = new T[SmallInit];
-            T rec = default(T);
-            this.elementSize = 4;// Marshal.SizeOf(rec);
+            this.elementSize = 4;
             this.size = SmallInit * this.elementSize;
         }
     }

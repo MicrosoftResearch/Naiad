@@ -18,17 +18,17 @@
  * permissions and limitations under the License.
  */
 
-using Naiad.Dataflow;
+using Microsoft.Research.Naiad.Dataflow;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Naiad.Frameworks.DifferentialDataflow.Operators
+namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Operators
 {
     class Union<S, T> : OperatorImplementations.BinaryStatefulOperator<S, T>
         where S : IEquatable<S>
-        where T : Naiad.Time<T>
+        where T : Microsoft.Research.Naiad.Time<T>
     {
         protected override Int64 WeightFunction(Int64 weight1, Int64 weight2)
         {

@@ -24,8 +24,8 @@ using System.Linq;
 using System.Text;
 using System.Diagnostics;
 
-using Naiad;
-using Naiad.Frameworks.DifferentialDataflow;
+using Microsoft.Research.Naiad;
+using Microsoft.Research.Naiad.Frameworks.DifferentialDataflow;
 
 namespace Examples.DifferentialDataflow
 {
@@ -89,7 +89,7 @@ namespace Examples.DifferentialDataflow
 
                 var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
-                using (var manager = controller.NewGraph())
+                using (var manager = controller.NewComputation())
                 {
                     // set up the CC computation
                     var edges = new IncrementalCollection<IntPair>(manager);
@@ -120,7 +120,7 @@ namespace Examples.DifferentialDataflow
                     // if we are up for interactive access ...
                     if (controller.Configuration.Processes == 1)
                     {
-                        output.Sync(0);
+                        output.Sync(new Epoch(0));
 
                         Console.WriteLine();
                         Console.WriteLine("Next: sequentially rewiring random edges (press [enter] each time):");
@@ -132,7 +132,7 @@ namespace Examples.DifferentialDataflow
                             var newEdge = new IntPair(random.Next(nodeCount), random.Next(nodeCount));
                             Console.WriteLine("Rewiring edge: {0} -> {1}", graph[i], newEdge);
                             edges.OnNext(new[] { new Weighted<IntPair>(graph[i], -1), new Weighted<IntPair>(newEdge, 1) });
-                            output.Sync(i + 1);
+                            output.Sync(new Epoch(i + 1));
                         }
                     }
 
@@ -144,7 +144,7 @@ namespace Examples.DifferentialDataflow
             }
         }
 
-        void Frontier_OnFrontierChanged(object sender, Naiad.Scheduling.Pointstamp[] e)
+        void Frontier_OnFrontierChanged(object sender, Microsoft.Research.Naiad.Scheduling.Pointstamp[] e)
         {
             Console.Error.WriteLine("Frontier: {0}", string.Join(", ", e));
         }

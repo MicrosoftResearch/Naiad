@@ -22,9 +22,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Naiad.CodeGeneration;
+using Microsoft.Research.Naiad.CodeGeneration;
 
-namespace Naiad.Frameworks.DifferentialDataflow
+namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
 {
 
     public struct UnaryKeyIndices : IEquatable<UnaryKeyIndices>
@@ -41,17 +41,6 @@ namespace Naiad.Frameworks.DifferentialDataflow
         public bool IsEmpty { get { return unprocessed == 0 && processed == 0 && output == 0; } }
 
         public UnaryKeyIndices(int u, int p, int r) { unprocessed = u; processed = p; output = r; }
-
-        private static NaiadSerialization<UnaryKeyIndices> serializer = null;
-        internal static NaiadSerialization<UnaryKeyIndices> Serializer
-        {
-            get
-            {
-                if (serializer == null)
-                    serializer = AutoSerialization.GetSerializer<UnaryKeyIndices>();
-                return serializer;
-            }
-        }
     }
 
     public struct BinaryKeyIndices : IEquatable<BinaryKeyIndices>
@@ -73,17 +62,6 @@ namespace Naiad.Frameworks.DifferentialDataflow
         }
 
         public BinaryKeyIndices(int u1, int u2, int p1, int p2, int r) { unprocessed1 = u1; unprocessed2 = u2; processed1 = p1; processed2 = p2; output = r; }
-
-        private static NaiadSerialization<BinaryKeyIndices> serializer = null;
-        internal static NaiadSerialization<BinaryKeyIndices> Serializer
-        {
-            get
-            {
-                if (serializer == null)
-                    serializer = AutoSerialization.GetSerializer<BinaryKeyIndices>();
-                return serializer;
-            }
-        }
     }
 
     // Join doesn't need all the KeyIndices cruft
@@ -100,17 +78,6 @@ namespace Naiad.Frameworks.DifferentialDataflow
         }
 
         public JoinKeyIndices(int p1, int p2) { processed1 = p1; processed2 = p2; }
-
-        private static NaiadSerialization<JoinKeyIndices> serializer = null;
-        internal static NaiadSerialization<JoinKeyIndices> Serializer
-        {
-            get
-            {
-                if (serializer == null)
-                    serializer = AutoSerialization.GetSerializer<JoinKeyIndices>();
-                return serializer;
-            }
-        }
     }
 
     // Join doesn't need all the KeyIndices cruft
@@ -123,16 +90,6 @@ namespace Naiad.Frameworks.DifferentialDataflow
 
         public JoinIntKeyIndices(int p1, int p2) { processed1 = p1; processed2 = p2; }
 
-        private static NaiadSerialization<JoinIntKeyIndices> serializer = null;
-        internal static NaiadSerialization<JoinIntKeyIndices> Serializer
-        {
-            get
-            {
-                if (serializer == null)
-                    serializer = AutoSerialization.GetSerializer<JoinIntKeyIndices>();
-                return serializer;
-            }
-        }
     }
 
 }

@@ -25,13 +25,13 @@ using System.Linq.Expressions;
 using System.Text;
 using System.IO;
 
-using Naiad.DataStructures;
-using Naiad.Dataflow.Channels;
-using Naiad.Scheduling;
-using Naiad;
-using Naiad.Dataflow;
+using Microsoft.Research.Naiad.DataStructures;
+using Microsoft.Research.Naiad.Dataflow.Channels;
+using Microsoft.Research.Naiad.Scheduling;
+using Microsoft.Research.Naiad;
+using Microsoft.Research.Naiad.Dataflow;
 
-namespace Naiad.Frameworks.DifferentialDataflow
+namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
 {
     /// <summary>
     /// The methods on a Collection that are exposed to the user program
@@ -406,8 +406,9 @@ namespace Naiad.Frameworks.DifferentialDataflow
         /// <param name="key">key selector</param>
         /// <param name="value">value selector</param>
         /// <returns>Collection containing for each key the maximum record under value</returns>
-        Collection<R, T> Max<K>(Expression<Func<R, K>> key, Expression<Func<R, int>> value)
-            where K : IEquatable<K>;
+        Collection<R, T> Max<K, M>(Expression<Func<R, K>> key, Expression<Func<R, M>> value)
+            where K : IEquatable<K>
+            where M : IComparable<M>;
 
         /// <summary>
         /// Key-wise minimum using intermediate value selectors.
@@ -419,8 +420,9 @@ namespace Naiad.Frameworks.DifferentialDataflow
         /// <param name="value">value selector</param>
         /// <param name="reducer">reducer</param>
         /// <returns>Collection containing for each key the minimum record under value</returns>
-        Collection<R, T> Max<K, S>(Expression<Func<R, K>> key, Expression<Func<R, S>> selector, Expression<Func<K, S, int>> value, Expression<Func<K, S, R>> reducer)
+        Collection<R, T> Max<K, M, S>(Expression<Func<R, K>> key, Expression<Func<R, S>> selector, Expression<Func<K, S, M>> value, Expression<Func<K, S, R>> reducer)
             where K : IEquatable<K>
+            where M : IComparable<M>
             where S : IEquatable<S>;
 
         #endregion Data-parallel aggregations
@@ -477,13 +479,13 @@ namespace Naiad.Frameworks.DifferentialDataflow
         /// Extends the lattice associated with a collection to nest in a loop.
         /// </summary>
         /// <returns>The same collection, varying with an additional index</returns>
-        Collection<R, IterationIn<T>> EnterLoop(Naiad.Dataflow.Iteration.LoopContext<T> context);
+        Collection<R, IterationIn<T>> EnterLoop(Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext<T> context);
 
         /// <summary>
         /// Extends the lattice associated with a collection to nest in a loop.
         /// </summary>
         /// <returns>The same collection, varying with an additional index</returns>
-        Collection<R, IterationIn<T>> EnterLoop(Naiad.Dataflow.Iteration.LoopContext<T> context, Func<R, int> initialIteration);
+        Collection<R, IterationIn<T>> EnterLoop(Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext<T> context, Func<R, int> initialIteration);
 
         /// <summary>
         /// Fixed point computation where each iterate can be changed arbitrarily by the input.
@@ -495,7 +497,7 @@ namespace Naiad.Frameworks.DifferentialDataflow
         /// <param name="maxIterations">maximum number of iterations</param>
         /// <returns>g^maxIterations, where g^{i+1} = f(g^i + initialIteration(input)^i)</returns>
         Collection<R, T> GeneralFixedPoint<K>(
-            Func<Naiad.Dataflow.Iteration.LoopContext<T>, Collection<R, IterationIn<T>>, Collection<R, IterationIn<T>>> f, // (lc, initial, x) => f(x)
+            Func<Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext<T>, Collection<R, IterationIn<T>>, Collection<R, IterationIn<T>>> f, // (lc, initial, x) => f(x)
             Func<R, int> introductionIteration,
             Expression<Func<R, K>> partitionedBy,
             int maxIterations);
@@ -506,7 +508,7 @@ namespace Naiad.Frameworks.DifferentialDataflow
         /// <param name="f">fixed-point body</param>
         /// <returns>f^maxIterations(input)</returns>
         Collection<R, T> FixedPoint(
-            Func<Naiad.Dataflow.Iteration.LoopContext<T>,
+            Func<Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext<T>,
             Collection<R, IterationIn<T>>, Collection<R, IterationIn<T>>> f);
 
         /// <summary>
@@ -516,7 +518,7 @@ namespace Naiad.Frameworks.DifferentialDataflow
         /// <param name="maxIterations">maximum number of iterations</param>
         /// <returns>f^maxIterations(input)</returns>
         Collection<R, T> FixedPoint(
-            Func<Naiad.Dataflow.Iteration.LoopContext<T>,
+            Func<Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext<T>,
             Collection<R, IterationIn<T>>, Collection<R, IterationIn<T>>> f, int iterations);
 
         /// <summary>
@@ -527,7 +529,7 @@ namespace Naiad.Frameworks.DifferentialDataflow
         /// <param name="consolidateFunction">partitioning function</param>
         /// <returns>f^infinity(input)</returns>
         Collection<R, T> FixedPoint<K>(
-            Func<Naiad.Dataflow.Iteration.LoopContext<T>,
+            Func<Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext<T>,
             Collection<R, IterationIn<T>>, Collection<R, IterationIn<T>>> f, Expression<Func<R, K>> consolidateFunction);
 
         /// <summary>
@@ -539,7 +541,7 @@ namespace Naiad.Frameworks.DifferentialDataflow
         /// <param name="maxIterations">maximum number of iterations</param>
         /// <returns>f^maxIterations(input)</returns>
         Collection<R, T> FixedPoint<K>(
-            Func<Naiad.Dataflow.Iteration.LoopContext<T>,
+            Func<Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext<T>,
             Collection<R, IterationIn<T>>, Collection<R, IterationIn<T>>> f, Expression<Func<R, K>> consolidateFunction, int iterations);
         #endregion Fixed Point
 

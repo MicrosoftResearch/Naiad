@@ -25,25 +25,25 @@ using System.Text;
 
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
-using Naiad.DataStructures;
+using Microsoft.Research.Naiad.DataStructures;
 using System.Diagnostics;
-using Naiad.Dataflow.Channels;
+using Microsoft.Research.Naiad.Dataflow.Channels;
 using System.Linq.Expressions;
-using Naiad.CodeGeneration;
+using Microsoft.Research.Naiad.CodeGeneration;
 using System.Threading;
 using System.Net.Sockets;
 using System.Net;
 using System.IO;
-using Naiad.Scheduling;
-using Naiad.Runtime.Controlling;
-using Naiad.FaultTolerance;
-using Naiad.Frameworks;
-using Naiad.Frameworks.DifferentialDataflow.OperatorImplementations;
+using Microsoft.Research.Naiad.Scheduling;
+using Microsoft.Research.Naiad.Runtime.Controlling;
+using Microsoft.Research.Naiad.FaultTolerance;
+using Microsoft.Research.Naiad.Frameworks;
+using Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.OperatorImplementations;
 
-using Naiad;
-using Naiad.Dataflow;
+using Microsoft.Research.Naiad;
+using Microsoft.Research.Naiad.Dataflow;
 
-namespace Naiad.Frameworks.DifferentialDataflow
+namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
 {
     public static class ExtensionHelpers
     {
@@ -52,7 +52,7 @@ namespace Naiad.Frameworks.DifferentialDataflow
         public static Expression ReverseLookUp(this Expression target)
         {
             for (int i = 0; i < expressionMapping.Count; i++)
-                if (Naiad.CodeGeneration.ExpressionComparer.Instance.Equals(target, expressionMapping[i].v2))
+                if (Microsoft.Research.Naiad.CodeGeneration.ExpressionComparer.Instance.Equals(target, expressionMapping[i].v2))
                     return expressionMapping[i].v1;
 
             return null;
@@ -61,7 +61,7 @@ namespace Naiad.Frameworks.DifferentialDataflow
         public static Expression LookUp(this Expression source)
         {
             for (int i = 0; i < expressionMapping.Count; i++)
-                if (Naiad.CodeGeneration.ExpressionComparer.Instance.Equals(source, expressionMapping[i].v1))
+                if (Microsoft.Research.Naiad.CodeGeneration.ExpressionComparer.Instance.Equals(source, expressionMapping[i].v1))
                     return expressionMapping[i].v2;
 
             return null;
@@ -70,7 +70,7 @@ namespace Naiad.Frameworks.DifferentialDataflow
         public static Expression LookUpOrAdd(this Expression source, Expression alternate)
         {
             for (int i = 0; i < expressionMapping.Count; i++)
-                if (Naiad.CodeGeneration.ExpressionComparer.Instance.Equals(source, expressionMapping[i].v1))
+                if (Microsoft.Research.Naiad.CodeGeneration.ExpressionComparer.Instance.Equals(source, expressionMapping[i].v1))
                     return expressionMapping[i].v2;
 
             expressionMapping.Add(new Pair<Expression, Expression>(source, alternate));
@@ -105,7 +105,7 @@ namespace Naiad.Frameworks.DifferentialDataflow
         }
     }
 
-    public abstract class TypedCollection<R, T> : Collection<R, T> //, IObservable<IEnumerable<NaiadRecord<R,T>>>
+    public abstract class TypedCollection<R, T> : Collection<R, T>
         where R : IEquatable<R>
         where T : Time<T>
     {
@@ -118,7 +118,7 @@ namespace Naiad.Frameworks.DifferentialDataflow
         //internal abstract Placement DownstreamPlacement { get; }
         #endregion
 
-        public abstract Naiad.Dataflow.Stream<Weighted<R>, T> Output { get; }
+        public abstract Microsoft.Research.Naiad.Dataflow.Stream<Weighted<R>, T> Output { get; }
 
         internal virtual Expression OutputPartitionedBy
         {
@@ -129,7 +129,7 @@ namespace Naiad.Frameworks.DifferentialDataflow
 
         public Collection<R, T> PartitionBy<K>(Expression<Func<R, K>> partitionFunction)
         {
-            var stream = Naiad.Dataflow.PartitionBy.ExtensionMethods.PartitionBy(this.Output, partitionFunction.ConvertToWeightedFuncAndHashCode());
+            var stream = Microsoft.Research.Naiad.Dataflow.PartitionBy.ExtensionMethods.PartitionBy(this.Output, partitionFunction.ConvertToWeightedFuncAndHashCode());
 
             return stream.ToCollection();
         }
@@ -176,21 +176,21 @@ namespace Naiad.Frameworks.DifferentialDataflow
 
         #endregion Lattice adjustment
 
-        private ShardedCollection<R2, T> Manufacture<R2>(Func<int, Stage<T>, UnaryVertex<Weighted<R>, Weighted<R2>, T>> factory, Expression<Func<Weighted<R>, int>> inputPartitionedBy, Expression<Func<Weighted<R2>, int>> outputPartitionedBy, string name)
+        private InternalCollection<R2, T> Manufacture<R2>(Func<int, Stage<T>, UnaryVertex<Weighted<R>, Weighted<R2>, T>> factory, Expression<Func<Weighted<R>, int>> inputPartitionedBy, Expression<Func<Weighted<R2>, int>> outputPartitionedBy, string name)
             where R2 : IEquatable<R2>
         {
             var output = Foundry.NewUnaryStage(this.Output, factory, inputPartitionedBy, outputPartitionedBy, name);
             
-            return new ShardedCollection<R2, T>(output, this.Immutable);
+            return new InternalCollection<R2, T>(output, this.Immutable);
         }
 
-        private ShardedCollection<R2, T> Manufacture<S, R2>(TypedCollection<S, T> other, Func<int, Stage<T>, BinaryVertex<Weighted<R>, Weighted<S>, Weighted<R2>, T>> factory, Expression<Func<Weighted<R>, int>> input1PartitionedBy, Expression<Func<Weighted<S>, int>> input2PartitionedBy, Expression<Func<Weighted<R2>, int>> outputPartitionedBy, string name)
+        private InternalCollection<R2, T> Manufacture<S, R2>(TypedCollection<S, T> other, Func<int, Stage<T>, BinaryVertex<Weighted<R>, Weighted<S>, Weighted<R2>, T>> factory, Expression<Func<Weighted<R>, int>> input1PartitionedBy, Expression<Func<Weighted<S>, int>> input2PartitionedBy, Expression<Func<Weighted<R2>, int>> outputPartitionedBy, string name)
             where S : IEquatable<S>
             where R2 : IEquatable<R2>
         {
             var output = Foundry.NewBinaryStage(this.Output, other.Output, factory, input1PartitionedBy, input2PartitionedBy, outputPartitionedBy, name);
 
-            return new ShardedCollection<R2, T>(output, this.Immutable && other.Immutable);
+            return new InternalCollection<R2, T>(output, this.Immutable && other.Immutable);
         }
 
 
@@ -589,8 +589,9 @@ namespace Naiad.Frameworks.DifferentialDataflow
             return this.Manufacture<R>((i,v) => new Operators.Min<K, V, M, R, T>(i, v, this.Immutable, key, value, minBy, reducer), key.ConvertToWeightedFuncAndHashCode(), null, "Min");
         }
 
-        public Collection<R, T> Max<K>(Expression<Func<R, K>> key, Expression<Func<R, int>> value)
+        public Collection<R, T> Max<K, M>(Expression<Func<R, K>> key, Expression<Func<R, M>> value)
             where K : IEquatable<K>
+            where M : IComparable<M>
         {
             if (key == null)
                 throw new ArgumentNullException("key");
@@ -598,12 +599,13 @@ namespace Naiad.Frameworks.DifferentialDataflow
                 throw new ArgumentNullException("value");
             var compiledValue = value.Compile();
 
-            return this.Manufacture((i,v) => new Operators.Max<K, R, R, T>(i, v, this.Immutable, key, x => x, (k,t) => compiledValue(t), (k,t) => t), key.ConvertToWeightedFuncAndHashCode(), key.ConvertToWeightedFuncAndHashCode(), "Max");
+            return this.Manufacture((i,v) => new Operators.Max<K, R, M, R, T>(i, v, this.Immutable, key, x => x, (k,t) => compiledValue(t), (k,t) => t), key.ConvertToWeightedFuncAndHashCode(), key.ConvertToWeightedFuncAndHashCode(), "Max");
         }
 
-        public Collection<R, T> Max<K, S>(Expression<Func<R, K>> key, Expression<Func<R, S>> selector, Expression<Func<K, S, int>> value, Expression<Func<K, S, R>> reducer)
+        public Collection<R, T> Max<K, M, S>(Expression<Func<R, K>> key, Expression<Func<R, S>> selector, Expression<Func<K, S, M>> value, Expression<Func<K, S, R>> reducer)
             where K : IEquatable<K>
             where S : IEquatable<S>
+            where M : IComparable<M>
         {
             if (key == null)
                 throw new ArgumentNullException("key");
@@ -614,7 +616,7 @@ namespace Naiad.Frameworks.DifferentialDataflow
             if (reducer == null)
                 throw new ArgumentNullException("reducer");
 
-            return this.Manufacture<R>((i,v) => new Operators.Max<K, S, R, T>(i, v, this.Immutable, key, selector, value, reducer), key.ConvertToWeightedFuncAndHashCode(), null, "Max");
+            return this.Manufacture<R>((i,v) => new Operators.Max<K, S, M, R, T>(i, v, this.Immutable, key, selector, value, reducer), key.ConvertToWeightedFuncAndHashCode(), null, "Max");
         }
         #endregion Data-parallel aggregations
 
@@ -683,7 +685,7 @@ namespace Naiad.Frameworks.DifferentialDataflow
                 throw new ArgumentException("Other collection must implement TypedCollection<R, T>", "other");
 
             var partitionFunction = this.Output.PartitionedBy;
-            if (!Naiad.CodeGeneration.ExpressionComparer.Instance.Equals(this.Output.PartitionedBy, that.Output.PartitionedBy))
+            if (!Microsoft.Research.Naiad.CodeGeneration.ExpressionComparer.Instance.Equals(this.Output.PartitionedBy, that.Output.PartitionedBy))
                 partitionFunction = null;
 
             return this.Manufacture(that, (i, v) => new Operators.Concat<R, T>(i, v), partitionFunction, partitionFunction, partitionFunction, "Concat");
@@ -698,7 +700,7 @@ namespace Naiad.Frameworks.DifferentialDataflow
                 throw new ArgumentException("Other collection must implement TypedCollection<R, T>", "other");
 
             var partitionFunction = this.Output.PartitionedBy;
-            if (!Naiad.CodeGeneration.ExpressionComparer.Instance.Equals(this.Output.PartitionedBy, that.Output.PartitionedBy))
+            if (!Microsoft.Research.Naiad.CodeGeneration.ExpressionComparer.Instance.Equals(this.Output.PartitionedBy, that.Output.PartitionedBy))
                 partitionFunction = null;
 
             return this.Manufacture(that, (i, v) => new Operators.Except<R, T>(i, v), partitionFunction, partitionFunction, partitionFunction, "Except");
@@ -713,7 +715,7 @@ namespace Naiad.Frameworks.DifferentialDataflow
         /// </summary>
         /// <param name="name">an identifier, for purposes of printing and reading</param>
         /// <returns></returns>
-        public Collection<R, IterationIn<T>> EnterLoop(Naiad.Dataflow.Iteration.LoopContext<T> helper)
+        public Collection<R, IterationIn<T>> EnterLoop(Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext<T> helper)
         {
             return helper.EnterLoop(this.Output).ToCollection(this.Immutable);
         }
@@ -723,13 +725,13 @@ namespace Naiad.Frameworks.DifferentialDataflow
         /// </summary>
         /// <param name="name">an identifier, for purposes of printing and reading</param>
         /// <returns></returns>
-        public Collection<R, IterationIn<T>> EnterLoop(Naiad.Dataflow.Iteration.LoopContext<T> helper, Func<R, int> initialIteration)
+        public Collection<R, IterationIn<T>> EnterLoop(Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext<T> helper, Func<R, int> initialIteration)
         {
             return helper.EnterLoop(this.Output, x => initialIteration(x.record)).ToCollection(this.Immutable);
         }
 
         public Collection<R, T> GeneralFixedPoint<K>(
-            Func<Naiad.Dataflow.Iteration.LoopContext<T>, Collection<R, IterationIn<T>>, Collection<R, IterationIn<T>>> f, // (lc, x) => f(x)
+            Func<Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext<T>, Collection<R, IterationIn<T>>, Collection<R, IterationIn<T>>> f, // (lc, x) => f(x)
             Func<R, int> priorityFunction,
             Expression<Func<R, K>> partitionedBy,
             int maxIterations)
@@ -739,7 +741,7 @@ namespace Naiad.Frameworks.DifferentialDataflow
 
             var compiled = partitionedBy.ConvertToWeightedFuncAndHashCode();
 
-            var fp = new Naiad.Dataflow.Iteration.LoopContext<T>(this.Statistics, "FixedPointSequence");
+            var fp = new Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext<T>(this.Statistics, "FixedPointSequence");
 
             // probably doesn't work correctly when max + pri >= 2^31. Fix!
             var delayVertex = fp.Delay(compiled, maxIterations);
@@ -764,25 +766,25 @@ namespace Naiad.Frameworks.DifferentialDataflow
         }
 
         public Collection<R, T> FixedPoint(
-            Func<Naiad.Dataflow.Iteration.LoopContext<T>,
+            Func<Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext<T>,
             Collection<R, IterationIn<T>>, Collection<R, IterationIn<T>>> f)
         {
             return this.FixedPoint(f, Int32.MaxValue);
         }
         public Collection<R, T> FixedPoint(
-            Func<Naiad.Dataflow.Iteration.LoopContext<T>,
+            Func<Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext<T>,
             Collection<R, IterationIn<T>>, Collection<R, IterationIn<T>>> f, int maxIterations)
         {
             return this.FixedPoint<int>(f, null, maxIterations);
         }
         public Collection<R, T> FixedPoint<K>(
-            Func<Naiad.Dataflow.Iteration.LoopContext<T>,
+            Func<Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext<T>,
             Collection<R, IterationIn<T>>, Collection<R, IterationIn<T>>> f, Expression<Func<R, K>> consolidateFunction)
         {
             return this.FixedPoint(f, consolidateFunction, Int32.MaxValue);
         }
         public Collection<R, T> FixedPoint<K>(
-            Func<Naiad.Dataflow.Iteration.LoopContext<T>,
+            Func<Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext<T>,
             Collection<R, IterationIn<T>>, Collection<R, IterationIn<T>>> f, Expression<Func<R, K>> consolidateFunction, int maxIterations)
         {
             if (f == null)
@@ -790,7 +792,7 @@ namespace Naiad.Frameworks.DifferentialDataflow
 
             var compiled = consolidateFunction.ConvertToWeightedFuncAndHashCode();
 
-            var fp = new Naiad.Dataflow.Iteration.LoopContext<T>(this.Statistics, "FixedPoint");
+            var fp = new Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext<T>(this.Statistics, "FixedPoint");
 
             var delay = fp.Delay<Weighted<R>>(compiled, maxIterations);
 
@@ -840,9 +842,9 @@ namespace Naiad.Frameworks.DifferentialDataflow
         where R : IEquatable<R>
         where T : Time<T>
     {
-        private readonly Naiad.Dataflow.Stream<Weighted<R>, T> output;
+        private readonly Microsoft.Research.Naiad.Dataflow.Stream<Weighted<R>, T> output;
 
-        public override Naiad.Dataflow.Stream<Weighted<R>, T> Output
+        public override Microsoft.Research.Naiad.Dataflow.Stream<Weighted<R>, T> Output
         {
             get { return this.output; }
         }
@@ -852,19 +854,19 @@ namespace Naiad.Frameworks.DifferentialDataflow
             get { return this.output.Context; }
         }
 
-        public DataflowCollection(Naiad.Dataflow.Stream<Weighted<R>, T> output)
+        public DataflowCollection(Microsoft.Research.Naiad.Dataflow.Stream<Weighted<R>, T> output)
         {
             this.output = output;
         }
     }
 
-    internal class ShardedCollection<R, T> : TypedCollection<R, T>
+    internal class InternalCollection<R, T> : TypedCollection<R, T>
         where R : IEquatable<R>
         where T : Time<T>
     {
         private readonly Stream<Weighted<R>,T> output;
 
-        public override Naiad.Dataflow.Stream<Weighted<R>, T> Output { get { return this.output; } }
+        public override Microsoft.Research.Naiad.Dataflow.Stream<Weighted<R>, T> Output { get { return this.output; } }
 
         internal override OpaqueTimeContext<T> Statistics
         {
@@ -876,11 +878,11 @@ namespace Naiad.Frameworks.DifferentialDataflow
             return output.ForStage.ToString();
         }
 
-        public ShardedCollection(Stream<Weighted<R>, T> output)
+        public InternalCollection(Stream<Weighted<R>, T> output)
             : this(output, false)
         {
         }
-        public ShardedCollection(Stream<Weighted<R>, T> output, bool immutable)
+        public InternalCollection(Stream<Weighted<R>, T> output, bool immutable)
         {
             this.output = output;
             this.immutable = immutable;

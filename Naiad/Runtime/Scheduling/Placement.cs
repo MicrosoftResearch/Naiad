@@ -23,7 +23,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Naiad.Scheduling
+namespace Microsoft.Research.Naiad.Scheduling
 {
     public struct VertexLocation
     {
@@ -31,9 +31,9 @@ namespace Naiad.Scheduling
         public readonly int ProcessId;
         public readonly int ThreadId;
 
-        public VertexLocation(int shardId, int processId, int threadId)
+        public VertexLocation(int vertexId, int processId, int threadId)
         {
-            this.VertexId = shardId;
+            this.VertexId = vertexId;
             this.ProcessId = processId;
             this.ThreadId = threadId;
         }
@@ -47,7 +47,7 @@ namespace Naiad.Scheduling
 
     public abstract class BasePlacement : Placement
     {
-        public abstract VertexLocation this[int shardId] { get; }
+        public abstract VertexLocation this[int vertexId] { get; }
         public abstract int Count { get; }
         public abstract IEnumerator<VertexLocation> GetEnumerator();
         public abstract bool Equals(Placement that);
@@ -71,11 +71,11 @@ namespace Naiad.Scheduling
 
         public override int Count { get { return this.numProcs * this.numThreads; } }
         
-        public override VertexLocation this[int shardId]
+        public override VertexLocation this[int vertexId]
         {
             get
             {
-                return new VertexLocation(shardId, (shardId / this.numThreads) % this.numProcs, shardId % this.numThreads);
+                return new VertexLocation(vertexId, (vertexId / this.numThreads) % this.numProcs, vertexId % this.numThreads);
             }
         }
 
@@ -123,9 +123,9 @@ namespace Naiad.Scheduling
 
         private readonly VertexLocation[] locations;
 
-        public override VertexLocation this[int shardId]
+        public override VertexLocation this[int vertexId]
         {
-            get { return this.locations[shardId]; }
+            get { return this.locations[vertexId]; }
         }
 
         public override int Count
@@ -160,9 +160,9 @@ namespace Naiad.Scheduling
             this.threadId = threadId;
         }
 
-        public override VertexLocation this[int shardId]
+        public override VertexLocation this[int vertexId]
         {
-            get { return new VertexLocation(shardId, shardId, this.threadId); }
+            get { return new VertexLocation(vertexId, vertexId, this.threadId); }
         }
 
         public override int Count

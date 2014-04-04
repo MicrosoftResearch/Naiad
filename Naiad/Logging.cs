@@ -24,9 +24,9 @@ using System.Linq;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Reflection.Emit;
-using Naiad.Util;
+using Microsoft.Research.Naiad.Util;
 
-namespace Naiad
+namespace Microsoft.Research.Naiad
 {
     public enum LoggingLevel
     {
@@ -231,7 +231,7 @@ namespace Naiad
                 initInMemoryLogging();
 
             long ts = System.DateTime.Now.ToFileTime();
-            String s = String.Format("{0}, {1}, {3}\n", ts, tid, msg);
+            String s = String.Format("{0}, {1}, {2}\n", ts, tid, msg);
 
             lock (logLock)
             {

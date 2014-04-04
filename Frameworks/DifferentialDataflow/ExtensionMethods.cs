@@ -24,10 +24,10 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
-using Naiad.Dataflow.Channels;
-using Naiad;
+using Microsoft.Research.Naiad.Dataflow.Channels;
+using Microsoft.Research.Naiad;
 
-namespace Naiad.Frameworks.DifferentialDataflow
+namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
 {
     public static class ExtensionMethods
     {
@@ -65,7 +65,7 @@ namespace Naiad.Frameworks.DifferentialDataflow
             where T : Time<T>
             where K : IEquatable<K>
         {
-            return Naiad.Dataflow.PartitionBy.ExtensionMethods.AssumePartitionedBy(input.Output, func.ConvertToWeightedFuncAndHashCode())
+            return Microsoft.Research.Naiad.Dataflow.PartitionBy.ExtensionMethods.AssumePartitionedBy(input.Output, func.ConvertToWeightedFuncAndHashCode())
                                                                .ToCollection((input as TypedCollection<R,T>).Immutable);
         }
     }
@@ -184,7 +184,7 @@ namespace Naiad.Frameworks.DifferentialDataflow
         /// <param name="output">Source collection</param>
         /// <param name="action">Callback action</param>
         /// <returns>A subscription whose disposal should disconnect the action from the source, but doesn't.</returns>
-        public static Naiad.Subscription Subscribe<R>(this Collection<R, Epoch> output, Action<Weighted<R>[]> action)
+        public static Microsoft.Research.Naiad.Subscription Subscribe<R>(this Collection<R, Epoch> output, Action<Weighted<R>[]> action)
             where R : IEquatable<R>
         {
             return output.Output.Subscribe(x => action(x.ToArray()));
@@ -193,7 +193,7 @@ namespace Naiad.Frameworks.DifferentialDataflow
 
     public static class DataflowExtensionMethods
     {
-        public static Collection<R, T> AsCollection<R, T>(this Naiad.Dataflow.Stream<Weighted<R>, T> port, bool immutable)
+        public static Collection<R, T> AsCollection<R, T>(this Microsoft.Research.Naiad.Dataflow.Stream<Weighted<R>, T> port, bool immutable)
             where R : IEquatable<R>
             where T : Time<T>
         {

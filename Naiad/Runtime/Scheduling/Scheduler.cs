@@ -23,16 +23,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using Naiad.DataStructures;
+using Microsoft.Research.Naiad.DataStructures;
 using System.Diagnostics;
-using Naiad.Frameworks;
+using Microsoft.Research.Naiad.Frameworks;
 using System.IO;
 using System.Runtime.InteropServices;
-using Naiad.Util;
-using Naiad.Dataflow.Channels;
-using Naiad.Runtime.Controlling;
+using Microsoft.Research.Naiad.Util;
+using Microsoft.Research.Naiad.Dataflow.Channels;
+using Microsoft.Research.Naiad.Runtime.Controlling;
 
-namespace Naiad.Scheduling
+namespace Microsoft.Research.Naiad.Scheduling
 {
     internal class Scheduler : IDisposable
     {
@@ -44,7 +44,7 @@ namespace Naiad.Scheduling
             public readonly NaiadList<WorkItem> WorkItems;
             private readonly int index;
 
-            public readonly List<Dataflow.Vertex> Shards;
+            public readonly List<Dataflow.Vertex> Vertices;
 
             public Runtime.Progress.ProgressUpdateProducer Producer 
             { 
@@ -80,7 +80,7 @@ namespace Naiad.Scheduling
                 this.PostOffice = new PostOffice(scheduler);
                 this.WorkItems = new NaiadList<WorkItem>();
                 this.index = scheduler.Index;
-                this.Shards = new List<Dataflow.Vertex>();
+                this.Vertices = new List<Dataflow.Vertex>();
 
                 this.producer = null;
             }
@@ -125,33 +125,33 @@ namespace Naiad.Scheduling
         {
             public Pointstamp Requirement;  // should not be run until this time (scheduled at).
             public Pointstamp Capability;   // may produce records at this time (prioritize by).
-            public Dataflow.Vertex Shard;
+            public Dataflow.Vertex Vertex;
 
             public void Run()
             {
-                Shard.PerformAction(this);
+                Vertex.PerformAction(this);
             }
 
             public override int GetHashCode()
             {
-                return Requirement.GetHashCode() + Shard.GetHashCode();
+                return Requirement.GetHashCode() + Vertex.GetHashCode();
             }
 
             public bool Equals(WorkItem that)
             {
-                return this.Requirement.Equals(that.Requirement) && this.Shard == that.Shard;
+                return this.Requirement.Equals(that.Requirement) && this.Vertex == that.Vertex;
             }
 
             public override string ToString()
             {
-                return String.Format("{0}\t{1}", Requirement, Shard);
+                return String.Format("{0}\t{1}", Requirement, Vertex);
             }
 
             public WorkItem(Pointstamp req, Pointstamp cap, Dataflow.Vertex o)
             {
                 Requirement = req;
                 Capability = cap;
-                Shard = o;
+                Vertex = o;
             }
         }
 
@@ -187,22 +187,22 @@ namespace Naiad.Scheduling
 
         internal void Schedule(WorkItem workItem)
         {
-            Logging.Info("Shard {2}: Running @ {1}:\t{0}", workItem.Shard, workItem.Requirement, this.Index);
+            Logging.Info("Vertex {2}: Running @ {1}:\t{0}", workItem.Vertex, workItem.Requirement, this.Index);
             workItem.Run();
-            Logging.Info("Shard {2}: Finishing @ {1}:\t{0}", workItem.Shard, workItem.Requirement, this.Index);
+            Logging.Info("Vertex {2}: Finishing @ {1}:\t{0}", workItem.Vertex, workItem.Requirement, this.Index);
         }
 
-        internal void Register(Dataflow.Vertex shard, InternalGraphManager manager)
+        internal void Register(Dataflow.Vertex vertex, InternalGraphManager manager)
         {
             for (int i = 0; i < this.graphStates.Count; i++)
                 if (this.graphStates[i].Manager == manager)
-                    this.graphStates[i].Shards.Add(shard);
+                    this.graphStates[i].Vertices.Add(vertex);
         }
 
-        internal IList<WorkItem> GetWorkItemsForShard(Dataflow.Vertex shard)
+        internal IList<WorkItem> GetWorkItemsForVertex(Dataflow.Vertex vertex)
         {
             throw new NotImplementedException();
-            //return workItems.Where(x => x.Shard == shard).ToList();
+            //return workItems.Where(x => x.Vertex == vertex).ToList();
         }
 
         protected System.Collections.Concurrent.ConcurrentQueue<WorkItem> sharedQueue = new System.Collections.Concurrent.ConcurrentQueue<WorkItem>();
@@ -213,8 +213,7 @@ namespace Naiad.Scheduling
 
             if (local)
             {
-                // workItems.Add(item);
-                graphStates[item.Shard.Stage.InternalGraphManager.Index].WorkItems.Add(item);
+                graphStates[item.Vertex.Stage.InternalGraphManager.Index].WorkItems.Add(item);
             }
             else
             {
@@ -223,25 +222,19 @@ namespace Naiad.Scheduling
             }
         }
 
-        public void EnqueueNotify(Pointstamp requirement, Pointstamp capability, Dataflow.Vertex op, bool local = true)
-        {
-            Enqueue(new WorkItem(requirement, capability, op), local);
-        }
-
         public void EnqueueNotify<T>(Dataflow.Vertex op, T time, bool local)
             where T : Time<T>
         {
-            var pointstamp = time.ToPointstamp(op.Stage.StageId);
-            EnqueueNotify(pointstamp, pointstamp, op, local);
+            EnqueueNotify(op, time, time, local);
         }
 
-        public void EnqueueNotify<T>(Dataflow.Vertex op, T requirement, T capability, bool local = true)
+        public void EnqueueNotify<T>(Dataflow.Vertex op, T requirement, T capability, bool local)
             where T : Time<T>
         {
             var req = requirement.ToPointstamp(op.Stage.StageId);
             var cap = capability.ToPointstamp(op.Stage.StageId);
 
-            EnqueueNotify(req, cap, op, local);
+            Enqueue(new WorkItem(req, cap, op), local);
         }
 
         internal void Start()
@@ -296,40 +289,46 @@ namespace Naiad.Scheduling
                 while (sharedQueue.TryDequeue(out item))
                     Enqueue(item);
 
+                #region related to shutting down finished graphmanagers
                 // check for graphs that have empty frontiers: these can be shutdown
                 for (int i = 0; i < this.graphStates.Count; i++)
                 {
                     if (this.graphStates[i].Manager != null && this.graphStates[i].Manager.CurrentState == InternalGraphManagerState.Active && this.graphStates[i].Manager.ProgressTracker.GetInfoForWorker(this.Index).PointstampCountSet.Frontier.Length == 0)
                     {
-                        foreach (Dataflow.Vertex shard in this.graphStates[i].Shards)
-                            shard.ShutDown();
+                        foreach (Dataflow.Vertex vertex in this.graphStates[i].Vertices)
+                            vertex.ShutDown();
+
+                        this.graphStates[i].Manager.SignalShutdown();
 
                         this.graphStates[i] = new GraphState();
                     }
                 }
+                #endregion
 
+                #region related to flushing messages for each graphmanager
                 // push any pending messages to recipients, so that work-to-do is as current as possible
                 for (int i = 0; i < this.graphStates.Count; i++)
                 {
                     if (this.graphStates[i].Manager != null && this.graphStates[i].Manager.CurrentState == InternalGraphManagerState.Active)
                     {
                         Tracing.Trace("(Flush {0}", this.Index);
-                        try
+                        //try
                         {
                             this.graphStates[i].PostOffice.DrainAllQueues();
                             this.graphStates[i].Producer.Start();   // tell everyone about records produced and consumed.
                         }
-                        catch (Exception e)
-                        {
-                            Logging.Error("Graph {0} failed on scheduler {1} with exception:\n{2}", i, this.Index, e);
-                            this.graphStates[i].Manager.Cancel(e);
-                        }
+                        //catch (Exception e)
+                        //{
+                         //   Logging.Error("Graph {0} failed on scheduler {1} with exception:\n{2}", i, this.Index, e);
+                         //   this.graphStates[i].Manager.Cancel(e);
+                        //}
                         Tracing.Trace(")Flush {0}", this.Index);
                     }
                 }
+                #endregion
 
-#if true
-                // periodically assesses reachability of versions based on the frontier. alerts operator shards to results, allowing them to compact state.
+                #region related to assessing reachability of vertices based on the current frontier
+                // periodically assesses reachability of versions based on the frontier. alerts operator vertices to results, allowing them to compact state.
                 if (this.Controller.Configuration.CompactionInterval > 0 && this.Controller.Stopwatch.ElapsedMilliseconds - reachabilityTime > this.Controller.Configuration.CompactionInterval)
                 {
                     Tracing.Trace("(reachability {0}", this.Index);
@@ -338,29 +337,29 @@ namespace Naiad.Scheduling
                         if (this.graphStates[i].Manager != null && this.graphStates[i].Manager.CurrentState == InternalGraphManagerState.Active)
                         {
                             var frontiers = this.graphStates[i].Manager.ProgressTracker.GetInfoForWorker(0).PointstampCountSet.Frontier.Concat(this.graphStates[i].Producer.LocalPCS.Frontier).ToArray();
-                            this.graphStates[i].Manager.Reachability.UpdateReachability(this.Controller, frontiers, this.graphStates[i].Shards);
+                            this.graphStates[i].Manager.Reachability.UpdateReachability(this.Controller, frontiers, this.graphStates[i].Vertices);
                         }
                     }
                     reachabilityTime = this.Controller.Stopwatch.ElapsedMilliseconds;
                     Tracing.Trace(")reachability {0}", this.Index);
                 }
-#endif
+                #endregion
 
                 var ranAnything = false;
                 for (int i = 0; i < graphStates.Count; i++)
                 {
                     if (graphStates[i].Manager != null && this.graphStates[i].Manager.CurrentState == InternalGraphManagerState.Active)
                     {
-                        try
+                        //try
                         {
                             var ranSomething = RunWorkItem(i);
                             ranAnything = ranSomething || ranAnything;
                         }
-                        catch (Exception e)
-                        {
-                            Logging.Error("Graph {0} failed on scheduler {1} with exception:\n{2}", i, this.Index, e);
-                            this.graphStates[i].Manager.Cancel(e);
-                        }
+                        //catch (Exception e)
+                        //{
+                        //    Logging.Error("Graph {0} failed on scheduler {1} with exception:\n{2}", i, this.Index, e);
+                        //    this.graphStates[i].Manager.Cancel(e);
+                        //}
                     }
                 }
 
@@ -539,6 +538,7 @@ namespace Naiad.Scheduling
             this.thread.Join();
             this.ev.Dispose();
             this.allChannelsInitializedEvent.Dispose();
+            this.resumeEvent.Dispose();
         }
     }
 

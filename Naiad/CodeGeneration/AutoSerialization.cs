@@ -33,7 +33,7 @@ using Microsoft.CSharp;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization.Formatters.Binary;
 
-namespace Naiad.CodeGeneration
+namespace Microsoft.Research.Naiad.CodeGeneration
 {
     public enum IntSerialization
     {
@@ -55,11 +55,107 @@ namespace Naiad.CodeGeneration
     public interface NaiadSerialization<T>// : IEqualityComparer<T>
     {
         bool Serialize(ref SubArray<byte> destination, T value);
+
+        int TrySerializeMany(ref SubArray<byte> destination, ArraySegment<T> values);
+
         bool TryDeserialize(ref RecvBuffer source, out T value);
     }
 
+    public interface SerializationCodeGenerator
+    {
+        NaiadSerialization<T> GetSerializer<T>();
+        int MajorVersion { get; }
+        int MinorVersion { get; }
+    }
 
+    internal abstract class BaseSerializationCodeGenerator : SerializationCodeGenerator
+    {
+        public abstract int MajorVersion { get; }
+        public abstract int MinorVersion { get; }
 
+        private readonly Dictionary<Type, object> serializerCache;
+
+        public NaiadSerialization<T> GetSerializer<T>()
+        {
+            lock (this)
+            {
+                Type t = typeof(T);
+                object serializer;
+
+                if (!this.serializerCache.TryGetValue(t, out serializer))
+                {
+                    AutoSerialization.SerializationCodeGeneratorForType gen = this.GetCodeGeneratorForType(t);
+                    serializer = gen.GenerateSerializer<T>();
+                    this.serializerCache[t] = serializer;
+                }
+
+                return (NaiadSerialization<T>)serializer;
+            }
+        }
+
+        protected BaseSerializationCodeGenerator()
+        {
+            this.serializerCache = new Dictionary<Type, object>();
+        }
+
+        protected abstract AutoSerialization.SerializationCodeGeneratorForType GetCodeGeneratorForType(Type t);
+    }
+
+    internal static class Serialization
+    {
+        public static SerializationCodeGenerator GetCodeGeneratorForVersion(int majorVersion, int minorVersion)
+        {
+            if (minorVersion != 0)
+                throw new InvalidOperationException(string.Format("No code generator available for version {0}.{1}", majorVersion, minorVersion));
+            switch (majorVersion)
+            {
+                case 1:
+                    return new LegacySerializationCodeGenerator();
+                case 2:
+                    return new InlineSerializationCodeGenerator();
+                default:
+                    throw new InvalidOperationException(string.Format("No code generator available for version {0}.{1}", majorVersion, minorVersion));
+            }
+        }
+    }
+
+    internal class LegacySerializationCodeGenerator : BaseSerializationCodeGenerator
+    {
+        public override int MajorVersion
+        {
+            get { return 1; }
+        }
+
+        public override int MinorVersion
+        {
+            get { return 0; }
+        }
+
+        protected override AutoSerialization.SerializationCodeGeneratorForType GetCodeGeneratorForType(Type t)
+        {
+            return new AutoSerialization.NaiadSerializationCodeGenerator(t);
+        }
+    }
+
+    internal class InlineSerializationCodeGenerator : BaseSerializationCodeGenerator
+    {
+        public override int MajorVersion
+        {
+            get { return 2; }
+        }
+
+        public override int MinorVersion
+        {
+            get { return 0; }
+        }
+
+        protected override AutoSerialization.SerializationCodeGeneratorForType GetCodeGeneratorForType(Type t)
+        {
+            return new AutoSerialization.InlineNaiadSerializationCodeGenerator(t);
+        }
+    }
+
+    /*
     public static class PrimitiveSerializers
     {
         private static NaiadSerialization<byte> _byte = null;
@@ -106,6 +202,7 @@ namespace Naiad.CodeGeneration
             }
         }
     }
+    */
 
     internal class CompileCache
     {
@@ -180,21 +277,6 @@ namespace Naiad.CodeGeneration
         private static CompileCache _compileCache = new CompileCache(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()));
         private static Dictionary<Type, object> _codeGenCache = new Dictionary<Type, object>();
 
-        public static bool Serialize<T>(ref SubArray<byte> destination, T value)
-        {
-            return GetSerializer<T>().Serialize(ref destination, value);
-        }
-
-        public static bool TryDeserialize<T>(ref RecvBuffer source, out T value)
-        {
-            return GetSerializer<T>().TryDeserialize(ref source, out value);
-        }
-
-        public static NaiadSerialization<T> GetSerializer<T>(T dummy)
-        {
-            return GetSerializer<T>();
-        }
-
         public static string FileNameForType(Type t)
         {
             var className = t.Name;
@@ -216,6 +298,7 @@ namespace Naiad.CodeGeneration
             }
         }
 
+#if false
         public static NaiadSerialization<T> GetSerializer<T>()
         {
             lock (_codegenLock)
@@ -224,8 +307,7 @@ namespace Naiad.CodeGeneration
 
                 if (!_codeGenCache.ContainsKey(t))
                 {
-                    object serializer;
-                    SerializationCodeGenerator gen;
+                    SerializationCodeGeneratorForType gen;
                     if (Configuration.StaticConfiguration.UseInlineSerialization)
                     {
                         gen = new InlineNaiadSerializationCodeGenerator(t);
@@ -240,15 +322,16 @@ namespace Naiad.CodeGeneration
                 return (NaiadSerialization<T>)_codeGenCache[t];
             }
         }
+#endif
 
-        public abstract class SerializationCodeGenerator
+        public abstract class SerializationCodeGeneratorForType
         {
             protected readonly Type Type;
             protected readonly string GeneratedClassName;
 
             private readonly HashSet<string> referencedAssemblyLocations;
 
-            public SerializationCodeGenerator(Type type, string generatedClassName)
+            public SerializationCodeGeneratorForType(Type type, string generatedClassName)
             {
                 this.Type = type;
                 this.GeneratedClassName = generatedClassName;
@@ -331,7 +414,7 @@ namespace Naiad.CodeGeneration
                         //_compileCache.Unlock();
                         Tracing.Trace("]Compile");
 
-                        return (NaiadSerialization<T>)res.CompiledAssembly.CreateInstance(String.Format("Naiad.AutoGenerated.{0}", this.GeneratedClassName));
+                        return (NaiadSerialization<T>)res.CompiledAssembly.CreateInstance(String.Format("Microsoft.Research.Naiad.AutoGenerated.{0}", this.GeneratedClassName));
                     }
                 }
 
@@ -637,7 +720,7 @@ namespace Naiad.CodeGeneration
 
         #region Nested type: NaiadSerializationCodeGenerator
 
-        public class InlineNaiadSerializationCodeGenerator : SerializationCodeGenerator
+        public class InlineNaiadSerializationCodeGenerator : SerializationCodeGeneratorForType
         {
             private readonly CodeTypeDeclaration classDecl;
 
@@ -651,7 +734,7 @@ namespace Naiad.CodeGeneration
             public override CodeCompileUnit GenerateCompileUnit()
             {
                 var ret = new CodeCompileUnit();
-                var cn = new CodeNamespace("Naiad.AutoGenerated");
+                var cn = new CodeNamespace("Microsoft.Research.Naiad.AutoGenerated");
                 ret.Namespaces.Add(cn);
                 cn.Types.Add(this.classDecl);
                 return ret;
@@ -666,6 +749,7 @@ namespace Naiad.CodeGeneration
 
                 classDecl.Members.Add(this.GenerateSerializeMethod());
                 classDecl.Members.Add(this.GenerateTryDeserializeMethod());
+                classDecl.Members.Add(this.GenerateTrySerializeManyMethod());
                 classDecl.BaseTypes.Add(
                     new CodeTypeReference(typeof(NaiadSerialization<>).MakeGenericType(this.Type)));
             }
@@ -676,12 +760,12 @@ namespace Naiad.CodeGeneration
                 return string.Format("__{0}_{1}", template, this.tempVariableCount++);
             }
 
-            private IEnumerable<CodeStatement> GeneratePrimitiveSerializeInstructions(CodeVariableReferenceExpression currentPosition, CodeVariableReferenceExpression bytesRemaining, CodeExpression toSerialize, Type t)
+            private IEnumerable<CodeStatement> GeneratePrimitiveSerializeInstructions(CodeVariableReferenceExpression currentPosition, CodeVariableReferenceExpression bytesRemaining, CodeExpression toSerialize, Type t, CodeExpression failureReturnExpression)
             {
                 Debug.Assert(t.IsPrimitive && !t.IsArray);
                 CodePrimitiveExpression size = new CodePrimitiveExpression(Marshal.SizeOf(t));
 
-                yield return If(new CodeBinaryOperatorExpression(bytesRemaining, CodeBinaryOperatorType.LessThan, size), Return(new CodePrimitiveExpression(false)));
+                yield return If(new CodeBinaryOperatorExpression(bytesRemaining, CodeBinaryOperatorType.LessThan, size), Return(failureReturnExpression));
                 yield return Assign(Expr(string.Format("*({0}*)currentPosition", t.FullName)), toSerialize);
                 yield return Assign(currentPosition, new CodeBinaryOperatorExpression(currentPosition, CodeBinaryOperatorType.Add, size));
                 yield return Assign(bytesRemaining, new CodeBinaryOperatorExpression(bytesRemaining, CodeBinaryOperatorType.Subtract, size));
@@ -699,10 +783,10 @@ namespace Naiad.CodeGeneration
 
             }
 
-            private IEnumerable<CodeStatement> GenerateEnumSerializeInstructions(CodeVariableReferenceExpression currentPosition, CodeVariableReferenceExpression bytesRemaining, CodeExpression toSerialize, Type t)
+            private IEnumerable<CodeStatement> GenerateEnumSerializeInstructions(CodeVariableReferenceExpression currentPosition, CodeVariableReferenceExpression bytesRemaining, CodeExpression toSerialize, Type t, CodeExpression failureReturnExpression)
             {
                 Debug.Assert(t.IsEnum);
-                return this.GeneratePrimitiveSerializeInstructions(currentPosition, bytesRemaining, new CodeCastExpression(typeof(int), toSerialize), typeof(int));
+                return this.GeneratePrimitiveSerializeInstructions(currentPosition, bytesRemaining, new CodeCastExpression(typeof(int), toSerialize), typeof(int), failureReturnExpression);
             }
 
             private IEnumerable<CodeStatement> GenerateEnumDeserializeInstructions(CodeVariableReferenceExpression currentPosition, CodeVariableReferenceExpression bytesRemaining, CodeExpression toDeserialize, Type t)
@@ -718,7 +802,7 @@ namespace Naiad.CodeGeneration
 
             private const int NULL_ARRAY_MARKER = -1;
              
-            private IEnumerable<CodeStatement> GenerateArraySerializeInstructions(CodeVariableReferenceExpression currentPosition, CodeVariableReferenceExpression bytesRemaining, CodeExpression toSerialize, Type t)
+            private IEnumerable<CodeStatement> GenerateArraySerializeInstructions(CodeVariableReferenceExpression currentPosition, CodeVariableReferenceExpression bytesRemaining, CodeExpression toSerialize, Type t, CodeExpression failureReturnExpression)
             {
                 Debug.Assert(t.IsArray);
 
@@ -726,7 +810,7 @@ namespace Naiad.CodeGeneration
 
                 List<CodeStatement> nullArrayStmts = new List<CodeStatement>();
 
-                foreach (CodeStatement stmt in this.GeneratePrimitiveSerializeInstructions(currentPosition, bytesRemaining, new CodePrimitiveExpression(NULL_ARRAY_MARKER), typeof(int)))
+                foreach (CodeStatement stmt in this.GeneratePrimitiveSerializeInstructions(currentPosition, bytesRemaining, new CodePrimitiveExpression(NULL_ARRAY_MARKER), typeof(int), failureReturnExpression))
                     nullArrayStmts.Add(stmt);
 
                 List<CodeStatement> arrayStmts = new List<CodeStatement>();
@@ -735,13 +819,13 @@ namespace Naiad.CodeGeneration
                 CodeFieldReferenceExpression arrayLength = new CodeFieldReferenceExpression(toSerialize, "Length");
 
                 // Count n, followed by n elements.
-                foreach (CodeStatement stmt in this.GeneratePrimitiveSerializeInstructions(currentPosition, bytesRemaining, arrayLength, typeof(int)))
+                foreach (CodeStatement stmt in this.GeneratePrimitiveSerializeInstructions(currentPosition, bytesRemaining, arrayLength, typeof(int), failureReturnExpression))
                     arrayStmts.Add(stmt);
 
                 string iterationVar = this.GenerateTempVariableName("iteration");
 
                 CodeIterationStatement loop = new CodeIterationStatement(Decl(iterationVar, typeof(int), new CodePrimitiveExpression(0)), new CodeBinaryOperatorExpression(Var(iterationVar), CodeBinaryOperatorType.LessThan, arrayLength), Assign(Var(iterationVar), new CodeBinaryOperatorExpression(Var(iterationVar), CodeBinaryOperatorType.Add, new CodePrimitiveExpression(1))));
-                foreach (CodeStatement stmt in this.GenerateSerializeInstructions(currentPosition, bytesRemaining, new CodeArrayIndexerExpression(toSerialize, Var(iterationVar)), t.GetElementType()))
+                foreach (CodeStatement stmt in this.GenerateSerializeInstructions(currentPosition, bytesRemaining, new CodeArrayIndexerExpression(toSerialize, Var(iterationVar)), t.GetElementType(), failureReturnExpression))
                     loop.Statements.Add(stmt);
 
                 arrayStmts.Add(loop);
@@ -796,13 +880,13 @@ namespace Naiad.CodeGeneration
 
             }
 
-            private IEnumerable<CodeStatement> GenerateLegacyStructSerializeInstructions(CodeVariableReferenceExpression currentPosition, CodeVariableReferenceExpression bytesRemaining, CodeExpression toSerialize, Type t)
+            private IEnumerable<CodeStatement> GenerateLegacyStructSerializeInstructions(CodeVariableReferenceExpression currentPosition, CodeVariableReferenceExpression bytesRemaining, CodeExpression toSerialize, Type t, CodeExpression failureReturnExpression)
             {
                 Debug.Assert(t.IsValueType && t.GetFields().All(x => x.IsPublic && !x.IsInitOnly));
 
                 foreach (var field in t.GetFields().Where(f => !f.IsStatic).OrderBy(f => f.Name))
                 {
-                    foreach (CodeStatement stmt in this.GenerateSerializeInstructions(currentPosition, bytesRemaining, new CodeFieldReferenceExpression(toSerialize, field.Name), field.FieldType))
+                    foreach (CodeStatement stmt in this.GenerateSerializeInstructions(currentPosition, bytesRemaining, new CodeFieldReferenceExpression(toSerialize, field.Name), field.FieldType, failureReturnExpression))
                         yield return stmt;
                 }
 
@@ -836,7 +920,7 @@ namespace Naiad.CodeGeneration
                 }
             }
 
-            private IEnumerable<CodeStatement> GenerateDotnetBinarySerializeInstructions(CodeVariableReferenceExpression currentPosition, CodeVariableReferenceExpression bytesRemaining, CodeExpression toSerialize, Type t)
+            private IEnumerable<CodeStatement> GenerateDotnetBinarySerializeInstructions(CodeVariableReferenceExpression currentPosition, CodeVariableReferenceExpression bytesRemaining, CodeExpression toSerialize, Type t, CodeExpression failureReturnExpression)
             {
                 Debug.Assert(t.IsSerializable);
 
@@ -858,7 +942,7 @@ namespace Naiad.CodeGeneration
 
                 yield return new CodeSnippetStatement("}");
 
-                foreach (CodeStatement stmt in this.GenerateArraySerializeInstructions(currentPosition, bytesRemaining, Var(tempBufferVar), typeof(byte[])))
+                foreach (CodeStatement stmt in this.GenerateArraySerializeInstructions(currentPosition, bytesRemaining, Var(tempBufferVar), typeof(byte[]), failureReturnExpression))
                     yield return stmt;
 
             }
@@ -886,19 +970,19 @@ namespace Naiad.CodeGeneration
 
             }
 
-            private IEnumerable<CodeStatement> GenerateSerializeInstructions(CodeVariableReferenceExpression currentPosition, CodeVariableReferenceExpression bytesRemaining, CodeExpression toSerialize, Type t)
+            private IEnumerable<CodeStatement> GenerateSerializeInstructions(CodeVariableReferenceExpression currentPosition, CodeVariableReferenceExpression bytesRemaining, CodeExpression toSerialize, Type t, CodeExpression failureReturnExpression)
             {
                 this.AddReferencedAssembly(t.Assembly);
                 if (t.IsArray)
-                    return GenerateArraySerializeInstructions(currentPosition, bytesRemaining, toSerialize, t);
+                    return GenerateArraySerializeInstructions(currentPosition, bytesRemaining, toSerialize, t, failureReturnExpression);
                 else if (t.IsEnum)
-                    return GenerateEnumSerializeInstructions(currentPosition, bytesRemaining, toSerialize, t);
+                    return GenerateEnumSerializeInstructions(currentPosition, bytesRemaining, toSerialize, t, failureReturnExpression);
                 else if (t.IsPrimitive)
-                    return GeneratePrimitiveSerializeInstructions(currentPosition, bytesRemaining, toSerialize, t);
+                    return GeneratePrimitiveSerializeInstructions(currentPosition, bytesRemaining, toSerialize, t, failureReturnExpression);
                 else if (t.IsValueType && t.GetFields().All(x => x.IsPublic && !x.IsInitOnly))
-                    return GenerateLegacyStructSerializeInstructions(currentPosition, bytesRemaining, toSerialize, t);
+                    return GenerateLegacyStructSerializeInstructions(currentPosition, bytesRemaining, toSerialize, t, failureReturnExpression);
                 else if (t.IsSerializable)
-                    return GenerateDotnetBinarySerializeInstructions(currentPosition, bytesRemaining, toSerialize, t);
+                    return GenerateDotnetBinarySerializeInstructions(currentPosition, bytesRemaining, toSerialize, t, failureReturnExpression);
                 else
                 {
                     Logging.Error("Cannot generate serializer for type: {0}", t.FullName);
@@ -941,7 +1025,7 @@ namespace Naiad.CodeGeneration
 
                 m.Add(Decl("currentPosition", typeof(byte*), Expr("destinationPtr")));
                 
-                m.AddAll(this.GenerateSerializeInstructions(new CodeVariableReferenceExpression("currentPosition"), new CodeVariableReferenceExpression("bytesRemaining"), value, this.Type));
+                m.AddAll(this.GenerateSerializeInstructions(new CodeVariableReferenceExpression("currentPosition"), new CodeVariableReferenceExpression("bytesRemaining"), value, this.Type, new CodePrimitiveExpression(false)));
 
                 m.Add(new CodeSnippetStatement("} }"));
 
@@ -949,6 +1033,43 @@ namespace Naiad.CodeGeneration
                 m.Add(Assign(Expr("destination.Count"), Expr("destination.Array.Length - bytesRemaining")));
 
                 m.Return(Expr("true"));
+                return m.Code;
+            }
+
+            public CodeMemberMethod GenerateTrySerializeManyMethod()
+            {
+                var m = new MethodHelper("TrySerializeMany", typeof(int), MemberAttributes.Final | MemberAttributes.Public);
+                CodeExpression dest = m.Param("destination", typeof(SubArray<byte>), FieldDirection.Ref);
+                CodeExpression values = m.Param("values", typeof(ArraySegment<>).MakeGenericType(this.Type));
+
+                m.Add(Decl("bytesRemaining", typeof(int), Expr("destination.Array.Length - destination.Count")));
+
+                // Must test for emptiness before taking the fixed pointer, because it performs a bounds check.
+                m.Add(If(new CodeBinaryOperatorExpression(Var("bytesRemaining"), CodeBinaryOperatorType.LessThanOrEqual, new CodePrimitiveExpression(0)), Return(new CodePrimitiveExpression(0))));
+
+                m.Add(Decl("numWritten", typeof(int), Literal(0)));
+
+                m.Add(new CodeSnippetStatement("unsafe { fixed (byte* destinationPtr = &destination.Array[destination.Count]) {"));
+
+                m.Add(Decl("currentPosition", typeof(byte*), Expr("destinationPtr")));
+                
+                var forLoop = new CodeIterationStatement(Stmt("int i = 0"), Expr("i < values.Count"), Stmt("++i, ++numWritten"));
+
+                forLoop.Statements.Add(Decl("value", this.Type, Expr("values.Array[i + values.Offset]")));
+
+                forLoop.Statements.AddRange(this.GenerateSerializeInstructions(new CodeVariableReferenceExpression("currentPosition"), new CodeVariableReferenceExpression("bytesRemaining"), Expr("value"), this.Type, Expr("numWritten")).ToArray());
+
+                forLoop.Statements.Add(Stmt("destination.Count = destination.Array.Length - bytesRemaining;"));
+
+                //forLoop.Statements.Add(Stmt("bool success = this.Serialize(ref destination, values.Array[i + values.Offset]);"));
+                //forLoop.Statements.Add(Stmt("if (!success) break;"));
+
+                m.Add(forLoop);
+
+                m.Add(new CodeSnippetStatement("} }"));
+
+                m.Return(Expr("numWritten"));
+
                 return m.Code;
             }
 
@@ -985,12 +1106,11 @@ namespace Naiad.CodeGeneration
         /// <summary>
         /// Code generation logic for the serialization of a single type.
         /// </summary>
-        public class NaiadSerializationCodeGenerator : SerializationCodeGenerator
+        public class NaiadSerializationCodeGenerator : SerializationCodeGeneratorForType
         {
             
             public readonly HashSet<Type> AllTypes;
             public readonly HashSet<Type> GeneratedTypes;
-            public readonly Type Type;
             private readonly CodeTypeDeclaration classDecl;
 
             public NaiadSerializationCodeGenerator(Type t)
@@ -999,7 +1119,6 @@ namespace Naiad.CodeGeneration
                 classDecl = new CodeTypeDeclaration(this.GeneratedClassName);
                 GeneratedTypes = new HashSet<Type>();
                 AllTypes = new HashSet<Type>();
-                Type = t;
                 AddType(t);
 
                 while (AllTypes.Count > GeneratedTypes.Count)
@@ -1017,7 +1136,7 @@ namespace Naiad.CodeGeneration
             public override CodeCompileUnit GenerateCompileUnit()
             {
                 var ret = new CodeCompileUnit();
-                var cn = new CodeNamespace("Naiad.AutoGenerated");
+                var cn = new CodeNamespace("Microsoft.Research.Naiad.AutoGenerated");
                 ret.Namespaces.Add(cn);
                 cn.Types.Add(classDecl);
                 return ret;
@@ -1050,6 +1169,7 @@ namespace Naiad.CodeGeneration
                 classDecl.Members.Add(GenerateNonStaticSerializeMethod(t));
                 classDecl.Members.Add(GenerateNonStaticTryDeserializeMethod(t));
                 classDecl.Members.Add(GenerateSerializeMethod(t));
+                classDecl.Members.Add(GenerateTrySerializeManyMethod(t));
                 classDecl.Members.Add(GenerateTryDeserializeMethod(t));
                 classDecl.BaseTypes.Add(
                     new CodeTypeReference(typeof(NaiadSerialization<>).MakeGenericType(t)));
@@ -1073,7 +1193,7 @@ namespace Naiad.CodeGeneration
             private CodeStatement CallVarLengthSerialize(CodeExpression dest, CodeExpression value)
             {
                 return IfElse(
-                    Invoke("Naiad.Serializers", "SerializeVarLength", Ref(dest), value),
+                    Invoke("Microsoft.Research.Naiad.Serializers", "SerializeVarLength", Ref(dest), value),
                     new CodeStatement[] { },
                     new CodeStatement[] { Return("false") });
             }
@@ -1089,7 +1209,7 @@ namespace Naiad.CodeGeneration
             private CodeStatement CallVarLengthDeserialize(CodeExpression source, CodeExpression value)
             {
                 return IfElse(
-                    Invoke("Naiad.Deserializers", "TryDeserializeVarLength", Ref(source), Out(value)),
+                    Invoke("Microsoft.Research.Naiad.Deserializers", "TryDeserializeVarLength", Ref(source), Out(value)),
                     new CodeStatement[] { },
                     Bail());
             }
@@ -1148,6 +1268,28 @@ namespace Naiad.CodeGeneration
 
                 m.Add(LogIt(Expr("\" After: \" + source.CurrentPos + \" - " + FileNameForType(t) + "\"")));
                 m.Return(Var("success"));
+                return m.Code;
+            }
+
+            public CodeMemberMethod GenerateTrySerializeManyMethod(Type t)
+            {
+                var m = new MethodHelper("TrySerializeMany", typeof(int), MemberAttributes.Final | MemberAttributes.Public);
+                CodeExpression dest = m.Param("destination", typeof(SubArray<byte>), FieldDirection.Ref);
+                CodeExpression values = m.Param("values", typeof(ArraySegment<>).MakeGenericType(t));
+
+                m.Add(Decl("bytesRemaining", typeof(int), Expr("destination.Array.Length - destination.Count")));
+
+                m.Add(Decl("numWritten", typeof(int), Literal(0)));
+
+                var forLoop = new CodeIterationStatement(Stmt("int i = 0"), Expr("i < values.Count"), Stmt("++i, ++numWritten"));
+
+                forLoop.Statements.Add(Stmt("bool success = this.Serialize(ref destination, values.Array[i + values.Offset]);"));
+                forLoop.Statements.Add(Stmt("if (!success) break;"));
+
+                m.Add(forLoop);
+
+                m.Return(Expr("numWritten"));
+
                 return m.Code;
             }
 

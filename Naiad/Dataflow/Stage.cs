@@ -23,17 +23,17 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
-using Naiad.Dataflow.Channels;
-using Naiad.CodeGeneration;
-using Naiad.Runtime.Controlling;
-using Naiad.DataStructures;
-using Naiad.FaultTolerance;
-using Naiad.Frameworks;
-using Naiad.Scheduling;
+using Microsoft.Research.Naiad.Dataflow.Channels;
+using Microsoft.Research.Naiad.CodeGeneration;
+using Microsoft.Research.Naiad.Runtime.Controlling;
+using Microsoft.Research.Naiad.DataStructures;
+using Microsoft.Research.Naiad.FaultTolerance;
+using Microsoft.Research.Naiad.Frameworks;
+using Microsoft.Research.Naiad.Scheduling;
 using System.IO;
-using Naiad.Dataflow.Reporting;
+using Microsoft.Research.Naiad.Dataflow.Reporting;
 
-namespace Naiad.Dataflow
+namespace Microsoft.Research.Naiad.Dataflow
 {
     /// <summary>
     /// Base class for stages without committing to a time type. Supports input/output creation, tracks topology, etc.
@@ -43,6 +43,9 @@ namespace Naiad.Dataflow
     {
         private readonly InternalGraphManager graphManager;
         internal InternalGraphManager InternalGraphManager { get { return this.graphManager; } }
+
+        public GraphManager GraphManager { get { return this.graphManager.ExternalGraphManager; } }
+
         public readonly int StageId;
         internal abstract Pointstamp DefaultVersion { get; }
 
@@ -58,7 +61,7 @@ namespace Naiad.Dataflow
         internal bool IsIterationIngress { get { return collectionType == OperatorType.IterationIngress; } }
         internal bool IsIterationEgress { get { return collectionType == OperatorType.IterationEgress; } }
 
-        internal abstract IEnumerable<Vertex> Shards { get; }
+        internal abstract IEnumerable<Vertex> Vertices { get; }
 
         public virtual void Restore(NaiadReader reader)
         {
@@ -207,7 +210,7 @@ namespace Naiad.Dataflow
     }
 
     /// <summary>
-    /// Represents a stage of shards all of type OP. 
+    /// Represents a stage of vertices all of type OP. 
     /// This information allows users to access OP-specific fields and methods, 
     /// useful in connecting each instance of OP to stage inputs and outputs.
     /// </summary>
@@ -217,21 +220,21 @@ namespace Naiad.Dataflow
         where TVertex : Vertex<TTime>
         where TTime : Time<TTime>
     {
-        private readonly Dictionary<int, TVertex> shards;
+        private readonly Dictionary<int, TVertex> vertices;
 
-        internal override IEnumerable<Vertex> Shards { get { return this.shards.Values; } }
+        internal override IEnumerable<Vertex> Vertices { get { return this.vertices.Values; } }
 
-        internal TVertex GetShard(int shardIndex)
+        internal TVertex GetVertex(int vertexIndex)
         {
-            return shards[shardIndex];
+            return vertices[vertexIndex];
         }
 
-        protected void AddShard(TVertex shard) { shards.Add(shard.VertexId, shard); }
+        protected void AddVertex(TVertex vertex) { vertices.Add(vertex.VertexId, vertex); }
 
         internal Stage(Placement placement, OpaqueTimeContext<TTime> context, OperatorType optype, Func<int, Stage<TTime>, TVertex> factory, string name)
             : base(placement, context, optype, name)
         {
-            shards = new Dictionary<int, TVertex>();
+            vertices = new Dictionary<int, TVertex>();
             this.factory = factory;
 
             if (factory == null)
@@ -253,18 +256,18 @@ namespace Naiad.Dataflow
         #region Input creation
 
         /// <summary>
-        /// Creates a new input from a stream, a ShardInput selector, and partitioning information.
+        /// Creates a new input from a stream, a VertexInput selector, and partitioning information.
         /// </summary>
         /// <typeparam name="TRecord">Record type</typeparam>
         /// <param name="stream">source stream</param>
-        /// <param name="shardInput">ShardInput selector</param>
+        /// <param name="vertexInput">VertexInput selector</param>
         /// <param name="partitionedBy">partitioning expression, or null</param>
         /// <returns>StageInput</returns>
-        public StageInput<TRecord, TTime> NewInput<TRecord>(Stream<TRecord, TTime> stream, Func<TVertex, VertexInput<TRecord, TTime>> shardInput, Expression<Func<TRecord, int>> partitionedBy)
+        public StageInput<TRecord, TTime> NewInput<TRecord>(Stream<TRecord, TTime> stream, Func<TVertex, VertexInput<TRecord, TTime>> vertexInput, Expression<Func<TRecord, int>> partitionedBy)
         {
             var ret = this.NewInput(stream, partitionedBy);
 
-            this.materializeActions.Add(shard => { ret.Register(shardInput(shard)); });
+            this.materializeActions.Add(vertex => { ret.Register(vertexInput(vertex)); });
 
             return ret;
         }
@@ -277,7 +280,7 @@ namespace Naiad.Dataflow
         /// <param name="onRecv">message callback</param>
         /// <param name="partitionedBy">partitioning expression, or null</param>
         /// <returns>StageInput</returns>
-        public StageInput<TRecord, TTime> NewInput<TRecord>(Stream<TRecord, TTime> stream, Action<Message<Pair<TRecord, TTime>>, TVertex> onRecv, Expression<Func<TRecord, int>> partitionedBy)
+        public StageInput<TRecord, TTime> NewInput<TRecord>(Stream<TRecord, TTime> stream, Action<Message<TRecord, TTime>, TVertex> onRecv, Expression<Func<TRecord, int>> partitionedBy)
         {
             return this.NewInput<TRecord>(stream, s => new ActionReceiver<TRecord, TTime>(s, m => onRecv(m, s)), partitionedBy);
         }
@@ -285,26 +288,26 @@ namespace Naiad.Dataflow
         /// <summary>
         /// Ok, listen. This is used in very few places when we need to violate the "inputs before outputs" rule. We create the input anyhow, and assign the stream later on
         /// </summary>
-        internal StageInput<S, TTime> NewUnconnectedInput<S>(Func<TVertex, VertexInput<S, TTime>> shardInput, Expression<Func<S, int>> partitionedBy)
+        internal StageInput<S, TTime> NewUnconnectedInput<S>(Func<TVertex, VertexInput<S, TTime>> vertexInput, Expression<Func<S, int>> partitionedBy)
         {
             var ret = this.NewUnconnectedInput<S,TTime>(partitionedBy);
 
-            this.materializeActions.Add(shard => { ret.Register(shardInput(shard)); });
+            this.materializeActions.Add(vertex => { ret.Register(vertexInput(vertex)); });
 
             return ret;
         }
 
-        internal StageInput<S, TTime> NewUnconnectedInput<S>(Action<Message<Pair<S, TTime>>, TVertex> onRecv, Expression<Func<S, int>> partitionedBy)
+        internal StageInput<S, TTime> NewUnconnectedInput<S>(Action<Message<S, TTime>, TVertex> onRecv, Expression<Func<S, int>> partitionedBy)
         {
-            return this.NewUnconnectedInput<S>(shard => new ActionReceiver<S, TTime>(shard, message => onRecv(message, shard)), partitionedBy);
+            return this.NewUnconnectedInput<S>(vertex => new ActionReceiver<S, TTime>(vertex, message => onRecv(message, vertex)), partitionedBy);
         }
 
-        internal StageInput<S, T2> NewSurprisingTimeTypeInput<S, T2>(Stream<S, T2> stream, Func<TVertex, VertexInput<S, T2>> shardInput, Expression<Func<S, int>> partitionedBy)
+        internal StageInput<S, T2> NewSurprisingTimeTypeInput<S, T2>(Stream<S, T2> stream, Func<TVertex, VertexInput<S, T2>> vertexInput, Expression<Func<S, int>> partitionedBy)
             where T2 : Time<T2>
         {
             var ret = this.NewInput<S, T2>(stream, partitionedBy);
 
-            this.materializeActions.Add(shard => { ret.Register(shardInput(shard)); });
+            this.materializeActions.Add(vertex => { ret.Register(vertexInput(vertex)); });
 
             return ret;
         }
@@ -314,16 +317,16 @@ namespace Naiad.Dataflow
 
         #region Output creation
 
-        public Stream<R, TTime> NewOutput<R>(Func<TVertex, VertexOutput<R, TTime>> shardOutput) 
+        public Stream<R, TTime> NewOutput<R>(Func<TVertex, VertexOutput<R, TTime>> vertexOutput) 
         { 
-            return this.NewOutput(shardOutput, null); 
+            return this.NewOutput(vertexOutput, null); 
         }
 
-        public Stream<R, TTime> NewOutput<R>(Func<TVertex, VertexOutput<R, TTime>> shardOutput, Expression<Func<R, int>> partitionedBy) 
+        public Stream<R, TTime> NewOutput<R>(Func<TVertex, VertexOutput<R, TTime>> vertexOutput, Expression<Func<R, int>> partitionedBy) 
         { 
             var ret = this.NewOutput<R, TTime>(this.Context.Context, partitionedBy);
 
-            this.materializeActions.Add(shard => { ret.Register(shardOutput(shard)); });
+            this.materializeActions.Add(vertex => { ret.Register(vertexOutput(vertex)); });
 
             return new Stream<R, TTime>(ret);
         }
@@ -334,11 +337,11 @@ namespace Naiad.Dataflow
             return this.NewOutput<R>(vertex => new ActionSubscriber<R, TTime>(vertex, listener => { newListener(listener, vertex); vertex.AddOnFlushAction(() => listener.Flush()); }), partitionedBy);
         }
 
-        internal Stream<R, TTime> NewOutputWithoutSealing<R>(Func<TVertex, VertexOutput<R, TTime>> shardOutput, Expression<Func<R, int>> partitionedBy)
+        internal Stream<R, TTime> NewOutputWithoutSealing<R>(Func<TVertex, VertexOutput<R, TTime>> vertexOutput, Expression<Func<R, int>> partitionedBy)
         {
             var result = new StageOutput<R, TTime>(this, this.Context.Context, partitionedBy);
 
-            this.materializeActions.Add(shard => { result.Register(shardOutput(shard)); });
+            this.materializeActions.Add(vertex => { result.Register(vertexOutput(vertex)); });
 
             return new Stream<R, TTime>(result);
         }
@@ -357,12 +360,12 @@ namespace Naiad.Dataflow
             {
                 if (loc.ProcessId == this.InternalGraphManager.Controller.Configuration.ProcessID)
                 {
-                    var shard = this.factory(loc.VertexId, this);
-                    AddShard(shard);
-                    shard.Context = this.LocalContext.MakeShardContext(shard);
+                    var vertex = this.factory(loc.VertexId, this);
+                    AddVertex(vertex);
+                    vertex.Context = this.LocalContext.MakeVertexContext(vertex);
 
                     foreach (var action in this.materializeActions)
-                        action(shard);
+                        action(vertex);
                 }
             }
         }

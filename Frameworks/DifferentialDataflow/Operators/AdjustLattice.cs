@@ -18,27 +18,28 @@
  * permissions and limitations under the License.
  */
 
-using Naiad.Dataflow;
+using Microsoft.Research.Naiad.Dataflow;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Naiad.Frameworks.DifferentialDataflow.Operators
+namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Operators
 {
     internal class AdjustLattice<R, T> : UnaryVertex<Weighted<R>, Weighted<R>, T>
-        where T : Naiad.Time<T>
+        where T : Microsoft.Research.Naiad.Time<T>
         where R : IEquatable<R>
     {
         public Func<R, T, T> adjustment;
         
-        public override void MessageReceived(Message<Pair<Weighted<R>, T>> message)
+        public override void OnReceive(Message<Weighted<R>, T> message)
         {
             for (int i = 0; i < message.length; i++)
             {
                 var record = message.payload[i];
-                var adjusted = adjustment(record.v1.record, record.v2);
-                this.Output.Send(message.payload[i].v1, adjusted.Join(message.payload[i].v2));
+                var adjusted = adjustment(record.record, message.time);
+                var newTime = adjusted.Join(message.time);
+                this.Output.GetBufferForTime(newTime).Send(message.payload[i]);
             }
         }
 

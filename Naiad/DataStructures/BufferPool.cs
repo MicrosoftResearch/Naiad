@@ -28,7 +28,7 @@ using System.Diagnostics;
 using System.Collections.Concurrent;
 using System.Reflection.Emit;
 
-namespace Naiad
+namespace Microsoft.Research.Naiad
 {
     // thread-local buffer pools
     static internal class ThreadLocalBufferPools<T>
@@ -311,7 +311,6 @@ namespace Naiad
             {
                 var size = Log2(array.Length);
 
-                var dropped = true;
                 if (size < stacks.Length)
                 {
                     lock (stacks[size])
@@ -319,7 +318,6 @@ namespace Naiad
                         if (stacks[size].Count < MaximumStackLength)
                         {
                             stacks[size].Push(array);
-                            dropped = false;
                         }
                     }
                 }

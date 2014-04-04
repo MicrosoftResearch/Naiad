@@ -23,19 +23,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-using Naiad.FaultTolerance;
-using Naiad.DataStructures;
-using Naiad.Dataflow.Channels;
-using Naiad.Scheduling;
-using Naiad.Frameworks.DifferentialDataflow.CollectionTrace;
+using Microsoft.Research.Naiad.FaultTolerance;
+using Microsoft.Research.Naiad.DataStructures;
+using Microsoft.Research.Naiad.Dataflow.Channels;
+using Microsoft.Research.Naiad.Scheduling;
+using Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.CollectionTrace;
 
 using System.Linq.Expressions;
 using System.Diagnostics;
-using Naiad.CodeGeneration;
-using Naiad;
-using Naiad.Dataflow;
+using Microsoft.Research.Naiad.CodeGeneration;
+using Microsoft.Research.Naiad;
+using Microsoft.Research.Naiad.Dataflow;
 
-namespace Naiad.Frameworks.DifferentialDataflow.OperatorImplementations
+namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.OperatorImplementations
 {
     internal class UnaryStatefulIntKeyedOperator<V, S, T, R> : UnaryBufferingVertex<Weighted<S>, Weighted<R>, T>
         
@@ -47,18 +47,16 @@ namespace Naiad.Frameworks.DifferentialDataflow.OperatorImplementations
     {
         bool inputImmutable = false;
 
-        public override void MessageReceived(Message<Pair<Weighted<S>, T>> message)
+        public override void OnReceive(Message<Weighted<S>, T> message)
         {
             if (this.inputImmutable)
             {
+                this.NotifyAt(message.time);
                 for (int i = 0; i < message.length; i++)
-                {
-                    this.OnInput(message.payload[i].v1, message.payload[i].v2);
-                    this.NotifyAt(message.payload[i].v2);
-                }
+                    this.OnInput(message.payload[i], message.time);
             }
             else
-                base.MessageReceived(message);
+                base.OnReceive(message);
         }
 
         protected CollectionTraceWithHeap<R> createOutputTrace()
@@ -69,7 +67,7 @@ namespace Naiad.Frameworks.DifferentialDataflow.OperatorImplementations
         protected virtual CollectionTraceCheckpointable<V> createInputTrace()
         {
 
-            if (Naiad.CodeGeneration.ExpressionComparer.Instance.Equals(keyExpression, valueExpression))
+            if (Microsoft.Research.Naiad.CodeGeneration.ExpressionComparer.Instance.Equals(keyExpression, valueExpression))
             {
                 if (this.inputImmutable)
                     return new CollectionTraceImmutableNoHeap<V>();
@@ -120,7 +118,7 @@ namespace Naiad.Frameworks.DifferentialDataflow.OperatorImplementations
 
         readonly bool MaintainOutputTrace;
 
-        public override void OnDone(T workTime)
+        public override void OnNotify(T workTime)
         {
             if (!this.inputImmutable)
                 foreach (var item in this.Input.GetRecordsAt(workTime))
@@ -235,8 +233,11 @@ namespace Naiad.Frameworks.DifferentialDataflow.OperatorImplementations
 
             toSend.Clear();
             outputTrace.EnumerateDifferenceAt(outputWorkspace, timeIndex, toSend);
+
+            var output = this.Output.GetBufferForTime(outputTime);
+
             for (int i = 0; i < toSend.Count; i++)
-                this.Output.Send(toSend.Array[i], outputTime);
+                output.Send(toSend.Array[i]);
         }
 
         protected NaiadList<Weighted<R>> toSend = new NaiadList<Weighted<R>>(1);
@@ -274,37 +275,29 @@ namespace Naiad.Frameworks.DifferentialDataflow.OperatorImplementations
 
         // keyIndices is spined list
 
-        protected static NaiadSerialization<T> timeSerializer = null;
-        protected static NaiadSerialization<Weighted<S>> weightedSSerializer = null;
-
         public override void Checkpoint(NaiadWriter writer)
         {
             base.Checkpoint(writer);
-            writer.Write(this.isShutdown, PrimitiveSerializers.Bool);
+            writer.Write(this.isShutdown);
             if (!this.isShutdown)
             {
-                if (timeSerializer == null)
-                    timeSerializer = AutoSerialization.GetSerializer<T>();
-                if (weightedSSerializer == null)
-                    weightedSSerializer = AutoSerialization.GetSerializer<Weighted<S>>();
-
-                this.internTable.Checkpoint(writer, timeSerializer);
+                this.internTable.Checkpoint(writer);
                 this.inputTrace.Checkpoint(writer);
                 this.outputTrace.Checkpoint(writer);
 
                 for (int i = 0; i < this.keyIndices.Length; ++i)
                 {
                     if (this.keyIndices[i] == null)
-                        writer.Write(0, PrimitiveSerializers.Int32);
+                        writer.Write(0);
                     else
                     {
-                        writer.Write(this.keyIndices[i].Length, PrimitiveSerializers.Int32);
+                        writer.Write(this.keyIndices[i].Length);
                         for (int j = 0; j < this.keyIndices[i].Length; ++j)
-                            writer.Write(this.keyIndices[i][j], UnaryKeyIndices.Serializer);
+                            writer.Write(this.keyIndices[i][j]);
                     }
                 }
 
-                this.keysToProcess.Checkpoint(writer, PrimitiveSerializers.Int32);
+                this.keysToProcess.Checkpoint(writer);
 
                 this.Input.Checkpoint(writer);
 
@@ -314,22 +307,17 @@ namespace Naiad.Frameworks.DifferentialDataflow.OperatorImplementations
         public override void Restore(NaiadReader reader)
         {
             base.Restore(reader);
-            this.isShutdown = reader.Read<bool>(PrimitiveSerializers.Bool);
+            this.isShutdown = reader.Read<bool>();
 
             if (!this.isShutdown)
             {
-                if (timeSerializer == null)
-                    timeSerializer = AutoSerialization.GetSerializer<T>();
-                if (weightedSSerializer == null)
-                    weightedSSerializer = AutoSerialization.GetSerializer<Weighted<S>>();
-
-                this.internTable.Restore(reader, timeSerializer);
+                this.internTable.Restore(reader);
                 this.inputTrace.Restore(reader);
                 this.outputTrace.Restore(reader);
 
                 for (int i = 0; i < this.keyIndices.Length; ++i)
                 {
-                    int length = reader.Read(PrimitiveSerializers.Int32);
+                    int length = reader.Read<int>();
                     if (length == 0)
                         this.keyIndices[i] = null;
                     else
@@ -337,22 +325,15 @@ namespace Naiad.Frameworks.DifferentialDataflow.OperatorImplementations
                         Debug.Assert(length == 65536);
                         this.keyIndices[i] = new UnaryKeyIndices[length];
                         for (int j = 0; j < this.keyIndices[i].Length; ++j)
-                            this.keyIndices[i][j] = reader.Read(UnaryKeyIndices.Serializer);
+                            this.keyIndices[i][j] = reader.Read<UnaryKeyIndices>();
                     }
                 }
 
-                this.keysToProcess.Restore(reader, PrimitiveSerializers.Int32);
+                this.keysToProcess.Restore(reader);
 
                 this.Input.Restore(reader);
             }
         }
-
-        //protected Naiad.Frameworks.RecvFiberBank<Weighted<S>, T> RecvInput;
-        //private ShardInput<Weighted<S>, T> input;
-
-        //internal override ShardInput<Weighted<S>, T> Input { get { return this.input; } }
-
-
 
         public UnaryStatefulIntKeyedOperator(int index, Stage<T> collection, bool immutableInput, Expression<Func<S, int>> k, Expression<Func<S, V>> v, bool maintainOutputTrace = true)
             : base(index, collection, null)

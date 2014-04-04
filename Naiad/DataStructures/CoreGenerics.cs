@@ -25,7 +25,7 @@ using System.Text;
 
 using System.IO;
 
-namespace Naiad.CodeGeneration
+namespace Microsoft.Research.Naiad.CodeGeneration
 {
     public interface CustomNaiadableSerialization
     {

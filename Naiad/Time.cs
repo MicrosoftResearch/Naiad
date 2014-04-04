@@ -23,9 +23,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Diagnostics;
-using Naiad.CodeGeneration;
+using Microsoft.Research.Naiad.CodeGeneration;
 
-namespace Naiad
+namespace Microsoft.Research.Naiad
 {
     /// <summary>
     /// The typed equivalent of a Pointstamp's "Timestamp" field, corresponding to a sequence of integers.
@@ -44,6 +44,20 @@ namespace Naiad
         int Populate(ref Scheduling.Pointstamp version);
 
         T InitializeFrom(Scheduling.Pointstamp version, int length);
+    }
+
+    public struct Empty : Time<Empty>
+    {
+        public int zero;
+
+        public Empty Join(Empty that) { return this; }
+        public Empty Meet(Empty that) { return this; }
+        public int Coordinates() { return 0; }
+        public int Populate(ref Scheduling.Pointstamp version) { return 0; }
+        public Empty InitializeFrom(Scheduling.Pointstamp version, int length) { return new Empty(); }
+        public bool Equals(Empty other) { return true; }
+        public int CompareTo(Empty other) { return 0; }
+        public bool LessThan(Empty that) { return true; }
     }
 
     public struct Epoch : Time<Epoch>
@@ -80,11 +94,12 @@ namespace Naiad
 
         public Epoch(int tt) { t = tt; }
 
+#if false
         public static implicit operator Epoch(int i)
         {
             return new Epoch(i);
         }
-
+#endif
         public Epoch InitializeFrom(Scheduling.Pointstamp version, int length)
         {
             t = version.Timestamp[0];

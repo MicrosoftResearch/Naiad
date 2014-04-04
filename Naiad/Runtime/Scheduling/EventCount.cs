@@ -30,7 +30,7 @@ using System.Threading.Tasks;
 using System.Runtime.CompilerServices;
 using System.Collections.Concurrent;
 
-namespace Naiad.Scheduling
+namespace Microsoft.Research.Naiad.Scheduling
 {
 
     public class EventCount

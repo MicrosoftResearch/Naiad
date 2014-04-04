@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ConfigFile Include="SUBMISSION_PACKAGE_DIRECTORY\lib\net45\*.exe.config"  />
+  </ItemGroup>
+
+  <Target Name="CopyConfigFile" AfterTargets="AfterBuild">
+    <Copy
+        SourceFiles="@(ConfigFile)"
+        DestinationFolder="$(TargetDir)"
+        SkipUnchangedFiles="true"
+        />
+    <Message Text="Done copying config file..." />
+  </Target>
+</Project>

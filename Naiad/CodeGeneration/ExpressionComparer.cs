@@ -25,7 +25,7 @@ using System.Text;
 using System.Linq.Expressions;
 using System.Collections.ObjectModel;
 
-namespace Naiad.CodeGeneration
+namespace Microsoft.Research.Naiad.CodeGeneration
 {
 
     public class ExpressionComparer

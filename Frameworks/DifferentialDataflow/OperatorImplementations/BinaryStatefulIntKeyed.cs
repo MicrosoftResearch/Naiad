@@ -26,19 +26,19 @@ using System.Text;
 
 using System.Collections.Concurrent;
 using System.IO;
-using Naiad.DataStructures;
-using Naiad.Dataflow.Channels;
-using Naiad.Scheduling;
-using Naiad.Frameworks.DifferentialDataflow.CollectionTrace;
-using Naiad.FaultTolerance;
+using Microsoft.Research.Naiad.DataStructures;
+using Microsoft.Research.Naiad.Dataflow.Channels;
+using Microsoft.Research.Naiad.Scheduling;
+using Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.CollectionTrace;
+using Microsoft.Research.Naiad.FaultTolerance;
 
 using System.Linq.Expressions;
 using System.Diagnostics;
-using Naiad;
-using Naiad.CodeGeneration;
-using Naiad.Dataflow;
+using Microsoft.Research.Naiad;
+using Microsoft.Research.Naiad.CodeGeneration;
+using Microsoft.Research.Naiad.Dataflow;
 
-namespace Naiad.Frameworks.DifferentialDataflow.OperatorImplementations
+namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.OperatorImplementations
 {
     internal class BinaryStatefulIntKeyedOperator<V1, V2, S1, S2, T, R> : BinaryBufferingVertex<Weighted<S1>, Weighted<S2>, Weighted<R>, T>
         //: BinaryOperator<S1, S2, R, T>
@@ -107,7 +107,7 @@ namespace Naiad.Frameworks.DifferentialDataflow.OperatorImplementations
 
         protected CollectionTraceCheckpointable<V2> createInputTrace2()
         {
-            if (Naiad.CodeGeneration.ExpressionComparer.Instance.Equals(keyExpression2, valueExpression2))
+            if (Microsoft.Research.Naiad.CodeGeneration.ExpressionComparer.Instance.Equals(keyExpression2, valueExpression2))
             {
                 if (this.inputImmutable2)
                     return new CollectionTraceImmutableNoHeap<V2>();
@@ -127,7 +127,7 @@ namespace Naiad.Frameworks.DifferentialDataflow.OperatorImplementations
 
         protected CollectionTraceCheckpointable<V1> createInputTrace1()
         {
-            if (Naiad.CodeGeneration.ExpressionComparer.Instance.Equals(keyExpression1, valueExpression1))
+            if (Microsoft.Research.Naiad.CodeGeneration.ExpressionComparer.Instance.Equals(keyExpression1, valueExpression1))
             {
                 if (this.inputImmutable1)
                     return new CollectionTraceImmutableNoHeap<V1>();
@@ -145,36 +145,34 @@ namespace Naiad.Frameworks.DifferentialDataflow.OperatorImplementations
             }
         }
 
-        public override void MessageReceived1(Message<Pair<Weighted<S1>, T>> message)
+        public override void OnReceive1(Message<Weighted<S1>, T> message)
         {
             if (this.inputImmutable1)
             {
+                this.NotifyAt(message.time);
                 for (int i = 0; i < message.length; i++)
-                {
-                    this.OnInput1(message.payload[i].v1, message.payload[i].v2);
-                    this.NotifyAt(message.payload[i].v2);
-                }
+                    this.OnInput1(message.payload[i], message.time);
             }
             else
-                base.MessageReceived1(message);
+                base.OnReceive1(message);
         }
 
 
-        public override void MessageReceived2(Message<Pair<Weighted<S2>, T>> message)
+        public override void OnReceive2(Message<Weighted<S2>, T> message)
         {
             if (this.inputImmutable2)
             {
+                this.NotifyAt(message.time);
                 for (int i = 0; i < message.length; i++)
                 {
-                    this.OnInput2(message.payload[i].v1, message.payload[i].v2);
-                    this.NotifyAt(message.payload[i].v2);
+                    this.OnInput2(message.payload[i], message.time);
                 }
             }
             else
-                base.MessageReceived2(message);
+                base.OnReceive2(message);
         }
 
-        public override void OnDone(T workTime)
+        public override void OnNotify(T workTime)
         {
             if (!this.inputImmutable1)
             {
@@ -322,8 +320,11 @@ namespace Naiad.Frameworks.DifferentialDataflow.OperatorImplementations
 
             outputCollection.Clear();
             outputTrace.EnumerateDifferenceAt(outputWorkspace, timeIndex, outputCollection);
+
+            var output = this.Output.GetBufferForTime(outputTime);
+
             for (int i = 0; i < outputCollection.Count; i++)
-                this.Output.Send(outputCollection.Array[i], outputTime);
+                output.Send(outputCollection.Array[i]);
         }
         
         protected virtual void NewOutputMinusOldOutput(int index, BinaryKeyIndices keyIndex, int timeIndex)
@@ -360,24 +361,17 @@ namespace Naiad.Frameworks.DifferentialDataflow.OperatorImplementations
          *     (T,NaiadList<Weighted<S>>)*recordsToProcessCount recordsToProcess2
          */
 
-        private static NaiadSerialization<T> timeSerializer = null;
-        private static NaiadSerialization<Weighted<S1>> weightedS1Serializer = null;
-        private static NaiadSerialization<Weighted<S2>> weightedS2Serializer = null;
+        //private static NaiadSerialization<T> timeSerializer = null;
+        //private static NaiadSerialization<Weighted<S1>> weightedS1Serializer = null;
+        //private static NaiadSerialization<Weighted<S2>> weightedS2Serializer = null;
 
         public override void Checkpoint(NaiadWriter writer)
         {
             base.Checkpoint(writer);
-            writer.Write(this.isShutdown, PrimitiveSerializers.Bool);
+            writer.Write(this.isShutdown);
             if (!this.isShutdown)
             {
-                if (timeSerializer == null)
-                    timeSerializer = AutoSerialization.GetSerializer<T>();
-                if (weightedS1Serializer == null)
-                    weightedS1Serializer = AutoSerialization.GetSerializer<Weighted<S1>>();
-                if (weightedS2Serializer == null)
-                    weightedS2Serializer = AutoSerialization.GetSerializer<Weighted<S2>>();
-
-                this.internTable.Checkpoint(writer, timeSerializer);
+                this.internTable.Checkpoint(writer);
                 this.inputTrace1.Checkpoint(writer);
                 this.inputTrace2.Checkpoint(writer);
                 this.outputTrace.Checkpoint(writer);
@@ -385,12 +379,12 @@ namespace Naiad.Frameworks.DifferentialDataflow.OperatorImplementations
                 for (int i = 0; i < this.keyIndices.Length; ++i)
                 {
                     if (this.keyIndices[i] == null)
-                        writer.Write(-1, PrimitiveSerializers.Int32);
+                        writer.Write(-1);
                     else
                     {
-                        writer.Write(this.keyIndices[i].Length, PrimitiveSerializers.Int32);
+                        writer.Write(this.keyIndices[i].Length);
                         for (int j = 0; j < this.keyIndices[i].Length; ++j)
-                            writer.Write(this.keyIndices[i][j], BinaryKeyIndices.Serializer);
+                            writer.Write(this.keyIndices[i][j]);
                     }
                 }
 
@@ -405,30 +399,22 @@ namespace Naiad.Frameworks.DifferentialDataflow.OperatorImplementations
         public override void Restore(NaiadReader reader)
         {
             base.Restore(reader);
-            this.isShutdown = reader.Read<bool>(PrimitiveSerializers.Bool);
-
+            
             if (!this.isShutdown)
             {
-                if (timeSerializer == null)
-                    timeSerializer = AutoSerialization.GetSerializer<T>();
-                if (weightedS1Serializer == null)
-                    weightedS1Serializer = AutoSerialization.GetSerializer<Weighted<S1>>();
-                if (weightedS2Serializer == null)
-                    weightedS2Serializer = AutoSerialization.GetSerializer<Weighted<S2>>();
-
-                this.internTable.Restore(reader, timeSerializer);
+                this.internTable.Restore(reader);
                 this.inputTrace1.Restore(reader);
                 this.inputTrace2.Restore(reader);
                 this.outputTrace.Restore(reader);
 
                 for (int i = 0; i < this.keyIndices.Length; ++i)
                 {
-                    int length = reader.Read<int>(PrimitiveSerializers.Int32);
+                    int length = reader.Read<int>();
                     if (length >= 0)
                     {
                         this.keyIndices[i] = new BinaryKeyIndices[length];
                         for (int j = 0; j < this.keyIndices[i].Length; ++j)
-                            this.keyIndices[i][j] = reader.Read<BinaryKeyIndices>(BinaryKeyIndices.Serializer);
+                            this.keyIndices[i][j] = reader.Read<BinaryKeyIndices>();
                     }
                 }
 

@@ -22,10 +22,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Naiad.CodeGeneration;
-using Naiad.DataStructures;
+using Microsoft.Research.Naiad.CodeGeneration;
+using Microsoft.Research.Naiad.DataStructures;
 
-namespace Naiad.Scheduling
+namespace Microsoft.Research.Naiad.Scheduling
 {
     public interface PartialOrder<T> : IEquatable<T>
     {
@@ -36,28 +36,18 @@ namespace Naiad.Scheduling
     {
         public static Pointstamp ToPointstamp<T>(this T latticeElement, int graphObjectID) where T : Time<T>
         {
-            var version = new Pointstamp();
+            var pointstamp = new Pointstamp();
             
-            version.Location = graphObjectID;
-            version.Timestamp.Length = latticeElement.Coordinates();
-            latticeElement.Populate(ref version);
+            pointstamp.Location = graphObjectID;
+            pointstamp.Timestamp.Length = latticeElement.Coordinates();
+            latticeElement.Populate(ref pointstamp);
 
-            return version;
+            return pointstamp;
         }
     }
 
     public struct Pointstamp : IEquatable<Pointstamp>, IComparable<Pointstamp>, PartialOrder<Pointstamp>, Time<Pointstamp>
     {
-        private static NaiadSerialization<Pointstamp> serializer = null;
-        public static NaiadSerialization<Pointstamp> Serializer
-        {
-            get
-            {
-                if (serializer == null)
-                    serializer = AutoSerialization.GetSerializer<Pointstamp>();
-                return serializer;
-            }
-        }
 
         public struct FakeArray
         {
@@ -133,7 +123,7 @@ namespace Naiad.Scheduling
 
         public override string ToString()
         {
-            return String.Format("[graph id = {0}, version = <{1}>]", Location, Timestamp);
+            return String.Format("[location = {0}, timestamp = <{1}>]", Location, Timestamp);
         }
 
         public bool Equals(Pointstamp that)

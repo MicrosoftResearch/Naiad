@@ -22,12 +22,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Naiad.Dataflow.Channels;
-using Naiad.CodeGeneration;
-using Naiad.FaultTolerance;
-using Naiad.Scheduling;
+using Microsoft.Research.Naiad.Dataflow.Channels;
+using Microsoft.Research.Naiad.CodeGeneration;
+using Microsoft.Research.Naiad.FaultTolerance;
+using Microsoft.Research.Naiad.Scheduling;
 
-namespace Naiad.DataStructures
+namespace Microsoft.Research.Naiad.DataStructures
 {
     // used for antichain of pointstamps, and pointstamps only
     public class MinimalAntichain<T> where T : Scheduling.PartialOrder<T>
@@ -125,18 +125,18 @@ namespace Naiad.DataStructures
             Antichain.Clear();
         }
 
-        public void Checkpoint(NaiadWriter writer, NaiadSerialization<T> serializer)
+        public void Checkpoint(NaiadWriter writer)
         {
-            this.elements.Checkpoint(writer, serializer);
-            this.precedents.Checkpoint(writer, PrimitiveSerializers.Int32);
-            this.Antichain.Checkpoint(writer, serializer);
+            this.elements.Checkpoint(writer);
+            this.precedents.Checkpoint(writer);
+            this.Antichain.Checkpoint(writer);
         }
 
-        public void Restore(NaiadReader reader, NaiadSerialization<T> serializer)
+        public void Restore(NaiadReader reader)
         {
-            this.elements.Restore(reader, serializer);
-            this.precedents.Restore(reader, PrimitiveSerializers.Int32);
-            this.Antichain.Restore(reader, serializer);
+            this.elements.Restore(reader);
+            this.precedents.Restore(reader);
+            this.Antichain.Restore(reader);
         }
     }
 
@@ -242,18 +242,18 @@ namespace Naiad.DataStructures
             Antichain.Clear();
         }
 
-        public void Checkpoint(NaiadWriter writer, NaiadSerialization<Pointstamp> serializer)
+        public void Checkpoint(NaiadWriter writer)
         {
-            this.elements.Checkpoint(writer, serializer);
-            this.precedents.Checkpoint(writer, PrimitiveSerializers.Int32);
-            this.Antichain.Checkpoint(writer, serializer);
+            this.elements.Checkpoint(writer);
+            this.precedents.Checkpoint(writer);
+            this.Antichain.Checkpoint(writer);
         }
 
-        public void Restore(NaiadReader reader, NaiadSerialization<Pointstamp> serializer)
+        public void Restore(NaiadReader reader)
         {
-            this.elements.Restore(reader, serializer);
-            this.precedents.Restore(reader, PrimitiveSerializers.Int32);
-            this.Antichain.Restore(reader, serializer);
+            this.elements.Restore(reader);
+            this.precedents.Restore(reader);
+            this.Antichain.Restore(reader);
         }
     }
 }

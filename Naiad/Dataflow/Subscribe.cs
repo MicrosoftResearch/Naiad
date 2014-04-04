@@ -23,13 +23,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using Naiad.Dataflow.Channels;
-using Naiad.Runtime.Controlling;
-using Naiad.Scheduling;
-using Naiad.Dataflow;
-using Naiad.Frameworks;
+using Microsoft.Research.Naiad.Dataflow.Channels;
+using Microsoft.Research.Naiad.Runtime.Controlling;
+using Microsoft.Research.Naiad.Scheduling;
+using Microsoft.Research.Naiad.Dataflow;
+using Microsoft.Research.Naiad.Frameworks;
 
-namespace Naiad
+namespace Microsoft.Research.Naiad
 {
     /// <summary>
     /// Returned by Subscribe(), allowing threads to block until epochs have completed.
@@ -101,22 +101,22 @@ namespace Naiad
         /// <param name="onNotify">notification callback</param>
         /// <param name="onComplete">completion callback</param>
         /// <returns>subscription for synchronization</returns>
-        public static Subscription Subscribe<R>(this Dataflow.Stream<R, Epoch> stream, Action<Message<Pair<R, Epoch>>, int> onRecv, Action<Epoch, int> onNotify, Action<int> onComplete)
+        public static Subscription Subscribe<R>(this Dataflow.Stream<R, Epoch> stream, Action<Message<R, Epoch>, int> onRecv, Action<Epoch, int> onNotify, Action<int> onComplete)
         {
             return new Subscription<R>(stream, stream.ForStage.Placement, stream.Context, onRecv, onNotify, onComplete);
         }
     }
 }
 
-namespace Naiad.Dataflow
+namespace Microsoft.Research.Naiad.Dataflow
 {
     /// <summary>
-    /// Manages several subscribe shards, and allows another thread to block until all have completed a specified epoch
+    /// Manages several subscribe vertices, and allows another thread to block until all have completed a specified epoch
     /// </summary>
     internal class Subscription<R> : IDisposable, Subscription
     {
         private readonly Dictionary<int, CountdownEvent> Countdowns;        
-        private int LocalShardCount;
+        private int LocalVertexCount;
 
         private int CompleteThrough;
 
@@ -132,16 +132,16 @@ namespace Naiad.Dataflow
 
 
         /// <summary>
-        /// Called by shards, indicates the receipt of an OnDone(time)
+        /// Called by vertices, indicates the receipt of an OnNotify(time)
         /// </summary>
-        /// <param name="time">Time that has completed for the shard</param>
+        /// <param name="time">Time that has completed for the vertex</param>
         internal void Signal(Epoch time)
         {
             lock (this.Countdowns)
             {
                 // if this is the first mention of time.t, create a new countdown
                 if (!this.Countdowns.ContainsKey(time.t))
-                    this.Countdowns[time.t] = new CountdownEvent(this.LocalShardCount);
+                    this.Countdowns[time.t] = new CountdownEvent(this.LocalVertexCount);
 
                 if (this.Countdowns[time.t].CurrentCount > 0)
                     this.Countdowns[time.t].Signal();
@@ -158,7 +158,7 @@ namespace Naiad.Dataflow
         }
 
         /// <summary>
-        /// Called by other threads, and should block until all local shards have received OnDone(time)
+        /// Called by other threads, and should block until all local vertices have received OnNotify(time)
         /// </summary>
         /// <param name="time">Time to wait until locally complete</param>
         public void Sync(Epoch time)
@@ -172,7 +172,7 @@ namespace Naiad.Dataflow
 
                 // if we haven't heard about it, create a new countdown
                 if (!this.Countdowns.ContainsKey(time.t))
-                    this.Countdowns[time.t] = new CountdownEvent(this.LocalShardCount);
+                    this.Countdowns[time.t] = new CountdownEvent(this.LocalVertexCount);
 
                 countdown = this.Countdowns[time.t];
             }
@@ -181,15 +181,15 @@ namespace Naiad.Dataflow
             countdown.Wait();
         }
 
-        internal Subscription(Stream<R, Epoch> input, Placement placement, OpaqueTimeContext<Epoch> context, Action<Message<Pair<R, Epoch>>, int> onRecv, Action<Epoch, int> onNotify, Action<int> onComplete)
+        internal Subscription(Stream<R, Epoch> input, Placement placement, OpaqueTimeContext<Epoch> context, Action<Message<R, Epoch>, int> onRecv, Action<Epoch, int> onNotify, Action<int> onComplete)
         {
             foreach (var entry in placement)
                 if (entry.ProcessId == context.Context.Manager.GraphManager.Controller.Configuration.ProcessID)
-                    this.LocalShardCount++;
+                    this.LocalVertexCount++;
 
             var stage = new Stage<SubscribeStreamingVertex<R>, Epoch>(placement, context, Stage.OperatorType.Default, (i, v) => new SubscribeStreamingVertex<R>(i, v, this, onRecv, onNotify, onComplete), "Subscribe");
 
-            stage.NewInput(input, (message, shard) => shard.MessageReceived(message), null);
+            stage.NewInput(input, (message, vertex) => vertex.OnReceive(message), null);
 
             this.Countdowns = new Dictionary<int, CountdownEvent>();
             this.CompleteThrough = -1;
@@ -208,11 +208,11 @@ namespace Naiad.Dataflow
         {
             foreach (var entry in placement)
                 if (entry.ProcessId == context.Context.Manager.GraphManager.Controller.Configuration.ProcessID)
-                    this.LocalShardCount++;
+                    this.LocalVertexCount++;
 
             var stage = new Stage<SubscribeBufferingVertex<R>, Epoch>(placement, context, Stage.OperatorType.Default, (i, v) => new SubscribeBufferingVertex<R>(i, v, this, action), "Subscribe");
 
-            stage.NewInput(input, (message, shard) => shard.MessageReceived(message), null);
+            stage.NewInput(input, (message, vertex) => vertex.OnReceive(message), null);
 
             this.Countdowns = new Dictionary<int, CountdownEvent>();
             this.CompleteThrough = -1;
@@ -229,37 +229,34 @@ namespace Naiad.Dataflow
     }
 
     /// <summary>
-    /// Individual subscription shard, invokes actions and notifies parent stage.
+    /// Individual subscription vertex, invokes actions and notifies parent stage.
     /// </summary>
     /// <typeparam name="R">Record type</typeparam>
     internal class SubscribeStreamingVertex<R> : SinkVertex<R, Epoch>
     {
-        Action<Message<Pair<R, Epoch>>, int> OnRecv;
-        Action<Epoch, int> OnNotify;
+        Action<Message<R, Epoch>, int> OnRecv;
+        Action<Epoch, int> OnNotifyAction;
         Action<int> OnCompleted;
 
         Subscription<R> Parent;
 
         protected override void OnShutdown()
         {
-            Console.WriteLine("About to invoke OnCompleted on scheduler {0}", this.scheduler.Index);
             this.OnCompleted(this.Scheduler.Index);
-
-            base.ShutDown();
+            base.OnShutdown();
         }
 
-        public override void MessageReceived(Message<Pair<R, Epoch>> record)
+        public override void OnReceive(Message<R, Epoch> record)
         {
             this.OnRecv(record, this.Scheduler.Index);
-            for (int i = 0; i < record.length; i++)
-                this.NotifyAt(record.payload[i].v2);
+            this.NotifyAt(record.time);
         }
 
         /// <summary>
-        /// When a time completes, invokes an action on received data, signals parent stage, and schedules OnDone for next expoch.
+        /// When a time completes, invokes an action on received data, signals parent stage, and schedules OnNotify for next expoch.
         /// </summary>
         /// <param name="time"></param>
-        public override void OnDone(Epoch time)
+        public override void OnNotify(Epoch time)
         {
             // test to see if inputs supplied data for this epoch, or terminated instead
             var validEpoch = false;
@@ -268,7 +265,7 @@ namespace Naiad.Dataflow
                     validEpoch = true;
             
             if (validEpoch)
-                this.OnNotify(time, this.Scheduler.Index);
+                this.OnNotifyAction(time, this.Scheduler.Index);
 
             this.Parent.Signal(time);
 
@@ -276,13 +273,13 @@ namespace Naiad.Dataflow
                 this.NotifyAt(new Epoch(time.t + 1));         
         }
 
-        public SubscribeStreamingVertex(int index, Stage<Epoch> stage, Subscription<R> parent, Action<Message<Pair<R, Epoch>>, int> onrecv, Action<Epoch, int> onnotify, Action<int> oncomplete)
+        public SubscribeStreamingVertex(int index, Stage<Epoch> stage, Subscription<R> parent, Action<Message<R, Epoch>, int> onrecv, Action<Epoch, int> onnotify, Action<int> oncomplete)
             : base(index, stage)
         {
             this.Parent = parent;
 
             this.OnRecv = onrecv;
-            this.OnNotify = onnotify;
+            this.OnNotifyAction = onnotify;
             this.OnCompleted = oncomplete;
 
             this.NotifyAt(new Epoch(0));
@@ -290,19 +287,19 @@ namespace Naiad.Dataflow
     }
 
     /// <summary>
-    /// Individual subscription shard, invokes actions and notifies parent stage.
+    /// Individual subscription vertex, invokes actions and notifies parent stage.
     /// </summary>
     /// <typeparam name="R">Record type</typeparam>
     internal class SubscribeBufferingVertex<R> : SinkBufferingVertex<R, Epoch>
     {
-        Action<int, int, IEnumerable<R>> Action;        // (shardid, epoch, data) => ()
+        Action<int, int, IEnumerable<R>> Action;        // (vertexid, epoch, data) => ()
         Subscription<R> Parent;
         
         /// <summary>
-        /// When a time completes, invokes an action on received data, signals parent stage, and schedules OnDone for next expoch.
+        /// When a time completes, invokes an action on received data, signals parent stage, and schedules OnNotify for next expoch.
         /// </summary>
         /// <param name="time"></param>
-        public override void OnDone(Epoch time)
+        public override void OnNotify(Epoch time)
         {
             var validEpoch = false;
             for (int i = 0; i < this.Parent.SourceInputs.Length; i++)

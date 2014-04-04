@@ -22,12 +22,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Naiad.Dataflow.Channels;
-using Naiad.CodeGeneration;
-using Naiad.DataStructures;
-using Naiad.FaultTolerance;
+using Microsoft.Research.Naiad.Dataflow.Channels;
+using Microsoft.Research.Naiad.CodeGeneration;
+using Microsoft.Research.Naiad.DataStructures;
+using Microsoft.Research.Naiad.FaultTolerance;
 
-namespace Naiad.Frameworks.DifferentialDataflow.CollectionTrace
+namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.CollectionTrace
 {
     /// <summary>
     /// Interface for a collection trace, which is a mapping from key indices (of type int)
@@ -175,7 +175,7 @@ namespace Naiad.Frameworks.DifferentialDataflow.CollectionTrace
         bool debug = false;
 
         private List<int> heads;            // index in links of the last element with the associated key.
-        private SpinedList<Naiad.Pair<R, int>> links;   // chain of links forming linked lists for each key.
+        private SpinedList<Microsoft.Research.Naiad.Pair<R, int>> links;   // chain of links forming linked lists for each key.
 
         //List<List<R>> list;
 
@@ -193,16 +193,16 @@ namespace Naiad.Frameworks.DifferentialDataflow.CollectionTrace
                 }
 
                 if (weight < 0)
-                    Naiad.Logging.Error("Subtracting records from Immutable collection (Consolidate first?)");
+                    Microsoft.Research.Naiad.Logging.Error("Subtracting records from Immutable collection (Consolidate first?)");
 
                 for (int i = 0; i < weight; i++)
                 {
-                    links.Add(new Naiad.Pair<R, int>(from, heads[keyIndex]));
+                    links.Add(new Microsoft.Research.Naiad.Pair<R, int>(from, heads[keyIndex]));
                     heads[keyIndex] = links.Count - 1;
                 }
             }
             else
-                Naiad.Logging.Error("Adding records to Immutable collection after compacting it");
+                Microsoft.Research.Naiad.Logging.Error("Adding records to Immutable collection after compacting it");
         }
 
         public void IntroduceFrom(ref int thisKeyIndex, ref int thatKeyIndex, bool delete = true)
@@ -231,7 +231,7 @@ namespace Naiad.Frameworks.DifferentialDataflow.CollectionTrace
                 }
             }
             else
-                Naiad.Logging.Error("Adding records to Immutable collection after compacting it");
+                Microsoft.Research.Naiad.Logging.Error("Adding records to Immutable collection after compacting it");
         }
         
         public void SubtractStrictlyPriorDifferences(ref int keyIndex, int timeIndex)
@@ -250,7 +250,7 @@ namespace Naiad.Frameworks.DifferentialDataflow.CollectionTrace
                 keyIndex = 0;
             }
             else
-                Naiad.Logging.Error("Zeroing parts of Immutable collection after compacting it");
+                Microsoft.Research.Naiad.Logging.Error("Zeroing parts of Immutable collection after compacting it");
 
         }
 
@@ -383,74 +383,61 @@ namespace Naiad.Frameworks.DifferentialDataflow.CollectionTrace
          *     INT               dataLength
          *     R*dataLength      data
          */
-        private static NaiadSerialization<R> rSerializer = null;
-        private static NaiadSerialization<Naiad.Pair<R, int>> pairSerializer = null;
         public void Checkpoint(NaiadWriter writer)
         {
-            if (rSerializer == null)
-                rSerializer = AutoSerialization.GetSerializer<R>();
-
-            writer.Write(heads != null, PrimitiveSerializers.Bool); // Is mutable flag
+            writer.Write(heads != null); // Is mutable flag
             if (heads != null)
             {
                 // Still mutable
-                writer.Write(heads.Count, PrimitiveSerializers.Int32);
+                writer.Write(heads.Count);
                 foreach (int head in heads)
-                    writer.Write(head, PrimitiveSerializers.Int32);
+                    writer.Write(head);
 
-                writer.Write(links.Count, PrimitiveSerializers.Int32);
-
-                if (pairSerializer == null)
-                    pairSerializer = AutoSerialization.GetSerializer<Naiad.Pair<R, int>>();
+                writer.Write(links.Count);
 
                 for (int i = 0; i < links.Count; i++)
-                    writer.Write(links.ElementAt(i), pairSerializer);
+                    writer.Write(links.ElementAt(i));
             }
             else
             {
                 // Immutable
-                writer.Write(offsets.Length, PrimitiveSerializers.Int32);
+                writer.Write(offsets.Length);
                 for (int i = 0; i < offsets.Length; ++i)
-                    writer.Write(offsets[i], PrimitiveSerializers.Int32);
+                    writer.Write(offsets[i]);
 
-                writer.Write(data.Length, PrimitiveSerializers.Int32);
+                writer.Write(data.Length);
                 for (int i = 0; i < data.Length; ++i)
-                    writer.Write(data[i], rSerializer);
+                    writer.Write(data[i]);
             }
         }
 
         public void Restore(NaiadReader reader)
         {
-            if (rSerializer == null)
-                rSerializer = AutoSerialization.GetSerializer<R>();
-            
-            bool isMutable = reader.Read<bool>(PrimitiveSerializers.Bool);
+            bool isMutable = reader.Read<bool>();
             if (isMutable)
             {
-                int headsCount = reader.Read<int>(PrimitiveSerializers.Int32);
+                int headsCount = reader.Read<int>();
                 this.heads = new List<int>(headsCount);
                 for (int i = 0; i < headsCount; ++i)
-                    this.heads.Add(reader.Read<int>(PrimitiveSerializers.Int32));
+                    this.heads.Add(reader.Read<int>());
 
-                int linksCount = reader.Read<int>(PrimitiveSerializers.Int32);
-                if (pairSerializer == null)
-                    pairSerializer = AutoSerialization.GetSerializer<Naiad.Pair<R, int>>();
+                int linksCount = reader.Read<int>();
                 //this.links = new List<Naiad.Pair<R, int>>(linksCount);
-                this.links = new SpinedList<Naiad.Pair<R, int>>();
+                this.links = new SpinedList<Microsoft.Research.Naiad.Pair<R, int>>();
                 for (int i = 0; i < linksCount; ++i)
-                    this.links.Add(reader.Read<Naiad.Pair<R, int>>(pairSerializer));
+                    this.links.Add(reader.Read<Microsoft.Research.Naiad.Pair<R, int>>());
             }
             else
             {
-                int offsetsLength = reader.Read<int>(PrimitiveSerializers.Int32);
+                int offsetsLength = reader.Read<int>();
                 offsets = new int[offsetsLength];
                 for (int i = 0; i < offsets.Length; ++i)
-                    offsets[i] = reader.Read<int>(PrimitiveSerializers.Int32);
+                    offsets[i] = reader.Read<int>();
 
-                int dataLength = reader.Read<int>(PrimitiveSerializers.Int32);
+                int dataLength = reader.Read<int>();
                 data = new R[dataLength];
                 for (int i = 0; i < data.Length; ++i)
-                    data[i] = reader.Read<R>(rSerializer);
+                    data[i] = reader.Read<R>();
             }
         }
 
@@ -460,7 +447,7 @@ namespace Naiad.Frameworks.DifferentialDataflow.CollectionTrace
         {
             if (debug) Console.Error.WriteLine("Allocated ImmutableTrace");
             heads = new List<int>();
-            links = new SpinedList<Naiad.Pair<R, int>>();// new List<Naiad.Pair<R, int>>();
+            links = new SpinedList<Microsoft.Research.Naiad.Pair<R, int>>();// new List<Naiad.Pair<R, int>>();
             heads.Add(-1);
         }
     }

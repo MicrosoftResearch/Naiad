@@ -18,11 +18,11 @@
  * permissions and limitations under the License.
  */
 
-using Naiad;
-using Naiad.Dataflow;
-using Naiad.Frameworks;
-using Naiad.Runtime;
-using Naiad.Scheduling;
+using Microsoft.Research.Naiad;
+using Microsoft.Research.Naiad.Dataflow;
+using Microsoft.Research.Naiad.Frameworks;
+using Microsoft.Research.Naiad.Runtime;
+using Microsoft.Research.Naiad.Scheduling;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -37,20 +37,19 @@ namespace Examples.Throughput
 
         private readonly int numberToSend;
 
-        public override void OnDone(Epoch time)
+        public override void OnNotify(Epoch time)
         {
-            Console.WriteLine("In OnDone");
+            var output = this.output.GetBufferForTime(new Epoch(0));
             for (int i = 0; i < this.numberToSend; ++i)
-                this.output.Send(this.VertexId, 0);
+                output.Send(this.VertexId);
         }
 
         private ProducerVertex(int id, Stage<Epoch> stage, int numberToSend)
             : base(id, stage)
         {
-            Console.WriteLine("Constructing Producer {0}", id);
             this.numberToSend = numberToSend;
             this.output = new VertexOutputBuffer<int,Epoch>(this);
-            this.NotifyAt(0);
+            this.NotifyAt(new Epoch(0));
         }
 
         public static Stream<int, Epoch> MakeStage(int numberToSend, int numberOfPartitions, Stream<int, Epoch> input)
@@ -70,7 +69,7 @@ namespace Examples.Throughput
         private readonly int numberToConsume;
         private Stopwatch stopwatch = new Stopwatch();
 
-        private void OnRecv(Message<Pair<int, Epoch>> message)
+        private void OnRecv(Message<int, Epoch> message)
         {
             //Console.WriteLine("In OnRecv");
             if (!stopwatch.IsRunning)
@@ -79,7 +78,7 @@ namespace Examples.Throughput
             numReceived += message.length;
         }
 
-        public override void OnDone(Epoch time)
+        public override void OnNotify(Epoch time)
         {
             Console.WriteLine("Received {0} records in {1}", numReceived, stopwatch.Elapsed);
         }
@@ -88,7 +87,7 @@ namespace Examples.Throughput
             : base(id, stage)
         {
             this.numberToConsume = numberToConsume;
-            this.NotifyAt(0);
+            this.NotifyAt(new Epoch(0));
         }
 
         public static Stage<ConsumerVertex, Epoch> MakeStage(int numberToConsume, int numberOfPartitions, Stream<int, Epoch> stream)
@@ -114,16 +113,16 @@ namespace Examples.Throughput
             {
                 int numToExchange = args.Length > 1 ? int.Parse(args[1]) : 1000000;
 
-                using (GraphManager graph = controller.NewGraph())
+                using (GraphManager manager = controller.NewComputation())
                 {
-                    Stream<int, Epoch> input = graph.NewInput(new ConstantDataSource<int>(5));
+                    Stream<int, Epoch> input = manager.NewInput(new ConstantDataSource<int>(5));
 
                     Stream<int, Epoch> stream = ProducerVertex.MakeStage(numToExchange, controller.Configuration.WorkerCount, input);
                     Stage<ConsumerVertex, Epoch> consumer = ConsumerVertex.MakeStage(numToExchange, controller.Configuration.WorkerCount, stream);
 
-                    graph.Activate();
+                    manager.Activate();
 
-                    graph.Join();
+                    manager.Join();
                 }
                 controller.Join();
             }

@@ -23,14 +23,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
-using Naiad.Dataflow.Channels;
-using Naiad.Dataflow;
-using Naiad.Frameworks;
-using Naiad.Dataflow.Iteration;
-using Naiad;
-using Naiad.Frameworks.Reduction;
+using Microsoft.Research.Naiad.Dataflow.Channels;
+using Microsoft.Research.Naiad.Dataflow;
+using Microsoft.Research.Naiad.Frameworks;
+using Microsoft.Research.Naiad.Dataflow.Iteration;
+using Microsoft.Research.Naiad;
+using Microsoft.Research.Naiad.Frameworks.Reduction;
 
-namespace Naiad.Frameworks.Lindi
+namespace Microsoft.Research.Naiad.Frameworks.Lindi
 {
     /// <summary>
     /// Standard LINQ-like methods.
@@ -89,7 +89,7 @@ namespace Naiad.Frameworks.Lindi
         public static Stream<TRecord, TTime> Concat<TRecord, TTime>(this Stream<TRecord, TTime> stream1, Stream<TRecord, TTime> stream2) where TTime : Time<TTime>
         {
             // test to see if they are partitioned properly, and if so maintain the information in output partitionedby information.
-            var partitionedBy = Naiad.CodeGeneration.ExpressionComparer.Instance.Equals(stream1.PartitionedBy, stream2.PartitionedBy) ? stream1.PartitionedBy : null;
+            var partitionedBy = Microsoft.Research.Naiad.CodeGeneration.ExpressionComparer.Instance.Equals(stream1.PartitionedBy, stream2.PartitionedBy) ? stream1.PartitionedBy : null;
             return Foundry.NewBinaryStage(stream1, stream2, (i, v) => new ConcatVertex<TRecord, TTime>(i, v), partitionedBy, partitionedBy, partitionedBy, "Concat");
         }
 
@@ -258,28 +258,22 @@ namespace Naiad.Frameworks.Lindi
 
         internal DistinctVertex(int i, Stage<T> stage) : base(i, stage) { }
 
-        public override void MessageReceived(Message<Pair<S, T>> message)
+        public override void OnReceive(Message<S, T> message)
         {
-            HashSet<S> currentSet = null;
-
-            for (int i = 0; i < message.length; i++)
+            if (!this.values.ContainsKey(message.time))
             {
-                if (i == 0 || !message.payload[i].v2.Equals(message.payload[i - 1].v2))
-                {
-                    if (!this.values.TryGetValue(message.payload[i].v2, out currentSet))
-                    {
-                        currentSet = new HashSet<S>();
-                        this.values[message.payload[i].v2] = currentSet;
-                        this.NotifyAt(message.payload[i].v2);
-                    }
-                }
-
-                if (currentSet.Add(message.payload[i].v1))
-                    this.Output.Send(message.payload[i].v1, message.payload[i].v2);
+                this.values.Add(message.time, new HashSet<S>());
+                this.NotifyAt(message.time);
             }
+
+            var currentSet = this.values[message.time];
+            var output = this.Output.GetBufferForTime(message.time);
+            for (int i = 0; i < message.length; i++)
+                if (currentSet.Add(message.payload[i]))
+                    output.Send(message.payload[i]);
         }
 
-        public override void OnDone(T time)
+        public override void OnNotify(T time)
         {
             this.values.Remove(time);
         }
@@ -290,10 +284,11 @@ namespace Naiad.Frameworks.Lindi
     {
         Func<S, R> Function;
 
-        public override void MessageReceived(Dataflow.Message<Pair<S, T>> message)
+        public override void OnReceive(Dataflow.Message<S, T> message)
         {
+            var output = this.Output.GetBufferForTime(message.time);
             for (int i = 0; i < message.length; i++)
-                this.Output.Send(this.Function(message.payload[i].v1), message.payload[i].v2);
+                output.Send(this.Function(message.payload[i]));
         }
 
         public SelectVertex(int index, Stage<T> stage, Func<S, R> function)
@@ -308,11 +303,12 @@ namespace Naiad.Frameworks.Lindi
     {
         Func<S, bool> Function;
 
-        public override void MessageReceived(Dataflow.Message<Pair<S, T>> message)
+        public override void OnReceive(Message<S, T> message)
         {
+            var output = this.Output.GetBufferForTime(message.time);
             for (int i = 0; i < message.length; i++)
-                if (Function(message.payload[i].v1))
-                    this.Output.Send(message.payload[i].v1, message.payload[i].v2);
+                if (Function(message.payload[i]))
+                    output.Send(message.payload[i]);
         }
 
         public WhereVertex(int index, Stage<T> stage, Func<S, bool> function)
@@ -322,13 +318,13 @@ namespace Naiad.Frameworks.Lindi
         }
     }
 
-    internal class ConcatVertex<S, T> : Naiad.Frameworks.BinaryVertex<S, S, S, T>
+    internal class ConcatVertex<S, T> : Microsoft.Research.Naiad.Frameworks.BinaryVertex<S, S, S, T>
         where T : Time<T>
     {
-        public override void MessageReceived1(Dataflow.Message<Pair<S, T>> message) { this.Output.Send(message); }
-        public override void MessageReceived2(Dataflow.Message<Pair<S, T>> message) { this.Output.Send(message); }
+        public override void OnReceive1(Message<S, T> message) { this.Output.Send(message); }
+        public override void OnReceive2(Message<S, T> message) { this.Output.Send(message); }
 
-        public ConcatVertex(int index, Naiad.Dataflow.Stage<T> stage) : base(index, stage) { }
+        public ConcatVertex(int index, Microsoft.Research.Naiad.Dataflow.Stage<T> stage) : base(index, stage) { }
     }
 
     internal class SelectManyVertex<S, R, T> : UnaryVertex<S, R, T>
@@ -336,11 +332,12 @@ namespace Naiad.Frameworks.Lindi
     {
         Func<S, IEnumerable<R>> Function;
 
-        public override void MessageReceived(Message<Pair<S, T>> message)
+        public override void OnReceive(Message<S, T> message)
         {
+            var output = this.Output.GetBufferForTime(message.time);
             for (int i = 0; i < message.length; i++)
-                foreach (var result in this.Function(message.payload[i].v1))
-                    this.Output.Send(result, message.payload[i].v2);;            
+                foreach (var result in this.Function(message.payload[i]))
+                    output.Send(result);;            
         }
 
         public SelectManyVertex(int index, Stage<T> stage, Func<S, IEnumerable<R>> function)
@@ -358,23 +355,21 @@ namespace Naiad.Frameworks.Lindi
         private readonly Func<S2, K> keySelector2;
         private readonly Func<S1, S2, R> resultSelector;
 
-        public override void MessageReceived1(Message<Pair<S1, T>> message)
+        public override void OnReceive1(Message<S1, T> message)
         {
-            Dictionary<K, Pair<List<S1>, List<S2>>> currentValues = null;
+            if (!this.values.ContainsKey(message.time))
+            {
+                this.values.Add(message.time, new Dictionary<K, Pair<List<S1>, List<S2>>>());
+                this.NotifyAt(message.time);
+            }
+
+            var currentValues = this.values[message.time];
+
+            var output = this.Output.GetBufferForTime(message.time);
 
             for (int i = 0; i < message.length; i++)
             {
-                if (i == 0 || !message.payload[i].v2.Equals(message.payload[i - 1].v2))
-                {
-                    if (!this.values.TryGetValue(message.payload[i].v2, out currentValues))
-                    {
-                        currentValues = new Dictionary<K,Pair<List<S1>,List<S2>>>();
-                        this.values[message.payload[i].v2] = currentValues;
-                        this.NotifyAt(message.payload[i].v2);
-                    }
-                }
-
-                var key = keySelector1(message.payload[i].v1);
+                var key = keySelector1(message.payload[i]);
 
                 Pair<List<S1>, List<S2>> currentEntry;
                 if (!currentValues.TryGetValue(key, out currentEntry))
@@ -383,29 +378,26 @@ namespace Naiad.Frameworks.Lindi
                     currentValues[key] = currentEntry;
                 }
 
-                currentEntry.v1.Add(message.payload[i].v1);
+                currentEntry.v1.Add(message.payload[i]);
                 foreach (var match in currentEntry.v2)
-                    this.Output.Send(resultSelector(message.payload[i].v1, match), message.payload[i].v2);
+                    output.Send(resultSelector(message.payload[i], match));
             }
         }
 
-        public override void MessageReceived2(Message<Pair<S2, T>> message)
+        public override void OnReceive2(Message<S2, T> message)
         {
-            Dictionary<K, Pair<List<S1>, List<S2>>> currentValues = null;
+            if (!this.values.ContainsKey(message.time))
+            {
+                this.values.Add(message.time, new Dictionary<K, Pair<List<S1>, List<S2>>>());
+                this.NotifyAt(message.time);
+            }
+
+            var currentValues = this.values[message.time];
+            var output = this.Output.GetBufferForTime(message.time);
 
             for (int i = 0; i < message.length; i++)
             {
-                if (i == 0 || !message.payload[i].v2.Equals(message.payload[i - 1].v2))
-                {
-                    if (!this.values.TryGetValue(message.payload[i].v2, out currentValues))
-                    {
-                        currentValues = new Dictionary<K, Pair<List<S1>, List<S2>>>();
-                        this.values[message.payload[i].v2] = currentValues;
-                        this.NotifyAt(message.payload[i].v2);
-                    }
-                }
-
-                var key = keySelector2(message.payload[i].v1);
+                var key = keySelector2(message.payload[i]);
 
                 Pair<List<S1>, List<S2>> currentEntry;
                 if (!currentValues.TryGetValue(key, out currentEntry))
@@ -414,13 +406,13 @@ namespace Naiad.Frameworks.Lindi
                     currentValues[key] = currentEntry;
                 }
 
-                currentEntry.v2.Add(message.payload[i].v1);
+                currentEntry.v2.Add(message.payload[i]);
                 foreach (var match in currentEntry.v1)
-                    this.Output.Send(resultSelector(match, message.payload[i].v1), message.payload[i].v2);
+                    output.Send(resultSelector(match, message.payload[i]));
             }
         }
 
-        public override void OnDone(T time)
+        public override void OnNotify(T time)
         {
             this.values.Remove(time);
         }
@@ -442,51 +434,41 @@ namespace Naiad.Frameworks.Lindi
 
         internal IntersectVertex(int i, Stage<T> stage) : base(i, stage) { }
 
-        public override void MessageReceived1(Message<Pair<S, T>> message)
+        public override void OnReceive1(Message<S, T> message)
         {
-            HashSet<S> currentSet = null;
+            if (!this.values1.ContainsKey(message.time))
+            {
+                this.values1.Add(message.time, new HashSet<S>());
+                this.NotifyAt(message.time);
+            }
+
+            var currentSet = this.values1[message.time];
+            var output = this.Output.GetBufferForTime(message.time);
 
             for (int i = 0; i < message.length; i++)
-            {
-                if (i == 0 || !message.payload[i].v2.Equals(message.payload[i - 1].v2))
-                {
-                    if (!this.values1.TryGetValue(message.payload[i].v2, out currentSet))
-                    {
-                        currentSet = new HashSet<S>();
-                        this.values1[message.payload[i].v2] = currentSet;
-                        this.NotifyAt(message.payload[i].v2);
-                    }
-                }
-
-                if (currentSet.Add(message.payload[i].v1))
-                    if (this.values2.ContainsKey(message.payload[i].v2) && this.values2[message.payload[i].v2].Contains(message.payload[i].v1))
-                        this.Output.Send(message.payload[i].v1, message.payload[i].v2);
-            }
+                if (currentSet.Add(message.payload[i]))
+                    if (this.values2.ContainsKey(message.time) && this.values2[message.time].Contains(message.payload[i]))
+                        output.Send(message.payload[i]);
         }
 
-        public override void MessageReceived2(Message<Pair<S, T>> message)
+        public override void OnReceive2(Message<S, T> message)
         {
-            HashSet<S> currentSet = null;
+            if (!this.values2.ContainsKey(message.time))
+            {
+                this.values2.Add(message.time, new HashSet<S>());
+                this.NotifyAt(message.time);
+            }
+
+            var currentSet = this.values2[message.time];
+            var output = this.Output.GetBufferForTime(message.time);
 
             for (int i = 0; i < message.length; i++)
-            {
-                if (i == 0 || !message.payload[i].v2.Equals(message.payload[i - 1].v2))
-                {
-                    if (!this.values2.TryGetValue(message.payload[i].v2, out currentSet))
-                    {
-                        currentSet = new HashSet<S>();
-                        this.values2[message.payload[i].v2] = currentSet;
-                        this.NotifyAt(message.payload[i].v2);
-                    }
-                }
-
-                if (currentSet.Add(message.payload[i].v1))
-                    if (this.values1.ContainsKey(message.payload[i].v2) && this.values1[message.payload[i].v2].Contains(message.payload[i].v1))
-                        this.Output.Send(message.payload[i].v1, message.payload[i].v2);
-            }
+                if (currentSet.Add(message.payload[i]))
+                    if (this.values1.ContainsKey(message.time) && this.values1[message.time].Contains(message.payload[i]))
+                        output.Send(message.payload[i]);
         }
 
-        public override void OnDone(T time)
+        public override void OnNotify(T time)
         {
             this.values1.Remove(time);
             this.values2.Remove(time);
@@ -499,59 +481,51 @@ namespace Naiad.Frameworks.Lindi
 
         internal ExceptVertex(int index, Stage<T> stage) : base(index, stage) { }
 
-        public override void MessageReceived1(Message<Pair<S, T>> message)
+        public override void OnReceive1(Message<S, T> message)
         {
-            Dictionary<S, int> currentValue;
+            if (!this.values.ContainsKey(message.time))
+            {
+                this.values.Add(message.time, new Dictionary<S, int>());
+                this.NotifyAt(message.time);
+            }
+
+            var currentValue = this.values[message.time];
 
             for (int i = 0; i < message.length; i++)
             {
-                if (i == 0 || !message.payload[i].v2.Equals(message.payload[i - 1].v2))
-                {
-                    if (!this.values.TryGetValue(message.payload[i].v2, out currentValue))
-                    {
-                        currentValue = new Dictionary<S,int>();
-                        this.values[message.payload[i].v2] = currentValue;
-                        this.NotifyAt(message.payload[i].v2);
-                    }
+                var currentCount = 0;
+                if (!currentValue.TryGetValue(message.payload[i], out currentCount))
+                    currentCount = 0;
 
-                    var currentCount = 0;
-                    if (!currentValue.TryGetValue(message.payload[i].v1, out currentCount))
-                        currentCount = 0;
-
-                    if (currentCount >= 0)
-                        currentValue[message.payload[i].v1] = currentCount + 1;
-                    else
-                        ;   // set negative by the other input; shame!
-                }
+                if (currentCount >= 0)
+                    currentValue[message.payload[i]] = currentCount + 1;
+                // else
+                //    ;   // set negative by the other input; shame!
             }
         }
 
-        public override void MessageReceived2(Message<Pair<S, T>> message)
+        public override void OnReceive2(Message<S, T> message)
         {
-            Dictionary<S, int> currentValue;
-
-            for (int i = 0; i < message.length; i++)
+            if (!this.values.ContainsKey(message.time))
             {
-                if (i == 0 || !message.payload[i].v2.Equals(message.payload[i - 1].v2))
-                {
-                    if (!this.values.TryGetValue(message.payload[i].v2, out currentValue))
-                    {
-                        currentValue = new Dictionary<S,int>();
-                        this.values[message.payload[i].v2] = currentValue;
-                        this.NotifyAt(message.payload[i].v2);
-                    }
+                this.values.Add(message.time, new Dictionary<S, int>());
+                this.NotifyAt(message.time);
+            }
+
+            var currentValue = this.values[message.time];
 
                     // set the value negative to exclude it.
-                    currentValue[message.payload[i].v1] = -1;
-                }
-            }        
+            for (int i = 0; i < message.length; i++)
+                currentValue[message.payload[i]] = -1;  
         }
 
-        public override void OnDone(T time)
+        public override void OnNotify(T time)
         {
+            var output = this.Output.GetBufferForTime(time);
+
             foreach (var pair in this.values[time])
                 for (int i = 0; i < pair.Value; i++)
-                    this.Output.Send(pair.Key, time);
+                    output.Send(pair.Key);
 
             this.values.Remove(time);
         }
@@ -565,7 +539,7 @@ namespace Naiad.Frameworks.Lindi
     public static class NonStandardExtensionMethods
     {
         /// <summary>
-        /// Select with access to shard index information
+        /// Select with access to vertex index information
         /// </summary>
         /// <typeparam name="TInput">Input type</typeparam>
         /// <typeparam name="TOutput">Output type</typeparam>
@@ -573,10 +547,10 @@ namespace Naiad.Frameworks.Lindi
         /// <param name="stream">input stream</param>
         /// <param name="function">transformation</param>
         /// <returns>record by record transformation of the input stream</returns>
-        public static Stream<TOutput, TTime> SelectShard<TInput, TOutput, TTime>(this Stream<TInput, TTime> stream, Func<int, TInput, TOutput> function)
+        public static Stream<TOutput, TTime> SelectByVertex<TInput, TOutput, TTime>(this Stream<TInput, TTime> stream, Func<int, TInput, TOutput> function)
             where TTime : Time<TTime>
         {
-            return Foundry.NewUnaryStage(stream, (i, v) => new ShardSelect<TInput, TOutput, TTime>(i, v, function), null, null, "ShardSelect");
+            return Foundry.NewUnaryStage(stream, (i, v) => new VertexSelect<TInput, TOutput, TTime>(i, v, function), null, null, "SelectByVertex");
         }
 
         /// <summary>
@@ -618,7 +592,7 @@ namespace Naiad.Frameworks.Lindi
         /// <param name="iterations">number of iterations to perform</param>
         /// <param name="name">descriptive name</param>
         /// <returns>stream reflecting multiple applications of function to the input</returns>
-        public static Stream<TRecord, TTime> Iterate<TRecord, TTime>(this Stream<TRecord, TTime> input, Func<Naiad.Dataflow.Iteration.LoopContext<TTime>, Stream<TRecord, IterationIn<TTime>>, Stream<TRecord, IterationIn<TTime>>> function, Expression<Func<TRecord, int>> partitionedBy, int iterations, string name)
+        public static Stream<TRecord, TTime> Iterate<TRecord, TTime>(this Stream<TRecord, TTime> input, Func<Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext<TTime>, Stream<TRecord, IterationIn<TTime>>, Stream<TRecord, IterationIn<TTime>>> function, Expression<Func<TRecord, int>> partitionedBy, int iterations, string name)
             where TTime : Time<TTime>
         {
             return input.Iterate(function, x => 0, partitionedBy, iterations, name);
@@ -636,16 +610,16 @@ namespace Naiad.Frameworks.Lindi
         /// <param name="iterations">number of iterations to perform</param>
         /// <param name="name">descriptive name</param>
         /// <returns>stream reflecting multiple applications of function to the input</returns>
-        public static Stream<TRecord, TTime> Iterate<TRecord, TTime>(this Stream<TRecord, TTime> input, Func<Naiad.Dataflow.Iteration.LoopContext<TTime>, Stream<TRecord, IterationIn<TTime>>, Stream<TRecord, IterationIn<TTime>>> function, Expression<Func<TRecord, int>> initialIteration, Expression<Func<TRecord, int>> partitionedBy, int iterations, string name)
+        public static Stream<TRecord, TTime> Iterate<TRecord, TTime>(this Stream<TRecord, TTime> input, Func<Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext<TTime>, Stream<TRecord, IterationIn<TTime>>, Stream<TRecord, IterationIn<TTime>>> function, Expression<Func<TRecord, int>> initialIteration, Expression<Func<TRecord, int>> partitionedBy, int iterations, string name)
             where TTime : Time<TTime>
         {
-            var helper = new Naiad.Dataflow.Iteration.LoopContext<TTime>(input.Context, name);
+            var helper = new Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext<TTime>(input.Context, name);
 
             var delayed = helper.Delay<TRecord>(partitionedBy, iterations);
 
-            var ingress = Naiad.Dataflow.PartitionBy.ExtensionMethods.PartitionBy(helper.EnterLoop(input, initialIteration.Compile()), partitionedBy);
+            var ingress = Microsoft.Research.Naiad.Dataflow.PartitionBy.ExtensionMethods.PartitionBy(helper.EnterLoop(input, initialIteration.Compile()), partitionedBy);
 
-            var loopHead = Naiad.Frameworks.Lindi.ExtensionMethods.Concat(ingress, delayed.Output);
+            var loopHead = Microsoft.Research.Naiad.Frameworks.Lindi.ExtensionMethods.Concat(ingress, delayed.Output);
 
             var loopTail = function(helper, loopHead);
 
@@ -665,7 +639,7 @@ namespace Naiad.Frameworks.Lindi
         /// <param name="iterations">number of iterations to perform</param>
         /// <param name="name">descriptive name</param>
         /// <returns>stream reflecting multiple applications of function to the input</returns>
-        public static Stream<TRecord, TTime> IterateAndAccumulate<TRecord, TTime>(this Stream<TRecord, TTime> input, Func<Naiad.Dataflow.Iteration.LoopContext<TTime>, Stream<TRecord, IterationIn<TTime>>, Stream<TRecord, IterationIn<TTime>>> function, Expression<Func<TRecord, int>> partitionedBy, int iterations, string name)
+        public static Stream<TRecord, TTime> IterateAndAccumulate<TRecord, TTime>(this Stream<TRecord, TTime> input, Func<Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext<TTime>, Stream<TRecord, IterationIn<TTime>>, Stream<TRecord, IterationIn<TTime>>> function, Expression<Func<TRecord, int>> partitionedBy, int iterations, string name)
             where TTime : Time<TTime>
         {
             return input.IterateAndAccumulate(function, x => 0, partitionedBy, iterations, name);
@@ -683,16 +657,16 @@ namespace Naiad.Frameworks.Lindi
         /// <param name="iterations">number of iterations to perform</param>
         /// <param name="name">descriptive name</param>
         /// <returns>stream reflecting multiple applications of function to the input</returns>
-        public static Stream<TRecord, TTime> IterateAndAccumulate<TRecord, TTime>(this Stream<TRecord, TTime> input, Func<Naiad.Dataflow.Iteration.LoopContext<TTime>, Stream<TRecord, IterationIn<TTime>>, Stream<TRecord, IterationIn<TTime>>> function, Expression<Func<TRecord, int>> initialIteration, Expression<Func<TRecord, int>> partitionedBy, int iterations, string name)
+        public static Stream<TRecord, TTime> IterateAndAccumulate<TRecord, TTime>(this Stream<TRecord, TTime> input, Func<Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext<TTime>, Stream<TRecord, IterationIn<TTime>>, Stream<TRecord, IterationIn<TTime>>> function, Expression<Func<TRecord, int>> initialIteration, Expression<Func<TRecord, int>> partitionedBy, int iterations, string name)
             where TTime : Time<TTime>
         {
-            var helper = new Naiad.Dataflow.Iteration.LoopContext<TTime>(input.Context, name);
+            var helper = new Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext<TTime>(input.Context, name);
 
             var delayed = helper.Delay<TRecord>(partitionedBy, iterations);
 
-            var ingress = Naiad.Dataflow.PartitionBy.ExtensionMethods.PartitionBy(helper.EnterLoop(input, initialIteration.Compile()), partitionedBy);
+            var ingress = Microsoft.Research.Naiad.Dataflow.PartitionBy.ExtensionMethods.PartitionBy(helper.EnterLoop(input, initialIteration.Compile()), partitionedBy);
 
-            var loopHead = Naiad.Frameworks.Lindi.ExtensionMethods.Concat(ingress, delayed.Output);
+            var loopHead = Microsoft.Research.Naiad.Frameworks.Lindi.ExtensionMethods.Concat(ingress, delayed.Output);
 
             var loopTail = function(helper, loopHead);
 
@@ -706,7 +680,7 @@ namespace Naiad.Frameworks.Lindi
         /// </summary>
         /// <typeparam name="S">Record type</typeparam>
         /// <param name="input">Source of records</param>
-        /// <param name="format">Format string for filename; {0} replaced with shard id</param>
+        /// <param name="format">Format string for filename; {0} replaced with vertex id</param>
         /// <param name="action">Operation to apply to each record and the output stream. Often (r,s) => s.Write(r);</param>
         public static void WriteToFiles<S>(this Stream<S, Epoch> input, string format, Action<S, System.IO.BinaryWriter> action)
         {
@@ -716,26 +690,19 @@ namespace Naiad.Frameworks.Lindi
    
     #region Custom implementations of non-standard vertex implementations
 
-    internal class ShardSelect<S, R, T> : UnaryVertex<S, R, T>
+    internal class VertexSelect<S, R, T> : UnaryVertex<S, R, T>
         where T : Time<T>
     {
         Func<int, S, R> Function;
 
-        public override void MessageReceived(Dataflow.Message<Pair<S, T>> message)
+        public override void OnReceive(Message<S, T> message)
         {
+            var output = this.Output.GetBufferForTime(message.time);
             for (int i = 0; i < message.length; i++)
-            {
-#if true
-                this.Output.Send(this.Function(this.VertexId, message.payload[i].v1), message.payload[i].v2);
-#else
-                this.Output.Buffer.payload[this.Output.Buffer.length++] = new Pair<R, T>(Function(this.VertexId, message.payload[i].v1), message.payload[i].v2);
-                if (this.Output.Buffer.length == this.Output.Buffer.payload.Length)
-                    this.Output.SendBuffer();
-#endif
-            }
+                output.Send(this.Function(this.VertexId, message.payload[i]));
         }
 
-        public ShardSelect(int index, Stage<T> stage, Func<int, S, R> function)
+        public VertexSelect(int index, Stage<T> stage, Func<int, S, R> function)
             : base(index, stage)
         {
             this.Function = function;
@@ -747,15 +714,15 @@ namespace Naiad.Frameworks.Lindi
     {
         Func<S, IEnumerable<ArraySegment<R>>> Function;
 
-        public override void MessageReceived(Dataflow.Message<Pair<S, T>> message)
+        public override void OnReceive(Message<S, T> message)
         {
+            var output = this.Output.GetBufferForTime(message.time);
             for (int ii = 0; ii < message.length; ii++)
             {
                 var record = message.payload[ii];
-                var time = record.v2;
-                foreach (var result in Function(record.v1))
+                foreach (var result in Function(record))
                     for (int i = result.Offset; i < result.Offset + result.Count; i++)
-                        this.Output.Send(result.Array[i], time);
+                        output.Send(result.Array[i]);
             }
         }
 
@@ -766,43 +733,37 @@ namespace Naiad.Frameworks.Lindi
         }
     }
 
-    internal class Writer<S> : Naiad.Frameworks.SinkVertex<S, Epoch>
+    internal class Writer<S> : Microsoft.Research.Naiad.Frameworks.SinkVertex<S, Epoch>
     {
         private readonly Dictionary<Epoch, System.IO.BinaryWriter> writers = new Dictionary<Epoch,System.IO.BinaryWriter>();
         private readonly Action<S, System.IO.BinaryWriter> Action;
         private readonly string format;
 
-        public override void MessageReceived(Message<Pair<S, Epoch>> message)
+        public override void OnReceive(Message<S, Epoch> message)
         {
-            System.IO.BinaryWriter writer = null;
+            if (!this.writers.ContainsKey(message.time))
+            {
+                var filename = String.Format(this.format, this.VertexId, message.time.t);
+                if (System.IO.File.Exists(filename))
+                    System.IO.File.Delete(filename);
+
+                this.writers[message.time] = new System.IO.BinaryWriter(System.IO.File.OpenWrite(filename));
+                this.NotifyAt(message.time);
+            }
+
+            var writer = this.writers[message.time];
 
             for (int i = 0; i < message.length; i++)
-            {
-                if (i == 0 || !message.payload[i].v2.Equals(message.payload[i - 1].v2))
-                {
-                    if (!this.writers.TryGetValue(message.payload[i].v2, out writer))
-                    {
-                        var filename = String.Format(this.format, this.VertexId, message.payload[i].v2.t);
-                        if (System.IO.File.Exists(filename))
-                            System.IO.File.Delete(filename);
-
-                        writer = new System.IO.BinaryWriter(System.IO.File.OpenWrite(filename));
-                        this.writers[message.payload[i].v2] = writer;
-                        this.NotifyAt(message.payload[i].v2);
-                    }
-                }
-
-                Action(message.payload[i].v1, writer);
-            }
+                Action(message.payload[i], writer);
         }
 
-        public override void OnDone(Epoch time)
+        public override void OnNotify(Epoch time)
         {
             this.writers[time].Dispose();
             this.writers.Remove(time);
         }
 
-        public Writer(int index, Naiad.Dataflow.Stage<Epoch> stage, Action<S, System.IO.BinaryWriter> action, string format)
+        public Writer(int index, Microsoft.Research.Naiad.Dataflow.Stage<Epoch> stage, Action<S, System.IO.BinaryWriter> action, string format)
             : base(index, stage)
         {
             this.format = format;

@@ -22,11 +22,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Naiad.DataStructures;
+using Microsoft.Research.Naiad.DataStructures;
 using System.Diagnostics;
-using Naiad.CodeGeneration;
-using Naiad.Scheduling;
+using Microsoft.Research.Naiad.CodeGeneration;
+using Microsoft.Research.Naiad.Scheduling;
 
-namespace Naiad.Dataflow.Channels
+namespace Microsoft.Research.Naiad.Dataflow.Channels
 {
 }
