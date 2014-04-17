@@ -1,0 +1,118 @@
+﻿<html xmlns:MSHelp="http://msdn.microsoft.com/mshelp" xmlns:mshelp="http://msdn.microsoft.com/mshelp"><head><link rel="SHORTCUT ICON" href="./../icons/favicon.ico" /><style type="text/css">.OH_CodeSnippetContainerTabLeftActive, .OH_CodeSnippetContainerTabLeft,.OH_CodeSnippetContainerTabLeftDisabled { }.OH_CodeSnippetContainerTabRightActive, .OH_CodeSnippetContainerTabRight,.OH_CodeSnippetContainerTabRightDisabled { }.OH_footer { }</style><link rel="stylesheet" type="text/css" href="./../styles/branding.css" /><link rel="stylesheet" type="text/css" href="./../styles/branding-en-US.css" /><style type="text/css">
+			body
+			{
+			border-left:5px solid #e6e6e6;
+			overflow-x:scroll;
+			overflow-y:scroll;
+			}
+		</style><script src="./../scripts/branding.js" type="text/javascript"><!----></script><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Collection(TRecord, TTime).Min(TValue, TComparable) Method (Expression(Func(TRecord, Int32)), Expression(Func(TRecord, TValue)), Expression(Func(Int32, TValue, TComparable)), Expression(Func(Int32, TValue, TRecord)), Boolean)</title><meta name="Language" content="en-us" /><meta name="Microsoft.Help.Id" content="M:Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Collection`2.Min``2(System.Linq.Expressions.Expression{System.Func{`0,System.Int32}},System.Linq.Expressions.Expression{System.Func{`0,``0}},System.Linq.Expressions.Expression{System.Func{System.Int32,``0,``1}},System.Linq.Expressions.Expression{System.Func{System.Int32,``0,`0}},System.Boolean)" /><meta name="Description" content="Groups records using the supplied integer-valued key selector, and computes the minimum value in each group." /><meta name="Microsoft.Help.ContentType" content="Reference" /><meta name="BrandingAware" content="'true'" /><meta name="container" content="Microsoft.Research.Naiad.Frameworks.DifferentialDataflow" /><meta name="file" content="M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Min__2" /><meta name="guid" content="M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Min__2" /><meta name="SelfBranded" content="true" /></head><body onload="onLoad()" class="primary-mtps-offline-document"><div class="OH_outerDiv"><div class="OH_outerContent"><table class="TitleTable"><tr><td class="OH_tdLogoColumn"><img src="./../icons/Help.png" /></td><td class="OH_tdTitleColumn">Collection<span id="ID0E0RB0BABAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0RB0BABAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script><span class="typeparameter">TRecord</span>, <span class="typeparameter">TTime</span><span id="ID0E0NB0BABAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0NB0BABAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0E0MB0BABAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0MB0BABAAA?vb=.|cpp=::|cs=.|fs=.|nu=.");
+				</script>Min<span id="ID0E0KB0BABAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0KB0BABAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script><span class="typeparameter">TValue</span>, <span class="typeparameter">TComparable</span><span id="ID0E0GB0BABAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0GB0BABAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script> Method (Expression<span id="ID0E0EB0BABAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0EB0BABAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0E0CB0BABAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0CB0BABAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script><span class="typeparameter">TRecord</span>, Int32<span id="ID0E6BABAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E6BABAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0E5BABAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E5BABAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0E3BABAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E3BABAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0E1BABAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E1BABAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script><span class="typeparameter">TRecord</span>, <span class="typeparameter">TValue</span><span id="ID0EWBABAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EWBABAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EVBABAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EVBABAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0ETBABAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ETBABAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0ERBABAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ERBABAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Int32, <span class="typeparameter">TValue</span>, <span class="typeparameter">TComparable</span><span id="ID0EMBABAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EMBABAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0ELBABAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ELBABAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0EJBABAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EJBABAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0EHBABAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EHBABAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Int32, <span class="typeparameter">TValue</span>, <span class="typeparameter">TRecord</span><span id="ID0ECBABAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECBABAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EBBABAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBBABAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Boolean)</td><td class="OH_tdRunningTitleColumn">Naiad Help</td></tr></table><div id="mainSection"><div id="mainBody"><span class="introStyle"></span><p style="color: #dc143c; font-size: 8.5pt; font-weight: bold;">[This is preliminary documentation and is subject to change.]</p><div class="summary">
+            Groups records using the supplied integer-valued key selector, and computes the minimum value in each group.
+            </div><p></p><strong>Namespace:</strong> <a href="N_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow.htm" target="">Microsoft.Research.Naiad.Frameworks.DifferentialDataflow</a><br /><strong>Assembly:</strong> <span sdata="assembly">Microsoft.Research.Naiad.DifferentialDataflow</span> (in Microsoft.Research.Naiad.DifferentialDataflow.dll) Version: 0.3.1.0 (0.3.1)<div class="OH_CollapsibleAreaRegion"><div class="OH_regiontitle">Syntax</div><div class="OH_CollapsibleArea_HrDiv"><hr class="OH_CollapsibleArea_Hr" /></div></div><div class="OH_clear"></div><div id="snippetGroup_Syntax" class="code"><div id="ID0EAMCAAAAA" class="OH_CodeSnippetContainer"><div class="OH_CodeSnippetContainerTabs" id="ID0EAMCAAAAA_tabs"><div class="OH_CodeSnippetContainerTabLeftActive" id="ID0EAMCAAAAA_tabimgleft"></div><div id="ID0EAMCAAAAA_tab1" class="OH_CodeSnippetContainerTabActive" EnableCopyCode="true"><a href="#" onclick="javascript:ChangeTab('ID0EAMCAAAAA','C#','1','4');return false;">C#</a></div><div id="ID0EAMCAAAAA_tab2" class="OH_CodeSnippetContainerTabDisabledNotFirst" EnableCopyCode="true" disabled="true"><a>VB</a></div><div id="ID0EAMCAAAAA_tab3" class="OH_CodeSnippetContainerTabDisabledNotFirst" EnableCopyCode="true" disabled="true"><a>C++</a></div><div id="ID0EAMCAAAAA_tab4" class="OH_CodeSnippetContainerTabDisabledNotFirst" EnableCopyCode="true" disabled="true"><a>F#</a></div><div class="OH_CodeSnippetContainerTabRight" id="ID0EAMCAAAAA_tabimgright"></div></div><div id="ID0EAMCAAAAA_codecollection" class="OH_CodeSnippetContainerCodeCollection"><div class="OH_CodeSnippetToolBar"><div class="OH_CodeSnippetToolBarText"><a id="ID0EAMCAAAAA_ViewColorized" href="#" onclick="javascript:ExchangeTitleContent('ID0EAMCAAAAA','4')" title="View Colorized" style="display: none">View Colorized</a><a id="ID0EAMCAAAAA_copycode" href="#" onclick="javascript:CopyToClipboard('ID0EAMCAAAAA','4')" title="Copy to Clipboard">Copy to Clipboard</a><a id="ID0EAMCAAAAA_PrintText" class="OH_PrintText" href="#" onclick="javascript:Print('ID0EAMCAAAAA','4')" title="Print">Print</a></div></div><div id="ID0EAMCAAAAA_code_Div1" class="OH_CodeSnippetContainerCode" style="display: block"><pre><span class="identifier">Collection</span>&lt;TRecord, TTime&gt; <span class="identifier">Min</span>&lt;TValue, TComparable&gt;(
+	<span class="identifier">Expression</span>&lt;<span class="identifier">Func</span>&lt;TRecord, <span class="identifier">int</span>&gt;&gt; <span class="parameter">keySelector</span>,
+	<span class="identifier">Expression</span>&lt;<span class="identifier">Func</span>&lt;TRecord, TValue&gt;&gt; <span class="parameter">valueSelector</span>,
+	<span class="identifier">Expression</span>&lt;<span class="identifier">Func</span>&lt;<span class="identifier">int</span>, TValue, TComparable&gt;&gt; <span class="parameter">comparableSelector</span>,
+	<span class="identifier">Expression</span>&lt;<span class="identifier">Func</span>&lt;<span class="identifier">int</span>, TValue, TRecord&gt;&gt; <span class="parameter">resultSelector</span>,
+	<span class="identifier">bool</span> <span class="parameter">useDenseIntKeys</span>
+)
+<span class="keyword">where</span> TValue : <span class="identifier">Object</span>, <span class="identifier">IEquatable</span>&lt;TValue&gt;
+<span class="keyword">where</span> TComparable : <span class="identifier">Object</span>, <span class="identifier">IEquatable</span>&lt;TComparable&gt;, <span class="identifier">IComparable</span>&lt;TComparable&gt;</pre></div><div id="ID0EAMCAAAAA_code_Plain_Div1" class="OH_CodeSnippetContainerCode" style="display: none"><pre>Collection&lt;TRecord, TTime&gt; Min&lt;TValue, TComparable&gt;(
+	Expression&lt;Func&lt;TRecord, int&gt;&gt; keySelector,
+	Expression&lt;Func&lt;TRecord, TValue&gt;&gt; valueSelector,
+	Expression&lt;Func&lt;int, TValue, TComparable&gt;&gt; comparableSelector,
+	Expression&lt;Func&lt;int, TValue, TRecord&gt;&gt; resultSelector,
+	bool useDenseIntKeys
+)
+where TValue : Object, IEquatable&lt;TValue&gt;
+where TComparable : Object, IEquatable&lt;TComparable&gt;, IComparable&lt;TComparable&gt;</pre></div><div id="ID0EAMCAAAAA_code_Div2" class="OH_CodeSnippetContainerCode" style="display: none"><pre /></div><div id="ID0EAMCAAAAA_code_Plain_Div2" class="OH_CodeSnippetContainerCode" style="display: none"><pre /></div><div id="ID0EAMCAAAAA_code_Div3" class="OH_CodeSnippetContainerCode" style="display: none"><pre /></div><div id="ID0EAMCAAAAA_code_Plain_Div3" class="OH_CodeSnippetContainerCode" style="display: none"><pre /></div><div id="ID0EAMCAAAAA_code_Div4" class="OH_CodeSnippetContainerCode" style="display: none"><pre /></div><div id="ID0EAMCAAAAA_code_Plain_Div4" class="OH_CodeSnippetContainerCode" style="display: none"><pre /></div></div></div><script>addSpecificTextLanguageTagSet('ID0EAMCAAAAA');</script></div><div id="parameters"><h4 class="subHeading">Parameters</h4><dl paramName="keySelector"><dt><span class="parameter">keySelector</span></dt><dd>Type: <a href="http://msdn2.microsoft.com/en-us/library/bb335710" target="_blank">System.Linq.Expressions<span id="ID0EBKAELCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBKAELCAAAAA?vb=.|cpp=::|cs=.|fs=.|nu=.");
+				</script>Expression</a><span id="ID0EJAELCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EJAELCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script><a href="http://msdn2.microsoft.com/en-us/library/bb549151" target="_blank">Func</a><span id="ID0EHAELCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EHAELCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script><a href="T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2.htm" target=""><span class="typeparam">TRecord</span></a>, <a href="http://msdn2.microsoft.com/en-us/library/td2s409d" target="_blank">Int32</a><span id="ID0EDAELCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EDAELCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0ECAELCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECAELCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><br /><span>Function that extracts an integer-valued key from each record.</span></dd></dl><dl paramName="valueSelector"><dt><span class="parameter">valueSelector</span></dt><dd>Type: <a href="http://msdn2.microsoft.com/en-us/library/bb335710" target="_blank">System.Linq.Expressions<span id="ID0EBKADLCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBKADLCAAAAA?vb=.|cpp=::|cs=.|fs=.|nu=.");
+				</script>Expression</a><span id="ID0EJADLCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EJADLCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script><a href="http://msdn2.microsoft.com/en-us/library/bb549151" target="_blank">Func</a><span id="ID0EHADLCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EHADLCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script><a href="T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2.htm" target=""><span class="typeparam">TRecord</span></a>, <span class="selflink"><span class="typeparam">TValue</span></span><span id="ID0EDADLCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EDADLCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0ECADLCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECADLCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><br /><span>Function that transforms a record to the intermediate value that is stored for each record.</span></dd></dl><dl paramName="comparableSelector"><dt><span class="parameter">comparableSelector</span></dt><dd>Type: <a href="http://msdn2.microsoft.com/en-us/library/bb335710" target="_blank">System.Linq.Expressions<span id="ID0EBMACLCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBMACLCAAAAA?vb=.|cpp=::|cs=.|fs=.|nu=.");
+				</script>Expression</a><span id="ID0ELACLCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ELACLCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script><a href="http://msdn2.microsoft.com/en-us/library/bb534647" target="_blank">Func</a><span id="ID0EJACLCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EJACLCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script><a href="http://msdn2.microsoft.com/en-us/library/td2s409d" target="_blank">Int32</a>, <span class="selflink"><span class="typeparam">TValue</span></span>, <span class="selflink"><span class="typeparam">TComparable</span></span><span id="ID0EDACLCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EDACLCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0ECACLCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECACLCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><br /><span>Function that extracts the portion of a key-value pair to be used in the comparison.</span></dd></dl><dl paramName="resultSelector"><dt><span class="parameter">resultSelector</span></dt><dd>Type: <a href="http://msdn2.microsoft.com/en-us/library/bb335710" target="_blank">System.Linq.Expressions<span id="ID0EBMABLCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBMABLCAAAAA?vb=.|cpp=::|cs=.|fs=.|nu=.");
+				</script>Expression</a><span id="ID0ELABLCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ELABLCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script><a href="http://msdn2.microsoft.com/en-us/library/bb534647" target="_blank">Func</a><span id="ID0EJABLCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EJABLCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script><a href="http://msdn2.microsoft.com/en-us/library/td2s409d" target="_blank">Int32</a>, <span class="selflink"><span class="typeparam">TValue</span></span>, <a href="T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2.htm" target=""><span class="typeparam">TRecord</span></a><span id="ID0EDABLCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EDABLCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0ECABLCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECABLCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><br /><span>Function that transforms a key and the minimum value to an output record.</span></dd></dl><dl paramName="useDenseIntKeys"><dt><span class="parameter">useDenseIntKeys</span></dt><dd>Type: <a href="http://msdn2.microsoft.com/en-us/library/a28wyd50" target="_blank">System<span id="ID0EBCAALCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBCAALCAAAAA?vb=.|cpp=::|cs=.|fs=.|nu=.");
+				</script>Boolean</a><br /><span>If <span class="code">true</span>, use optimizations for dense-valued keys, otherwise treat keys as sparse.</span></dd></dl></div><div class="OH_CollapsibleAreaRegion"><div class="OH_regiontitle">Type Parameters</div><div class="OH_CollapsibleArea_HrDiv"><hr class="OH_CollapsibleArea_Hr" /></div></div><div class="OH_clear"></div><dl><dt><span class="parameter">TValue</span></dt><dd>The intermediate value type.</dd><dt><span class="parameter">TComparable</span></dt><dd>The type of values to be used for comparison.</dd></dl><h4 class="subHeading">Return Value</h4>Type: <a href="T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2.htm" target="">Collection</a><span id="ID0EGCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EGCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script><a href="T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2.htm" target=""><span class="typeparam">TRecord</span></a>, <a href="T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2.htm" target=""><span class="typeparam">TTime</span></a><span id="ID0ECCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><br />The collection of output records.<a name="seeAlsoSection"><!----></a><div class="OH_CollapsibleAreaRegion"><div class="OH_regiontitle">See Also</div><div class="OH_CollapsibleArea_HrDiv"><hr class="OH_CollapsibleArea_Hr" /></div></div><div class="OH_clear"></div><div class="seeAlsoStyle"><a href="T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2.htm" target="">Collection<span id="ID0EDACAAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EDACAAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, TTime<span id="ID0EBACAAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBACAAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script> Interface</a></div><div class="seeAlsoStyle"><a href="Overload_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Min.htm" target="">Min Overload</a></div><div class="seeAlsoStyle"><a href="N_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow.htm" target="">Microsoft.Research.Naiad.Frameworks.DifferentialDataflow Namespace</a></div></div></div></div></div><div id="OH_footer" class="OH_footer"><p /><div class="OH_feedbacklink"><a href="mailto:naiadquestions@microsoft.com?subject=Naiad+Help+Collection(TRecord%2c+TTime).Min(TValue%2c+TComparable)+Method+(Expression(Func(TRecord%2c+Int32))%2c+Expression(Func(TRecord%2c+TValue))%2c+Expression(Func(Int32%2c+TValue%2c+TComparable))%2c+Expression(Func(Int32%2c+TValue%2c+TRecord))%2c+Boolean)+100+EN-US&amp;body=Your%20feedback%20is%20used%20to%20improve%20the%20documentation%20and%20the%20product.%20Your%20e-mail%20address%20will%20not%20be%20used%20for%20any%20other%20purpose%20and%20is%20disposed%20of%20after%20the%20issue%20you%20report%20is%20resolved.%20While%20working%20to%20resolve%20the%20issue%20that%20you%20report%2c%20you%20may%20be%20contacted%20via%20e-mail%20to%20get%20further%20details%20or%20clarification%20on%20the%20feedback%20you%20sent.%20After%20the%20issue%20you%20report%20has%20been%20addressed%2c%20you%20may%20receive%20an%20e-mail%20to%20let%20you%20know%20that%20your%20feedback%20has%20been%20addressed.">Send Feedback</a> on this topic to naiadquestions@microsoft.com.</div></div></body></html>

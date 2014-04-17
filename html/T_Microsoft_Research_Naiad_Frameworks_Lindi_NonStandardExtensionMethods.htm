@@ -1,0 +1,216 @@
+﻿<html xmlns:MSHelp="http://msdn.microsoft.com/mshelp" xmlns:mshelp="http://msdn.microsoft.com/mshelp"><head><link rel="SHORTCUT ICON" href="./../icons/favicon.ico" /><style type="text/css">.OH_CodeSnippetContainerTabLeftActive, .OH_CodeSnippetContainerTabLeft,.OH_CodeSnippetContainerTabLeftDisabled { }.OH_CodeSnippetContainerTabRightActive, .OH_CodeSnippetContainerTabRight,.OH_CodeSnippetContainerTabRightDisabled { }.OH_footer { }</style><link rel="stylesheet" type="text/css" href="./../styles/branding.css" /><link rel="stylesheet" type="text/css" href="./../styles/branding-en-US.css" /><style type="text/css">
+			body
+			{
+			border-left:5px solid #e6e6e6;
+			overflow-x:scroll;
+			overflow-y:scroll;
+			}
+		</style><script src="./../scripts/branding.js" type="text/javascript"><!----></script><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>NonStandardExtensionMethods Class</title><meta name="Language" content="en-us" /><meta name="System.Keywords" content="NonStandardExtensionMethods class" /><meta name="System.Keywords" content="Microsoft.Research.Naiad.Frameworks.Lindi.NonStandardExtensionMethods class" /><meta name="System.Keywords" content="NonStandardExtensionMethods class, about NonStandardExtensionMethods class" /><meta name="Microsoft.Help.F1" content="Microsoft.Research.Naiad.Frameworks.Lindi.NonStandardExtensionMethods" /><meta name="Microsoft.Help.Id" content="T:Microsoft.Research.Naiad.Frameworks.Lindi.NonStandardExtensionMethods" /><meta name="Description" content="Less standard LINQ-ish methods exposing loops and parallelism." /><meta name="Microsoft.Help.ContentType" content="Reference" /><meta name="BrandingAware" content="'true'" /><meta name="container" content="Microsoft.Research.Naiad.Frameworks.Lindi" /><meta name="file" content="T_Microsoft_Research_Naiad_Frameworks_Lindi_NonStandardExtensionMethods" /><meta name="guid" content="T_Microsoft_Research_Naiad_Frameworks_Lindi_NonStandardExtensionMethods" /><meta name="SelfBranded" content="true" /></head><body onload="onLoad()" class="primary-mtps-offline-document"><div class="OH_outerDiv"><div class="OH_outerContent"><table class="TitleTable"><tr><td class="OH_tdLogoColumn"><img src="./../icons/Help.png" /></td><td class="OH_tdTitleColumn">NonStandardExtensionMethods Class</td><td class="OH_tdRunningTitleColumn">Naiad Help</td></tr></table><div id="mainSection"><div id="mainBody"><span class="introStyle"></span><p style="color: #dc143c; font-size: 8.5pt; font-weight: bold;">[This is preliminary documentation and is subject to change.]</p><div class="summary">
+            Less standard LINQ-ish methods exposing loops and parallelism.
+            </div><div class="OH_CollapsibleAreaRegion"><div class="OH_regiontitle">Inheritance Hierarchy</div><div class="OH_CollapsibleArea_HrDiv"><hr class="OH_CollapsibleArea_Hr" /></div></div><div class="OH_clear"></div><a href="http://msdn2.microsoft.com/en-us/library/e5kfa45b" target="_blank">System<span id="ID0EBEOAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBEOAAAAA?vb=.|cpp=::|cs=.|fs=.|nu=.");
+				</script>Object</a><br />  <span class="selflink">Microsoft.Research.Naiad.Frameworks.Lindi<span id="ID0EBBOAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBBOAAAAA?vb=.|cpp=::|cs=.|fs=.|nu=.");
+				</script>NonStandardExtensionMethods</span><br /><p></p><strong>Namespace:</strong> <a href="N_Microsoft_Research_Naiad_Frameworks_Lindi.htm" target="">Microsoft.Research.Naiad.Frameworks.Lindi</a><br /><strong>Assembly:</strong> <span sdata="assembly">Microsoft.Research.Naiad.Lindi</span> (in Microsoft.Research.Naiad.Lindi.dll) Version: 0.3.1.0 (0.3.1)<div class="OH_CollapsibleAreaRegion"><div class="OH_regiontitle">Syntax</div><div class="OH_CollapsibleArea_HrDiv"><hr class="OH_CollapsibleArea_Hr" /></div></div><div class="OH_clear"></div><div id="snippetGroup_Syntax" class="code"><div id="ID0EAAEAAAAA" class="OH_CodeSnippetContainer"><div class="OH_CodeSnippetContainerTabs" id="ID0EAAEAAAAA_tabs"><div class="OH_CodeSnippetContainerTabLeftActive" id="ID0EAAEAAAAA_tabimgleft"></div><div id="ID0EAAEAAAAA_tab1" class="OH_CodeSnippetContainerTabActive" EnableCopyCode="true"><a href="#" onclick="javascript:ChangeTab('ID0EAAEAAAAA','C#','1','4');return false;">C#</a></div><div id="ID0EAAEAAAAA_tab2" class="OH_CodeSnippetContainerTabDisabledNotFirst" EnableCopyCode="true" disabled="true"><a>VB</a></div><div id="ID0EAAEAAAAA_tab3" class="OH_CodeSnippetContainerTabDisabledNotFirst" EnableCopyCode="true" disabled="true"><a>C++</a></div><div id="ID0EAAEAAAAA_tab4" class="OH_CodeSnippetContainerTabDisabledNotFirst" EnableCopyCode="true" disabled="true"><a>F#</a></div><div class="OH_CodeSnippetContainerTabRight" id="ID0EAAEAAAAA_tabimgright"></div></div><div id="ID0EAAEAAAAA_codecollection" class="OH_CodeSnippetContainerCodeCollection"><div class="OH_CodeSnippetToolBar"><div class="OH_CodeSnippetToolBarText"><a id="ID0EAAEAAAAA_ViewColorized" href="#" onclick="javascript:ExchangeTitleContent('ID0EAAEAAAAA','4')" title="View Colorized" style="display: none">View Colorized</a><a id="ID0EAAEAAAAA_copycode" href="#" onclick="javascript:CopyToClipboard('ID0EAAEAAAAA','4')" title="Copy to Clipboard">Copy to Clipboard</a><a id="ID0EAAEAAAAA_PrintText" class="OH_PrintText" href="#" onclick="javascript:Print('ID0EAAEAAAAA','4')" title="Print">Print</a></div></div><div id="ID0EAAEAAAAA_code_Div1" class="OH_CodeSnippetContainerCode" style="display: block"><pre><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">class</span> <span class="identifier">NonStandardExtensionMethods</span></pre></div><div id="ID0EAAEAAAAA_code_Plain_Div1" class="OH_CodeSnippetContainerCode" style="display: none"><pre>public static class NonStandardExtensionMethods</pre></div><div id="ID0EAAEAAAAA_code_Div2" class="OH_CodeSnippetContainerCode" style="display: none"><pre /></div><div id="ID0EAAEAAAAA_code_Plain_Div2" class="OH_CodeSnippetContainerCode" style="display: none"><pre /></div><div id="ID0EAAEAAAAA_code_Div3" class="OH_CodeSnippetContainerCode" style="display: none"><pre /></div><div id="ID0EAAEAAAAA_code_Plain_Div3" class="OH_CodeSnippetContainerCode" style="display: none"><pre /></div><div id="ID0EAAEAAAAA_code_Div4" class="OH_CodeSnippetContainerCode" style="display: none"><pre /></div><div id="ID0EAAEAAAAA_code_Plain_Div4" class="OH_CodeSnippetContainerCode" style="display: none"><pre /></div></div></div><script>addSpecificTextLanguageTagSet('ID0EAAEAAAAA');</script></div><p>The <span class="selflink">NonStandardExtensionMethods</span> type exposes the following members.</p><div class="OH_CollapsibleAreaRegion"><div class="OH_regiontitle">Methods</div><div class="OH_CollapsibleArea_HrDiv"><hr class="OH_CollapsibleArea_Hr" /></div></div><div class="OH_clear"></div><table id="memberList" class="members"><tr><th class="ps_iconColumn">
+							 
+						</th><th class="ps_nameColumn">Name</th><th class="ps_descriptionColumn">Description</th></tr><tr data="public;static;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /><img src="./../icons/static.gif" alt="Static member" title="Static member" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_Lindi_NonStandardExtensionMethods_Iterate__2_1.htm" target="">Iterate<span id="ID0E0DB0ABHBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0DB0ABHBCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TInput, TTime<span id="ID0E0BB0ABHBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0BB0ABHBCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>(Stream<span id="ID0E6ABHBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E6ABHBCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TInput, TTime<span id="ID0E4ABHBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E4ABHBCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Func<span id="ID0E2ABHBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E2ABHBCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>LoopContext<span id="ID0EZABHBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EZABHBCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TTime<span id="ID0EXABHBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EXABHBCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Stream<span id="ID0EVABHBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EVABHBCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TInput, IterationIn<span id="ID0ETABHBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ETABHBCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TTime<span id="ID0ERABHBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ERABHBCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EQABHBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EQABHBCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Stream<span id="ID0EOABHBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EOABHBCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TInput, IterationIn<span id="ID0EMABHBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EMABHBCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TTime<span id="ID0EKABHBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EKABHBCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EJABHBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EJABHBCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EIABHBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EIABHBCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0EGABHBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EGABHBCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0EEABHBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EEABHBCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TInput, Int32<span id="ID0ECABHBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECABHBCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EBABHBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBABHBCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Int32, String)</a></td><td><div class="summary">
+            Iteratively applies <span class="parameter">function</span> to the given <span class="parameter">stream</span>.
+            </div></td></tr><tr data="public;static;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /><img src="./../icons/static.gif" alt="Static member" title="Static member" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_Lindi_NonStandardExtensionMethods_Iterate__2.htm" target="">Iterate<span id="ID0E0HB0ABGBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0HB0ABGBCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TInput, TTime<span id="ID0E0FB0ABGBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0FB0ABGBCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>(Stream<span id="ID0E0DB0ABGBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0DB0ABGBCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TInput, TTime<span id="ID0E0BB0ABGBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0BB0ABGBCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Func<span id="ID0E6ABGBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E6ABGBCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>LoopContext<span id="ID0E4ABGBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E4ABGBCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TTime<span id="ID0E2ABGBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E2ABGBCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Stream<span id="ID0EZABGBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EZABGBCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TInput, IterationIn<span id="ID0EXABGBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EXABGBCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TTime<span id="ID0EVABGBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EVABGBCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EUABGBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EUABGBCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Stream<span id="ID0ESABGBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ESABGBCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TInput, IterationIn<span id="ID0EQABGBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EQABGBCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TTime<span id="ID0EOABGBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EOABGBCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0ENABGBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ENABGBCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EMABGBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EMABGBCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Func<span id="ID0EKABGBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EKABGBCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TInput, Int32<span id="ID0EIABGBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EIABGBCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0EGABGBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EGABGBCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0EEABGBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EEABGBCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TInput, Int32<span id="ID0ECABGBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECABGBCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EBABGBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBABGBCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Int32, String)</a></td><td><div class="summary">
+            Iteratively applies <span class="parameter">function</span> to the given <span class="parameter">stream</span>.
+            </div></td></tr><tr data="public;static;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /><img src="./../icons/static.gif" alt="Static member" title="Static member" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_Lindi_NonStandardExtensionMethods_IterateAndAccumulate__2_1.htm" target="">IterateAndAccumulate<span id="ID0E0DB0ABFBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0DB0ABFBCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TInput, TTime<span id="ID0E0BB0ABFBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0BB0ABFBCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>(Stream<span id="ID0E6ABFBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E6ABFBCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TInput, TTime<span id="ID0E4ABFBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E4ABFBCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Func<span id="ID0E2ABFBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E2ABFBCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>LoopContext<span id="ID0EZABFBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EZABFBCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TTime<span id="ID0EXABFBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EXABFBCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Stream<span id="ID0EVABFBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EVABFBCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TInput, IterationIn<span id="ID0ETABFBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ETABFBCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TTime<span id="ID0ERABFBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ERABFBCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EQABFBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EQABFBCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Stream<span id="ID0EOABFBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EOABFBCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TInput, IterationIn<span id="ID0EMABFBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EMABFBCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TTime<span id="ID0EKABFBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EKABFBCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EJABFBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EJABFBCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EIABFBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EIABFBCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0EGABFBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EGABFBCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0EEABFBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EEABFBCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TInput, Int32<span id="ID0ECABFBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECABFBCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EBABFBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBABFBCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Int32, String)</a></td><td><div class="summary">
+            Iteratively applies <span class="parameter">function</span> to the given <span class="parameter">stream</span> and accumulates all of the iterates.
+            </div></td></tr><tr data="public;static;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /><img src="./../icons/static.gif" alt="Static member" title="Static member" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_Lindi_NonStandardExtensionMethods_IterateAndAccumulate__2.htm" target="">IterateAndAccumulate<span id="ID0E0HB0ABEBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0HB0ABEBCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TInput, TTime<span id="ID0E0FB0ABEBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0FB0ABEBCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>(Stream<span id="ID0E0DB0ABEBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0DB0ABEBCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TInput, TTime<span id="ID0E0BB0ABEBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0BB0ABEBCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Func<span id="ID0E6ABEBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E6ABEBCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>LoopContext<span id="ID0E4ABEBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E4ABEBCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TTime<span id="ID0E2ABEBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E2ABEBCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Stream<span id="ID0EZABEBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EZABEBCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TInput, IterationIn<span id="ID0EXABEBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EXABEBCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TTime<span id="ID0EVABEBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EVABEBCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EUABEBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EUABEBCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Stream<span id="ID0ESABEBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ESABEBCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TInput, IterationIn<span id="ID0EQABEBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EQABEBCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TTime<span id="ID0EOABEBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EOABEBCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0ENABEBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ENABEBCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EMABEBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EMABEBCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Func<span id="ID0EKABEBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EKABEBCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TInput, Int32<span id="ID0EIABEBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EIABEBCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0EGABEBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EGABEBCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0EEABEBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EEABEBCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TInput, Int32<span id="ID0ECABEBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECABEBCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EBABEBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBABEBCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Int32, String)</a></td><td><div class="summary">
+            Iteratively applies <span class="parameter">function</span> to the given <span class="parameter">stream</span> and accumulates all of the iterates.
+            </div></td></tr><tr data="public;static;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /><img src="./../icons/static.gif" alt="Static member" title="Static member" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_Lindi_NonStandardExtensionMethods_SelectByVertex__3.htm" target="">SelectByVertex<span id="ID0ECABDBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECABDBCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TInput, TOutput, TTime<span id="ID0EAABDBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EAABDBCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script></a></td><td><div class="summary">
+            Transforms each record in the input <span class="parameter">stream</span> using the given <span class="parameter">selector</span> function.
+            </div></td></tr><tr data="public;static;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /><img src="./../icons/static.gif" alt="Static member" title="Static member" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_Lindi_NonStandardExtensionMethods_SelectManyArraySegment__3.htm" target="">SelectManyArraySegment<span id="ID0ECABCBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECABCBCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TInput, TOutput, TTime<span id="ID0EAABCBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EAABCBCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script></a></td><td><div class="summary">
+            Transforms each record in the collection using the given <span class="parameter">selector</span> function and flattens the result.
+            </div></td></tr><tr data="public;static;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /><img src="./../icons/static.gif" alt="Static member" title="Static member" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_Lindi_NonStandardExtensionMethods_Synchronize__2.htm" target="">Synchronize<span id="ID0ECABBBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECABBBCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TInput, TTime<span id="ID0EAABBBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EAABBBCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script></a></td><td><div class="summary">
+            For each timestamp, buffers the given <span class="parameter">stream</span> until all workers have all input for that time, and then releases the buffer.
+            </div></td></tr><tr data="public;static;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /><img src="./../icons/static.gif" alt="Static member" title="Static member" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_Lindi_NonStandardExtensionMethods_WriteToFiles__1.htm" target="">WriteToFiles<span id="ID0ECABABCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECABABCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TInput<span id="ID0EAABABCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EAABABCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script></a></td><td><div class="summary">
+            Writes the records in the given <span class="parameter">stream</span> to files.
+            </div></td></tr></table><a href="#mainBody" target="">Top</a><a name="seeAlsoSection"><!----></a><div class="OH_CollapsibleAreaRegion"><div class="OH_regiontitle">See Also</div><div class="OH_CollapsibleArea_HrDiv"><hr class="OH_CollapsibleArea_Hr" /></div></div><div class="OH_clear"></div><div class="seeAlsoStyle"><a href="N_Microsoft_Research_Naiad_Frameworks_Lindi.htm" target="">Microsoft.Research.Naiad.Frameworks.Lindi Namespace</a></div></div></div></div></div><div id="OH_footer" class="OH_footer"><p /><div class="OH_feedbacklink"><a href="mailto:naiadquestions@microsoft.com?subject=Naiad+Help+NonStandardExtensionMethods+Class+100+EN-US&amp;body=Your%20feedback%20is%20used%20to%20improve%20the%20documentation%20and%20the%20product.%20Your%20e-mail%20address%20will%20not%20be%20used%20for%20any%20other%20purpose%20and%20is%20disposed%20of%20after%20the%20issue%20you%20report%20is%20resolved.%20While%20working%20to%20resolve%20the%20issue%20that%20you%20report%2c%20you%20may%20be%20contacted%20via%20e-mail%20to%20get%20further%20details%20or%20clarification%20on%20the%20feedback%20you%20sent.%20After%20the%20issue%20you%20report%20has%20been%20addressed%2c%20you%20may%20receive%20an%20e-mail%20to%20let%20you%20know%20that%20your%20feedback%20has%20been%20addressed.">Send Feedback</a> on this topic to naiadquestions@microsoft.com.</div></div></body></html>

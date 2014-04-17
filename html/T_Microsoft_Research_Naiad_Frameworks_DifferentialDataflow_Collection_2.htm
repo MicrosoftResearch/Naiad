@@ -1,0 +1,1047 @@
+﻿<html xmlns:MSHelp="http://msdn.microsoft.com/mshelp" xmlns:mshelp="http://msdn.microsoft.com/mshelp"><head><link rel="SHORTCUT ICON" href="./../icons/favicon.ico" /><style type="text/css">.OH_CodeSnippetContainerTabLeftActive, .OH_CodeSnippetContainerTabLeft,.OH_CodeSnippetContainerTabLeftDisabled { }.OH_CodeSnippetContainerTabRightActive, .OH_CodeSnippetContainerTabRight,.OH_CodeSnippetContainerTabRightDisabled { }.OH_footer { }</style><link rel="stylesheet" type="text/css" href="./../styles/branding.css" /><link rel="stylesheet" type="text/css" href="./../styles/branding-en-US.css" /><style type="text/css">
+			body
+			{
+			border-left:5px solid #e6e6e6;
+			overflow-x:scroll;
+			overflow-y:scroll;
+			}
+		</style><script src="./../scripts/branding.js" type="text/javascript"><!----></script><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Collection(TRecord, TTime) Interface</title><meta name="Language" content="en-us" /><meta name="System.Keywords" content="Collection%3CTRecord%2C TTime%3E interface" /><meta name="System.Keywords" content="Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Collection%3CTRecord%2C TTime%3E interface" /><meta name="System.Keywords" content="Collection%3CTRecord%2C TTime%3E interface, about Collection%3CTRecord%2C TTime%3E interface" /><meta name="System.Keywords" content="Collection(Of TRecord%2C TTime) interface" /><meta name="System.Keywords" content="Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Collection(Of TRecord%2C TTime) interface" /><meta name="System.Keywords" content="Collection(Of TRecord%2C TTime) interface, about Collection(Of TRecord%2C TTime) interface" /><meta name="Microsoft.Help.F1" content="Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Collection`2" /><meta name="Microsoft.Help.Id" content="T:Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Collection`2" /><meta name="Description" content="A collection is a multiset of records that varies according to a logical timestamp." /><meta name="Microsoft.Help.ContentType" content="Reference" /><meta name="BrandingAware" content="'true'" /><meta name="container" content="Microsoft.Research.Naiad.Frameworks.DifferentialDataflow" /><meta name="file" content="T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2" /><meta name="guid" content="T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2" /><meta name="SelfBranded" content="true" /></head><body onload="onLoad()" class="primary-mtps-offline-document"><div class="OH_outerDiv"><div class="OH_outerContent"><table class="TitleTable"><tr><td class="OH_tdLogoColumn"><img src="./../icons/Help.png" /></td><td class="OH_tdTitleColumn">Collection<span id="ID0EFBABAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EFBABAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script><span class="typeparameter">TRecord</span>, <span class="typeparameter">TTime</span><span id="ID0EBBABAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBBABAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script> Interface</td><td class="OH_tdRunningTitleColumn">Naiad Help</td></tr></table><div id="mainSection"><div id="mainBody"><span class="introStyle"></span><p style="color: #dc143c; font-size: 8.5pt; font-weight: bold;">[This is preliminary documentation and is subject to change.]</p><div class="summary">
+            A collection is a multiset of records that varies according to a logical timestamp.
+            </div><p></p><strong>Namespace:</strong> <a href="N_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow.htm" target="">Microsoft.Research.Naiad.Frameworks.DifferentialDataflow</a><br /><strong>Assembly:</strong> <span sdata="assembly">Microsoft.Research.Naiad.DifferentialDataflow</span> (in Microsoft.Research.Naiad.DifferentialDataflow.dll) Version: 0.3.1.0 (0.3.1)<div class="OH_CollapsibleAreaRegion"><div class="OH_regiontitle">Syntax</div><div class="OH_CollapsibleArea_HrDiv"><hr class="OH_CollapsibleArea_Hr" /></div></div><div class="OH_clear"></div><div id="snippetGroup_Syntax" class="code"><div id="ID0EABGAAAAA" class="OH_CodeSnippetContainer"><div class="OH_CodeSnippetContainerTabs" id="ID0EABGAAAAA_tabs"><div class="OH_CodeSnippetContainerTabLeftActive" id="ID0EABGAAAAA_tabimgleft"></div><div id="ID0EABGAAAAA_tab1" class="OH_CodeSnippetContainerTabActive" EnableCopyCode="true"><a href="#" onclick="javascript:ChangeTab('ID0EABGAAAAA','C#','1','4');return false;">C#</a></div><div id="ID0EABGAAAAA_tab2" class="OH_CodeSnippetContainerTabDisabledNotFirst" EnableCopyCode="true" disabled="true"><a>VB</a></div><div id="ID0EABGAAAAA_tab3" class="OH_CodeSnippetContainerTabDisabledNotFirst" EnableCopyCode="true" disabled="true"><a>C++</a></div><div id="ID0EABGAAAAA_tab4" class="OH_CodeSnippetContainerTabDisabledNotFirst" EnableCopyCode="true" disabled="true"><a>F#</a></div><div class="OH_CodeSnippetContainerTabRight" id="ID0EABGAAAAA_tabimgright"></div></div><div id="ID0EABGAAAAA_codecollection" class="OH_CodeSnippetContainerCodeCollection"><div class="OH_CodeSnippetToolBar"><div class="OH_CodeSnippetToolBarText"><a id="ID0EABGAAAAA_ViewColorized" href="#" onclick="javascript:ExchangeTitleContent('ID0EABGAAAAA','4')" title="View Colorized" style="display: none">View Colorized</a><a id="ID0EABGAAAAA_copycode" href="#" onclick="javascript:CopyToClipboard('ID0EABGAAAAA','4')" title="Copy to Clipboard">Copy to Clipboard</a><a id="ID0EABGAAAAA_PrintText" class="OH_PrintText" href="#" onclick="javascript:Print('ID0EABGAAAAA','4')" title="Print">Print</a></div></div><div id="ID0EABGAAAAA_code_Div1" class="OH_CodeSnippetContainerCode" style="display: block"><pre><span class="keyword">public</span> <span class="keyword">interface</span> <span class="identifier">Collection</span>&lt;TRecord, TTime&gt;
+<span class="keyword">where</span> TRecord : <span class="identifier">Object</span>, <span class="identifier">IEquatable</span>&lt;TRecord&gt;
+<span class="keyword">where</span> TTime : <span class="identifier">Object</span>, <span class="identifier">Time</span>&lt;TTime&gt;</pre></div><div id="ID0EABGAAAAA_code_Plain_Div1" class="OH_CodeSnippetContainerCode" style="display: none"><pre>public interface Collection&lt;TRecord, TTime&gt;
+where TRecord : Object, IEquatable&lt;TRecord&gt;
+where TTime : Object, Time&lt;TTime&gt;</pre></div><div id="ID0EABGAAAAA_code_Div2" class="OH_CodeSnippetContainerCode" style="display: none"><pre /></div><div id="ID0EABGAAAAA_code_Plain_Div2" class="OH_CodeSnippetContainerCode" style="display: none"><pre /></div><div id="ID0EABGAAAAA_code_Div3" class="OH_CodeSnippetContainerCode" style="display: none"><pre /></div><div id="ID0EABGAAAAA_code_Plain_Div3" class="OH_CodeSnippetContainerCode" style="display: none"><pre /></div><div id="ID0EABGAAAAA_code_Div4" class="OH_CodeSnippetContainerCode" style="display: none"><pre /></div><div id="ID0EABGAAAAA_code_Plain_Div4" class="OH_CodeSnippetContainerCode" style="display: none"><pre /></div></div></div><script>addSpecificTextLanguageTagSet('ID0EABGAAAAA');</script></div><div class="OH_CollapsibleAreaRegion"><div class="OH_regiontitle">Type Parameters</div><div class="OH_CollapsibleArea_HrDiv"><hr class="OH_CollapsibleArea_Hr" /></div></div><div class="OH_clear"></div><dl><dt><span class="parameter">TRecord</span></dt><dd>The type of records in the collection.</dd><dt><span class="parameter">TTime</span></dt><dd>The type of timestamp on each record.</dd></dl><p>The <span class="selflink">Collection<span id="ID0ECBFAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECBFAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, TTime<span id="ID0EABFAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EABFAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script></span> type exposes the following members.</p><div class="OH_CollapsibleAreaRegion"><div class="OH_regiontitle">Methods</div><div class="OH_CollapsibleArea_HrDiv"><hr class="OH_CollapsibleArea_Hr" /></div></div><div class="OH_clear"></div><table id="memberList" class="members"><tr><th class="ps_iconColumn">
+							 
+						</th><th class="ps_nameColumn">Name</th><th class="ps_descriptionColumn">Description</th></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Aggregate__3.htm" target="">Aggregate<span id="ID0ECAB0JB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECAB0JB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TKey, TValue, TOutput<span id="ID0EAAB0JB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EAAB0JB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script></a></td><td><div class="summary">
+            Groups records using the supplied key selector, and applies the given aggregation function.
+            </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_CoGroupBy__3.htm" target="">CoGroupBy<span id="ID0E0QB0AB0IB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0QB0AB0IB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TKey, TRecord2, TOutput<span id="ID0E0OB0AB0IB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0OB0AB0IB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>(Collection<span id="ID0E0MB0AB0IB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0MB0AB0IB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord2, TTime<span id="ID0E0KB0AB0IB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0KB0AB0IB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0E0IB0AB0IB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0IB0AB0IB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0E0GB0AB0IB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0GB0AB0IB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, TKey<span id="ID0E0EB0AB0IB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0EB0AB0IB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0E0DB0AB0IB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0DB0AB0IB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0E0BB0AB0IB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0BB0AB0IB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0E6AB0IB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E6AB0IB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord2, TKey<span id="ID0E4AB0IB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E4AB0IB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0E3AB0IB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E3AB0IB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0E1AB0IB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E1AB0IB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0EYAB0IB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EYAB0IB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TKey, IEnumerable<span id="ID0EWAB0IB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EWAB0IB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Weighted<span id="ID0EUAB0IB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EUAB0IB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord<span id="ID0ESAB0IB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ESAB0IB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0ERAB0IB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ERAB0IB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, IEnumerable<span id="ID0EPAB0IB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EPAB0IB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Weighted<span id="ID0ENAB0IB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ENAB0IB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord2<span id="ID0ELAB0IB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ELAB0IB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EKAB0IB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EKAB0IB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, IEnumerable<span id="ID0EIAB0IB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EIAB0IB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Weighted<span id="ID0EGAB0IB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EGAB0IB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TOutput<span id="ID0EEAB0IB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EEAB0IB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EDAB0IB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EDAB0IB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0ECAB0IB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECAB0IB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EBAB0IB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBAB0IB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>)</a></td><td><div class="summary">
+            Groups records from both input collections using the respective key selector, and applies the given reduction function.
+            </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_CoGroupBy__3_1.htm" target="">CoGroupBy<span id="ID0E0HB0AB0HB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0HB0AB0HB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TKey, TRecord2, TOutput<span id="ID0E0FB0AB0HB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0FB0AB0HB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>(Collection<span id="ID0E0DB0AB0HB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0DB0AB0HB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord2, TTime<span id="ID0E0BB0AB0HB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0BB0AB0HB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0E6AB0HB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E6AB0HB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0E4AB0HB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E4AB0HB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, TKey<span id="ID0E2AB0HB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E2AB0HB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0E1AB0HB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E1AB0HB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0EYAB0HB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EYAB0HB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0EWAB0HB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EWAB0HB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord2, TKey<span id="ID0EUAB0HB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EUAB0HB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0ETAB0HB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ETAB0HB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0ERAB0HB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ERAB0HB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0EPAB0HB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EPAB0HB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TKey, IEnumerable<span id="ID0ENAB0HB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ENAB0HB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord<span id="ID0ELAB0HB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ELAB0HB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, IEnumerable<span id="ID0EJAB0HB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EJAB0HB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord2<span id="ID0EHAB0HB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EHAB0HB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, IEnumerable<span id="ID0EFAB0HB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EFAB0HB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TOutput<span id="ID0EDAB0HB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EDAB0HB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0ECAB0HB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECAB0HB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EBAB0HB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBAB0HB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>)</a></td><td><div class="summary">
+            Groups records from both input collections using the respective key selector, and applies the given reduction function.
+            </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_CoGroupBy__5.htm" target="">CoGroupBy<span id="ID0E05B0AB0GB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E05B0AB0GB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TKey, TValue1, TValue2, TRecord2, TOutput<span id="ID0E03B0AB0GB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E03B0AB0GB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>(Collection<span id="ID0E01B0AB0GB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E01B0AB0GB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord2, TTime<span id="ID0E0YB0AB0GB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0YB0AB0GB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0E0WB0AB0GB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0WB0AB0GB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0E0UB0AB0GB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0UB0AB0GB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, TKey<span id="ID0E0SB0AB0GB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0SB0AB0GB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0E0RB0AB0GB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0RB0AB0GB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0E0PB0AB0GB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0PB0AB0GB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0E0NB0AB0GB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0NB0AB0GB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord2, TKey<span id="ID0E0LB0AB0GB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0LB0AB0GB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0E0KB0AB0GB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0KB0AB0GB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0E0IB0AB0GB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0IB0AB0GB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0E0GB0AB0GB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0GB0AB0GB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, TValue1<span id="ID0E0EB0AB0GB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0EB0AB0GB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0E0DB0AB0GB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0DB0AB0GB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0E0BB0AB0GB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0BB0AB0GB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0E6AB0GB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E6AB0GB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord2, TValue2<span id="ID0E4AB0GB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E4AB0GB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0E3AB0GB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E3AB0GB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0E1AB0GB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E1AB0GB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0EYAB0GB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EYAB0GB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TKey, IEnumerable<span id="ID0EWAB0GB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EWAB0GB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Weighted<span id="ID0EUAB0GB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EUAB0GB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TValue1<span id="ID0ESAB0GB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ESAB0GB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0ERAB0GB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ERAB0GB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, IEnumerable<span id="ID0EPAB0GB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EPAB0GB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Weighted<span id="ID0ENAB0GB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ENAB0GB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TValue2<span id="ID0ELAB0GB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ELAB0GB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EKAB0GB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EKAB0GB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, IEnumerable<span id="ID0EIAB0GB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EIAB0GB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Weighted<span id="ID0EGAB0GB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EGAB0GB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TOutput<span id="ID0EEAB0GB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EEAB0GB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EDAB0GB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EDAB0GB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0ECAB0GB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECAB0GB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EBAB0GB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBAB0GB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>)</a></td><td><div class="summary">
+            Groups records from both input collections using the respective key selector, and applies the given reduction function.
+            </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_CoGroupBy__5_1.htm" target="">CoGroupBy<span id="ID0E0VB0AB0FB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0VB0AB0FB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TKey, TValue1, TValue2, TRecord2, TOutput<span id="ID0E0TB0AB0FB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0TB0AB0FB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>(Collection<span id="ID0E0RB0AB0FB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0RB0AB0FB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord2, TTime<span id="ID0E0PB0AB0FB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0PB0AB0FB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0E0NB0AB0FB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0NB0AB0FB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0E0LB0AB0FB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0LB0AB0FB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, TKey<span id="ID0E0JB0AB0FB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0JB0AB0FB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0E0IB0AB0FB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0IB0AB0FB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0E0GB0AB0FB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0GB0AB0FB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0E0EB0AB0FB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0EB0AB0FB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord2, TKey<span id="ID0E0CB0AB0FB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0CB0AB0FB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0E0BB0AB0FB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0BB0AB0FB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0E6AB0FB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E6AB0FB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0E4AB0FB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E4AB0FB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, TValue1<span id="ID0E2AB0FB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E2AB0FB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0E1AB0FB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E1AB0FB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0EYAB0FB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EYAB0FB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0EWAB0FB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EWAB0FB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord2, TValue2<span id="ID0EUAB0FB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EUAB0FB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0ETAB0FB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ETAB0FB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0ERAB0FB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ERAB0FB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0EPAB0FB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EPAB0FB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TKey, IEnumerable<span id="ID0ENAB0FB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ENAB0FB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TValue1<span id="ID0ELAB0FB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ELAB0FB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, IEnumerable<span id="ID0EJAB0FB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EJAB0FB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TValue2<span id="ID0EHAB0FB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EHAB0FB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, IEnumerable<span id="ID0EFAB0FB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EFAB0FB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TOutput<span id="ID0EDAB0FB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EDAB0FB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0ECAB0FB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECAB0FB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EBAB0FB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBAB0FB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>)</a></td><td><div class="summary">
+            Groups records from both input collections using the respective key selector, and applies the given reduction function.
+            </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Concat.htm" target="">Concat</a></td><td><div class="summary">
+            Computes the concatenation of this collection and the <span class="parameter">other</span> collection.
+            </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Consolidate.htm" target="">Consolidate<span id="ID0EAAB0DB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EAAB0DB0BEAAAAA?vb=|cpp=()|cs=()|fs=()|nu=()");
+				</script></a></td><td><div class="summary">
+            Consolidates a collection so that each record occurs with at most one weight.
+            </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Consolidate__1.htm" target="">Consolidate<span id="ID0EKAB0CB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EKAB0CB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TKey<span id="ID0EIAB0CB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EIAB0CB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>(Expression<span id="ID0EGAB0CB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EGAB0CB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0EEAB0CB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EEAB0CB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, TKey<span id="ID0ECAB0CB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECAB0CB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EBAB0CB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBAB0CB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>)</a></td><td><div class="summary">
+            Consolidates representation so that each record occurs with at most one weight.
+            </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Count__1.htm" target="">Count<span id="ID0EKAB0BB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EKAB0BB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TKey<span id="ID0EIAB0BB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EIAB0BB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>(Expression<span id="ID0EGAB0BB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EGAB0BB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0EEAB0BB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EEAB0BB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, TKey<span id="ID0ECAB0BB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECAB0BB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EBAB0BB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBAB0BB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>)</a></td><td><div class="summary">
+            Groups records using the supplied key selector, and counts the number of records in each group.
+            </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Count__2.htm" target="">Count<span id="ID0ERAB0AB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ERAB0AB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TKey, TOutput<span id="ID0EPAB0AB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EPAB0AB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>(Expression<span id="ID0ENAB0AB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ENAB0AB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0ELAB0AB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ELAB0AB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, TKey<span id="ID0EJAB0AB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EJAB0AB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EIAB0AB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EIAB0AB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0EGAB0AB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EGAB0AB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0EEAB0AB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EEAB0AB0BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TKey, Int64, TOutput<span id="ID0ECAB0AB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECAB0AB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EBAB0AB0BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBAB0AB0BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>)</a></td><td><div class="summary">
+            Groups records using the supplied key selector, and counts the number of records in each group.
+            </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Distinct.htm" target="">Distinct</a></td><td><div class="summary">
+            Computes the set of distinct records in this collection.
+            </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_EnterLoop.htm" target="">EnterLoop(LoopContext<span id="ID0EDAB5BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EDAB5BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TTime<span id="ID0EBAB5BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBAB5BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>)</a></td><td><div class="summary">
+            Enables this collection to be used as a constant in the given loop context.
+            </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_EnterLoop_1.htm" target="">EnterLoop(LoopContext<span id="ID0EHAB4BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EHAB4BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TTime<span id="ID0EFAB4BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EFAB4BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Func<span id="ID0EDAB4BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EDAB4BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, Int32<span id="ID0EBAB4BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBAB4BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>)</a></td><td><div class="summary">
+            Enables this collection to be used in the given loop context, where each record
+            may be introduced at a different iteration.
+            </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Except.htm" target="">Except</a></td><td><div class="summary">
+            Computes the multiset difference of this collection minus the <span class="parameter">other</span> collection.
+            </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_FixedPoint.htm" target="">FixedPoint(Func<span id="ID0EUAB2BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EUAB2BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>LoopContext<span id="ID0ESAB2BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ESAB2BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TTime<span id="ID0EQAB2BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EQAB2BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Collection<span id="ID0EOAB2BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EOAB2BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, IterationIn<span id="ID0EMAB2BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EMAB2BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TTime<span id="ID0EKAB2BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EKAB2BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EJAB2BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EJAB2BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Collection<span id="ID0EHAB2BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EHAB2BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, IterationIn<span id="ID0EFAB2BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EFAB2BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TTime<span id="ID0EDAB2BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EDAB2BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0ECAB2BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECAB2BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EBAB2BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBAB2BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>)</a></td><td><div class="summary">
+            Computes the fixed point of the subquery <span class="parameter">f</span> applied to this collection.
+            </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_FixedPoint_1.htm" target="">FixedPoint(Func<span id="ID0EUAB1BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EUAB1BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>LoopContext<span id="ID0ESAB1BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ESAB1BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TTime<span id="ID0EQAB1BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EQAB1BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Collection<span id="ID0EOAB1BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EOAB1BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, IterationIn<span id="ID0EMAB1BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EMAB1BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TTime<span id="ID0EKAB1BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EKAB1BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EJAB1BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EJAB1BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Collection<span id="ID0EHAB1BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EHAB1BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, IterationIn<span id="ID0EFAB1BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EFAB1BEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TTime<span id="ID0EDAB1BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EDAB1BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0ECAB1BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECAB1BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EBAB1BEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBAB1BEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Int32)</a></td><td><div class="summary">
+            Computes the fixed point of the subquery <span class="parameter">f</span> applied to this collection.
+            </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_FixedPoint__1.htm" target="">FixedPoint<span id="ID0E6ABZBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E6ABZBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TKey<span id="ID0E4ABZBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E4ABZBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>(Func<span id="ID0E2ABZBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E2ABZBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>LoopContext<span id="ID0EZABZBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EZABZBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TTime<span id="ID0EXABZBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EXABZBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Collection<span id="ID0EVABZBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EVABZBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, IterationIn<span id="ID0ETABZBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ETABZBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TTime<span id="ID0ERABZBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ERABZBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EQABZBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EQABZBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Collection<span id="ID0EOABZBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EOABZBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, IterationIn<span id="ID0EMABZBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EMABZBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TTime<span id="ID0EKABZBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EKABZBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EJABZBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EJABZBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EIABZBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EIABZBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0EGABZBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EGABZBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0EEABZBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EEABZBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, TKey<span id="ID0ECABZBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECABZBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EBABZBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBABZBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>)</a></td><td><div class="summary">
+            Computes the fixed point of the subquery <span class="parameter">f</span> applied to this collection.
+            </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_FixedPoint__1_1.htm" target="">FixedPoint<span id="ID0E6ABYBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E6ABYBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TKey<span id="ID0E4ABYBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E4ABYBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>(Func<span id="ID0E2ABYBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E2ABYBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>LoopContext<span id="ID0EZABYBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EZABYBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TTime<span id="ID0EXABYBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EXABYBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Collection<span id="ID0EVABYBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EVABYBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, IterationIn<span id="ID0ETABYBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ETABYBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TTime<span id="ID0ERABYBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ERABYBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EQABYBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EQABYBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Collection<span id="ID0EOABYBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EOABYBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, IterationIn<span id="ID0EMABYBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EMABYBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TTime<span id="ID0EKABYBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EKABYBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EJABYBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EJABYBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EIABYBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EIABYBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0EGABYBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EGABYBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0EEABYBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EEABYBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, TKey<span id="ID0ECABYBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECABYBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EBABYBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBABYBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Int32)</a></td><td><div class="summary">
+            Computes the fixed point of the subquery <span class="parameter">f</span> applied to this collection.
+            </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_GeneralFixedPoint__1.htm" target="">GeneralFixedPoint<span id="ID0ECABXBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECABXBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TKey<span id="ID0EAABXBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EAABXBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script></a></td><td><div class="summary">
+            Computes the fixed point of the subquery <span class="parameter">f</span> applied to this collection.
+            </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_GroupBy__2.htm" target="">GroupBy<span id="ID0EVABWBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EVABWBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TKey, TOutput<span id="ID0ETABWBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ETABWBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>(Expression<span id="ID0ERABWBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ERABWBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0EPABWBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EPABWBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, TKey<span id="ID0ENABWBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ENABWBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EMABWBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EMABWBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Func<span id="ID0EKABWBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EKABWBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TKey, IEnumerable<span id="ID0EIABWBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EIABWBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord<span id="ID0EGABWBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EGABWBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, IEnumerable<span id="ID0EEABWBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EEABWBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TOutput<span id="ID0ECABWBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECABWBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EBABWBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBABWBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>)</a></td><td><div class="summary">
+            Groups records using the supplied key selector, and applies the given reduction function.
+            </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_GroupBy__3.htm" target="">GroupBy<span id="ID0E3ABVBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E3ABVBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TKey, TValue, TOutput<span id="ID0E1ABVBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E1ABVBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>(Expression<span id="ID0EYABVBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EYABVBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0EWABVBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EWABVBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, TKey<span id="ID0EUABVBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EUABVBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0ETABVBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ETABVBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0ERABVBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ERABVBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0EPABVBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EPABVBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, TValue<span id="ID0ENABVBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ENABVBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EMABVBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EMABVBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Func<span id="ID0EKABVBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EKABVBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TKey, IEnumerable<span id="ID0EIABVBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EIABVBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TValue<span id="ID0EGABVBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EGABVBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, IEnumerable<span id="ID0EEABVBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EEABVBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TOutput<span id="ID0ECABVBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECABVBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EBABVBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBABVBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>)</a></td><td><div class="summary">
+            Groups records using the supplied key selector, and applies the given reduction function.
+            </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Intersect.htm" target="">Intersect</a></td><td><div class="summary">
+            Computes the multiset intersection of this collection and the <span class="parameter">other</span> collection.
+            </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Join__3.htm" target="">Join<span id="ID0E3ABTBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E3ABTBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TKey, TRecord2, TOutput<span id="ID0E1ABTBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E1ABTBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>(Collection<span id="ID0EYABTBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EYABTBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord2, TTime<span id="ID0EWABTBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EWABTBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0EUABTBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EUABTBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0ESABTBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ESABTBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, TKey<span id="ID0EQABTBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EQABTBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EPABTBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EPABTBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0ENABTBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ENABTBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0ELABTBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ELABTBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord2, TKey<span id="ID0EJABTBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EJABTBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EIABTBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EIABTBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0EGABTBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EGABTBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0EEABTBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EEABTBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, TRecord2, TOutput<span id="ID0ECABTBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECABTBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EBABTBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBABTBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>)</a></td><td><div class="summary">
+            Joins this collection with the <span class="parameter">other</span> collection, using the respective key selectors.
+            </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Join__4.htm" target="">Join<span id="ID0E0KB0ABSBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0KB0ABSBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TValue1, TValue2, TRecord2, TOutput<span id="ID0E0IB0ABSBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0IB0ABSBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>(Collection<span id="ID0E0GB0ABSBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0GB0ABSBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord2, TTime<span id="ID0E0EB0ABSBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0EB0ABSBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0E0CB0ABSBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0CB0ABSBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0E0AB0ABSBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0AB0ABSBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, Int32<span id="ID0E5ABSBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E5ABSBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0E4ABSBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E4ABSBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0E2ABSBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E2ABSBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0EZABSBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EZABSBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord2, Int32<span id="ID0EXABSBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EXABSBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EWABSBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EWABSBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0EUABSBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EUABSBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0ESABSBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ESABSBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, TValue1<span id="ID0EQABSBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EQABSBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EPABSBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EPABSBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0ENABSBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ENABSBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0ELABSBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ELABSBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord2, TValue2<span id="ID0EJABSBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EJABSBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EIABSBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EIABSBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0EGABSBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EGABSBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0EEABSBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EEABSBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Int32, TValue1, TValue2, TOutput<span id="ID0ECABSBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECABSBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EBABSBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBABSBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Boolean)</a></td><td><div class="summary">
+            Joins this collection with the <span class="parameter">other</span> collection, using the respective integer-valued key selectors.
+            </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Join__5.htm" target="">Join<span id="ID0E0KB0ABRBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0KB0ABRBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TKey, TValue1, TValue2, TRecord2, TOutput<span id="ID0E0IB0ABRBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0IB0ABRBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>(Collection<span id="ID0E0GB0ABRBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0GB0ABRBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord2, TTime<span id="ID0E0EB0ABRBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0EB0ABRBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0E0CB0ABRBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0CB0ABRBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0E0AB0ABRBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0AB0ABRBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, TKey<span id="ID0E5ABRBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E5ABRBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0E4ABRBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E4ABRBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0E2ABRBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E2ABRBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0EZABRBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EZABRBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord2, TKey<span id="ID0EXABRBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EXABRBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EWABRBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EWABRBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0EUABRBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EUABRBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0ESABRBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ESABRBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, TValue1<span id="ID0EQABRBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EQABRBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EPABRBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EPABRBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0ENABRBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ENABRBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0ELABRBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ELABRBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord2, TValue2<span id="ID0EJABRBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EJABRBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EIABRBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EIABRBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0EGABRBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EGABRBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0EEABRBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EEABRBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TKey, TValue1, TValue2, TOutput<span id="ID0ECABRBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECABRBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EBABRBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBABRBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>)</a></td><td><div class="summary">
+            Joins this collection with the <span class="parameter">other</span> collection, using the respective key selectors.
+            </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Max__2.htm" target="">Max<span id="ID0ERABQBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ERABQBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TKey, TComparable<span id="ID0EPABQBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EPABQBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>(Expression<span id="ID0ENABQBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ENABQBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0ELABQBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ELABQBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, TKey<span id="ID0EJABQBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EJABQBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EIABQBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EIABQBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0EGABQBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EGABQBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0EEABQBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EEABQBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, TComparable<span id="ID0ECABQBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECABQBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EBABQBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBABQBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>)</a></td><td><div class="summary">
+            Groups records using the supplied key selector, and computes the maximum value in each group.
+            </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Max__3.htm" target="">Max<span id="ID0E6ABPBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E6ABPBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TKey, TComparable, TValue<span id="ID0E4ABPBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E4ABPBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>(Expression<span id="ID0E2ABPBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E2ABPBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0EZABPBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EZABPBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, TKey<span id="ID0EXABPBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EXABPBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EWABPBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EWABPBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0EUABPBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EUABPBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0ESABPBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ESABPBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, TValue<span id="ID0EQABPBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EQABPBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EPABPBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EPABPBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0ENABPBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ENABPBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0ELABPBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ELABPBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TKey, TValue, TComparable<span id="ID0EJABPBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EJABPBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EIABPBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EIABPBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0EGABPBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EGABPBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0EEABPBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EEABPBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TKey, TValue, TRecord<span id="ID0ECABPBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECABPBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EBABPBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBABPBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>)</a></td><td><div class="summary">
+            Groups records using the supplied key selector, and computes the maximum value in each group.
+            </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Min__2_1.htm" target="">Min<span id="ID0ERABOBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ERABOBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TKey, TComparable<span id="ID0EPABOBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EPABOBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>(Expression<span id="ID0ENABOBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ENABOBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0ELABOBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ELABOBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, TKey<span id="ID0EJABOBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EJABOBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EIABOBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EIABOBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0EGABOBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EGABOBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0EEABOBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EEABOBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, TComparable<span id="ID0ECABOBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECABOBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EBABOBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBABOBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>)</a></td><td><div class="summary">
+            Groups records using the supplied key selector, and computes the minimum value in each group.
+            </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Min__2.htm" target="">Min<span id="ID0E6ABNBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E6ABNBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TValue, TComparable<span id="ID0E4ABNBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E4ABNBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>(Expression<span id="ID0E2ABNBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E2ABNBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0EZABNBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EZABNBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, Int32<span id="ID0EXABNBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EXABNBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EWABNBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EWABNBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0EUABNBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EUABNBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0ESABNBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ESABNBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, TValue<span id="ID0EQABNBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EQABNBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EPABNBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EPABNBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0ENABNBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ENABNBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0ELABNBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ELABNBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Int32, TValue, TComparable<span id="ID0EJABNBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EJABNBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EIABNBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EIABNBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0EGABNBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EGABNBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0EEABNBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EEABNBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Int32, TValue, TRecord<span id="ID0ECABNBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECABNBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EBABNBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBABNBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Boolean)</a></td><td><div class="summary">
+            Groups records using the supplied integer-valued key selector, and computes the minimum value in each group.
+            </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Min__3.htm" target="">Min<span id="ID0E6ABMBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E6ABMBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TKey, TComparable, TValue<span id="ID0E4ABMBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E4ABMBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>(Expression<span id="ID0E2ABMBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E2ABMBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0EZABMBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EZABMBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, TKey<span id="ID0EXABMBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EXABMBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EWABMBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EWABMBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0EUABMBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EUABMBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0ESABMBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ESABMBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, TValue<span id="ID0EQABMBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EQABMBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EPABMBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EPABMBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0ENABMBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ENABMBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0ELABMBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ELABMBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TKey, TValue, TComparable<span id="ID0EJABMBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EJABMBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EIABMBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EIABMBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0EGABMBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EGABMBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0EEABMBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EEABMBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TKey, TValue, TRecord<span id="ID0ECABMBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECABMBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EBABMBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBABMBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>)</a></td><td><div class="summary">
+            Groups records using the supplied key selector, and computes the minimum value in each group.
+            </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Monitor.htm" target="">Monitor</a></td><td><div class="summary">
+            Applies the given action to the records in this collection once for each timestamp on each worker, for monitoring.
+            </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_PartitionBy__1.htm" target="">PartitionBy<span id="ID0ECABKBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECABKBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TKey<span id="ID0EAABKBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EAABKBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script></a></td><td><div class="summary">
+            Partitions a collection by the given key selector.
+            </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Select__1.htm" target="">Select<span id="ID0ECABJBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECABJBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TOutput<span id="ID0EAABJBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EAABJBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script></a></td><td><div class="summary">
+            Transforms each record in the collection using the given <span class="parameter">selector</span> function.
+            </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_SelectMany__1.htm" target="">SelectMany<span id="ID0EQABIBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EQABIBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TOutput<span id="ID0EOABIBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EOABIBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>(Expression<span id="ID0EMABIBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EMABIBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0EKABIBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EKABIBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, IEnumerable<span id="ID0EIABIBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EIABIBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>ArraySegment<span id="ID0EGABIBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EGABIBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TOutput<span id="ID0EEABIBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EEABIBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EDABIBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EDABIBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0ECABIBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECABIBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EBABIBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBABIBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>)</a></td><td><div class="summary">
+            Transforms each record in the collection using the given <span class="parameter">selector</span> function and flattens the result.
+            </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_SelectMany__1_1.htm" target="">SelectMany<span id="ID0ENABHBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ENABHBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TOutput<span id="ID0ELABHBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ELABHBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>(Expression<span id="ID0EJABHBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EJABHBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0EHABHBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EHABHBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, IEnumerable<span id="ID0EFABHBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EFABHBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TOutput<span id="ID0EDABHBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EDABHBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0ECABHBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECABHBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EBABHBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBABHBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>)</a></td><td><div class="summary">
+            Transforms each record in the collection using the given <span class="parameter">selector</span> function and flattens the result. 
+            </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Sum__2.htm" target="">Sum<span id="ID0EYABGBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EYABGBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TKey, TOutput<span id="ID0EWABGBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EWABGBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>(Expression<span id="ID0EUABGBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EUABGBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0ESABGBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ESABGBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, TKey<span id="ID0EQABGBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EQABGBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EPABGBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EPABGBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0ENABGBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ENABGBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0ELABGBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ELABGBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, Double<span id="ID0EJABGBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EJABGBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EIABGBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EIABGBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0EGABGBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EGABGBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0EEABGBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EEABGBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TKey, Double, TOutput<span id="ID0ECABGBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECABGBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EBABGBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBABGBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>)</a></td><td><div class="summary">
+            Groups records using the supplied key selector, and computes the sum of the records in each group.
+            </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Sum__2_1.htm" target="">Sum<span id="ID0EYABFBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EYABFBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TKey, TOutput<span id="ID0EWABFBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EWABFBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>(Expression<span id="ID0EUABFBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EUABFBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0ESABFBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ESABFBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, TKey<span id="ID0EQABFBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EQABFBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EPABFBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EPABFBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0ENABFBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ENABFBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0ELABFBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ELABFBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, Int32<span id="ID0EJABFBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EJABFBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EIABFBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EIABFBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0EGABFBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EGABFBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0EEABFBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EEABFBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TKey, Int32, TOutput<span id="ID0ECABFBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECABFBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EBABFBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBABFBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>)</a></td><td><div class="summary">
+            Groups records using the supplied key selector, and computes the sum of the records in each group.
+            </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Sum__2_2.htm" target="">Sum<span id="ID0EYABEBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EYABEBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TKey, TOutput<span id="ID0EWABEBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EWABEBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>(Expression<span id="ID0EUABEBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EUABEBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0ESABEBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ESABEBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, TKey<span id="ID0EQABEBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EQABEBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EPABEBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EPABEBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0ENABEBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ENABEBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0ELABEBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ELABEBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, Int64<span id="ID0EJABEBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EJABEBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EIABEBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EIABEBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0EGABEBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EGABEBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0EEABEBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EEABEBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TKey, Int64, TOutput<span id="ID0ECABEBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECABEBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EBABEBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBABEBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>)</a></td><td><div class="summary">
+            Groups records using the supplied key selector, and computes the sum of the records in each group.
+            </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Sum__2_3.htm" target="">Sum<span id="ID0EYABDBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EYABDBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TKey, TOutput<span id="ID0EWABDBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EWABDBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>(Expression<span id="ID0EUABDBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EUABDBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0ESABDBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ESABDBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, TKey<span id="ID0EQABDBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EQABDBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EPABDBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EPABDBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0ENABDBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ENABDBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0ELABDBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ELABDBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, Single<span id="ID0EJABDBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EJABDBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EIABDBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EIABDBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0EGABDBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EGABDBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0EEABDBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EEABDBEAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TKey, Single, TOutput<span id="ID0ECABDBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECABDBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EBABDBEAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBABDBEAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>)</a></td><td><div class="summary">
+            Groups records using the supplied key selector, and computes the sum of the records in each group.
+            </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_SymmetricDifference.htm" target="">SymmetricDifference</a></td><td><div class="summary">
+            Computes the multiset symmetric difference of this collection and the <span class="parameter">other</span> collection.
+            </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Union.htm" target="">Union</a></td><td><div class="summary">
+            Computes the multiset union of this collection and the <span class="parameter">other</span> collection.
+            </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Where.htm" target="">Where</a></td><td><div class="summary">
+            Filters the collection to contain only records that match the given <span class="parameter">predicate</span>.
+            </div></td></tr></table><a href="#mainBody" target="">Top</a><div class="OH_CollapsibleAreaRegion"><div class="OH_regiontitle">Properties</div><div class="OH_CollapsibleArea_HrDiv"><hr class="OH_CollapsibleArea_Hr" /></div></div><div class="OH_clear"></div><table id="memberList" class="members"><tr><th class="ps_iconColumn">
+							 
+						</th><th class="ps_nameColumn">Name</th><th class="ps_descriptionColumn">Description</th></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubproperty.gif" alt="Public property" title="Public property" /></td><td><a href="P_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Output.htm" target="">Output</a></td><td><div class="summary">
+            The underlying Naiad <a href="T_Microsoft_Research_Naiad_Stream_2.htm" target="">Stream<span id="ID0ECDAAABDAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECDAAABDAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, TTime<span id="ID0EADAAABDAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EADAAABDAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script></a> of
+            <a href="T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Weighted_1.htm" target="">Weighted<span id="ID0ECBAAABDAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECBAAABDAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord<span id="ID0EABAAABDAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EABAAABDAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script></a> elements.
+            </div></td></tr></table><a href="#mainBody" target="">Top</a><div class="OH_CollapsibleAreaRegion"><div class="OH_regiontitle">Remarks</div><div class="OH_CollapsibleArea_HrDiv"><hr class="OH_CollapsibleArea_Hr" /></div></div><div class="OH_clear"></div>
+            The <span class="typeparameter">TTime</span> type parameter is used to ensure that collections are
+            combined in compatible ways, and need not be manipulated directly by the programmer. Initially,
+            <a href="T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_InputCollection_1.htm" target="">InputCollection<span id="ID0ECHCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECHCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord<span id="ID0EAHCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EAHCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script></a> collections have an integer-valued <a href="T_Microsoft_Research_Naiad_Dataflow_Epoch.htm" target="">Epoch</a> timestamp,
+            which indicates that they vary according to a stream of input epochs. The <a href="M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_EnterLoop.htm" target="">EnterLoop(LoopContext<span id="ID0EDDCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EDDCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TTime<span id="ID0EBDCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBDCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>)</a> method
+            is used to refer to a collection within a loop, by augmenting its timestamp to have an <a href="T_Microsoft_Research_Naiad_Dataflow_IterationIn_1.htm" target="">IterationIn<span id="ID0ECBCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECBCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TTime<span id="ID0EABCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EABCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script></a> value
+            with an additional loop counter.
+            <a name="seeAlsoSection"><!----></a><div class="OH_CollapsibleAreaRegion"><div class="OH_regiontitle">See Also</div><div class="OH_CollapsibleArea_HrDiv"><hr class="OH_CollapsibleArea_Hr" /></div></div><div class="OH_clear"></div><div class="seeAlsoStyle"><a href="N_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow.htm" target="">Microsoft.Research.Naiad.Frameworks.DifferentialDataflow Namespace</a></div></div></div></div></div><div id="OH_footer" class="OH_footer"><p /><div class="OH_feedbacklink"><a href="mailto:naiadquestions@microsoft.com?subject=Naiad+Help+Collection(TRecord%2c+TTime)+Interface+100+EN-US&amp;body=Your%20feedback%20is%20used%20to%20improve%20the%20documentation%20and%20the%20product.%20Your%20e-mail%20address%20will%20not%20be%20used%20for%20any%20other%20purpose%20and%20is%20disposed%20of%20after%20the%20issue%20you%20report%20is%20resolved.%20While%20working%20to%20resolve%20the%20issue%20that%20you%20report%2c%20you%20may%20be%20contacted%20via%20e-mail%20to%20get%20further%20details%20or%20clarification%20on%20the%20feedback%20you%20sent.%20After%20the%20issue%20you%20report%20has%20been%20addressed%2c%20you%20may%20receive%20an%20e-mail%20to%20let%20you%20know%20that%20your%20feedback%20has%20been%20addressed.">Send Feedback</a> on this topic to naiadquestions@microsoft.com.</div></div></body></html>

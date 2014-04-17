@@ -1,0 +1,132 @@
+﻿<html xmlns:MSHelp="http://msdn.microsoft.com/mshelp" xmlns:mshelp="http://msdn.microsoft.com/mshelp"><head><link rel="SHORTCUT ICON" href="./../icons/favicon.ico" /><style type="text/css">.OH_CodeSnippetContainerTabLeftActive, .OH_CodeSnippetContainerTabLeft,.OH_CodeSnippetContainerTabLeftDisabled { }.OH_CodeSnippetContainerTabRightActive, .OH_CodeSnippetContainerTabRight,.OH_CodeSnippetContainerTabRightDisabled { }.OH_footer { }</style><link rel="stylesheet" type="text/css" href="./../styles/branding.css" /><link rel="stylesheet" type="text/css" href="./../styles/branding-en-US.css" /><style type="text/css">
+			body
+			{
+			border-left:5px solid #e6e6e6;
+			overflow-x:scroll;
+			overflow-y:scroll;
+			}
+		</style><script src="./../scripts/branding.js" type="text/javascript"><!----></script><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>NonStandardExtensionMethods.Iterate(TInput, TTime) Method (Stream(TInput, TTime), Func(LoopContext(TTime), Stream(TInput, IterationIn(TTime)), Stream(TInput, IterationIn(TTime))), Func(TInput, Int32), Expression(Func(TInput, Int32)), Int32, String)</title><meta name="Language" content="en-us" /><meta name="Microsoft.Help.Id" content="M:Microsoft.Research.Naiad.Frameworks.Lindi.NonStandardExtensionMethods.Iterate``2(Microsoft.Research.Naiad.Stream{``0,``1},System.Func{Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext{``1},Microsoft.Research.Naiad.Stream{``0,Microsoft.Research.Naiad.Dataflow.IterationIn{``1}},Microsoft.Research.Naiad.Stream{``0,Microsoft.Research.Naiad.Dataflow.IterationIn{``1}}},System.Func{``0,System.Int32},System.Linq.Expressions.Expression{System.Func{``0,System.Int32}},System.Int32,System.String)" /><meta name="Description" content="Iteratively applies to the given ." /><meta name="Microsoft.Help.ContentType" content="Reference" /><meta name="BrandingAware" content="'true'" /><meta name="container" content="Microsoft.Research.Naiad.Frameworks.Lindi" /><meta name="file" content="M_Microsoft_Research_Naiad_Frameworks_Lindi_NonStandardExtensionMethods_Iterate__2" /><meta name="guid" content="M_Microsoft_Research_Naiad_Frameworks_Lindi_NonStandardExtensionMethods_Iterate__2" /><meta name="SelfBranded" content="true" /></head><body onload="onLoad()" class="primary-mtps-offline-document"><div class="OH_outerDiv"><div class="OH_outerContent"><table class="TitleTable"><tr><td class="OH_tdLogoColumn"><img src="./../icons/Help.png" /></td><td class="OH_tdTitleColumn">NonStandardExtensionMethods<span id="ID0E0RB0BABAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0RB0BABAAA?vb=.|cpp=::|cs=.|fs=.|nu=.");
+				</script>Iterate<span id="ID0E0PB0BABAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0PB0BABAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script><span class="typeparameter">TInput</span>, <span class="typeparameter">TTime</span><span id="ID0E0LB0BABAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0LB0BABAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script> Method (Stream<span id="ID0E0JB0BABAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0JB0BABAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script><span class="typeparameter">TInput</span>, <span class="typeparameter">TTime</span><span id="ID0E0FB0BABAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0FB0BABAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Func<span id="ID0E0DB0BABAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0DB0BABAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>LoopContext<span id="ID0E0BB0BABAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E0BB0BABAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script><span class="typeparameter">TTime</span><span id="ID0E6BABAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E6BABAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Stream<span id="ID0E4BABAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E4BABAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script><span class="typeparameter">TInput</span>, IterationIn<span id="ID0E1BABAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E1BABAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script><span class="typeparameter">TTime</span><span id="ID0EYBABAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EYBABAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EXBABAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EXBABAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Stream<span id="ID0EVBABAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EVBABAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script><span class="typeparameter">TInput</span>, IterationIn<span id="ID0ESBABAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ESBABAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script><span class="typeparameter">TTime</span><span id="ID0EQBABAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EQBABAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EPBABAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EPBABAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EOBABAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EOBABAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Func<span id="ID0EMBABAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EMBABAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script><span class="typeparameter">TInput</span>, Int32<span id="ID0EJBABAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EJBABAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Expression<span id="ID0EHBABAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EHBABAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>Func<span id="ID0EFBABAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EFBABAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script><span class="typeparameter">TInput</span>, Int32<span id="ID0ECBABAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECBABAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EBBABAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBBABAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, Int32, String)</td><td class="OH_tdRunningTitleColumn">Naiad Help</td></tr></table><div id="mainSection"><div id="mainBody"><span class="introStyle"></span><p style="color: #dc143c; font-size: 8.5pt; font-weight: bold;">[This is preliminary documentation and is subject to change.]</p><div class="summary">
+            Iteratively applies <span class="parameter">function</span> to the given <span class="parameter">stream</span>.
+            </div><p></p><strong>Namespace:</strong> <a href="N_Microsoft_Research_Naiad_Frameworks_Lindi.htm" target="">Microsoft.Research.Naiad.Frameworks.Lindi</a><br /><strong>Assembly:</strong> <span sdata="assembly">Microsoft.Research.Naiad.Lindi</span> (in Microsoft.Research.Naiad.Lindi.dll) Version: 0.3.1.0 (0.3.1)<div class="OH_CollapsibleAreaRegion"><div class="OH_regiontitle">Syntax</div><div class="OH_CollapsibleArea_HrDiv"><hr class="OH_CollapsibleArea_Hr" /></div></div><div class="OH_clear"></div><div id="snippetGroup_Syntax" class="code"><div id="ID0EA4CAAAAA" class="OH_CodeSnippetContainer"><div class="OH_CodeSnippetContainerTabs" id="ID0EA4CAAAAA_tabs"><div class="OH_CodeSnippetContainerTabLeftActive" id="ID0EA4CAAAAA_tabimgleft"></div><div id="ID0EA4CAAAAA_tab1" class="OH_CodeSnippetContainerTabActive" EnableCopyCode="true"><a href="#" onclick="javascript:ChangeTab('ID0EA4CAAAAA','C#','1','4');return false;">C#</a></div><div id="ID0EA4CAAAAA_tab2" class="OH_CodeSnippetContainerTabDisabledNotFirst" EnableCopyCode="true" disabled="true"><a>VB</a></div><div id="ID0EA4CAAAAA_tab3" class="OH_CodeSnippetContainerTabDisabledNotFirst" EnableCopyCode="true" disabled="true"><a>C++</a></div><div id="ID0EA4CAAAAA_tab4" class="OH_CodeSnippetContainerTabDisabledNotFirst" EnableCopyCode="true" disabled="true"><a>F#</a></div><div class="OH_CodeSnippetContainerTabRight" id="ID0EA4CAAAAA_tabimgright"></div></div><div id="ID0EA4CAAAAA_codecollection" class="OH_CodeSnippetContainerCodeCollection"><div class="OH_CodeSnippetToolBar"><div class="OH_CodeSnippetToolBarText"><a id="ID0EA4CAAAAA_ViewColorized" href="#" onclick="javascript:ExchangeTitleContent('ID0EA4CAAAAA','4')" title="View Colorized" style="display: none">View Colorized</a><a id="ID0EA4CAAAAA_copycode" href="#" onclick="javascript:CopyToClipboard('ID0EA4CAAAAA','4')" title="Copy to Clipboard">Copy to Clipboard</a><a id="ID0EA4CAAAAA_PrintText" class="OH_PrintText" href="#" onclick="javascript:Print('ID0EA4CAAAAA','4')" title="Print">Print</a></div></div><div id="ID0EA4CAAAAA_code_Div1" class="OH_CodeSnippetContainerCode" style="display: block"><pre><span class="keyword">public</span> <span class="keyword">static</span> <span class="identifier">Stream</span>&lt;TInput, TTime&gt; <span class="identifier">Iterate</span>&lt;TInput, TTime&gt;(
+	<span class="keyword">this</span> <span class="identifier">Stream</span>&lt;TInput, TTime&gt; <span class="parameter">stream</span>,
+	<span class="identifier">Func</span>&lt;<span class="identifier">LoopContext</span>&lt;TTime&gt;, <span class="identifier">Stream</span>&lt;TInput, <span class="identifier">IterationIn</span>&lt;TTime&gt;&gt;, <span class="identifier">Stream</span>&lt;TInput, <span class="identifier">IterationIn</span>&lt;TTime&gt;&gt;&gt; <span class="parameter">function</span>,
+	<span class="identifier">Func</span>&lt;TInput, <span class="identifier">int</span>&gt; <span class="parameter">iterationSelector</span>,
+	<span class="identifier">Expression</span>&lt;<span class="identifier">Func</span>&lt;TInput, <span class="identifier">int</span>&gt;&gt; <span class="parameter">partitionedBy</span>,
+	<span class="identifier">int</span> <span class="parameter">iterations</span>,
+	<span class="identifier">string</span> <span class="parameter">name</span>
+)
+<span class="keyword">where</span> TTime : <span class="identifier">Object</span>, <span class="identifier">Time</span>&lt;TTime&gt;</pre></div><div id="ID0EA4CAAAAA_code_Plain_Div1" class="OH_CodeSnippetContainerCode" style="display: none"><pre>public static Stream&lt;TInput, TTime&gt; Iterate&lt;TInput, TTime&gt;(
+	this Stream&lt;TInput, TTime&gt; stream,
+	Func&lt;LoopContext&lt;TTime&gt;, Stream&lt;TInput, IterationIn&lt;TTime&gt;&gt;, Stream&lt;TInput, IterationIn&lt;TTime&gt;&gt;&gt; function,
+	Func&lt;TInput, int&gt; iterationSelector,
+	Expression&lt;Func&lt;TInput, int&gt;&gt; partitionedBy,
+	int iterations,
+	string name
+)
+where TTime : Object, Time&lt;TTime&gt;</pre></div><div id="ID0EA4CAAAAA_code_Div2" class="OH_CodeSnippetContainerCode" style="display: none"><pre /></div><div id="ID0EA4CAAAAA_code_Plain_Div2" class="OH_CodeSnippetContainerCode" style="display: none"><pre /></div><div id="ID0EA4CAAAAA_code_Div3" class="OH_CodeSnippetContainerCode" style="display: none"><pre /></div><div id="ID0EA4CAAAAA_code_Plain_Div3" class="OH_CodeSnippetContainerCode" style="display: none"><pre /></div><div id="ID0EA4CAAAAA_code_Div4" class="OH_CodeSnippetContainerCode" style="display: none"><pre /></div><div id="ID0EA4CAAAAA_code_Plain_Div4" class="OH_CodeSnippetContainerCode" style="display: none"><pre /></div></div></div><script>addSpecificTextLanguageTagSet('ID0EA4CAAAAA');</script></div><div id="parameters"><h4 class="subHeading">Parameters</h4><dl paramName="stream"><dt><span class="parameter">stream</span></dt><dd>Type: <a href="T_Microsoft_Research_Naiad_Stream_2.htm" target="">Microsoft.Research.Naiad<span id="ID0EBHAF3CAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBHAF3CAAAAA?vb=.|cpp=::|cs=.|fs=.|nu=.");
+				</script>Stream</a><span id="ID0EGAF3CAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EGAF3CAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script><span class="selflink"><span class="typeparam">TInput</span></span>, <span class="selflink"><span class="typeparam">TTime</span></span><span id="ID0ECAF3CAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECAF3CAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><br /><span>The input stream.</span></dd></dl><dl paramName="function"><dt><span class="parameter">function</span></dt><dd>Type: <a href="http://msdn2.microsoft.com/en-us/library/bb534647" target="_blank">System<span id="ID0EB3AE3CAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EB3AE3CAAAAA?vb=.|cpp=::|cs=.|fs=.|nu=.");
+				</script>Func</a><span id="ID0E2AE3CAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0E2AE3CAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script><a href="T_Microsoft_Research_Naiad_Dataflow_Iteration_LoopContext_1.htm" target="">LoopContext</a><span id="ID0EZAE3CAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EZAE3CAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script><span class="selflink"><span class="typeparam">TTime</span></span><span id="ID0EXAE3CAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EXAE3CAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, <a href="T_Microsoft_Research_Naiad_Stream_2.htm" target="">Stream</a><span id="ID0EUAE3CAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EUAE3CAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script><span class="selflink"><span class="typeparam">TInput</span></span>, <a href="T_Microsoft_Research_Naiad_Dataflow_IterationIn_1.htm" target="">IterationIn</a><span id="ID0EQAE3CAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EQAE3CAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script><span class="selflink"><span class="typeparam">TTime</span></span><span id="ID0EOAE3CAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EOAE3CAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0ENAE3CAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ENAE3CAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>, <a href="T_Microsoft_Research_Naiad_Stream_2.htm" target="">Stream</a><span id="ID0EKAE3CAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EKAE3CAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script><span class="selflink"><span class="typeparam">TInput</span></span>, <a href="T_Microsoft_Research_Naiad_Dataflow_IterationIn_1.htm" target="">IterationIn</a><span id="ID0EGAE3CAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EGAE3CAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script><span class="selflink"><span class="typeparam">TTime</span></span><span id="ID0EEAE3CAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EEAE3CAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0EDAE3CAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EDAE3CAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0ECAE3CAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECAE3CAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><br /><span>The Naiad computation to apply iteratively.</span></dd></dl><dl paramName="iterationSelector"><dt><span class="parameter">iterationSelector</span></dt><dd>Type: <a href="http://msdn2.microsoft.com/en-us/library/bb549151" target="_blank">System<span id="ID0EBHAD3CAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBHAD3CAAAAA?vb=.|cpp=::|cs=.|fs=.|nu=.");
+				</script>Func</a><span id="ID0EGAD3CAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EGAD3CAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script><span class="selflink"><span class="typeparam">TInput</span></span>, <a href="http://msdn2.microsoft.com/en-us/library/td2s409d" target="_blank">Int32</a><span id="ID0ECAD3CAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECAD3CAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><br /><span>Function that maps an input record to the iteration at which that record should be introduced.</span></dd></dl><dl paramName="partitionedBy"><dt><span class="parameter">partitionedBy</span></dt><dd>Type: <a href="http://msdn2.microsoft.com/en-us/library/bb335710" target="_blank">System.Linq.Expressions<span id="ID0EBKAC3CAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBKAC3CAAAAA?vb=.|cpp=::|cs=.|fs=.|nu=.");
+				</script>Expression</a><span id="ID0EJAC3CAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EJAC3CAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script><a href="http://msdn2.microsoft.com/en-us/library/bb549151" target="_blank">Func</a><span id="ID0EHAC3CAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EHAC3CAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script><span class="selflink"><span class="typeparam">TInput</span></span>, <a href="http://msdn2.microsoft.com/en-us/library/td2s409d" target="_blank">Int32</a><span id="ID0EDAC3CAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EDAC3CAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><span id="ID0ECAC3CAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECAC3CAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><br /><span>Partitioning function for the input stream.</span></dd></dl><dl paramName="iterations"><dt><span class="parameter">iterations</span></dt><dd>Type: <a href="http://msdn2.microsoft.com/en-us/library/td2s409d" target="_blank">System<span id="ID0EBCAB3CAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBCAB3CAAAAA?vb=.|cpp=::|cs=.|fs=.|nu=.");
+				</script>Int32</a><br /><span>The number of iterations to perform.</span></dd></dl><dl paramName="name"><dt><span class="parameter">name</span></dt><dd>Type: <a href="http://msdn2.microsoft.com/en-us/library/s1wwdcbf" target="_blank">System<span id="ID0EBCAA3CAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EBCAA3CAAAAA?vb=.|cpp=::|cs=.|fs=.|nu=.");
+				</script>String</a><br /><span>Descriptive name for the loop.</span></dd></dl></div><div class="OH_CollapsibleAreaRegion"><div class="OH_regiontitle">Type Parameters</div><div class="OH_CollapsibleArea_HrDiv"><hr class="OH_CollapsibleArea_Hr" /></div></div><div class="OH_clear"></div><dl><dt><span class="parameter">TInput</span></dt><dd>The type of the input records.</dd><dt><span class="parameter">TTime</span></dt><dd>The type of timestamp on each record.</dd></dl><h4 class="subHeading">Return Value</h4>Type: <a href="T_Microsoft_Research_Naiad_Stream_2.htm" target="">Stream</a><span id="ID0EXCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EXCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script><span class="selflink"><span class="typeparam">TInput</span></span>, <span class="selflink"><span class="typeparam">TTime</span></span><span id="ID0ETCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ETCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script><br />The stream corresponding to applying <span class="parameter">function</span> to the input <span class="parameter">iterations</span> times.<h4 class="subHeading">Usage Note</h4>In Visual Basic and C#, you can call this method as an instance method on any object of type <a href="T_Microsoft_Research_Naiad_Stream_2.htm" target="">Stream</a><span id="ID0EJCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EJCAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script><span class="selflink"><span class="typeparam">TInput</span></span>, <span class="selflink"><span class="typeparam">TTime</span></span><span id="ID0EFCAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EFCAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script>. When you use instance method syntax to call this method, omit the first parameter. For more information, see <a href="http://msdn.microsoft.com/en-us/library/bb384936.aspx" target="_blank">Extension Methods (Visual Basic)</a> or <a href="http://msdn.microsoft.com/en-us/library/bb383977.aspx" target="_blank">Extension Methods (C# Programming Guide)</a>.<a name="seeAlsoSection"><!----></a><div class="OH_CollapsibleAreaRegion"><div class="OH_regiontitle">See Also</div><div class="OH_CollapsibleArea_HrDiv"><hr class="OH_CollapsibleArea_Hr" /></div></div><div class="OH_clear"></div><div class="seeAlsoStyle"><a href="T_Microsoft_Research_Naiad_Frameworks_Lindi_NonStandardExtensionMethods.htm" target="">NonStandardExtensionMethods Class</a></div><div class="seeAlsoStyle"><a href="Overload_Microsoft_Research_Naiad_Frameworks_Lindi_NonStandardExtensionMethods_Iterate.htm" target="">Iterate Overload</a></div><div class="seeAlsoStyle"><a href="N_Microsoft_Research_Naiad_Frameworks_Lindi.htm" target="">Microsoft.Research.Naiad.Frameworks.Lindi Namespace</a></div></div></div></div></div><div id="OH_footer" class="OH_footer"><p /><div class="OH_feedbacklink"><a href="mailto:naiadquestions@microsoft.com?subject=Naiad+Help+NonStandardExtensionMethods.Iterate(TInput%2c+TTime)+Method+(Stream(TInput%2c+TTime)%2c+Func(LoopContext(TTime)%2c+Stream(TInput%2c+IterationIn(TTime))%2c+Stream(TInput%2c+IterationIn(TTime)))%2c+Func(TInput%2c+Int32)%2c+Expression(Func(TInput%2c+Int32))%2c+Int32%2c+String)+100+EN-US&amp;body=Your%20feedback%20is%20used%20to%20improve%20the%20documentation%20and%20the%20product.%20Your%20e-mail%20address%20will%20not%20be%20used%20for%20any%20other%20purpose%20and%20is%20disposed%20of%20after%20the%20issue%20you%20report%20is%20resolved.%20While%20working%20to%20resolve%20the%20issue%20that%20you%20report%2c%20you%20may%20be%20contacted%20via%20e-mail%20to%20get%20further%20details%20or%20clarification%20on%20the%20feedback%20you%20sent.%20After%20the%20issue%20you%20report%20has%20been%20addressed%2c%20you%20may%20receive%20an%20e-mail%20to%20let%20you%20know%20that%20your%20feedback%20has%20been%20addressed.">Send Feedback</a> on this topic to naiadquestions@microsoft.com.</div></div></body></html>
