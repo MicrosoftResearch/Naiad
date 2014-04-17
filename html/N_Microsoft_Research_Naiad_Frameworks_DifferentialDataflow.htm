@@ -27,7 +27,8 @@
 				</script>TRecord<span id="ID0EAABAAFAAAAA"> </span><script type="text/javascript">
 					addToLanSpecTextIdSet("ID0EAABAAFAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
 				</script></a></td><td><div class="summary">
-            A record with a signed 64-bit weight.
+            A record with a signed 64-bit weight, which corresponds to the multiplicity of the record
+            in a multiset.
             </div></td></tr></table><div class="OH_CollapsibleAreaRegion"><div class="OH_regiontitle">Interfaces</div><div class="OH_CollapsibleArea_HrDiv"><hr class="OH_CollapsibleArea_Hr" /></div></div><div class="OH_clear"></div><table id="typeList" class="members"><tr><th class="ps_iconColumn">
 					 
 				</th><th class="ps_nameColumn">Interface</th><th class="ps_descriptionColumn">Description</th></tr><tr data="interface; public"><td><img src="./../icons/pubinterface.gif" alt="Public interface" title="Public interface" /></td><td><a href="T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2.htm" target="">Collection<span id="ID0ECABBAEAAAAA"> </span><script type="text/javascript">
@@ -72,7 +73,7 @@
     {
         <span class="highlight-keyword">using</span> (Controller controller = NewController.FromArgs(<span class="highlight-keyword">ref</span> args)
         {
-            <span class="highlight-keyword">using</span> (GraphManager computation = controller.NewComputation())
+            <span class="highlight-keyword">using</span> (Computation computation = controller.NewComputation())
             {
                 <span class="highlight-comment">// Define a computation in terms of collections.</span>
                 InputCollection&lt;<span class="highlight-keyword">int</span>&gt; input = computation.NewInputCollection();
@@ -113,7 +114,7 @@ class Program
     {
         using (Controller controller = NewController.FromArgs(ref args)
         {
-            using (GraphManager computation = controller.NewComputation())
+            using (Computation computation = controller.NewComputation())
             {
                 // Define a computation in terms of collections.
                 InputCollection&lt;int&gt; input = computation.NewInputCollection();
@@ -149,9 +150,9 @@ class Program
 					addToLanSpecTextIdSet("ID0EBAHAAAAAA?vb=.|cpp=::|cs=.|fs=.|nu=.");
 				</script>Controller</a></div><div class="seeAlsoStyle"><a href="T_Microsoft_Research_Naiad_NewController.htm" target="">Microsoft.Research.Naiad<span id="ID0EBAGAAAAAA"> </span><script type="text/javascript">
 					addToLanSpecTextIdSet("ID0EBAGAAAAAA?vb=.|cpp=::|cs=.|fs=.|nu=.");
-				</script>NewController</a></div><div class="seeAlsoStyle"><a href="T_Microsoft_Research_Naiad_GraphManager.htm" target="">Microsoft.Research.Naiad<span id="ID0EBAFAAAAAA"> </span><script type="text/javascript">
+				</script>NewController</a></div><div class="seeAlsoStyle"><a href="T_Microsoft_Research_Naiad_Computation.htm" target="">Microsoft.Research.Naiad<span id="ID0EBAFAAAAAA"> </span><script type="text/javascript">
 					addToLanSpecTextIdSet("ID0EBAFAAAAAA?vb=.|cpp=::|cs=.|fs=.|nu=.");
-				</script>GraphManager</a></div><div class="seeAlsoStyle"><a href="T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_InputCollection_1.htm" target="">Microsoft.Research.Naiad.Frameworks.DifferentialDataflow<span id="ID0EEAEAAAAAA"> </span><script type="text/javascript">
+				</script>Computation</a></div><div class="seeAlsoStyle"><a href="T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_InputCollection_1.htm" target="">Microsoft.Research.Naiad.Frameworks.DifferentialDataflow<span id="ID0EEAEAAAAAA"> </span><script type="text/javascript">
 					addToLanSpecTextIdSet("ID0EEAEAAAAAA?vb=.|cpp=::|cs=.|fs=.|nu=.");
 				</script>InputCollection<span id="ID0ECAEAAAAAA"> </span><script type="text/javascript">
 					addToLanSpecTextIdSet("ID0ECAEAAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");

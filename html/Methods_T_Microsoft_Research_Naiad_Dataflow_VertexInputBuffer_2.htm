@@ -16,19 +16,21 @@
 				</script></a> type exposes the following members.</p><div class="OH_CollapsibleAreaRegion"><div class="OH_regiontitle">Methods</div><div class="OH_CollapsibleArea_HrDiv"><hr class="OH_CollapsibleArea_Hr" /></div></div><div class="OH_clear"></div><table id="memberList" class="members"><tr><th class="ps_iconColumn">
 							 
 						</th><th class="ps_nameColumn">Name</th><th class="ps_descriptionColumn">Description</th></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Dataflow_VertexInputBuffer_2_Checkpoint.htm" target="">Checkpoint</a></td><td><div class="summary">
-            Checkpoints to a NaiadWriter
+            Checkpoints the contents of this buffer to the given <a href="T_Microsoft_Research_Naiad_Serialization_NaiadWriter.htm" target="">NaiadWriter</a>.
             </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Dataflow_VertexInputBuffer_2_Flush.htm" target="">Flush</a></td><td><div class="summary">
-            Flushes the associated vertex
+            Flushes the associated vertex.
             </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Dataflow_VertexInputBuffer_2_GetRecordsAt.htm" target="">GetRecordsAt</a></td><td><div class="summary">
-            Enumerates (and destroys) input records associated with a specified time.
+            Enumerates (and destroys) input records associated with the given <span class="parameter">time</span>.
             </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Dataflow_VertexInputBuffer_2_OnReceive.htm" target="">OnReceive</a></td><td><div class="summary">
-            Message callback
+            Buffers the content of the given <span class="parameter">message</span>, and schedules
+            a corresponding notification on the owning <a href="P_Microsoft_Research_Naiad_Dataflow_VertexInputBuffer_2_Vertex.htm" target="">Vertex</a>.
             </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Dataflow_VertexInputBuffer_2_Restore.htm" target="">Restore</a></td><td><div class="summary">
-            Restores from a NaiadReader
+            Restores this buffer from the given <a href="T_Microsoft_Research_Naiad_Serialization_NaiadReader.htm" target="">NaiadReader</a>.
             </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Dataflow_VertexInputBuffer_2_SerializedMessageReceived.htm" target="">SerializedMessageReceived</a></td><td><div class="summary">
-            Serialized message callback
+            Buffers the content of the given <span class="parameter">serializedMessage</span>, and
+            schedules a corresponding notification on the owning <a href="P_Microsoft_Research_Naiad_Dataflow_VertexInputBuffer_2_Vertex.htm" target="">Vertex</a>.
             </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Dataflow_VertexInputBuffer_2_ToString.htm" target="">ToString</a></td><td><div class="summary">
-            Overrridden ToString
+            Returns a string representation of this buffer.
             </div> (Overrides <a href="http://msdn2.microsoft.com/en-us/library/7bxwbwt2" target="_blank">Object<span id="ID0ECBAABCAAAAA"> </span><script type="text/javascript">
 					addToLanSpecTextIdSet("ID0ECBAABCAAAAA?vb=.|cpp=::|cs=.|fs=.|nu=.");
 				</script>ToString<span id="ID0EABAABCAAAAA"> </span><script type="text/javascript">

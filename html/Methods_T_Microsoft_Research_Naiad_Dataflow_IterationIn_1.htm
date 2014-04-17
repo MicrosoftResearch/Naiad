@@ -16,27 +16,29 @@
 				</script></a> type exposes the following members.</p><div class="OH_CollapsibleAreaRegion"><div class="OH_regiontitle">Methods</div><div class="OH_CollapsibleArea_HrDiv"><hr class="OH_CollapsibleArea_Hr" /></div></div><div class="OH_clear"></div><table id="memberList" class="members"><tr><th class="ps_iconColumn">
 							 
 						</th><th class="ps_nameColumn">Name</th><th class="ps_descriptionColumn">Description</th></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Dataflow_IterationIn_1_CompareTo.htm" target="">CompareTo</a></td><td><div class="summary">
-            Compares first by outerTime, then by iteration
+            Compares this timestamp with the <span class="parameter">other</span> timestamp.
             </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Dataflow_IterationIn_1_Equals.htm" target="">Equals</a></td><td><div class="summary">
-            Compares both outerTime and iteration
+            Returns <span class="code">true</span> if and only if this timestamp is equal to the <span class="parameter">other</span>
+            timestamp.
             </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Dataflow_IterationIn_1_GetHashCode.htm" target="">GetHashCode</a></td><td><div class="summary">
-            GetHashCode override
+            Returns a hashcode for this epoch.
             </div> (Overrides <a href="http://msdn2.microsoft.com/en-us/library/y3509fc2" target="_blank">ValueType<span id="ID0ECBAGBCAAAAA"> </span><script type="text/javascript">
 					addToLanSpecTextIdSet("ID0ECBAGBCAAAAA?vb=.|cpp=::|cs=.|fs=.|nu=.");
 				</script>GetHashCode<span id="ID0EABAGBCAAAAA"> </span><script type="text/javascript">
 					addToLanSpecTextIdSet("ID0EABAGBCAAAAA?vb=|cpp=()|cs=()|fs=()|nu=()");
 				</script></a>.)</td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Dataflow_IterationIn_1_InitializeFrom.htm" target="">InitializeFrom</a></td><td><div class="summary">
-            Initializes a time from a pointstamp
+            Returns a timestamp initialized from the given <span class="parameter">pointstamp</span>.
             </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Dataflow_IterationIn_1_Join.htm" target="">Join</a></td><td><div class="summary">
-            Computes least upper bound of two times
+            Returns the later of this and the <span class="parameter">other</span> timestamps.
             </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Dataflow_IterationIn_1_LessThan.htm" target="">LessThan</a></td><td><div class="summary">
-            Compares times using a partial order
+            Returns <span class="code">true</span> if and only if this timestamp is less than or equal to the <span class="parameter">other</span>
+            timestamp.
             </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Dataflow_IterationIn_1_Meet.htm" target="">Meet</a></td><td><div class="summary">
-            Computes greatest lower bound of two times
+            Returns the earlier of this and the <span class="parameter">other</span> timestamps.
             </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Dataflow_IterationIn_1_Populate.htm" target="">Populate</a></td><td><div class="summary">
-            Populates from a pointstamp
+            Populates a <a href="T_Microsoft_Research_Naiad_Runtime_Progress_Pointstamp.htm" target="">Pointstamp</a> from this timestamp.
             </div></td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Dataflow_IterationIn_1_ToString.htm" target="">ToString</a></td><td><div class="summary">
-            ToString override
+            Returns a string representation of this timestamp.
             </div> (Overrides <a href="http://msdn2.microsoft.com/en-us/library/wb77sz3h" target="_blank">ValueType<span id="ID0ECBAABCAAAAA"> </span><script type="text/javascript">
 					addToLanSpecTextIdSet("ID0ECBAABCAAAAA?vb=.|cpp=::|cs=.|fs=.|nu=.");
 				</script>ToString<span id="ID0EABAABCAAAAA"> </span><script type="text/javascript">

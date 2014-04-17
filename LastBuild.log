@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<shfbBuild product="Sandcastle Help File Builder" version="2014.2.15.0 Beta" projectFile="C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\NaiadDocumentation.shfbproj" started="4/16/2014 10:48:48 PM">
+<shfbBuild product="Sandcastle Help File Builder" version="2014.2.15.0 Beta" projectFile="C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\NaiadDocumentation.shfbproj" started="4/17/2014 12:42:47 AM">
 <buildStep step="Initializing">
 Finding tools...
 The Sandcastle tools are located in &#39;C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\&#39;
@@ -33,16 +33,16 @@ Copying XML comments files
 </buildStep>
 <buildStep step="GenerateSharedContent">
 Generating shared content files (en-US, English (United States))...
-    Last step completed in 00:00:00.0300
+    Last step completed in 00:00:00.0000
 </buildStep>
 <buildStep step="GenerateApiFilter">
 Generating API filter for MRefBuilder...
-    Last step completed in 00:00:00.0250
+    Last step completed in 00:00:00.0300
 </buildStep>
 <buildStep step="GenerateReflectionInfo">
 Generating reflection information...
 [C:\Program Files (x86)\MSBuild\12.0\bin\MSBuild.exe]
-Build started 4/16/2014 10:48:50 PM.
+Build started 4/17/2014 12:42:48 AM.
 Project &quot;C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\GenerateRefInfo.proj&quot; on node 1 (default targets).
 PrepareForBuild:
   Creating directory &quot;obj\Debug\&quot;.
@@ -51,7 +51,7 @@ GenerateRefInfo:
   Copyright c 2006-2014, Microsoft Corporation, All Rights Reserved.
   Portions Copyright c 2006-2014, Eric Woodruff, All Rights Reserved.
   Loaded 5 assemblies for reflection and 1 dependency assemblies.
-  Wrote information on 15 namespaces, 102 types, and 578 members
+  Wrote information on 14 namespaces, 101 types, and 570 members
   Copying file from &quot;reflection.org&quot; to &quot;reflection.all&quot;.
   XslTransform (v2014.1.26.0)
   Copyright c 2006-2014, Microsoft Corporation, All Rights Reserved.
@@ -61,13 +61,13 @@ Done Building Project &quot;C:\gits\naiad\Documentation\NaiadDocumentation\Naiad
 
 Build succeeded.
 
-Time Elapsed 00:00:01.13
-    Last step completed in 00:00:01.2801
+Time Elapsed 00:00:01.19
+    Last step completed in 00:00:01.2941
 </buildStep>
 <buildStep step="TransformReflectionInfo">
 Transforming reflection output...
 [C:\Program Files (x86)\MSBuild\12.0\bin\MSBuild.exe]
-Build started 4/16/2014 10:48:51 PM.
+Build started 4/17/2014 12:42:49 AM.
 Project &quot;C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\TransformManifest.proj&quot; on node 1 (default targets).
 TransformManifest:
   XslTransform (v2014.1.26.0)
@@ -79,14 +79,14 @@ TransformManifest:
   Copyright c 2006-2014, Microsoft Corporation, All Rights Reserved.
   Portions Copyright c 2006-2014, Eric Woodruff, All Rights Reserved.
   Applying XSL transformation &#39;C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\ProductionTransforms\AddFilenames.xsl&#39;.
-    Unique name M_Microsoft_Research_Naiad_GraphManager_NewInput__1_1 generated for M:Microsoft.Research.Naiad.GraphManager.NewInput``1(Microsoft.Research.Naiad.Input.DataSource{``0},System.String)
+    Unique name M_Microsoft_Research_Naiad_Computation_NewInput__1_1 generated for M:Microsoft.Research.Naiad.Computation.NewInput``1(Microsoft.Research.Naiad.Input.DataSource{``0},System.String)
     Unique name M_Microsoft_Research_Naiad_SubscribeExtensionMethods_Subscribe__1_1 generated for M:Microsoft.Research.Naiad.SubscribeExtensionMethods.Subscribe``1(Microsoft.Research.Naiad.Stream{``0,Microsoft.Research.Naiad.Dataflow.Epoch},System.Action{System.Collections.Generic.IEnumerable{``0}})
     Unique name M_Microsoft_Research_Naiad_SubscribeExtensionMethods_Subscribe__1_2 generated for M:Microsoft.Research.Naiad.SubscribeExtensionMethods.Subscribe``1(Microsoft.Research.Naiad.Stream{``0,Microsoft.Research.Naiad.Dataflow.Epoch},System.Action{Microsoft.Research.Naiad.Dataflow.Message{``0,Microsoft.Research.Naiad.Dataflow.Epoch},System.Int32},System.Action{Microsoft.Research.Naiad.Dataflow.Epoch,System.Int32},System.Action{System.Int32})
     Unique name M_Microsoft_Research_Naiad_SubscribeExtensionMethods_Subscribe__1_3 generated for M:Microsoft.Research.Naiad.SubscribeExtensionMethods.Subscribe``1(Microsoft.Research.Naiad.Stream{``0,Microsoft.Research.Naiad.Dataflow.Epoch},System.Action{System.Int32,System.Collections.Generic.IEnumerable{``0}})
     Unique name M_Microsoft_Research_Naiad_SubscribeExtensionMethods_Subscribe__1_4 generated for M:Microsoft.Research.Naiad.SubscribeExtensionMethods.Subscribe``1(Microsoft.Research.Naiad.Stream{``0,Microsoft.Research.Naiad.Dataflow.Epoch},System.Action{System.Int32,System.Int32,System.Collections.Generic.IEnumerable{``0}})
+    Unique name M_Microsoft_Research_Naiad_Dataflow_ReturnAddress__ctor_1 generated for M:Microsoft.Research.Naiad.Dataflow.ReturnAddress.#ctor(System.Int32,System.Int32,System.Int32)
     Unique name M_Microsoft_Research_Naiad_Dataflow_Stage_2_NewOutput__1_1 generated for M:Microsoft.Research.Naiad.Dataflow.Stage`2.NewOutput``1(System.Func{`0,Microsoft.Research.Naiad.Dataflow.VertexOutput{``0,`1}},System.Linq.Expressions.Expression{System.Func{``0,System.Int32}})
     Unique name M_Microsoft_Research_Naiad_Dataflow_Vertex_1_NotifyAt_1 generated for M:Microsoft.Research.Naiad.Dataflow.Vertex`1.NotifyAt(`0,`0)
-    Unique name M_Microsoft_Research_Naiad_Dataflow_Channels_ReturnAddress__ctor_1 generated for M:Microsoft.Research.Naiad.Dataflow.Channels.ReturnAddress.#ctor(System.Int32,System.Int32,System.Int32)
     Unique name M_Microsoft_Research_Naiad_Dataflow_Iteration_LoopContext_1_Delay__1_1 generated for M:Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext`1.Delay``1(System.Int32)
     Unique name M_Microsoft_Research_Naiad_Dataflow_Iteration_LoopContext_1_Delay__1_2 generated for M:Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext`1.Delay``1(System.Linq.Expressions.Expression{System.Func{``0,System.Int32}})
     Unique name M_Microsoft_Research_Naiad_Dataflow_Iteration_LoopContext_1_Delay__1_3 generated for M:Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext`1.Delay``1(System.Linq.Expressions.Expression{System.Func{``0,System.Int32}},System.Int32)
@@ -126,7 +126,7 @@ TransformManifest:
     Unique name M_Microsoft_Research_Naiad_Input_BatchedDataSource_1_OnNext_2 generated for M:Microsoft.Research.Naiad.Input.BatchedDataSource`1.OnNext(`0)
     Unique name M_Microsoft_Research_Naiad_Input_ConstantDataSource_1__ctor_1 generated for M:Microsoft.Research.Naiad.Input.ConstantDataSource`1.#ctor(System.Collections.Generic.IEnumerable{`0})
     Unique name M_Microsoft_Research_Naiad_Input_ConstantDataSource_1__ctor_2 generated for M:Microsoft.Research.Naiad.Input.ConstantDataSource`1.#ctor(`0)
-    Unique name M_Microsoft_Research_Naiad_Input_DataSourceExtensionMethods_AsNaiadStream__1_1 generated for M:Microsoft.Research.Naiad.Input.DataSourceExtensionMethods.AsNaiadStream``1(System.IObservable{System.Collections.Generic.IEnumerable{``0}},Microsoft.Research.Naiad.GraphManager)
+    Unique name M_Microsoft_Research_Naiad_Input_DataSourceExtensionMethods_AsNaiadStream__1_1 generated for M:Microsoft.Research.Naiad.Input.DataSourceExtensionMethods.AsNaiadStream``1(System.IObservable{System.Collections.Generic.IEnumerable{``0}},Microsoft.Research.Naiad.Computation)
     Unique name M_Microsoft_Research_Naiad_Serialization_CheckpointRestoreExtensionMethods_Checkpoint__1_1 generated for M:Microsoft.Research.Naiad.Serialization.CheckpointRestoreExtensionMethods.Checkpoint``1(``0[],System.Int32,Microsoft.Research.Naiad.Serialization.NaiadWriter)
     Unique name M_Microsoft_Research_Naiad_Serialization_Deserializers_TryDeserialize_1 generated for M:Microsoft.Research.Naiad.Serialization.Deserializers.TryDeserialize(Microsoft.Research.Naiad.Serialization.RecvBuffer@,System.Byte@)
     Unique name M_Microsoft_Research_Naiad_Serialization_Deserializers_TryDeserialize_2 generated for M:Microsoft.Research.Naiad.Serialization.Deserializers.TryDeserialize(Microsoft.Research.Naiad.Serialization.RecvBuffer@,System.Byte[]@)
@@ -164,12 +164,12 @@ Done Building Project &quot;C:\gits\naiad\Documentation\NaiadDocumentation\Naiad
 
 Build succeeded.
 
-Time Elapsed 00:00:01.43
-    Last step completed in 00:00:01.5502
+Time Elapsed 00:00:01.28
+    Last step completed in 00:00:01.5306
 </buildStep>
 <buildStep step="GenerateNamespaceSummaries">
 Generating namespace summary information...
-    Last step completed in 00:00:00.1350
+    Last step completed in 00:00:00.1750
 </buildStep>
 <buildStep step="CopyConceptualContent">
 Copying conceptual content...
@@ -188,28 +188,28 @@ Generating conceptual topic files
     C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Content\VersionHistory\VersionHistory.aml -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\ddueXml\c2a31aaa-d867-4d3b-9315-dbb7c7527659.xml
     Parsing topic file &#39;C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Content\VersionHistory\v1.0.0.0.aml&#39;
     C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Content\VersionHistory\v1.0.0.0.aml -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\ddueXml\576fa56a-c7d5-4dc9-81bb-6fbd7e312fec.xml
-    Last step completed in 00:00:00.0800
+    Last step completed in 00:00:00.1300
 </buildStep>
 <buildStep step="CreateConceptualTopicConfigs">
 Creating conceptual topic configuration files...
     Companion files
     _ContentMetadata_.xml
     ConceptualManifest.xml
-    Last step completed in 00:00:00.0300
+    Last step completed in 00:00:00.0150
 </buildStep>
 <buildStep step="CopyAdditionalContent">
 Copying additional content files...
 C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\icons\Help.png -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\Help.png
-    Last step completed in 00:00:00.0050
+    Last step completed in 00:00:00.0100
 </buildStep>
 <buildStep step="MergeTablesOfContents">
 Merging conceptual and additional tables of contents...
-    Last step completed in 00:00:00.0050
+    Last step completed in 00:00:00.0000
 </buildStep>
 <buildStep step="GenerateIntermediateTableOfContents">
 Generating intermediate table of contents file...
 [C:\Program Files (x86)\MSBuild\12.0\bin\MSBuild.exe]
-Build started 4/16/2014 10:48:53 PM.
+Build started 4/17/2014 12:42:51 AM.
 Project &quot;C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\GenerateIntermediateTOC.proj&quot; on node 1 (default targets).
 GenerateIntermediateTOC:
   XslTransform (v2014.1.26.0)
@@ -220,27 +220,27 @@ Done Building Project &quot;C:\gits\naiad\Documentation\NaiadDocumentation\Naiad
 
 Build succeeded.
 
-Time Elapsed 00:00:00.12
+Time Elapsed 00:00:00.21
 Generating conceptual content intermediate TOC file...
-    Last step completed in 00:00:00.2050
+    Last step completed in 00:00:00.2950
 </buildStep>
 <buildStep step="CreateBuildAssemblerConfigs">
 Creating Sandcastle configuration files...
     sandcastle.config
     conceptual.config
-    Last step completed in 00:00:00.2900
+    Last step completed in 00:00:00.3550
 </buildStep>
 <buildStep step="MergeCustomConfigs">
 Merging custom build component configurations
 C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\sandcastle.config
 C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\conceptual.config
     Removing unused ExampleComponent.
-    Last step completed in 00:00:00.1050
+    Last step completed in 00:00:00.1550
 </buildStep>
 <buildStep step="BuildConceptualTopics">
 Building conceptual help topics...
 [C:\Program Files (x86)\MSBuild\12.0\bin\MSBuild.exe]
-Build started 4/16/2014 10:48:53 PM.
+Build started 4/17/2014 12:42:52 AM.
 Project &quot;C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildConceptualTopics.proj&quot; on node 1 (default targets).
 BuildConceptualTopics:
   BuildAssembler (v2014.1.26.0)
@@ -254,13 +254,13 @@ Done Building Project &quot;C:\gits\naiad\Documentation\NaiadDocumentation\Naiad
 
 Build succeeded.
 
-Time Elapsed 00:00:06.42
-    Last step completed in 00:00:06.5857
+Time Elapsed 00:00:06.95
+    Last step completed in 00:00:07.2356
 </buildStep>
 <buildStep step="BuildReferenceTopics">
 Building reference help topics...
 [C:\Program Files (x86)\MSBuild\12.0\bin\MSBuild.exe]
-Build started 4/16/2014 10:49:00 PM.
+Build started 4/17/2014 12:42:59 AM.
 Project &quot;C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj&quot; on node 1 (default targets).
 BuildReferenceTopics:
   BuildAssembler (v2014.1.26.0)
@@ -268,105 +268,31 @@ BuildReferenceTopics:
   Portions Copyright c 2006-2014, Eric Woodruff, All Rights Reserved.
   Loading configuration...
   Processing topics...
-BuildAssembler : warning : ResolveReferenceLinksComponent: [R:Project_NaiadDocumentation] Unknown reference link target &#39;T:UnaryVertex&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [R:Project_NaiadDocumentation] Unknown reference link target &#39;T:BinaryVertex&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Configuration.FromArgs(System.String[]@)] Missing &lt;returns&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Configuration.FromArgs(System.String[]@)] Missing &lt;param name=&quot;args&quot;/&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [T:Microsoft.Research.Naiad.GraphManager] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.CloudStorageAccount&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [T:Microsoft.Research.Naiad.GraphManager] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [Methods.T:Microsoft.Research.Naiad.GraphManager] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.CloudStorageAccount&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [Methods.T:Microsoft.Research.Naiad.GraphManager] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.NewComputation.FromArgs(System.String[]@)] Unknown reference link target &#39;!:GraphManger&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.NewComputation.FromArgs(System.String[]@)] Invalid reference link target &#39;!:GraphManger&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [T:Microsoft.Research.Naiad.OneOffComputation] Missing &lt;summary&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
+BuildAssembler : warning : ResolveReferenceLinksComponent: [T:Microsoft.Research.Naiad.Computation] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.CloudStorageAccount&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
+BuildAssembler : warning : ResolveReferenceLinksComponent: [T:Microsoft.Research.Naiad.Computation] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
+BuildAssembler : warning : ResolveReferenceLinksComponent: [Methods.T:Microsoft.Research.Naiad.Computation] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.CloudStorageAccount&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
+BuildAssembler : warning : ResolveReferenceLinksComponent: [Methods.T:Microsoft.Research.Naiad.Computation] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
 BuildAssembler : warning : ResolveReferenceLinksComponent: [T:Microsoft.Research.Naiad.OneOffComputation] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.CloudStorageAccount&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
 BuildAssembler : warning : ResolveReferenceLinksComponent: [T:Microsoft.Research.Naiad.OneOffComputation] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
 BuildAssembler : warning : ResolveReferenceLinksComponent: [Methods.T:Microsoft.Research.Naiad.OneOffComputation] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.CloudStorageAccount&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
 BuildAssembler : warning : ResolveReferenceLinksComponent: [Methods.T:Microsoft.Research.Naiad.OneOffComputation] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Pair`2.Equals(Microsoft.Research.Naiad.Pair{`0,`1})] Missing &lt;returns&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Pair`2.GetHashCode] Missing &lt;returns&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Pair`2.ToString] Missing &lt;returns&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [T:Microsoft.Research.Naiad.Time`1] Missing &lt;typeparam name=&quot;TTime&quot;/&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Time`1.GetHashCode] Missing &lt;returns&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.Empty.CompareTo(Microsoft.Research.Naiad.Dataflow.Empty)] Missing &lt;returns&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.Empty.CompareTo(Microsoft.Research.Naiad.Dataflow.Empty)] Missing &lt;param name=&quot;other&quot;/&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.Empty.Equals(Microsoft.Research.Naiad.Dataflow.Empty)] Missing &lt;returns&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.Empty.Equals(Microsoft.Research.Naiad.Dataflow.Empty)] Missing &lt;param name=&quot;other&quot;/&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.Empty.InitializeFrom(Microsoft.Research.Naiad.Runtime.Progress.Pointstamp,System.Int32)] Missing &lt;returns&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.Empty.InitializeFrom(Microsoft.Research.Naiad.Runtime.Progress.Pointstamp,System.Int32)] Missing &lt;param name=&quot;version&quot;/&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.Empty.InitializeFrom(Microsoft.Research.Naiad.Runtime.Progress.Pointstamp,System.Int32)] Missing &lt;param name=&quot;length&quot;/&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.Empty.Join(Microsoft.Research.Naiad.Dataflow.Empty)] Missing &lt;returns&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.Empty.Join(Microsoft.Research.Naiad.Dataflow.Empty)] Missing &lt;param name=&quot;that&quot;/&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.Empty.LessThan(Microsoft.Research.Naiad.Dataflow.Empty)] Missing &lt;returns&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.Empty.LessThan(Microsoft.Research.Naiad.Dataflow.Empty)] Missing &lt;param name=&quot;that&quot;/&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.Empty.Meet(Microsoft.Research.Naiad.Dataflow.Empty)] Missing &lt;returns&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.Empty.Meet(Microsoft.Research.Naiad.Dataflow.Empty)] Missing &lt;param name=&quot;that&quot;/&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.Empty.Populate(Microsoft.Research.Naiad.Runtime.Progress.Pointstamp@)] Missing &lt;returns&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.Empty.Populate(Microsoft.Research.Naiad.Runtime.Progress.Pointstamp@)] Missing &lt;param name=&quot;version&quot;/&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.Epoch.#ctor(System.Int32)] Missing &lt;param name=&quot;tt&quot;/&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.Epoch.CompareTo(Microsoft.Research.Naiad.Dataflow.Epoch)] Missing &lt;returns&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.Epoch.Equals(Microsoft.Research.Naiad.Dataflow.Epoch)] Missing &lt;returns&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.Epoch.GetHashCode] Missing &lt;returns&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.Epoch.InitializeFrom(Microsoft.Research.Naiad.Runtime.Progress.Pointstamp,System.Int32)] Missing &lt;returns&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.Epoch.Join(Microsoft.Research.Naiad.Dataflow.Epoch)] Missing &lt;returns&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.Epoch.LessThan(Microsoft.Research.Naiad.Dataflow.Epoch)] Missing &lt;returns&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.Epoch.Meet(Microsoft.Research.Naiad.Dataflow.Epoch)] Missing &lt;returns&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.Epoch.Populate(Microsoft.Research.Naiad.Runtime.Progress.Pointstamp@)] Missing &lt;returns&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.Epoch.ToString] Missing &lt;returns&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.IterationIn`1.GetHashCode] Missing &lt;returns&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.IterationIn`1.ToString] Missing &lt;returns&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.Placement.Equals(Microsoft.Research.Naiad.Dataflow.Placement)] Missing &lt;returns&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.Placement.Equals(Microsoft.Research.Naiad.Dataflow.Placement)] Missing &lt;param name=&quot;that&quot;/&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.Placement.GetEnumerator] Missing &lt;returns&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.Placement.Explicit.#ctor(System.Collections.Generic.IEnumerable{Microsoft.Research.Naiad.Dataflow.VertexLocation})] Missing &lt;param name=&quot;locations&quot;/&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.Placement.Explicit.Equals(Microsoft.Research.Naiad.Dataflow.Placement)] Missing &lt;returns&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.Placement.Explicit.Equals(Microsoft.Research.Naiad.Dataflow.Placement)] Missing &lt;param name=&quot;that&quot;/&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.Placement.Explicit.GetEnumerator] Missing &lt;returns&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.Stage.NewInput``2(Microsoft.Research.Naiad.Stream{``0,``1},System.Linq.Expressions.Expression{System.Func{``0,System.Int32}})] Missing &lt;returns&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.Stage.Restore(Microsoft.Research.Naiad.Serialization.NaiadReader)] Missing &lt;param name=&quot;reader&quot;/&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.Stage.ToString] Missing &lt;returns&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.StageInput`2.ToString] Missing &lt;returns&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [T:Microsoft.Research.Naiad.Dataflow.StreamingInput`1] Missing &lt;typeparam name=&quot;TRecord&quot;/&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.Vertex`1.OnNotify(`0)] Missing &lt;param name=&quot;time&quot;/&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [T:Microsoft.Research.Naiad.Dataflow.VertexInput`2] Missing &lt;typeparam name=&quot;TRecord&quot;/&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [T:Microsoft.Research.Naiad.Dataflow.VertexInput`2] Missing &lt;typeparam name=&quot;TTime&quot;/&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.VertexInputBuffer`2.Checkpoint(Microsoft.Research.Naiad.Serialization.NaiadWriter)] Missing &lt;param name=&quot;writer&quot;/&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.VertexInputBuffer`2.GetRecordsAt(`1)] Missing &lt;returns&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.VertexInputBuffer`2.ToString] Missing &lt;returns&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.VertexLocation.#ctor(System.Int32,System.Int32,System.Int32)] Missing &lt;param name=&quot;vertexId&quot;/&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.VertexLocation.#ctor(System.Int32,System.Int32,System.Int32)] Missing &lt;param name=&quot;processId&quot;/&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.VertexLocation.#ctor(System.Int32,System.Int32,System.Int32)] Missing &lt;param name=&quot;threadId&quot;/&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [T:Microsoft.Research.Naiad.Dataflow.VertexOutput`2] Missing &lt;typeparam name=&quot;TRecord&quot;/&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [T:Microsoft.Research.Naiad.Dataflow.VertexOutput`2] Missing &lt;typeparam name=&quot;TTime&quot;/&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [N:Microsoft.Research.Naiad.Dataflow.Channels] Missing &lt;summary&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [N:Microsoft.Research.Naiad.Dataflow.StandardVertices] Unknown reference link target &#39;T:UnaryVertex&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [N:Microsoft.Research.Naiad.Dataflow.StandardVertices] Unknown reference link target &#39;T:BinaryVertex&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.StandardVertices.BinaryBufferingVertex`4.OnNotify(`3)] Missing &lt;param name=&quot;time&quot;/&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.StandardVertices.BinaryBufferingVertex`4.OnReceive1(Microsoft.Research.Naiad.Dataflow.Message{`0,`3})] Missing &lt;param name=&quot;message&quot;/&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.StandardVertices.BinaryBufferingVertex`4.OnReceive2(Microsoft.Research.Naiad.Dataflow.Message{`1,`3})] Missing &lt;param name=&quot;message&quot;/&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.StandardVertices.SinkBufferingVertex`2.OnNotify(`1)] Missing &lt;param name=&quot;time&quot;/&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.StandardVertices.SinkBufferingVertex`2.OnReceive(Microsoft.Research.Naiad.Dataflow.Message{`0,`1})] Missing &lt;param name=&quot;record&quot;/&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.StandardVertices.UnaryBufferingVertex`3.OnNotify(`2)] Missing &lt;param name=&quot;time&quot;/&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Dataflow.StandardVertices.UnaryBufferingVertex`3.OnReceive(Microsoft.Research.Naiad.Dataflow.Message{`0,`2})] Missing &lt;param name=&quot;message&quot;/&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Diagnostics.FrontierChangedEventArgs.#ctor(Microsoft.Research.Naiad.Runtime.Progress.Pointstamp[])] Missing &lt;param name=&quot;newFrontier&quot;/&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [N:Microsoft.Research.Naiad.Frameworks.Azure] Missing &lt;summary&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
 BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Azure.ConsoleExtensionMethods.SetConsoleError(Microsoft.Research.Naiad.Controller,Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer,System.String)] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
 BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Azure.ConsoleExtensionMethods.SetConsoleOut(Microsoft.Research.Naiad.Controller,Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer,System.String)] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
 BuildAssembler : warning : ResolveReferenceLinksComponent: [T:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.CloudStorageAccount&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
 BuildAssembler : warning : ResolveReferenceLinksComponent: [T:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
 BuildAssembler : warning : ResolveReferenceLinksComponent: [Methods.T:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.CloudStorageAccount&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
 BuildAssembler : warning : ResolveReferenceLinksComponent: [Methods.T:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods.DefaultAccount(Microsoft.Research.Naiad.GraphManager)] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.CloudStorageAccount&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods.DefaultAccount(Microsoft.Research.Naiad.GraphManager)] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.CloudStorageAccount&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods.DefaultAccount(Microsoft.Research.Naiad.GraphManager)] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.CloudStorageAccount&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods.DefaultBlobContainer(Microsoft.Research.Naiad.GraphManager,System.String)] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods.DefaultBlobContainer(Microsoft.Research.Naiad.GraphManager,System.String)] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods.ReadBinaryFromAzureBlobs``1(Microsoft.Research.Naiad.GraphManager,Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer,System.String)] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods.ReadCustomBinaryFromAzureBlobs``1(Microsoft.Research.Naiad.GraphManager,Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer,System.String,System.Func{System.IO.BinaryReader,System.Collections.Generic.IEnumerable{``0}})] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods.ReadFromAzureBlobs``1(Microsoft.Research.Naiad.GraphManager,Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer,System.String,System.Func{System.IO.Stream,System.Collections.Generic.IEnumerable{``0}})] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods.ReadFromAzureTable``1(Microsoft.Research.Naiad.GraphManager,Microsoft.WindowsAzure.Storage.Table.CloudTable,Microsoft.WindowsAzure.Storage.Table.TableQuery{``0})] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Table.CloudTable&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods.ReadFromAzureTable``1(Microsoft.Research.Naiad.GraphManager,Microsoft.WindowsAzure.Storage.Table.CloudTable,Microsoft.WindowsAzure.Storage.Table.TableQuery{``0})] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Table.TableQuery`1&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods.ReadTextFromAzureBlobs(Microsoft.Research.Naiad.GraphManager,Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer,System.String)] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
+BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods.DefaultAccount(Microsoft.Research.Naiad.Computation)] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.CloudStorageAccount&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
+BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods.DefaultAccount(Microsoft.Research.Naiad.Computation)] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.CloudStorageAccount&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
+BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods.DefaultAccount(Microsoft.Research.Naiad.Computation)] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.CloudStorageAccount&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
+BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods.DefaultBlobContainer(Microsoft.Research.Naiad.Computation,System.String)] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
+BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods.DefaultBlobContainer(Microsoft.Research.Naiad.Computation,System.String)] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
+BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods.ReadBinaryFromAzureBlobs``1(Microsoft.Research.Naiad.Computation,Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer,System.String)] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
+BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods.ReadCustomBinaryFromAzureBlobs``1(Microsoft.Research.Naiad.Computation,Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer,System.String,System.Func{System.IO.BinaryReader,System.Collections.Generic.IEnumerable{``0}})] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
+BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods.ReadFromAzureBlobs``1(Microsoft.Research.Naiad.Computation,Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer,System.String,System.Func{System.IO.Stream,System.Collections.Generic.IEnumerable{``0}})] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
+BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods.ReadFromAzureTable``1(Microsoft.Research.Naiad.Computation,Microsoft.WindowsAzure.Storage.Table.CloudTable,Microsoft.WindowsAzure.Storage.Table.TableQuery{``0})] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Table.CloudTable&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
+BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods.ReadFromAzureTable``1(Microsoft.Research.Naiad.Computation,Microsoft.WindowsAzure.Storage.Table.CloudTable,Microsoft.WindowsAzure.Storage.Table.TableQuery{``0})] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Table.TableQuery`1&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
+BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods.ReadTextFromAzureBlobs(Microsoft.Research.Naiad.Computation,Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer,System.String)] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
 BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods.WriteBinaryToAzureBlobs``1(Microsoft.Research.Naiad.Stream{``0,Microsoft.Research.Naiad.Dataflow.Epoch},Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer,System.String)] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
 BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods.WriteCustomBinaryToAzureBlobs``1(Microsoft.Research.Naiad.Stream{``0,Microsoft.Research.Naiad.Dataflow.Epoch},Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer,System.String,System.Action{System.IO.BinaryWriter,``0})] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
 BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods.WriteTextToAzureBlobs(Microsoft.Research.Naiad.Stream{System.String,Microsoft.Research.Naiad.Dataflow.Epoch},Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer,System.String)] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
@@ -374,41 +300,22 @@ BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research
 BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods.WriteToAzureBlobs``1(Microsoft.Research.Naiad.Stream{``0,Microsoft.Research.Naiad.Dataflow.Epoch},Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer,System.String,System.Func{Microsoft.WindowsAzure.Storage.Blob.CloudBlobStream,System.IObserver{``0}})] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
 BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods.WriteToAzureBlobs``1(Microsoft.Research.Naiad.Stream{``0,Microsoft.Research.Naiad.Dataflow.Epoch},Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer,System.String,System.Func{Microsoft.WindowsAzure.Storage.Blob.CloudBlobStream,System.IObserver{``0}})] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Blob.CloudBlobStream&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
 BuildAssembler : warning : ResolveReferenceLinksComponent: [N:Microsoft.Research.Naiad.Frameworks.DifferentialDataflow] Unknown reference link target &#39;T:Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.IncrementalCollection`1&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.ExtensionMethods.SlidingWindow``1(Microsoft.Research.Naiad.Stream{``0,Microsoft.Research.Naiad.Dataflow.Epoch},System.Int32)] Missing &lt;param name=&quot;stream&quot;/&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.IntPair.CompareTo(Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.IntPair)] Missing &lt;returns&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.IntPair.CompareTo(Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.IntPair)] Missing &lt;param name=&quot;that&quot;/&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.IntPair.Equals(Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.IntPair)] Missing &lt;returns&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.IntPair.GetHashCode] Missing &lt;returns&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.IntPair.ToString] Missing &lt;returns&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Weighted`1.Equals(Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Weighted{`0})] Missing &lt;returns&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Weighted`1.ToString] Missing &lt;returns&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [T:Microsoft.Research.Naiad.Input.DataSource`1] Missing &lt;typeparam name=&quot;TRecord&quot;/&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [T:Microsoft.Research.Naiad.Input.InterGraphDataSink`1] Missing &lt;typeparam name=&quot;TRecord&quot;/&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Input.InterGraphDataSource`1.#ctor(Microsoft.Research.Naiad.Input.InterGraphDataSink{`0})] Missing &lt;param name=&quot;sink&quot;/&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Runtime.Progress.Pointstamp.GetHashCode] Missing &lt;returns&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Runtime.Progress.Pointstamp.ToString] Missing &lt;returns&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Runtime.Progress.Pointstamp.FakeArray.#ctor(System.Int32)] Missing &lt;param name=&quot;size&quot;/&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Runtime.Progress.Pointstamp.FakeArray.ToString] Missing &lt;returns&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [M:Microsoft.Research.Naiad.Serialization.CheckpointRestoreExtensionMethods.RestoreArray``1(Microsoft.Research.Naiad.Serialization.NaiadReader,System.Func{System.Int32,``0[]})] Missing &lt;returns&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [T:Microsoft.Research.Naiad.Serialization.NaiadWriter`1] Missing &lt;typeparam name=&quot;TElement&quot;/&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ShowMissingComponent: [T:Microsoft.Research.Naiad.Utilities.DependencyLister] Missing &lt;summary&gt; documentation [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-  Processed 876 topic(s)
-  124 warning(s)
+  Processed 864 topic(s)
+  32 warning(s)
   CopyFromIndexComponent: &quot;reflection&quot; in-memory cache entries used: 9 of 15.
   CopyFromIndexComponent: &quot;comments&quot; in-memory cache entries used: 5 of 30.
-  ResolveReferenceLinksComponent: New MSDN content ID cache size: 133 entries
 Done Building Project &quot;C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj&quot; (default targets).
 
 Build succeeded.
 
-Time Elapsed 00:00:31.17
-    Last step completed in 00:00:31.2786
+Time Elapsed 00:00:38.60
+    Last step completed in 00:00:38.7422
 </buildStep>
 <buildStep step="CombiningIntermediateTocFiles">
 Combining conceptual and API intermediate TOC files...
 
 Clearing any prior web output
-    Last step completed in 00:00:00.3500
+    Last step completed in 00:00:00.3550
 </buildStep>
 <buildStep step="ExtractingHtmlInfo">
 Extracting HTML info for HTML Help 1 and/or website...
@@ -420,11 +327,11 @@ E-Mail: Eric@EWoodruff.us
 Using LCID &#39;1033&#39;, code page &#39;65001&#39;, encoding charset &#39;UTF-8&#39;.
 
 Processing website files in C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website
-Processed 881 HTML files
+Processed 869 HTML files
 Sorting keywords and generating See Also indices
 Saving website keyword index to C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\WebKI.xml
 Saving website table of contents to C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\WebTOC.xml
-    Last step completed in 00:00:06.4623
+    Last step completed in 00:00:09.9071
 </buildStep>
 <buildStep step="CopyStandardHelpContent">
 Copying standard help content...
@@ -523,16 +430,16 @@ C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\\Web\SyncTOC.gif 
 C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\\Web\TOC.css -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\.\TOC.css
 C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\\Web\TOC.js -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\.\TOC.js
 C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\\Web\Web.Config -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\.\Web.Config
-    Last step completed in 00:00:00.6451
+    Last step completed in 00:00:00.7551
 </buildStep>
 <buildStep step="GenerateHelpFormatTableOfContents">
 Generating website table of contents file...
-    Last step completed in 00:00:00.0000
+    Last step completed in 00:00:00.0050
 </buildStep>
 <buildStep step="GenerateFullTextIndex">
 Generating full-text index for the website...
 
-    Last step completed in 00:00:02.5903
+    Last step completed in 00:00:03.6850
 </buildStep>
 <buildStep step="CopyingWebsiteFiles">
 Copying website files to output folder...
@@ -546,17 +453,16 @@ Copied 600 files
 Copied 700 files
 Copied 800 files
 Copied 900 files
-Copied 1000 files
-Copied 1004 files for the website content
-    Last step completed in 00:00:00.9101
+Copied 992 files for the website content
+    Last step completed in 00:00:01.5036
 </buildStep>
 <buildStep step="CleanIntermediates">
 Removing intermediate files...
-    Last step completed in 00:00:00.2150
+    Last step completed in 00:00:00.3350
 </buildStep>
 <buildStep step="Completed">
 
-Build completed successfully at 04/16/2014 10:49 PM.  Total time: 00:00:54.1277
+Build completed successfully at 04/17/2014 12:43 AM.  Total time: 00:01:07.0750
 
 </buildStep>
 </shfbBuild>

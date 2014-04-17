@@ -10,11 +10,15 @@
             </div><div class="OH_CollapsibleAreaRegion"><div class="OH_regiontitle">Classes</div><div class="OH_CollapsibleArea_HrDiv"><hr class="OH_CollapsibleArea_Hr" /></div></div><div class="OH_clear"></div><table id="typeList" class="members"><tr><th class="ps_iconColumn">
 					 
 				</th><th class="ps_nameColumn">Class</th><th class="ps_descriptionColumn">Description</th></tr><tr data="class; public"><td><img src="./../icons/pubclass.gif" alt="Public class" title="Public class" /></td><td><a href="T_Microsoft_Research_Naiad_Dataflow_Placement.htm" target="">Placement</a></td><td><div class="summary">
-            Base class for placement
+            Represents the placement of physical dataflow <a href="T_Microsoft_Research_Naiad_Dataflow_Vertex.htm" target="">Vertex</a> objects in a <a href="T_Microsoft_Research_Naiad_Dataflow_Stage_1.htm" target="">Stage<span id="ID0ECBAAKACAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECBAAKACAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TTime<span id="ID0EABAAKACAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EABAAKACAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script></a>.
             </div></td></tr><tr data="class; public"><td><img src="./../icons/pubclass.gif" alt="Public class" title="Public class" /></td><td><a href="T_Microsoft_Research_Naiad_Dataflow_Placement_Explicit.htm" target="">Placement<span id="ID0EBABJACAAAAA"> </span><script type="text/javascript">
 					addToLanSpecTextIdSet("ID0EBABJACAAAAA?vb=.|cpp=::|cs=.|fs=.|nu=.");
 				</script>Explicit</a></td><td><div class="summary">
-            Placement based on an explicit map
+            Represents a <a href="T_Microsoft_Research_Naiad_Dataflow_Placement.htm" target="">Placement</a> based on an explicit <a href="T_Microsoft_Research_Naiad_Dataflow_Vertex.htm" target="">Vertex</a>-to-location mapping.
             </div></td></tr><tr data="class; public"><td><img src="./../icons/pubclass.gif" alt="Public class" title="Public class" /></td><td><a href="T_Microsoft_Research_Naiad_Dataflow_Stage.htm" target="">Stage</a></td><td><div class="summary">
             Represents an abstract stage in a dataflow graph, which comprises one or more dataflow vertices that each
             handle a partition of the data received by the stage.
@@ -64,31 +68,33 @@
 				</script>TRecord, TTime<span id="ID0EAABBACAAAAA"> </span><script type="text/javascript">
 					addToLanSpecTextIdSet("ID0EAABBACAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
 				</script></a></td><td><div class="summary">
-            Buffers sent records
+            An intermediate buffer for records sent by a <a href="P_Microsoft_Research_Naiad_Dataflow_VertexOutputBuffer_2_Vertex.htm" target="">Vertex</a>.
             </div></td></tr><tr data="class; public"><td><img src="./../icons/pubclass.gif" alt="Public class" title="Public class" /></td><td><a href="T_Microsoft_Research_Naiad_Dataflow_VertexOutputBufferPerTime_2.htm" target="">VertexOutputBufferPerTime<span id="ID0ECABAACAAAAA"> </span><script type="text/javascript">
 					addToLanSpecTextIdSet("ID0ECABAACAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
 				</script>TRecord, TTime<span id="ID0EAABAACAAAAA"> </span><script type="text/javascript">
 					addToLanSpecTextIdSet("ID0EAABAACAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
 				</script></a></td><td><div class="summary">
-            Send buffer for a single time
+            Represents a per-time buffer for sending records with a single time.
             </div></td></tr></table><div class="OH_CollapsibleAreaRegion"><div class="OH_regiontitle">Structures</div><div class="OH_CollapsibleArea_HrDiv"><hr class="OH_CollapsibleArea_Hr" /></div></div><div class="OH_clear"></div><table id="typeList" class="members"><tr><th class="ps_iconColumn">
 					 
 				</th><th class="ps_nameColumn">Structure</th><th class="ps_descriptionColumn">Description</th></tr><tr data="structure; public"><td><img src="./../icons/pubstructure.gif" alt="Public structure" title="Public structure" /></td><td><a href="T_Microsoft_Research_Naiad_Dataflow_Empty.htm" target="">Empty</a></td><td><div class="summary">
-            Represents a non-varying time
+            Represents a non-varying logical time.
             </div></td></tr><tr data="structure; public"><td><img src="./../icons/pubstructure.gif" alt="Public structure" title="Public structure" /></td><td><a href="T_Microsoft_Research_Naiad_Dataflow_Epoch.htm" target="">Epoch</a></td><td><div class="summary">
-            Represents an outermost streaming times
-            </div></td></tr><tr data="structure; public"><td><img src="./../icons/pubstructure.gif" alt="Public structure" title="Public structure" /></td><td><a href="T_Microsoft_Research_Naiad_Dataflow_IterationIn_1.htm" target="">IterationIn<span id="ID0ECABDABAAAAA"> </span><script type="text/javascript">
+            Represents the logical timestamp in a streaming context.
+            </div></td></tr><tr data="structure; public"><td><img src="./../icons/pubstructure.gif" alt="Public structure" title="Public structure" /></td><td><a href="T_Microsoft_Research_Naiad_Dataflow_IterationIn_1.htm" target="">IterationIn<span id="ID0ECABEABAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECABEABAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TTime<span id="ID0EAABEABAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EAABEABAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script></a></td><td><div class="summary">
+            Represents the logical timestamp containing a loop counter nested within another logical <span class="typeparameter">TTime</span> context.
+            </div></td></tr><tr data="structure; public"><td><img src="./../icons/pubstructure.gif" alt="Public structure" title="Public structure" /></td><td><a href="T_Microsoft_Research_Naiad_Dataflow_Message_2.htm" target="">Message<span id="ID0ECABDABAAAAA"> </span><script type="text/javascript">
 					addToLanSpecTextIdSet("ID0ECABDABAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
-				</script>TTime<span id="ID0EAABDABAAAAA"> </span><script type="text/javascript">
+				</script>TRecord, TTime<span id="ID0EAABDABAAAAA"> </span><script type="text/javascript">
 					addToLanSpecTextIdSet("ID0EAABDABAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
 				</script></a></td><td><div class="summary">
-            Represents a loop nested within another time
-            </div></td></tr><tr data="structure; public"><td><img src="./../icons/pubstructure.gif" alt="Public structure" title="Public structure" /></td><td><a href="T_Microsoft_Research_Naiad_Dataflow_Message_2.htm" target="">Message<span id="ID0ECABCABAAAAA"> </span><script type="text/javascript">
-					addToLanSpecTextIdSet("ID0ECABCABAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
-				</script>TRecord, TTime<span id="ID0EAABCABAAAAA"> </span><script type="text/javascript">
-					addToLanSpecTextIdSet("ID0EAABCABAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
-				</script></a></td><td><div class="summary">
             A message containing typed records all with a common time
+            </div></td></tr><tr data="structure; public"><td><img src="./../icons/pubstructure.gif" alt="Public structure" title="Public structure" /></td><td><a href="T_Microsoft_Research_Naiad_Dataflow_ReturnAddress.htm" target="">ReturnAddress</a></td><td><div class="summary">
+            Describes the origin of a message
             </div></td></tr><tr data="structure; public"><td><img src="./../icons/pubstructure.gif" alt="Public structure" title="Public structure" /></td><td><a href="T_Microsoft_Research_Naiad_Dataflow_TimeContext_1.htm" target="">TimeContext<span id="ID0ECABBABAAAAA"> </span><script type="text/javascript">
 					addToLanSpecTextIdSet("ID0ECABBABAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
 				</script>TTime<span id="ID0EAABBABAAAAA"> </span><script type="text/javascript">
@@ -96,15 +102,24 @@
 				</script></a></td><td><div class="summary">
             Represents a potentially nested scope in a dataflow computation, in which all messages have the same time type.
             </div></td></tr><tr data="structure; public"><td><img src="./../icons/pubstructure.gif" alt="Public structure" title="Public structure" /></td><td><a href="T_Microsoft_Research_Naiad_Dataflow_VertexLocation.htm" target="">VertexLocation</a></td><td><div class="summary">
-            Describes a vertex's location
+            Describes the physical location of a dataflow <a href="T_Microsoft_Research_Naiad_Dataflow_Vertex.htm" target="">Vertex</a>.
             </div></td></tr></table><div class="OH_CollapsibleAreaRegion"><div class="OH_regiontitle">Interfaces</div><div class="OH_CollapsibleArea_HrDiv"><hr class="OH_CollapsibleArea_Hr" /></div></div><div class="OH_clear"></div><table id="typeList" class="members"><tr><th class="ps_iconColumn">
 					 
-				</th><th class="ps_nameColumn">Interface</th><th class="ps_descriptionColumn">Description</th></tr><tr data="interface; public"><td><img src="./../icons/pubinterface.gif" alt="Public interface" title="Public interface" /></td><td><a href="T_Microsoft_Research_Naiad_Dataflow_StreamingInput_1.htm" target="">StreamingInput<span id="ID0ECABCAAAAAAA"> </span><script type="text/javascript">
+				</th><th class="ps_nameColumn">Interface</th><th class="ps_descriptionColumn">Description</th></tr><tr data="interface; public"><td><img src="./../icons/pubinterface.gif" alt="Public interface" title="Public interface" /></td><td><a href="T_Microsoft_Research_Naiad_Dataflow_SendChannel_2.htm" target="">SendChannel<span id="ID0ECABDAAAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECABDAAAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, TTime<span id="ID0EAABDAAAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EAABDAAAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script></a></td><td><div class="summary">
+            Represents the recipient of a <a href="T_Microsoft_Research_Naiad_Dataflow_Message_2.htm" target="">Message<span id="ID0ECAAADAAAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECAAADAAAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, TTime<span id="ID0EAAAADAAAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EAAAADAAAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script></a></div></td></tr><tr data="interface; public"><td><img src="./../icons/pubinterface.gif" alt="Public interface" title="Public interface" /></td><td><a href="T_Microsoft_Research_Naiad_Dataflow_StreamingInput_1.htm" target="">StreamingInput<span id="ID0ECABCAAAAAAA"> </span><script type="text/javascript">
 					addToLanSpecTextIdSet("ID0ECABCAAAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
 				</script>TRecord<span id="ID0EAABCAAAAAAA"> </span><script type="text/javascript">
 					addToLanSpecTextIdSet("ID0EAABCAAAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
 				</script></a></td><td><div class="summary">
-            An input supporting Naiad's streaming input operations.
+            Represents a streaming input to a Naiad computation.
             </div></td></tr><tr data="interface; public"><td><img src="./../icons/pubinterface.gif" alt="Public interface" title="Public interface" /></td><td><a href="T_Microsoft_Research_Naiad_Dataflow_VertexInput_2.htm" target="">VertexInput<span id="ID0ECABBAAAAAAA"> </span><script type="text/javascript">
 					addToLanSpecTextIdSet("ID0ECABBAAAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
 				</script>TRecord, TTime<span id="ID0EAABBAAAAAAA"> </span><script type="text/javascript">
@@ -116,5 +131,10 @@
 				</script>TRecord, TTime<span id="ID0EAABAAAAAAAA"> </span><script type="text/javascript">
 					addToLanSpecTextIdSet("ID0EAABAAAAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
 				</script></a></td><td><div class="summary">
-            Defines an output of a vertex, which only needs to respond to requests to receive messages from the output.
+            Represents an output of a vertex, to which zero or more <a href="T_Microsoft_Research_Naiad_Dataflow_SendChannel_2.htm" target="">SendChannel<span id="ID0ECBAAAAAAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0ECBAAAAAAAAAA?vb=(Of |cpp=&lt;|cs=&lt;|fs=&lt;'|nu=(");
+				</script>TRecord, TTime<span id="ID0EABAAAAAAAAAA"> </span><script type="text/javascript">
+					addToLanSpecTextIdSet("ID0EABAAAAAAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
+				</script></a> (receivers)
+            can be added.
             </div></td></tr></table></div></div></div></div><div id="OH_footer" class="OH_footer"><p /><div class="OH_feedbacklink"><a href="mailto:naiadquestions@microsoft.com?subject=Naiad+Help+Microsoft.Research.Naiad.Dataflow+Namespace+100+EN-US&amp;body=Your%20feedback%20is%20used%20to%20improve%20the%20documentation%20and%20the%20product.%20Your%20e-mail%20address%20will%20not%20be%20used%20for%20any%20other%20purpose%20and%20is%20disposed%20of%20after%20the%20issue%20you%20report%20is%20resolved.%20While%20working%20to%20resolve%20the%20issue%20that%20you%20report%2c%20you%20may%20be%20contacted%20via%20e-mail%20to%20get%20further%20details%20or%20clarification%20on%20the%20feedback%20you%20sent.%20After%20the%20issue%20you%20report%20has%20been%20addressed%2c%20you%20may%20receive%20an%20e-mail%20to%20let%20you%20know%20that%20your%20feedback%20has%20been%20addressed.">Send Feedback</a> on this topic to naiadquestions@microsoft.com.</div></div></body></html>

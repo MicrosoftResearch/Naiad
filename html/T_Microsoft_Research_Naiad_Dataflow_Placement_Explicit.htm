@@ -5,10 +5,10 @@
 			overflow-x:scroll;
 			overflow-y:scroll;
 			}
-		</style><script src="./../scripts/branding.js" type="text/javascript"><!----></script><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Placement.Explicit Class</title><meta name="Language" content="en-us" /><meta name="System.Keywords" content="Placement.Explicit class" /><meta name="System.Keywords" content="Microsoft.Research.Naiad.Dataflow.Placement.Explicit class" /><meta name="System.Keywords" content="Placement.Explicit class, about Placement.Explicit class" /><meta name="Microsoft.Help.F1" content="Microsoft.Research.Naiad.Dataflow.Placement.Explicit" /><meta name="Microsoft.Help.Id" content="T:Microsoft.Research.Naiad.Dataflow.Placement.Explicit" /><meta name="Description" content="Placement based on an explicit map" /><meta name="Microsoft.Help.ContentType" content="Reference" /><meta name="BrandingAware" content="'true'" /><meta name="container" content="Microsoft.Research.Naiad.Dataflow" /><meta name="file" content="T_Microsoft_Research_Naiad_Dataflow_Placement_Explicit" /><meta name="guid" content="T_Microsoft_Research_Naiad_Dataflow_Placement_Explicit" /><meta name="SelfBranded" content="true" /></head><body onload="onLoad()" class="primary-mtps-offline-document"><div class="OH_outerDiv"><div class="OH_outerContent"><table class="TitleTable"><tr><td class="OH_tdLogoColumn"><img src="./../icons/Help.png" /></td><td class="OH_tdTitleColumn">Placement<span id="ID0EBBABAAA"> </span><script type="text/javascript">
+		</style><script src="./../scripts/branding.js" type="text/javascript"><!----></script><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Placement.Explicit Class</title><meta name="Language" content="en-us" /><meta name="System.Keywords" content="Placement.Explicit class" /><meta name="System.Keywords" content="Microsoft.Research.Naiad.Dataflow.Placement.Explicit class" /><meta name="System.Keywords" content="Placement.Explicit class, about Placement.Explicit class" /><meta name="Microsoft.Help.F1" content="Microsoft.Research.Naiad.Dataflow.Placement.Explicit" /><meta name="Microsoft.Help.Id" content="T:Microsoft.Research.Naiad.Dataflow.Placement.Explicit" /><meta name="Description" content="Represents a based on an explicit -to-location mapping." /><meta name="Microsoft.Help.ContentType" content="Reference" /><meta name="BrandingAware" content="'true'" /><meta name="container" content="Microsoft.Research.Naiad.Dataflow" /><meta name="file" content="T_Microsoft_Research_Naiad_Dataflow_Placement_Explicit" /><meta name="guid" content="T_Microsoft_Research_Naiad_Dataflow_Placement_Explicit" /><meta name="SelfBranded" content="true" /></head><body onload="onLoad()" class="primary-mtps-offline-document"><div class="OH_outerDiv"><div class="OH_outerContent"><table class="TitleTable"><tr><td class="OH_tdLogoColumn"><img src="./../icons/Help.png" /></td><td class="OH_tdTitleColumn">Placement<span id="ID0EBBABAAA"> </span><script type="text/javascript">
 					addToLanSpecTextIdSet("ID0EBBABAAA?vb=.|cpp=::|cs=.|fs=.|nu=.");
 				</script>Explicit Class</td><td class="OH_tdRunningTitleColumn">Naiad Help</td></tr></table><div id="mainSection"><div id="mainBody"><span class="introStyle"></span><p style="color: #dc143c; font-size: 8.5pt; font-weight: bold;">[This is preliminary documentation and is subject to change.]</p><div class="summary">
-            Placement based on an explicit map
+            Represents a <a href="T_Microsoft_Research_Naiad_Dataflow_Placement.htm" target="">Placement</a> based on an explicit <a href="T_Microsoft_Research_Naiad_Dataflow_Vertex.htm" target="">Vertex</a>-to-location mapping.
             </div><div class="OH_CollapsibleAreaRegion"><div class="OH_regiontitle">Inheritance Hierarchy</div><div class="OH_CollapsibleArea_HrDiv"><hr class="OH_CollapsibleArea_Hr" /></div></div><div class="OH_clear"></div><a href="http://msdn2.microsoft.com/en-us/library/e5kfa45b" target="_blank">System<span id="ID0EBHQAAAAA"> </span><script type="text/javascript">
 					addToLanSpecTextIdSet("ID0EBHQAAAAA?vb=.|cpp=::|cs=.|fs=.|nu=.");
 				</script>Object</a><br />  <a href="T_Microsoft_Research_Naiad_Dataflow_Placement.htm" target="">Microsoft.Research.Naiad.Dataflow<span id="ID0EBEQAAAAA"> </span><script type="text/javascript">
@@ -24,15 +24,16 @@
 						</th><th class="ps_nameColumn">Name</th><th class="ps_descriptionColumn">Description</th></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Dataflow_Placement_Explicit__ctor.htm" target="">Placement<span id="ID0EBABABEAAAAA"> </span><script type="text/javascript">
 					addToLanSpecTextIdSet("ID0EBABABEAAAAA?vb=.|cpp=::|cs=.|fs=.|nu=.");
 				</script>Explicit</a></td><td><div class="summary">
-            Constructs explicit placement from location enumeration
+            Constructs explicit placement from a sequence of <a href="T_Microsoft_Research_Naiad_Dataflow_VertexLocation.htm" target="">VertexLocation</a> objects.
             </div></td></tr></table><a href="#mainBody" target="">Top</a><div class="OH_CollapsibleAreaRegion"><div class="OH_regiontitle">Methods</div><div class="OH_CollapsibleArea_HrDiv"><hr class="OH_CollapsibleArea_Hr" /></div></div><div class="OH_clear"></div><table id="memberList" class="members"><tr><th class="ps_iconColumn">
 							 
 						</th><th class="ps_nameColumn">Name</th><th class="ps_descriptionColumn">Description</th></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Dataflow_Placement_Explicit_Equals.htm" target="">Equals</a></td><td><div class="summary">
-            Tests equality with other placements
+            Returns <span class="code">true</span> if and only if each vertex in this placement has the same location as the vertex
+            with the same ID in the <span class="parameter">other</span> placement, and vice versa.
             </div> (Overrides <a href="M_Microsoft_Research_Naiad_Dataflow_Placement_Equals.htm" target="">Placement<span id="ID0EBBABBDAAAAA"> </span><script type="text/javascript">
 					addToLanSpecTextIdSet("ID0EBBABBDAAAAA?vb=.|cpp=::|cs=.|fs=.|nu=.");
 				</script>Equals(Placement)</a>.)</td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubmethod.gif" alt="Public method" title="Public method" /></td><td><a href="M_Microsoft_Research_Naiad_Dataflow_Placement_Explicit_GetEnumerator.htm" target="">GetEnumerator</a></td><td><div class="summary">
-            Enumerator
+            Returns an object for enumerating location information about every vertex in this placement.
             </div> (Overrides <a href="M_Microsoft_Research_Naiad_Dataflow_Placement_GetEnumerator.htm" target="">Placement<span id="ID0ECBAABDAAAAA"> </span><script type="text/javascript">
 					addToLanSpecTextIdSet("ID0ECBAABDAAAAA?vb=.|cpp=::|cs=.|fs=.|nu=.");
 				</script>GetEnumerator<span id="ID0EABAABDAAAAA"> </span><script type="text/javascript">
@@ -40,11 +41,11 @@
 				</script></a>.)</td></tr></table><a href="#mainBody" target="">Top</a><div class="OH_CollapsibleAreaRegion"><div class="OH_regiontitle">Properties</div><div class="OH_CollapsibleArea_HrDiv"><hr class="OH_CollapsibleArea_Hr" /></div></div><div class="OH_clear"></div><table id="memberList" class="members"><tr><th class="ps_iconColumn">
 							 
 						</th><th class="ps_nameColumn">Name</th><th class="ps_descriptionColumn">Description</th></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubproperty.gif" alt="Public property" title="Public property" /></td><td><a href="P_Microsoft_Research_Naiad_Dataflow_Placement_Explicit_Count.htm" target="">Count</a></td><td><div class="summary">
-            Number of vertices
+            The number of vertices.
             </div> (Overrides <a href="P_Microsoft_Research_Naiad_Dataflow_Placement_Count.htm" target="">Placement<span id="ID0EBBABBCAAAAA"> </span><script type="text/javascript">
 					addToLanSpecTextIdSet("ID0EBBABBCAAAAA?vb=.|cpp=::|cs=.|fs=.|nu=.");
 				</script>Count</a>.)</td></tr><tr data="public;declared;notNetfw;"><td><img src="./../icons/pubproperty.gif" alt="Public property" title="Public property" /></td><td><a href="P_Microsoft_Research_Naiad_Dataflow_Placement_Explicit_Item.htm" target="">Item</a></td><td><div class="summary">
-            Indexer
+            Returns location information about the vertex with the given ID.
             </div> (Overrides <a href="P_Microsoft_Research_Naiad_Dataflow_Placement_Item.htm" target="">Placement<span id="ID0EEBAABCAAAAA"> </span><script type="text/javascript">
 					addToLanSpecTextIdSet("ID0EEBAABCAAAAA?vb=.|cpp=::|cs=.|fs=.|nu=.");
 				</script>Item<span id="ID0ECBAABCAAAAA"> </span><script type="text/javascript">

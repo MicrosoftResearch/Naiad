@@ -35,11 +35,13 @@
             Pair of two elements
             </div></td></tr></table><div class="OH_CollapsibleAreaRegion"><div class="OH_regiontitle">Interfaces</div><div class="OH_CollapsibleArea_HrDiv"><hr class="OH_CollapsibleArea_Hr" /></div></div><div class="OH_clear"></div><table id="typeList" class="members"><tr><th class="ps_iconColumn">
 					 
-				</th><th class="ps_nameColumn">Interface</th><th class="ps_descriptionColumn">Description</th></tr><tr data="interface; public"><td><img src="./../icons/pubinterface.gif" alt="Public interface" title="Public interface" /></td><td><a href="T_Microsoft_Research_Naiad_Controller.htm" target="">Controller</a></td><td><div class="summary">
+				</th><th class="ps_nameColumn">Interface</th><th class="ps_descriptionColumn">Description</th></tr><tr data="interface; public"><td><img src="./../icons/pubinterface.gif" alt="Public interface" title="Public interface" /></td><td><a href="T_Microsoft_Research_Naiad_Computation.htm" target="">Computation</a></td><td><div class="summary">
+            Manages the construction and execution of an individual dataflow computation.
+            </div></td></tr><tr data="interface; public"><td><img src="./../icons/pubinterface.gif" alt="Public interface" title="Public interface" /></td><td><a href="T_Microsoft_Research_Naiad_Controller.htm" target="">Controller</a></td><td><div class="summary">
             Manages the execution of Naiad programs in a single process.
-            </div></td></tr><tr data="interface; public"><td><img src="./../icons/pubinterface.gif" alt="Public interface" title="Public interface" /></td><td><a href="T_Microsoft_Research_Naiad_GraphManager.htm" target="">GraphManager</a></td><td><div class="summary">
-            Manages the construction and execution of an individual dataflow graph.
-            </div></td></tr><tr data="interface; public"><td><img src="./../icons/pubinterface.gif" alt="Public interface" title="Public interface" /></td><td><a href="T_Microsoft_Research_Naiad_OneOffComputation.htm" target="">OneOffComputation</a></td><td></td></tr><tr data="interface; public"><td><img src="./../icons/pubinterface.gif" alt="Public interface" title="Public interface" /></td><td><a href="T_Microsoft_Research_Naiad_Subscription.htm" target="">Subscription</a></td><td><div class="summary">
+            </div></td></tr><tr data="interface; public"><td><img src="./../icons/pubinterface.gif" alt="Public interface" title="Public interface" /></td><td><a href="T_Microsoft_Research_Naiad_OneOffComputation.htm" target="">OneOffComputation</a></td><td><div class="summary">
+            A Computation with an internal Controller which cannot be re-used for other Computations.
+            </div></td></tr><tr data="interface; public"><td><img src="./../icons/pubinterface.gif" alt="Public interface" title="Public interface" /></td><td><a href="T_Microsoft_Research_Naiad_Subscription.htm" target="">Subscription</a></td><td><div class="summary">
             Represents an observable "output" of a Naiad computation, and provides a means
             of synchronizing with the computation.
             </div></td></tr><tr data="interface; public"><td><img src="./../icons/pubinterface.gif" alt="Public interface" title="Public interface" /></td><td><a href="T_Microsoft_Research_Naiad_Time_1.htm" target="">Time<span id="ID0ECABBABAAAAA"> </span><script type="text/javascript">
@@ -47,8 +49,8 @@
 				</script>TTime<span id="ID0EAABBABAAAAA"> </span><script type="text/javascript">
 					addToLanSpecTextIdSet("ID0EAABBABAAAAA?vb=)|cpp=&gt;|cs=&gt;|fs=&gt;|nu=)");
 				</script></a></td><td><div class="summary">
-            The typed equivalent of a Pointstamp's "Timestamp" field, corresponding to a sequence of integers.
-            Main use is Join/Meet, and conversion to and from Pointstamp representation.
+            Represents a logical timestamp in a timely dataflow computation. All messages in a
+            timely dataflow computation are labeled with a logical timestamp.
             </div></td></tr><tr data="interface; public"><td><img src="./../icons/pubinterface.gif" alt="Public interface" title="Public interface" /></td><td><a href="T_Microsoft_Research_Naiad_WorkerGroup.htm" target="">WorkerGroup</a></td><td><div class="summary">
             Represents a group of workers and allows registration of callbacks
             </div></td></tr></table><div class="OH_CollapsibleAreaRegion"><div class="OH_regiontitle">Enumerations</div><div class="OH_CollapsibleArea_HrDiv"><hr class="OH_CollapsibleArea_Hr" /></div></div><div class="OH_clear"></div><table id="typeList" class="members"><tr><th class="ps_iconColumn">
