@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -28,7 +28,7 @@ using Microsoft.Research.Naiad.Dataflow;
 using Microsoft.Research.Naiad.Frameworks;
 using Microsoft.Research.Naiad.Frameworks.DifferentialDataflow;
 
-namespace Examples.DifferentialDataflow
+namespace Microsoft.Research.Naiad.Examples.DifferentialDataflow
 {
     public static class GraphColoringExtensionMethods
     {
@@ -84,7 +84,7 @@ namespace Examples.DifferentialDataflow
 
         public void Execute(string[] args)
         {
-            using (var controller = NewController.FromArgs(ref args))
+            using (var computation = NewComputation.FromArgs(ref args))
             {
                 // establish numbers of nodes and edges from input or from defaults.
                 if (args.Length == 3)
@@ -99,67 +99,69 @@ namespace Examples.DifferentialDataflow
                 for (int i = 0; i < edgeCount; i++)
                     graph[i] = new IntPair(random.Next(nodeCount), random.Next(nodeCount));
 
-                using (var manager = controller.NewComputation())
+                // set up the CC computation
+                var edges = computation.NewInputCollection<IntPair>();
+
+                var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+                var colors = edges.Where(x => x.s != x.t)
+                                  .Color();
+
+                var output = colors.Select(x => x.t)          // just keep the color (to count)
+                                   .Output
+                                   .Subscribe((i, l) => Console.WriteLine("Time to process: {0}", stopwatch.Elapsed));
+
+                // set to enable a correctness test, at the cost of more memory and computation.
+                var testCorrectness = false;
+                if (testCorrectness)
                 {
-                    // set up the CC computation
-                    var edges = new IncrementalCollection<IntPair>(manager);
-
-                    var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-
-                    var colors = edges.Where(x => x.s != x.t)
-                                      .Color();
-
-                    var output = colors.Select(x => x.t)          // just keep the color (to count)
-                                       .Output
-                                       .Subscribe((i, l) => Console.WriteLine("Time to process: {0}", stopwatch.Elapsed));
-
-                    // set to enable a correctness test, at the cost of more memory and computation.
-                    var testCorrectness = false;
-                    if (testCorrectness)
-                    {
-                        edges.Where(x => x.s != x.t)
-                             .Join(colors, e => e.s, c => c.s, e => e.t, c => c.t, (s, t, c) => new IntPair(c, t))
-                             .Join(colors, e => e.t, c => c.s, e => e.s, c => c.t, (t, s, c) => new IntPair(s, c))
-                             .Where(p => p.s == p.t)
-                             .Consolidate()
-                             .Subscribe(l => Console.WriteLine("Coloring errors: {0}", l.Length));
-                    }
-
-                    Console.WriteLine("Running graph coloring on a random graph ({0} nodes, {1} edges)", nodeCount, edgeCount);
-                    Console.WriteLine("For each color, the nodes with that color:");
-
-                    manager.Activate();
-
-                    edges.OnNext(controller.Configuration.ProcessID == 0 ? graph : Enumerable.Empty<IntPair>());
-
-                    output.Sync(new Epoch(0));
-
-                    // if we are up for interactive access ...
-                    if (controller.Configuration.Processes == 1)
-                    {
-                        Console.WriteLine();
-                        Console.WriteLine("Next: sequentially rewiring random edges (press [enter] each time):");
-
-                        for (int i = 0; i < graph.Length; i++)
-                        {
-                            Console.ReadLine();
-                            stopwatch.Restart();
-                            var newEdge = new IntPair(random.Next(nodeCount), random.Next(nodeCount));
-                            Console.WriteLine("Rewiring edge: {0} -> {1}", graph[i], newEdge);
-                            edges.OnNext(new[] { new Weighted<IntPair>(graph[i], -1), new Weighted<IntPair>(newEdge, 1) });
-                            output.Sync(new Epoch(i + 1));
-                        }
-                    }
-
-                    edges.OnCompleted();
-
-                    manager.Join();
+                    edges.Where(x => x.s != x.t)
+                         .Join(colors, e => e.s, c => c.s, e => e.t, c => c.t, (s, t, c) => new IntPair(c, t))
+                         .Join(colors, e => e.t, c => c.s, e => e.s, c => c.t, (t, s, c) => new IntPair(s, c))
+                         .Where(p => p.s == p.t)
+                         .Consolidate()
+                         .Subscribe(l => Console.WriteLine("Coloring errors: {0}", l.Length));
                 }
 
-                controller.Join();
+                Console.WriteLine("Running graph coloring on a random graph ({0} nodes, {1} edges)", nodeCount, edgeCount);
+                Console.WriteLine("For each color, the nodes with that color:");
+
+                computation.Activate();
+
+                edges.OnNext(computation.Configuration.ProcessID == 0 ? graph : Enumerable.Empty<IntPair>());
+
+                output.Sync(0);
+
+                // if we are up for interactive access ...
+                if (computation.Configuration.Processes == 1)
+                {
+                    Console.WriteLine();
+                    Console.WriteLine("Next: sequentially rewiring random edges (press [enter] each time):");
+
+                    for (int i = 0; i < graph.Length; i++)
+                    {
+                        Console.ReadLine();
+                        stopwatch.Restart();
+                        var newEdge = new IntPair(random.Next(nodeCount), random.Next(nodeCount));
+                        Console.WriteLine("Rewiring edge: {0} -> {1}", graph[i], newEdge);
+                        edges.OnNext(new[] { new Weighted<IntPair>(graph[i], -1), new Weighted<IntPair>(newEdge, 1) });
+                        output.Sync(i + 1);
+                    }
+                }
+
+                edges.OnCompleted();
+
+                computation.Join();
             }
+
         }
 
         public string Usage { get { return "[nodecount edgecount]"; } }
+
+
+        public string Help
+        {
+            get { return "Demonstrates graph coloring using iterative computation. Each vertex adopts the least color not found among neighbors with lower index, iteratively, until convergence."; }
+        }
     }
 }

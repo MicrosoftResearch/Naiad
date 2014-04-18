@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -28,20 +28,24 @@ using System.Diagnostics;
 using Microsoft.Research.Naiad.Frameworks;
 using System.IO;
 using System.Runtime.InteropServices;
-using Microsoft.Research.Naiad.Util;
+using Microsoft.Research.Naiad.Utilities;
+using Microsoft.Research.Naiad.Dataflow;
 using Microsoft.Research.Naiad.Dataflow.Channels;
-using Microsoft.Research.Naiad.Runtime.Controlling;
+//using Microsoft.Research.Naiad.Runtime.Controlling;
+
+using Microsoft.Research.Naiad.Diagnostics;
+using Microsoft.Research.Naiad.Runtime.Progress;
 
 namespace Microsoft.Research.Naiad.Scheduling
 {
     internal class Scheduler : IDisposable
     {
-        internal class GraphState
+        internal class ComputationState
         {
-            public readonly InternalGraphManager Manager;
+            public readonly InternalComputation InternalComputation;
 
             public readonly PostOffice PostOffice;
-            public readonly NaiadList<WorkItem> WorkItems;
+            public readonly List<WorkItem> WorkItems;
             private readonly int index;
 
             public readonly List<Dataflow.Vertex> Vertices;
@@ -59,12 +63,12 @@ namespace Microsoft.Research.Naiad.Scheduling
 #else
                 get 
                 {
-                    if (this.Manager.ProgressTracker == null)
+                    if (this.InternalComputation.ProgressTracker == null)
                         return null;
                     else
                     {
                         if (this.producer == null)
-                            this.producer = new Runtime.Progress.ProgressUpdateProducer(this.Manager, this.Manager.ProgressTracker.Aggregator);
+                            this.producer = new Runtime.Progress.ProgressUpdateProducer(this.InternalComputation, this.InternalComputation.ProgressTracker.Aggregator);
 
                         return this.producer;
                     }
@@ -74,46 +78,46 @@ namespace Microsoft.Research.Naiad.Scheduling
 
             private Runtime.Progress.ProgressUpdateProducer producer;
 
-            public GraphState(InternalGraphManager manager, Scheduler scheduler)
+            public ComputationState(InternalComputation manager, Scheduler scheduler)
             {
-                this.Manager = manager;
+                this.InternalComputation = manager;
                 this.PostOffice = new PostOffice(scheduler);
-                this.WorkItems = new NaiadList<WorkItem>();
+                this.WorkItems = new List<WorkItem>();
                 this.index = scheduler.Index;
                 this.Vertices = new List<Dataflow.Vertex>();
 
                 this.producer = null;
             }
-            public GraphState()
+            public ComputationState()
             {
             }
         }
 
-        internal GraphState State(InternalGraphManager graphManager)
+        internal ComputationState State(InternalComputation internalComputation)
         {
-            if (this.graphStates.Count <= graphManager.Index || this.graphStates[graphManager.Index].Manager == null)
-                this.RegisterGraph(graphManager);
+            if (this.computationStates.Count <= internalComputation.Index || this.computationStates[internalComputation.Index].InternalComputation == null)
+                this.RegisterGraph(internalComputation);
 
-            return this.graphStates[graphManager.Index];
+            return this.computationStates[internalComputation.Index];
         }
 
-        private volatile List<GraphState> graphStates = new List<GraphState>();
-        internal void RegisterGraph(InternalGraphManager graphManager)
+        private List<ComputationState> computationStates = new List<ComputationState>();
+        internal void RegisterGraph(InternalComputation internalComputation)
         {
             var success = false;
 
             do
             {
-                var oldList = this.graphStates;
+                var oldList = this.computationStates;
 
-                var newList = this.graphStates.ToList();
+                var newList = this.computationStates.ToList();
 
-                while (newList.Count < graphManager.Index + 1)
-                    newList.Add(new GraphState());
+                while (newList.Count < internalComputation.Index + 1)
+                    newList.Add(new ComputationState());
                 
-                newList[graphManager.Index] = new GraphState(graphManager, this);
+                newList[internalComputation.Index] = new ComputationState(internalComputation, this);
 
-                success = oldList == Interlocked.CompareExchange(ref this.graphStates, newList, oldList);
+                success = oldList == Interlocked.CompareExchange(ref this.computationStates, newList, oldList);
             }
             while (!success);
         }
@@ -192,11 +196,11 @@ namespace Microsoft.Research.Naiad.Scheduling
             Logging.Info("Vertex {2}: Finishing @ {1}:\t{0}", workItem.Vertex, workItem.Requirement, this.Index);
         }
 
-        internal void Register(Dataflow.Vertex vertex, InternalGraphManager manager)
+        internal void Register(Dataflow.Vertex vertex, InternalComputation manager)
         {
-            for (int i = 0; i < this.graphStates.Count; i++)
-                if (this.graphStates[i].Manager == manager)
-                    this.graphStates[i].Vertices.Add(vertex);
+            for (int i = 0; i < this.computationStates.Count; i++)
+                if (this.computationStates[i].InternalComputation == manager)
+                    this.computationStates[i].Vertices.Add(vertex);
         }
 
         internal IList<WorkItem> GetWorkItemsForVertex(Dataflow.Vertex vertex)
@@ -209,11 +213,11 @@ namespace Microsoft.Research.Naiad.Scheduling
 
         private void Enqueue(WorkItem item, bool local = true)
         {
-            this.Controller.Workers.NotifyOperatorEnqueued(this, item);
+            this.Controller.Workers.NotifyVertexEnqueued(this, item);
 
             if (local)
             {
-                graphStates[item.Vertex.Stage.InternalGraphManager.Index].WorkItems.Add(item);
+                computationStates[item.Vertex.Stage.InternalComputation.Index].WorkItems.Add(item);
             }
             else
             {
@@ -257,7 +261,7 @@ namespace Microsoft.Research.Naiad.Scheduling
         /// </summary>
         protected virtual void InternalStart()
         {
-            this.Controller.Workers.NotifySchedulerStarting(this);
+            this.Controller.Workers.NotifyWorkerStarting(this);
 
             // the time of the most recent reachability computation. 
             var reachabilityTime = this.Controller.Stopwatch.ElapsedMilliseconds - this.Controller.Configuration.CompactionInterval;
@@ -278,9 +282,9 @@ namespace Microsoft.Research.Naiad.Scheduling
 
                     this.resumeEvent.WaitOne();
                     Logging.Info("Resumed worker {0}", this.Index);
-                    for (int i = 0; i < this.graphStates.Count; i++)
-                        if (this.graphStates[i].Manager != null)
-                            this.graphStates[i].Producer.Start(); // In case any outstanding records were caught in the checkpoint.
+                    for (int i = 0; i < this.computationStates.Count; i++)
+                        if (this.computationStates[i].InternalComputation != null)
+                            this.computationStates[i].Producer.Start(); // In case any outstanding records were caught in the checkpoint.
                 }
                 #endregion
 
@@ -289,39 +293,39 @@ namespace Microsoft.Research.Naiad.Scheduling
                 while (sharedQueue.TryDequeue(out item))
                     Enqueue(item);
 
-                #region related to shutting down finished graphmanagers
-                // check for graphs that have empty frontiers: these can be shutdown
-                for (int i = 0; i < this.graphStates.Count; i++)
+                #region related to shutting down finished computations
+                // check for computations that have empty frontiers: these can be shutdown
+                for (int i = 0; i < this.computationStates.Count; i++)
                 {
-                    if (this.graphStates[i].Manager != null && this.graphStates[i].Manager.CurrentState == InternalGraphManagerState.Active && this.graphStates[i].Manager.ProgressTracker.GetInfoForWorker(this.Index).PointstampCountSet.Frontier.Length == 0)
+                    if (this.computationStates[i].InternalComputation != null && this.computationStates[i].InternalComputation.CurrentState == InternalComputationState.Active && this.computationStates[i].InternalComputation.ProgressTracker.GetInfoForWorker(this.Index).PointstampCountSet.Frontier.Length == 0)
                     {
-                        foreach (Dataflow.Vertex vertex in this.graphStates[i].Vertices)
+                        foreach (Dataflow.Vertex vertex in this.computationStates[i].Vertices)
                             vertex.ShutDown();
 
-                        this.graphStates[i].Manager.SignalShutdown();
+                        this.computationStates[i].InternalComputation.SignalShutdown();
 
-                        this.graphStates[i] = new GraphState();
+                        this.computationStates[i] = new ComputationState();
                     }
                 }
                 #endregion
 
-                #region related to flushing messages for each graphmanager
+                #region related to flushing messages for each computations
                 // push any pending messages to recipients, so that work-to-do is as current as possible
-                for (int i = 0; i < this.graphStates.Count; i++)
+                for (int i = 0; i < this.computationStates.Count; i++)
                 {
-                    if (this.graphStates[i].Manager != null && this.graphStates[i].Manager.CurrentState == InternalGraphManagerState.Active)
+                    if (this.computationStates[i].InternalComputation != null && this.computationStates[i].InternalComputation.CurrentState == InternalComputationState.Active)
                     {
                         Tracing.Trace("(Flush {0}", this.Index);
-                        //try
+                        try
                         {
-                            this.graphStates[i].PostOffice.DrainAllQueues();
-                            this.graphStates[i].Producer.Start();   // tell everyone about records produced and consumed.
+                            this.computationStates[i].PostOffice.DrainAllQueues();
+                            this.computationStates[i].Producer.Start();   // tell everyone about records produced and consumed.
                         }
-                        //catch (Exception e)
-                        //{
-                         //   Logging.Error("Graph {0} failed on scheduler {1} with exception:\n{2}", i, this.Index, e);
-                         //   this.graphStates[i].Manager.Cancel(e);
-                        //}
+                        catch (Exception e)
+                        {
+                            Logging.Error("Graph {0} failed on scheduler {1} with exception:\n{2}", i, this.Index, e);
+                            this.computationStates[i].InternalComputation.Cancel(e);
+                        }
                         Tracing.Trace(")Flush {0}", this.Index);
                     }
                 }
@@ -332,12 +336,12 @@ namespace Microsoft.Research.Naiad.Scheduling
                 if (this.Controller.Configuration.CompactionInterval > 0 && this.Controller.Stopwatch.ElapsedMilliseconds - reachabilityTime > this.Controller.Configuration.CompactionInterval)
                 {
                     Tracing.Trace("(reachability {0}", this.Index);
-                    for (int i = 0; i < this.graphStates.Count; i++)
+                    for (int i = 0; i < this.computationStates.Count; i++)
                     {
-                        if (this.graphStates[i].Manager != null && this.graphStates[i].Manager.CurrentState == InternalGraphManagerState.Active)
+                        if (this.computationStates[i].InternalComputation != null && this.computationStates[i].InternalComputation.CurrentState == InternalComputationState.Active)
                         {
-                            var frontiers = this.graphStates[i].Manager.ProgressTracker.GetInfoForWorker(0).PointstampCountSet.Frontier.Concat(this.graphStates[i].Producer.LocalPCS.Frontier).ToArray();
-                            this.graphStates[i].Manager.Reachability.UpdateReachability(this.Controller, frontiers, this.graphStates[i].Vertices);
+                            var frontiers = this.computationStates[i].InternalComputation.ProgressTracker.GetInfoForWorker(0).PointstampCountSet.Frontier.Concat(this.computationStates[i].Producer.LocalPCS.Frontier).ToArray();
+                            this.computationStates[i].InternalComputation.Reachability.UpdateReachability(this.Controller, frontiers, this.computationStates[i].Vertices);
                         }
                     }
                     reachabilityTime = this.Controller.Stopwatch.ElapsedMilliseconds;
@@ -346,20 +350,20 @@ namespace Microsoft.Research.Naiad.Scheduling
                 #endregion
 
                 var ranAnything = false;
-                for (int i = 0; i < graphStates.Count; i++)
+                for (int i = 0; i < computationStates.Count; i++)
                 {
-                    if (graphStates[i].Manager != null && this.graphStates[i].Manager.CurrentState == InternalGraphManagerState.Active)
+                    if (computationStates[i].InternalComputation != null && this.computationStates[i].InternalComputation.CurrentState == InternalComputationState.Active)
                     {
-                        //try
+                        try
                         {
                             var ranSomething = RunWorkItem(i);
                             ranAnything = ranSomething || ranAnything;
                         }
-                        //catch (Exception e)
-                        //{
-                        //    Logging.Error("Graph {0} failed on scheduler {1} with exception:\n{2}", i, this.Index, e);
-                        //    this.graphStates[i].Manager.Cancel(e);
-                        //}
+                        catch (Exception e)
+                        {
+                            Logging.Error("Graph {0} failed on scheduler {1} with exception:\n{2}", i, this.Index, e);
+                            this.computationStates[i].InternalComputation.Cancel(e);
+                        }
                     }
                 }
 
@@ -381,7 +385,7 @@ namespace Microsoft.Research.Naiad.Scheduling
                         }
                     }
 
-                    this.Controller.Workers.NotifySchedulerWaking(this);
+                    this.Controller.Workers.NotifyWorkerWaking(this);
                 }
             }
 
@@ -391,29 +395,29 @@ namespace Microsoft.Research.Naiad.Scheduling
 
         protected bool RunWorkItem(int graphId)
         {
-            var graphManager = this.graphStates[graphId].Manager;
-            var workItems = this.graphStates[graphId].WorkItems;
+            var computation = this.computationStates[graphId].InternalComputation;
+            var workItems = this.computationStates[graphId].WorkItems;
             var itemToRun = workItems.Count;
 
             for (int i = 0; i < workItems.Count; i++)
             {
-                if (itemToRun == workItems.Count || graphManager.Reachability.CompareTo(workItems.Array[itemToRun].Capability, workItems.Array[i].Capability) > 0)
+                if (itemToRun == workItems.Count || computation.Reachability.CompareTo(workItems[itemToRun].Capability, workItems[i].Capability) > 0)
                 {
                     var valid = false;
 
                     // update the frontier, to keep things fresh-ish!
-                    var frontier = graphManager.ProgressTracker.GetInfoForWorker(this.Index).PointstampCountSet.Frontier;
-                    var local = this.graphStates[graphId].Producer.LocalPCS.Frontier;
+                    var frontier = computation.ProgressTracker.GetInfoForWorker(this.Index).PointstampCountSet.Frontier;
+                    var local = this.computationStates[graphId].Producer.LocalPCS.Frontier;
 
-                    var v = workItems.Array[i].Requirement;
+                    var v = workItems[i].Requirement;
 
                     var dominated = false;
                     for (int j = 0; j < frontier.Length && !dominated; j++)
-                        if (graphManager.Reachability.LessThan(frontier[j], v) && !frontier[j].Equals(v))
+                        if (computation.Reachability.LessThan(frontier[j], v) && !frontier[j].Equals(v))
                             dominated = true;
 
                     for (int j = 0; j < local.Length && !dominated; j++)
-                        if (graphManager.Reachability.LessThan(local[j], v) && !local[j].Equals(v))
+                        if (computation.Reachability.LessThan(local[j], v) && !local[j].Equals(v))
                             dominated = true;
 
                     valid = !dominated;
@@ -425,17 +429,20 @@ namespace Microsoft.Research.Naiad.Scheduling
 
             if (itemToRun < workItems.Count)
             {
-                var item = workItems.RemoveAtAndReturn(itemToRun--);
+                var item = workItems[itemToRun];
 
-                this.Controller.Workers.NotifyOperatorStarting(this, item);
+                workItems[itemToRun] = workItems[workItems.Count - 1];
+                workItems.RemoveAt(workItems.Count - 1);
+
+                this.Controller.Workers.NotifyVertexStarting(this, item);
                 Tracing.Trace("[Sched " + this.Index + " " + item.ToString());
                 
                 Schedule(item);
 
                 Tracing.Trace("]Sched " + this.Index + " " + item.ToString());
-                this.Controller.Workers.NotifyOperatorEnding(this, item);
+                this.Controller.Workers.NotifyVertexEnding(this, item);
 
-                this.graphStates[graphId].Producer.Start();   // tell everyone about records produced and consumed.
+                this.computationStates[graphId].Producer.Start();   // tell everyone about records produced and consumed.
 
                 return true;
             }
@@ -506,6 +513,7 @@ namespace Microsoft.Research.Naiad.Scheduling
         /// </summary>
         /// <param name="n">The friendly name of this scheduler</param>
         /// <param name="i">The id of the core this thread is affinitized to</param>
+        /// <param name="c">The internal controller reference</param>
         internal Scheduler(string n, int i, InternalController c)
         { 
             Name = n;

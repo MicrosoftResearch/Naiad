@@ -1,24 +1,111 @@
-﻿using System;
+﻿/*
+ * Naiad ver. 0.4
+ * Copyright (c) Microsoft Corporation
+ * All rights reserved. 
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); 
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0 
+ *
+ * THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR
+ * CONDITIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT
+ * LIMITATION ANY IMPLIED WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR
+ * A PARTICULAR PURPOSE, MERCHANTABLITY OR NON-INFRINGEMENT.
+ *
+ * See the Apache Version 2.0 License for specific language governing
+ * permissions and limitations under the License.
+ */
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using Microsoft.Research.Naiad;
-using Microsoft.Research.Naiad.Dataflow;
-using Microsoft.Research.Naiad.Frameworks.Lindi;
-using Microsoft.Research.Naiad.Dataflow.PartitionBy;
 using Microsoft.WindowsAzure.Storage.Blob;
 using Microsoft.WindowsAzure.Storage.Table;
 using Microsoft.WindowsAzure.Storage;
 using System.Reactive;
+
+using Microsoft.Research.Naiad;
+using Microsoft.Research.Naiad.Dataflow;
+using Microsoft.Research.Naiad.Frameworks.Lindi;
+using Microsoft.Research.Naiad.Dataflow.PartitionBy;
 using Microsoft.Research.Naiad.Dataflow.Channels;
-using Microsoft.Research.Naiad.CodeGeneration;
+using Microsoft.Research.Naiad.Serialization;
+using Microsoft.Research.Naiad.Input;
 
 namespace Microsoft.Research.Naiad.Frameworks.Azure
 {
+    /// <summary>
+    /// The Azure framework contains extension methods for <see cref="Computation"/> and <see cref="Stream{TRecord,TTime}"/>
+    /// that facilitate the use of Microsoft Azure Storage.
+    /// </summary>
+    class NamespaceDoc
+    { }
+
+    /// <summary>
+    /// Extension methods
+    /// </summary>
     public static class ExtensionMethods
     {
+        #region Default connection string.
+
+        private const string DefaultConnectionString = "Microsoft.Research.Naiad.Cluster.Azure.DefaultConnectionString";
+
+        /// <summary>
+        /// Returns the default <see cref="CloudStorageAccount"/> for this computation.
+        /// </summary>
+        /// <param name="computation">The computation.</param>
+        /// <returns>The default <see cref="CloudStorageAccount"/> for this computation.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when the <c>Microsoft.Research.Naiad.Cluster.Azure.DefaultConnectionString</c> setting is not set or has more than one value in <see cref="Configuration.AdditionalSettings"/> 
+        /// </exception>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when the <c>Microsoft.Research.Naiad.Cluster.Azure.DefaultConnectionString</c> setting cannot be parsed.</exception>
+        public static CloudStorageAccount DefaultAccount(this Computation computation)
+        {
+            string[] connectionStrings = computation.Controller.Configuration.AdditionalSettings.GetValues(DefaultConnectionString);
+
+            if (connectionStrings == null)
+                throw new ArgumentOutOfRangeException("DefaultConnectionString not set");
+
+            if (connectionStrings.Length == 0)
+                throw new ArgumentOutOfRangeException("DefaultConnectionString not set");
+
+            if (connectionStrings.Length > 1)
+                throw new ArgumentOutOfRangeException("Cannot set more than one DefaultConnectionString");
+
+            CloudStorageAccount ret;
+            bool success = CloudStorageAccount.TryParse(connectionStrings[0], out ret);
+
+            if (!success)
+                throw new ArgumentOutOfRangeException(string.Format("Invalid DefaultConnectionString: {0}", connectionStrings[0]));
+
+            return ret;
+        }
+
+        /// <summary>
+        /// Returns a reference to the <see cref="CloudBlobContainer"/> with the given <paramref name="containerName"/>
+        /// in the default account for this computation. The container will be created if it does not exist.
+        /// </summary>
+        /// <param name="computation">The computation.</param>
+        /// <param name="containerName">The container name.</param>
+        /// <returns>A reference to the container.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when the <c>Microsoft.Research.Naiad.Cluster.Azure.DefaultConnectionString</c> setting is not set or has more than one value in <see cref="Configuration.AdditionalSettings"/> 
+        /// </exception>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when the <c>Microsoft.Research.Naiad.Cluster.Azure.DefaultConnectionString</c> setting cannot be parsed.</exception>
+        public static CloudBlobContainer DefaultBlobContainer(this Computation computation, string containerName)
+        {
+            CloudStorageAccount account = computation.DefaultAccount();
+            CloudBlobClient blobClient = account.CreateCloudBlobClient();
+            CloudBlobContainer container = blobClient.GetContainerReference(containerName);
+            container.CreateIfNotExists();
+            return container;
+        }
+
+        #endregion
+
         #region Azure file-reading extension methods
 
         /// <summary>
@@ -30,18 +117,18 @@ namespace Microsoft.Research.Naiad.Frameworks.Azure
         /// <param name="prefix">Azure blob prefix</param>
         /// <param name="reader">Decoding function from a stream to sequence of records</param>
         /// <returns>Naiad stream containing the records extracted from files in the Azure directory</returns>
-        public static Stream<TRecord, Epoch> ReadFromAzureBlobs<TRecord>(this GraphManager manager, CloudBlobContainer container, string prefix, Func<System.IO.Stream, IEnumerable<TRecord>> reader)
+        public static Stream<TRecord, Epoch> ReadFromAzureBlobs<TRecord>(this Computation manager, CloudBlobContainer container, string prefix, Func<System.IO.Stream, IEnumerable<TRecord>> reader)
         {
             var directory = container.GetDirectoryReference(prefix);
 
             var blobs = directory.ListBlobs();
 
             return blobs.AsNaiadStream(manager)
-                            .Select(blob => blob.Uri.AbsolutePath)
-                            .Distinct()
-                            .Select(path => path.Substring(path.LastIndexOf('/') + 1))
-                            .Select(blobname => directory.GetBlockBlobReference(blobname).OpenRead())
-                            .SelectMany(reader);
+                        .Select(blob => blob.Uri.AbsolutePath)
+                        .Distinct()
+                        .Select(path => path.Substring(path.LastIndexOf('/') + 1))
+                        .Select(blobname => directory.GetBlockBlobReference(blobname).OpenRead())
+                        .SelectMany(reader);
         }
 
         /// <summary>
@@ -54,9 +141,9 @@ namespace Microsoft.Research.Naiad.Frameworks.Azure
         /// <param name="container">Azure container</param>
         /// <param name="prefix">Azure blob prefix</param>
         /// <returns>Naiad stream containing the records extracted from files in the Azure directory</returns>
-        public static Stream<TRecord, Epoch> ReadBinaryFromAzureBlobs<TRecord>(this GraphManager manager, CloudBlobContainer container, string prefix)
+        public static Stream<TRecord, Epoch> ReadBinaryFromAzureBlobs<TRecord>(this Computation manager, CloudBlobContainer container, string prefix)
         {
-            return manager.ReadFromAzureBlobs<TRecord>(container, prefix, stream => GetNaiadReaderEnumerable<TRecord>(stream, manager.Controller.CodeGenerator));
+            return manager.ReadFromAzureBlobs<TRecord>(container, prefix, stream => GetNaiadReaderEnumerable<TRecord>(stream, manager.Controller.SerializationFormat));
         }
 
         /// <summary>
@@ -68,7 +155,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Azure
         /// <param name="prefix">Azure blob prefix</param>
         /// <param name="reader">Decoding function from a binary reader to a sequence of records</param>
         /// <returns>Naiad stream containing the records extracted from files in the Azure directory</returns>
-        public static Stream<R, Epoch> ReadCustomBinaryFromAzureBlobs<R>(this GraphManager manager, CloudBlobContainer container, string prefix, Func<System.IO.BinaryReader, IEnumerable<R>> reader)
+        public static Stream<R, Epoch> ReadCustomBinaryFromAzureBlobs<R>(this Computation manager, CloudBlobContainer container, string prefix, Func<System.IO.BinaryReader, IEnumerable<R>> reader)
         {
             return manager.ReadFromAzureBlobs<R>(container, prefix, s => reader(new System.IO.BinaryReader(s)));
         }
@@ -77,9 +164,10 @@ namespace Microsoft.Research.Naiad.Frameworks.Azure
         /// Reads the contents of all text files in an Azure directory into a Naiad stream.
         /// </summary>
         /// <param name="manager">Graph manager</param>
+        /// <param name="container">Azure container</param>
         /// <param name="prefix">Azure blob prefix</param>
         /// <returns>Naiad stream containing the lines extracted from files in the Azure directory</returns>
-        public static Stream<string, Epoch> ReadTextFromAzureBlobs(this GraphManager manager, CloudBlobContainer container, string prefix)
+        public static Stream<string, Epoch> ReadTextFromAzureBlobs(this Computation manager, CloudBlobContainer container, string prefix)
         {
             return manager.ReadFromAzureBlobs<string>(container, prefix, s => s.ReadLines());
         }
@@ -92,7 +180,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Azure
         /// <param name="table">Azure table</param>
         /// <param name="query">Query to be applied to the table</param>
         /// <returns>Naiad stream containing the entities extracted by the table query</returns>
-        public static Stream<TEntity, Epoch> ReadFromAzureTable<TEntity>(this GraphManager manager, CloudTable table, TableQuery<TEntity> query)
+        public static Stream<TEntity, Epoch> ReadFromAzureTable<TEntity>(this Computation manager, CloudTable table, TableQuery<TEntity> query)
             where TEntity : ITableEntity, new()
         {
             CloudTable[] tables = new CloudTable[] { table };
@@ -119,8 +207,9 @@ namespace Microsoft.Research.Naiad.Frameworks.Azure
         /// </summary>
         /// <typeparam name="TRecord">Type of record in the stream</typeparam>
         /// <param name="stream">A stream containing records serialized in the Naiad messaging format</param>
+        /// <param name="codeGenerator">code generator</param>
         /// <returns>An enumeration of records in the stream</returns>
-        internal static IEnumerable<TRecord> GetNaiadReaderEnumerable<TRecord>(System.IO.Stream stream, SerializationCodeGenerator codeGenerator)
+        internal static IEnumerable<TRecord> GetNaiadReaderEnumerable<TRecord>(System.IO.Stream stream, SerializationFormat codeGenerator)
         {
             NaiadReader reader = new NaiadReader(stream, codeGenerator);
             NaiadSerialization<TRecord> deserializer = codeGenerator.GetSerializer<TRecord>();
@@ -186,7 +275,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Azure
         /// <returns>Subscription corresponding to the Azure writer</returns>
         public static Subscription WriteBinaryToAzureBlobs<TRecord>(this Stream<TRecord, Epoch> source, CloudBlobContainer container, string format)
         {
-            return source.WriteToAzureBlobs(container, format, stream => GetNaiadWriterObserver<TRecord>(stream, source.ForStage.GraphManager.Controller.CodeGenerator));
+            return source.WriteToAzureBlobs(container, format, stream => GetNaiadWriterObserver<TRecord>(stream, source.ForStage.Computation.Controller.SerializationFormat));
         }
 
         /// <summary>
@@ -194,10 +283,11 @@ namespace Microsoft.Research.Naiad.Frameworks.Azure
         /// </summary>
         /// <typeparam name="TRecord">Type of records to be written</typeparam>
         /// <param name="stream">Target I/O stream</param>
+        /// <param name="codeGenerator">code generator</param>
         /// <returns>A record observer that writes records to the given stream.</returns>
-        internal static IObserver<TRecord> GetNaiadWriterObserver<TRecord>(System.IO.Stream stream, SerializationCodeGenerator codeGenerator)
+        internal static IObserver<TRecord> GetNaiadWriterObserver<TRecord>(System.IO.Stream stream, SerializationFormat codeGenerator)
         {
-            NaiadStreamWriter<TRecord> writer = new NaiadStreamWriter<TRecord>(stream, codeGenerator);
+            NaiadWriter<TRecord> writer = new NaiadWriter<TRecord>(stream, codeGenerator);
             return Observer.Create<TRecord>(r => 
             {
                 writer.Write(r);
@@ -226,7 +316,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Azure
                     lock (writers)
                     {
                         if (!writers.ContainsKey(workerid))
-                            writers.Add(workerid, new System.IO.BinaryWriter(container.GetBlockBlobReference(string.Format(format, source.ForStage.GraphManager.Controller.Configuration.ProcessID, workerid)).OpenWrite()));
+                            writers.Add(workerid, new System.IO.BinaryWriter(container.GetBlockBlobReference(string.Format(format, source.ForStage.Computation.Controller.Configuration.ProcessID, workerid)).OpenWrite()));
 
                         writer = writers[workerid];
                     }
@@ -263,7 +353,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Azure
                 lock (writers)
                 {
                     if (!writers.ContainsKey(workerid))
-                        writers.Add(workerid, new System.IO.StreamWriter(container.GetBlockBlobReference(string.Format(format, source.ForStage.GraphManager.Controller.Configuration.ProcessID, workerid)).OpenWrite()));
+                        writers.Add(workerid, new System.IO.StreamWriter(container.GetBlockBlobReference(string.Format(format, source.ForStage.Computation.Controller.Configuration.ProcessID, workerid)).OpenWrite()));
 
                     writer = writers[workerid];
                 }

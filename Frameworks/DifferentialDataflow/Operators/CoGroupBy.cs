@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -34,7 +34,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Operators
         where V2 : IEquatable<V2>
         where S1 : IEquatable<S1>
         where S2 : IEquatable<S2>
-        where T : Microsoft.Research.Naiad.Time<T>
+        where T : Time<T>
         where R : IEquatable<R>
     {
         public Func<K, IEnumerable<Weighted<V1>>, IEnumerable<Weighted<V2>>, IEnumerable<Weighted<R>>> weightedReducer;

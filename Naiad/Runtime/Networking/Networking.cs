@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -36,12 +36,15 @@ using System.Collections.Concurrent;
 using System.Net.Sockets;
 using System.Diagnostics;
 using System.IO;
-using Microsoft.Research.Naiad.Util;
+using Microsoft.Research.Naiad.Utilities;
 using Microsoft.Research.Naiad.Scheduling;
 using Microsoft.Research.Naiad.DataStructures;
 using Microsoft.Research.Naiad.Runtime.Controlling;
 using Microsoft.Research.Naiad.Dataflow.Channels;
-using Microsoft.Research.Naiad.CodeGeneration;
+using Microsoft.Research.Naiad.Serialization;
+
+using Microsoft.Research.Naiad.Diagnostics;
+using Microsoft.Research.Naiad.Dataflow;
 
 namespace Microsoft.Research.Naiad.Runtime.Networking
 {
@@ -189,8 +192,8 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
             public ConnectionStatus Status { get { return this.status; } set { this.status = value; } }
             public readonly ConcurrentQueue<BufferSegment> SegmentQueue;
             public readonly ConcurrentQueue<BufferSegment> HighPrioritySegmentQueue;
-            public readonly NaiadList<BufferSegment> InflightSegments;
-            public readonly NaiadList<ArraySegment<byte>> InflightArraySegments;
+            //public readonly NaiadList<BufferSegment> InflightSegments;
+            //public readonly NaiadList<ArraySegment<byte>> InflightArraySegments;
             public readonly RecvBufferSheaf RecvBufferSheaf;
             public Thread RecvThread;
             public Thread SendThread;
@@ -226,8 +229,8 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
                 this.status = status;
                 this.SegmentQueue = new ConcurrentQueue<BufferSegment>();
                 this.HighPrioritySegmentQueue = new ConcurrentQueue<BufferSegment>();
-                this.InflightSegments = new NaiadList<BufferSegment>(MAX_INFLIGHT_SEGMENTS);
-                this.InflightArraySegments = new NaiadList<ArraySegment<byte>>(MAX_INFLIGHT_SEGMENTS);
+                //this.InflightSegments = new NaiadList<BufferSegment>(MAX_INFLIGHT_SEGMENTS);
+                //this.InflightArraySegments = new NaiadList<ArraySegment<byte>>(MAX_INFLIGHT_SEGMENTS);
                 this.RecvBufferSheaf = new RecvBufferSheaf(id, recvBufferLength / RecvBufferPage.PAGE_SIZE, GlobalBufferPool<byte>.pool);
 
                 this.SendPool = sendPool;
@@ -307,7 +310,7 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
                 if (i == this.localProcessID)
                     writer.WriteLine("{0} ---", i);
                 else
-                    writer.WriteLine("{0} S = {1}\tR = {2}\tQ = {3}\tState = {4}\tIFS = {5}", i, this.connections[i].RecordsSent, this.connections[i].RecordsRecv, this.connections[i].SegmentQueue.Count, this.connections[i].Status.ToString(), this.connections[i].InflightSegments.Count);
+                    writer.WriteLine("{0} S = {1}\tR = {2}\tQ = {3}\tState = {4}\tIFS = {5}", i, this.connections[i].RecordsSent, this.connections[i].RecordsRecv, this.connections[i].SegmentQueue.Count, this.connections[i].Status.ToString(), "DEPRECATED");
         }
 
         public readonly InternalController Controller;
@@ -539,7 +542,7 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
         public void AnnounceCheckpoint()
         {
             int seqno = this.GetSequenceNumber(-1);
-            SendBufferPage checkpointPage = SendBufferPage.CreateSpecialPage(MessageHeader.Checkpoint, seqno, this.Controller.CodeGenerator.GetSerializer<MessageHeader>());
+            SendBufferPage checkpointPage = SendBufferPage.CreateSpecialPage(MessageHeader.Checkpoint, seqno, this.Controller.SerializationFormat.GetSerializer<MessageHeader>());
             BufferSegment checkpointSegment = checkpointPage.Consume();
 
             for (int i = 0; i < this.connections.Count - 2; ++i)
@@ -577,7 +580,11 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
             get
             {
                 if (this._headerSerializer == null)
-                    this._headerSerializer = this.Controller.CodeGenerator.GetSerializer<MessageHeader>();
+                    this._headerSerializer = this.Controller.SerializationFormat.GetSerializer<MessageHeader>();
+
+                if (this._headerSerializer == null)
+                    throw new Exception();
+
                 return this._headerSerializer;
             }
         }
@@ -795,7 +802,7 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
             if (this.Controller.Configuration.KeepAlives)
             {
                 socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
-                Microsoft.Research.Naiad.Util.Win32.SetKeepaliveOptions(socket.Handle);
+                Microsoft.Research.Naiad.Utilities.Win32.SetKeepaliveOptions(socket.Handle);
             } 
 
             long wakeupCount = 0;
@@ -967,7 +974,7 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
                             break;
                         case SerializedMessageType.Failure:
                             Logging.Error("Received graph failure message from {0}", srcProcessID);
-                            this.Controller.GetInternalGraph(message.Header.ChannelID).Cancel(new Exception(string.Format("Received graph failure message from {0}", srcProcessID)));
+                            this.Controller.GetInternalComputation(message.Header.ChannelID).Cancel(new Exception(string.Format("Received graph failure message from {0}", srcProcessID)));
                             break;
                         case SerializedMessageType.Shutdown:
                             Logging.Progress("Received shutdown message from {0}", srcProcessID);
@@ -1031,7 +1038,7 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
                 // Special-cased logic for the progress channel, where we know that each process uses its process ID as the vertex ID.
                 try
                 {
-                    this.graphmailboxes[graphId][channelId][this.localProcessID].DeliverSerializedMessage(message, new RemotePostbox(peerID, message.Header.FromVertexID));
+                    this.graphmailboxes[graphId][channelId][this.localProcessID].DeliverSerializedMessage(message, new ReturnAddress(peerID, message.Header.FromVertexID));
                 }
                 catch (Exception)
                 {
@@ -1063,7 +1070,7 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
             }
             else
             {
-                this.graphmailboxes[graphId][channelId][message.Header.DestVertexID].DeliverSerializedMessage(message, new RemotePostbox(peerID, message.Header.FromVertexID));
+                this.graphmailboxes[graphId][channelId][message.Header.DestVertexID].DeliverSerializedMessage(message, new ReturnAddress(peerID, message.Header.FromVertexID));
                 return true;
             }
         }

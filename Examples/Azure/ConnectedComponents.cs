@@ -1,5 +1,5 @@
 ﻿/*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -21,7 +21,7 @@
 using Microsoft.Research.Naiad;
 using Microsoft.Research.Naiad.Dataflow;
 using Microsoft.Research.Naiad.Frameworks.Lindi;
-using Examples.ConnectedComponents;
+using Microsoft.Research.Naiad.Examples.ConnectedComponents;
 using Microsoft.Research.Naiad.Frameworks.Azure;
 using Microsoft.Research.Naiad.Dataflow.PartitionBy;
 using System;
@@ -31,7 +31,7 @@ using System.Text;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
 
-namespace Examples.Azure
+namespace Microsoft.Research.Naiad.Examples.Azure
 {
     class ConnectedComponents : Example
     {
@@ -54,44 +54,45 @@ namespace Examples.Azure
             if (!container.Exists())
                 throw new Exception("No such container exists");
 
-            // allocate a new controller from command line arguments.
-            using (var controller = NewController.FromArgs(ref args))
+            // allocate a new computation from command line arguments.
+            using (var computation = NewComputation.FromArgs(ref args))
             {
                 // Set Console.Out to point at an Azure blob bearing the process id. 
                 // See the important note at end of method about closing Console.Out.
-                controller.SetConsoleOut(container, "stdout-{0}.txt");
+                computation.Controller.SetConsoleOut(container, "stdout-{0}.txt");
 
-                // allocate a new graph manager for the computation.
-                using (var manager = controller.NewComputation())
-                {
-                    System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
+                System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
 
-                    // read the edges from azure storage
-                    var edges = manager.ReadBinaryFromAzureBlobs<Pair<int, int>>(container, directoryName);
+                // read the edges from azure storage
+                var edges = computation.ReadBinaryFromAzureBlobs<Pair<int, int>>(container, directoryName);
 
-                    // symmetrize the graph by adding in transposed edges.
-                    edges = edges.Select(x => new Pair<int, int>(x.v2, x.v1))
-                                 .Concat(edges);
+                // symmetrize the graph by adding in transposed edges.
+                edges = edges.Select(x => new Pair<int, int>(x.Second, x.First))
+                             .Concat(edges);
 
-                    // invoke director reachability
-                    var result = edges.DirectedReachability();
-                         
-                    // listen to the output for reporting, and also write the output somewhere in Azure
-                    result.Subscribe(list => Console.WriteLine("labeled {0} nodes in {1}", list.Count(), stopwatch.Elapsed));
-                    result.WriteBinaryToAzureBlobs(container, outputblobName);
+                // invoke director reachability
+                var result = edges.DirectedReachability();
 
-                    stopwatch.Start();
+                // listen to the output for reporting, and also write the output somewhere in Azure
+                result.Subscribe(list => Console.WriteLine("labeled {0} nodes in {1}", list.Count(), stopwatch.Elapsed));
+                result.WriteBinaryToAzureBlobs(container, outputblobName);
 
-                    // start computation and wait.
-                    manager.Activate();
-                    manager.Join();
-                }
+                stopwatch.Start();
 
-                controller.Join();
+                // start computation and wait.
+                computation.Activate();
+                computation.Join();
             }
+
 
             // very important to close the stream to flush writes to Azure.
             Console.Out.Close();
+        }
+
+
+        public string Help
+        {
+            get { return "Demonstrates a connected components computation (from Examples.ConnectedComponents) run using Azure data sources, suitable for use in HDInsight. Requires previous use of azure-graphgenerator, or an equivalent source of graph data."; }
         }
     }
 }

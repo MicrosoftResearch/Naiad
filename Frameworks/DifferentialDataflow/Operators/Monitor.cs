@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -27,18 +27,18 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
 
-using Microsoft.Research.Naiad.Util;
+using Microsoft.Research.Naiad.Utilities;
 using Microsoft.Research.Naiad.Dataflow;
+using Microsoft.Research.Naiad.Dataflow.StandardVertices;
 
 namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Operators
 {
     internal class Monitor<R, T> : UnaryVertex<Weighted<R>, Weighted<R>, T>
-        //OperatorImplementations.UnaryStatefulOperator<R, R, R, T, R>
         where R : IEquatable<R>
-        where T : Microsoft.Research.Naiad.Time<T>
+        where T : Time<T>
     {
-        public Action<int, List<NaiadRecord<R,T>>> action;
-        public List<NaiadRecord<R,T>> list;
+        public Action<int, List<Pair<Weighted<R>,T>>> action;
+        public List<Pair<Weighted<R>,T>> list;
 
         Int64 count;
         T leastTime;
@@ -53,7 +53,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Operators
             for (int i = 0; i < message.length; i++)
             {
                 if (action != null)
-                    list.Add(message.payload[i].ToNaiadRecord(message.time));
+                    list.Add(message.payload[i].PairWith(message.time));
 
                 count++;
             }
@@ -70,16 +70,16 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Operators
             }
             else
             { 
-                Console.WriteLine("{0}\t{1}\t{2}\t{3}", this.VertexId, count, leastTime, Logging.Stopwatch.Elapsed);
+                Console.WriteLine("{0}\t{1}\t{2}\t{3}", this.VertexId, count, leastTime, System.DateTime.Now);
 
                 count = 0;
             }
         }
 
-        public Monitor(int index, Stage<T> collection, bool immutableInput, Action<int, List<NaiadRecord<R,T>>> a) : base(index, collection)
+        public Monitor(int index, Stage<T> collection, bool immutableInput, Action<int, List<Pair<Weighted<R>,T>>> a) : base(index, collection)
         {
             action = a;
-            list = new List<NaiadRecord<R,T>>();
+            list = new List<Pair<Weighted<R>,T>>();
         }
     }
 }

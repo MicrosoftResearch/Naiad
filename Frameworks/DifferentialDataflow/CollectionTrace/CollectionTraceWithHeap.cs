@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -22,8 +22,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Microsoft.Research.Naiad.Dataflow.Channels;
-using Microsoft.Research.Naiad.DataStructures;
+using Microsoft.Research.Naiad.Serialization;
+using Microsoft.Research.Naiad.Diagnostics;
 
 namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.CollectionTrace
 {
@@ -193,8 +193,8 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.CollectionTra
                     var idx = handle.Offset + ((Int32.MaxValue & (index + RandomOffsets.Offsets[into.Length][i])) % handle.Length);
                     if (idx < 0 || idx >= handle.Array.Length)
                     {
-                        Microsoft.Research.Naiad.Logging.Error("IntroduceAsHashTable: trying to insert at bad index {0}", idx);
-                        Microsoft.Research.Naiad.Logging.Error("handle.Array.Length={0}, handle.Offset={1}, handle.Length={2}, index={3}, randomOffsets[into.Length][i]={4}",
+                        Logging.Error("IntroduceAsHashTable: trying to insert at bad index {0}", idx);
+                        Logging.Error("handle.Array.Length={0}, handle.Offset={1}, handle.Length={2}, index={3}, randomOffsets[into.Length][i]={4}",
                             handle.Array.Length, handle.Offset, handle.Length, index, RandomOffsets.Offsets[into.Length][i]);
                     }
                     if (handle.Array[idx].weight == 0)

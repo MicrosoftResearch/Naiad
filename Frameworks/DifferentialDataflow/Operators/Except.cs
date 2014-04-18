@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -23,12 +23,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Microsoft.Research.Naiad.Dataflow.StandardVertices;
 
 namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Operators
 {
     internal class Except<S,T> : BinaryVertex<Weighted<S>, Weighted<S>, Weighted<S>, T>
         where S : IEquatable<S>
-        where T : Microsoft.Research.Naiad.Time<T>
+        where T : Time<T>
     {
         public override void OnReceive1(Message<Weighted<S>, T> message)
         {

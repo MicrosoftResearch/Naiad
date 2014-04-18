@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -23,9 +23,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Microsoft.Research.Naiad
+namespace Microsoft.Research.Naiad.Serialization
 {
-    public struct NativeSA 
+    internal struct NativeSA 
     {
         public readonly IntPtr ArrayBegin;
         public int CurPos;
@@ -44,86 +44,70 @@ namespace Microsoft.Research.Naiad
         }
 
     }
-    public struct SubArray<T> : IEquatable<SubArray<T>>
+
+    /// <summary>
+    /// Represents a growable segment of an array, used for serialization.
+    /// </summary>
+    /// <typeparam name="TElement">The type of elements.</typeparam>
+    public struct SubArray<TElement>
     {
-        public T[] Array;
+        /// <summary>
+        /// The array instance that backs this subarray.
+        /// </summary>
+        public readonly TElement[] Array;
+
+        /// <summary>
+        /// The number of elements that have been written into this subarray.
+        /// </summary>
         public int Count;
-        //public const bool Resizable = false;
+        
+        /// <summary>
+        /// Constructs a new empty subarray that can grow to the full size of the given array.
+        /// </summary>
+        /// <param name="array">The array that backs this subarray.</param>
+        public SubArray(TElement[] array) : this(array, 0) { }
 
-        public SubArray(T[] a)
+        /// <summary>
+        /// Constructs a new subarray that contains an initial number of elements and can grow to the full size
+        /// of the given array.
+        /// </summary>
+        /// <param name="array">The array that backs this subarray.</param>
+        /// <param name="initialCount">The initial number of elements in this subarray.</param>
+        public SubArray(TElement[] array, int initialCount)
         {
-            ///Resizable = false;
-            Array = a;
-            Count = 0;
+            this.Array = array;
+            this.Count = initialCount;
         }
 
-        public SubArray(T[] a, int c)
-        {
-            //Resizable = false;
-            Array = a;
-            Count = c;
-        }
-
-#if false
-        public SubArray(int size)
-        {
-            Count = 0;
-            Array = size > 0 ? GlobalBufferPool<T>.pool.CheckOut(size) : GlobalBufferPool<T>.pool.Empty;
-            Resizable = true;
-        }
-#endif
-
-        public bool Equals(SubArray<T> that)
-        {
-            if (this.Count != that.Count)
-            {
-                return false;
-            }
-
-            for (int i = 0; i < this.Count; ++i)
-                if (!this.Array[i].Equals(that.Array[i]))
-                    return false;
-
-            return true;
-        }
-
-        public override bool Equals(object that)
-        {
-            return that is SubArray<T> && this.Equals((SubArray<T>) that);
-        }
-
-        public override int GetHashCode()
-        {
-            int ret = 0;
-            for (int i = 0; i < this.Count; ++i)
-                ret ^= this.Array[i].GetHashCode();
-            return ret;
-        }
-
+        /// <summary>
+        /// The total number of (occupied and unoccupied) elements in this subarray.
+        /// </summary>
         public int Length
         {
             get { return Array == null ? 0 : Array.Length; }
         }
 
-        public T this[int i]
+        /// <summary>
+        /// The element of this subarray at the given index.
+        /// </summary>
+        /// <param name="index">The index.</param>
+        /// <returns>The element of this subarray at the given index.</returns>
+        public TElement this[int index]
         {
-            get { return Array[i]; }
-            set { Array[i] = value; }
+            get { return Array[index]; }
+            set { Array[index] = value; }
         }
 
+        /// <summary>
+        /// The number of unoccupied elements in this subarray.
+        /// </summary>
         public int Available
         {
             get { return Length - Count; }
             set { Count = Length - value; }
         }
 
-        // Methods for resizing a subarray.
-        internal BufferPool<T> pool
-        {
-            get { return GlobalBufferPool<T>.pool; }
-        }
-
-        public bool EnsureCapacity(int size)
+        private bool EnsureCapacity(int size)
         {
             return Array.Length >= size;
 #if false
@@ -146,28 +130,47 @@ namespace Microsoft.Research.Naiad
 #endif
         }
 
-        public bool EnsureAvailable(int size)
+        /// <summary>
+        /// Returns true if the given number of elements is available in this subarray.
+        /// </summary>
+        /// <param name="numElements">The number of elements.</param>
+        /// <returns>True if the given number of elements is available in this subarray, otherwise false.</returns>
+        public bool EnsureAvailable(int numElements)
         {
-            return EnsureCapacity(Count + size);
+            return EnsureCapacity(Count + numElements);
         }
     }
 
-
+    /// <summary>
+    /// Represents a growable segment of an array, used for deserialization.
+    /// </summary>
     public struct RecvBuffer
     {
+        /// <summary>
+        /// The array that backs this buffer.
+        /// </summary>
         public readonly byte[] Buffer;
+
+        /// <summary>
+        /// The offset (in the backing array) of the first byte after the end of this buffer.
+        /// </summary>
         public readonly int End;
 
+        /// <summary>
+        /// The current offset in the backing array.
+        /// </summary>
         public int CurrentPos;
 
-        public RecvBuffer(byte[] buffer, int start, int end)
+        internal RecvBuffer(byte[] buffer, int start, int end)
         {
             this.Buffer = buffer;
             this.End = end;
             this.CurrentPos = start;
         }
 
-
+        /// <summary>
+        /// The number of bytes that have not been consumed from this buffer.
+        /// </summary>
         public int Available { get { return End - CurrentPos; } }
     }
 }

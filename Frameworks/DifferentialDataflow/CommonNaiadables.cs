@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -27,91 +27,57 @@ using Microsoft.Research.Naiad;
 
 namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
 {
-#if false
-    public struct WeightedNaiadable<T> : IEquatable<WeightedNaiadable<T>>
-        where T : IEquatable<T>
-    {
-        public class WeightComparer : IComparer<WeightedNaiadable<T>>
-        {
-            public int Compare(WeightedNaiadable<T> x, WeightedNaiadable<T> y)
-            {
-                if (x.weight != y.weight)
-                    return x.weight - y.weight;
-                else
-                    return x.GetHashCode() - y.GetHashCode();
-            }
-
-            private static WeightComparer _Instance = new WeightComparer();
-            public static WeightComparer Instance
-            {
-                get
-                {
-                    return WeightComparer._Instance;
-                }
-            }
-        }
-
-        public T payload;
-        public int weight;
-
-        public WeightedNaiadable(T payload, int weight)
-        {
-            this.payload = payload;
-            this.weight = weight;
-        }
-
-        public bool Equals(WeightedNaiadable<T> other)
-        {
-            return this.weight == other.weight && this.payload.Equals(other.payload);
-        }
-
-        public override string ToString()
-        {
-            return string.Format("[{0} * {1}]", this.payload, this.weight);
-        }
-
-        public static implicit operator WeightedNaiadable<T>(T payload)
-        {
-            return new WeightedNaiadable<T>(payload, 1);
-        }
-
-        public static implicit operator WeightedNaiadable<T>(Weighted<T> weighted)
-        {
-            return new WeightedNaiadable<T>(weighted.record, weighted.weight);
-        }
-    }
-#endif
+    /// <summary>
+    /// An equatable pair of integers
+    /// </summary>
     public struct IntPair : IEquatable<IntPair>
     {
+        /// <summary>
+        /// The first integer.
+        /// </summary>
         public int s;
+
+        /// <summary>
+        /// The second integer.
+        /// </summary>
         public int t;
 
-        public bool Equals(IntPair that)
+        /// <summary>
+        /// Returns <c>true</c> if and only if this and the other pair are element-wise equal.
+        /// </summary>
+        /// <param name="other">The other pair.</param>
+        /// <returns><c>true</c> if and only if this and the other pair are element-wise equal.</returns>
+        public bool Equals(IntPair other)
         {
-            return s == that.s && t == that.t;
+            return s == other.s && t == other.t;
         }
 
-        public int CompareTo(IntPair that)
-        {
-            if (this.s != that.s)
-                return this.s - that.s;
-
-            return this.t - that.t;
-        }
-
+        /// <summary>
+        /// Returns a hashcode for this pair.
+        /// </summary>
+        /// <returns>A hashcode for this pair.</returns>
         public override int GetHashCode()
         {
             return 47 * s + 36425232 * t;
         }
 
+        /// <summary>
+        /// Returns a string representation of this pair.
+        /// </summary>
+        /// <returns>A string representation of this pair.</returns>
         public override string ToString()
         {
             return String.Format("({0}, {1})", s, t);
         }
 
-        public IntPair(int ss, int tt) { s = ss; t = tt; }
+        /// <summary>
+        /// Constructs a new pair from the given integers.
+        /// </summary>
+        /// <param name="s">The first integer.</param>
+        /// <param name="t">The second integer.</param>
+        public IntPair(int s, int t) { this.s = s; this.t = t; }
     }
-
+#if false
     public struct Int64Pair : IEquatable<Int64Pair>
     {
         public Int64 s;
@@ -230,4 +196,5 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
             first = x; second = y; third = z; fourth = w;
         }
     }
+#endif
 }

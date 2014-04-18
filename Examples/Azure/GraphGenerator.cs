@@ -1,5 +1,5 @@
 ﻿/*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -19,7 +19,7 @@
  */
 
 using Microsoft.Research.Naiad;
-using Microsoft.Research.Naiad.Dataflow;
+using Microsoft.Research.Naiad.Input;
 using Microsoft.Research.Naiad.Frameworks.Lindi;
 using Microsoft.Research.Naiad.Frameworks.Azure;
 using Microsoft.Research.Naiad.Dataflow.PartitionBy;
@@ -29,7 +29,7 @@ using System.Linq;
 using System.Text;
 using Microsoft.WindowsAzure.Storage;
 
-namespace Examples.Azure
+namespace Microsoft.Research.Naiad.Examples.Azure
 {
     public struct GraphProperties
     {
@@ -65,28 +65,23 @@ namespace Examples.Azure
 
             container.CreateIfNotExists();
 
-            // allocate a new controller from command line arguments.
-            using (var controller = NewController.FromArgs(ref args))
+            // allocate a new computation from command line arguments.
+            using (var computation = NewComputation.FromArgs(ref args))
             {
-                // allocate a new graph manager for the computation.
-                using (var manager = controller.NewComputation())
-                {
-                    // create a new input from a constant data source 
-                    var source = new ConstantDataSource<GraphProperties>(new GraphProperties(nodeCount, edgeCount));
-                    var input = manager.NewInput(source);
+                // create a new input from a constant data source 
+                var source = new ConstantDataSource<GraphProperties>(new GraphProperties(nodeCount, edgeCount));
+                var input = computation.NewInput(source);
 
-                    // generate the graph, partition by edge source, and write to Azure.
-                    input.SelectMany(x => GenerateGraph(x.NodeCount, x.EdgeCount))
-                         .PartitionBy(x => x.v1)
-                         .WriteBinaryToAzureBlobs(container, directoryName + "/edges-{0}");
+                // generate the graph, partition by edge source, and write to Azure.
+                input.SelectMany(x => GenerateGraph(x.NodeCount, x.EdgeCount))
+                     .PartitionBy(x => x.First)
+                     .WriteBinaryToAzureBlobs(container, directoryName + "/edges-{0}");
 
-                    // start job and wait.
-                    manager.Activate();
-                    manager.Join();
-                }
-
-                controller.Join();
+                // start job and wait.
+                computation.Activate();
+                computation.Join();
             }
+
         }
 
         private static IEnumerable<Pair<int, int>> GenerateGraph(int nodeCount, int edgeCount)
@@ -94,6 +89,12 @@ namespace Examples.Azure
             var random = new Random(0);
             for (int i = 0; i < edgeCount; i++)
                 yield return new Pair<int, int>(random.Next(nodeCount), random.Next(nodeCount));
+        }
+
+
+        public string Help
+        {
+            get { return "Generates a random graph and writes it to a set of files in an Azure directory. For use with other Azure example."; }
         }
     }
 }

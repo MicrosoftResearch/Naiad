@@ -83,6 +83,8 @@
     <Compile Include="DifferentialDataflow\SearchIndex.cs" />
     <Compile Include="DifferentialDataflow\StronglyConnectedComponents.cs" />
     <Compile Include="DifferentialDataflow\WordCount.cs" />
+    <Compile Include="GraphLINQ\PageRank.cs" />
+    <Compile Include="GraphLINQ\Reachability.cs" />
     <Compile Include="Naiad\ConnectedComponents.cs" />
     <Compile Include="Naiad\KeyValueLookup.cs" />
     <Compile Include="Naiad\Latency.cs" />
@@ -99,6 +101,10 @@
     <ProjectReference Include="..\Frameworks\AzureSupport\AzureSupport.csproj">
       <Project>{e2347f7a-ddb2-4ccd-8a37-44202d7bbaa7}</Project>
       <Name>AzureSupport</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Frameworks\GraphLINQ\GraphLINQ.csproj">
+      <Project>{bdbeaca4-1235-4fdc-bbf5-9f9b7ab553ad}</Project>
+      <Name>GraphLINQ</Name>
     </ProjectReference>
     <ProjectReference Include="..\Frameworks\Lindi\Lindi.csproj">
       <Project>{bdc6546c-7ba0-472b-b260-0d596b6152e4}</Project>

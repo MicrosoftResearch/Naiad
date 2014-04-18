@@ -1,0 +1,45 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<topic id="4306361f-4369-4b46-9c0d-464ccb176161" revisionNumber="1">
+  <developerConceptualDocument
+    xmlns="http://ddue.schemas.microsoft.com/authoring/2003/5"
+    xmlns:xlink="http://www.w3.org/1999/xlink">
+
+    <summary>
+      <para>
+        The first open-source release of Naiad, version 0.2 included support for multiple
+        data-parallel frameworks on top of a common low-latency and high-throughput
+        distributed runtime.
+      </para>
+    </summary>
+
+
+    <introduction>
+      <para>Version 0.2 was released on October 29th 2013.</para>
+    </introduction>
+
+    <section>
+      <title>Changes in This Release</title>
+      <content>
+
+        <list class="bullet">
+          <listItem>
+            <para>The license was changed to the Apache 2.0 open-source license.</para>
+          </listItem>
+          <listItem>
+            <para>
+              The Naiad runtime was split into the <codeInline>Naiad.dll</codeInline> runtime,
+              and multiple frameworks. This release contained the Lindi (LINQ with declarative iteration)
+              and Differential Dataflow frameworks.
+            </para>
+          </listItem>
+        </list>
+
+      </content>
+    </section>
+
+    <relatedTopics>
+      <link xlink:href="c2a31aaa-d867-4d3b-9315-dbb7c7527659" />
+    </relatedTopics>
+
+  </developerConceptualDocument>
+</topic>

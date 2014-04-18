@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -26,9 +26,10 @@ using System.Threading.Tasks;
 
 using Microsoft.Research.Naiad;
 using Microsoft.Research.Naiad.Dataflow;
-using Microsoft.Research.Naiad.Frameworks;
+using Microsoft.Research.Naiad.Input;
+using Microsoft.Research.Naiad.Dataflow.StandardVertices;
 
-namespace Examples.WordCount
+namespace Microsoft.Research.Naiad.Examples.WordCount
 {
     public static class ExtensionMethods
     {
@@ -93,40 +94,41 @@ namespace Examples.WordCount
 
         public void Execute(string[] args)
         {
-            // the first thing to do is to allocate a controller from args.
-            using (var controller = NewController.FromArgs(ref args))
+            // the first thing to do is to allocate a computation from args.
+            using (var computation = NewComputation.FromArgs(ref args))
             {
-                // controllers allocate graphs, which are where computations are defined.
-                using (var manager = controller.NewComputation())
+
+                // 1. Make a new data source, to which we will supply strings.
+                var source = new BatchedDataSource<string>();
+
+                // 2. Attach source, and apply count extension method.
+                var counts = computation.NewInput(source).StreamingCount();
+
+                // 3. Subscribe to the resulting stream with a callback to print the outputs.
+                counts.Subscribe(list => { foreach (var element in list) Console.WriteLine(element); });
+
+                computation.Activate();       // activate the execution of this graph (no new stages allowed).
+
+                if (computation.Configuration.ProcessID == 0)
                 {
-                    // 1. Make a new data source, to which we will supply strings.
-                    var source = new BatchedDataSource<string>();
+                    // with our dataflow graph defined, we can start soliciting strings from the user.
+                    Console.WriteLine("Start entering lines of text. An empty line will exit the program.");
+                    Console.WriteLine("Naiad will display counts (and changes in counts) of words you type.");
 
-                    // 2. Attach source, and apply count extension method.
-                    var counts = manager.NewInput(source).StreamingCount();
-
-                    // 3. Subscribe to the resulting stream with a callback to print the outputs.
-                    counts.Subscribe(list => { foreach (var element in list) Console.WriteLine(element); });
-
-                    manager.Activate();       // activate the execution of this graph (no new stages allowed).
-
-                    if (controller.Configuration.ProcessID == 0)
-                    {
-                        // with our dataflow graph defined, we can start soliciting strings from the user.
-                        Console.WriteLine("Start entering lines of text. An empty line will exit the program.");
-                        Console.WriteLine("Naiad will display counts (and changes in counts) of words you type.");
-
-                        // read lines of input and hand them to the input, until an empty line appears.
-                        for (var line = Console.ReadLine(); line.Length > 0; line = Console.ReadLine())
-                            source.OnNext(line.Split());
-                    }
-
-                    source.OnCompleted();   // signal the end of the input.
-                    manager.Join();           // waits until the graph has finished executing.
+                    // read lines of input and hand them to the input, until an empty line appears.
+                    for (var line = Console.ReadLine(); line.Length > 0; line = Console.ReadLine())
+                        source.OnNext(line.Split());
                 }
 
-                controller.Join();          // waits until all graphs have finished executing.
+                source.OnCompleted();   // signal the end of the input.
+                computation.Join();           // waits until the graph has finished executing.
             }
+
+        }
+
+        public string Help
+        {
+            get { return "Demonstrates interactive counting of words in lines of text.\nPerhaps the simplest example of a self-contained Naiad program."; }
         }
     }
 }

@@ -60,7 +60,8 @@
     <SignAssembly>true</SignAssembly>
   </PropertyGroup>
   <PropertyGroup>
-    <AssemblyOriginatorKeyFile>Naiad.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>
+    </AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -78,7 +79,7 @@
     <Compile Include="Dataflow\DataSources.cs" />
     <Compile Include="Dataflow\Endpoints.cs" />
     <Compile Include="Dataflow\Vertex.cs" />
-    <Compile Include="DataStructures\StringKeyedDictionary.cs" />
+    <Compile Include="NamespaceDocs.cs" />
     <Compile Include="Runtime\Controlling\Peloponnese.cs" />
     <Compile Include="Runtime\Progress\ProgressTracker.cs" />
     <Compile Include="Runtime\Controlling\Controller.cs" />
@@ -92,7 +93,6 @@
     <Compile Include="Runtime\Controlling\InternalController.cs" />
     <Compile Include="Dataflow\Input.cs" />
     <Compile Include="Dataflow\Statistics.cs" />
-    <Compile Include="DataStructures\Allocator.cs" />
     <Compile Include="DataStructures\SpinedList.cs" />
     <Compile Include="Frameworks\LINQ.cs" />
     <Compile Include="Frameworks\Reduce.cs" />
@@ -100,7 +100,6 @@
     <Compile Include="Dataflow\Stream.cs" />
     <Compile Include="Dataflow\Edge.cs" />
     <Compile Include="FaultTolerance\FaultToleranceExtensionMethods.cs" />
-    <Compile Include="FaultTolerance\ICheckpointable.cs" />
     <Compile Include="Dataflow\Iteration.cs" />
     <Compile Include="Dataflow\Subscribe.cs" />
     <Compile Include="Frameworks\StandardVertices.cs" />
@@ -116,9 +115,7 @@
     <Compile Include="Runtime\Networking\NaiadServer.cs" />
     <Compile Include="Channels\MessageDelivery.cs" />
     <Compile Include="CodeGeneration\AutoSerialization.cs" />
-    <Compile Include="DataStructures\NaiadList.cs" />
     <Compile Include="Configuration.cs" />
-    <Compile Include="DataStructures\CoreGenerics.cs" />
     <Compile Include="DataStructures\CircularLogBuffer.cs" />
     <Compile Include="DataStructures\SubArray.cs" />
     <Compile Include="Time.cs" />
@@ -132,14 +129,12 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Channels\Channel.cs" />
     <Compile Include="Util\DependencyLister.cs" />
-    <Compile Include="Util\NetworkMonitoringStats.cs" />
     <Compile Include="Util\Win32.cs" />
     <Compile Include="Dataflow\Stage.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
     <None Include="Microsoft.Research.Naiad.nuspec" />
-    <None Include="Naiad.snk" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

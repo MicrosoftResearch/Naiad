@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<topic id="2a378dc0-df87-470e-9d7c-450ef7248667" revisionNumber="1">
+	<developerConceptualDocument xmlns="http://ddue.schemas.microsoft.com/authoring/2003/5" xmlns:xlink="http://www.w3.org/1999/xlink">
+		<introduction>
+      <para>
+        Naiad is an open-source data-parallel dataflow system designed to provide low latency and high throughput for a variety of sophisticated data processing tasks.
+      </para>
+      <para>
+        Naiad exposes low-level primitives for dataflow construction and execution, as well as several libraries wrapping standard patterns in higher level constructs.
+        Our experience has been that many popular programming patterns are easily expressed in Naiad, including streaming analytics, graph computation, and machine learning.
+        Our intent is that users will mostly use common high-level patterns, but have access to low-level primitives as needed, which can be wrapped and shared as new high-level patterns.
+      </para>
+		</introduction>
+
+		<section>
+			<title>Getting Started</title>
+			<content>
+				<para>
+          You will want a recent version of Naiad. 
+          Naiad is available both as 
+            <externalLink>
+              <linkText>binaries on NuGet</linkText>
+              <linkUri>http://www.nuget.org/packages?q=Naiad</linkUri>
+            </externalLink>
+           and as 
+          <externalLink>
+            <linkText>open source on GitHub</linkText>
+            <linkUri>https://github.com/MicrosoftResearchSVC/Naiad/</linkUri>
+          </externalLink>.
+        </para>
+
+        <para>
+          This document <link xlink:href="450c8ec2-65e4-4396-93e8-634e6a2144f4"/> has an introduction to writing Naiad programs.
+        </para>
+			</content>
+		</section>
+
+    <section>
+      <title>
+        Learning more about Naiad
+      </title>
+      <content>
+        <para>
+          Naiad is an ongoing research project, but there are many places to find more information about what has already been done and what is coming next.
+        </para>
+        <list class="bullet">
+          <listItem>
+            <para>
+              The <externalLink>
+                <linkText>
+                  Naiad project page
+                </linkText>
+                <linkUri>
+                  http://research.microsoft.com/naiad
+                </linkUri>
+              </externalLink> 
+              has information about the research that underlies the Naiad system. 
+              It also discusses research related to Naiad, and has links to other Microsoft Research projects related to large-scale data processing.
+            </para>
+          </listItem>
+          <listItem>
+            <para>
+              The 
+              <externalLink>
+                <linkText>
+                  Big Data at SVC blog    
+                </linkText>
+                <linkUri>
+                  http://bigdataatsvc.wordpress.com/
+                </linkUri>
+              </externalLink> 
+              contains many posts about Naiad, related projects, and opinions about the state of large-scale data processing generally.
+            </para>
+          </listItem>
+          <listItem>
+            <para>
+              <externalLink>
+                <linkText>
+                  Naiad's GitHub project page
+                </linkText>
+                <linkUri>
+                  https://github.com/MicrosoftResearchSVC/Naiad/
+                </linkUri>
+              </externalLink> 
+              is a great resource for the source code itself, as well as a place to comment on and discuss the current state of the code and its future directions.
+            </para>
+          </listItem>
+        </list>
+      </content>
+    </section>
+    
+		<relatedTopics>
+			<link xlink:href="c2a31aaa-d867-4d3b-9315-dbb7c7527659"/>
+      <link xlink:href="450c8ec2-65e4-4396-93e8-634e6a2144f4"/>
+      <externalLink>
+        <linkText>
+          Microsoft Research's Naiad page
+        </linkText>
+        <linkUri>
+          http://research.microsoft.com/naiad/
+        </linkUri>
+      </externalLink>
+		</relatedTopics>
+	</developerConceptualDocument>
+</topic>

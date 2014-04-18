@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\packages\Microsoft.Research.Peloponnese.0.7.1-beta\build\Microsoft.Research.Peloponnese.props" Condition="Exists('..\packages\Microsoft.Research.Peloponnese.0.7.1-beta\build\Microsoft.Research.Peloponnese.props')" />
+  <Import Project="..\packages\Microsoft.Research.Peloponnese.0.7.2-beta\build\Microsoft.Research.Peloponnese.props" Condition="Exists('..\packages\Microsoft.Research.Peloponnese.0.7.2-beta\build\Microsoft.Research.Peloponnese.props')" />
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -55,14 +55,38 @@
     </Reference>
     <Reference Include="Microsoft.Research.Peloponnese.HadoopBridge, Version=0.0.0.0, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Microsoft.Research.Peloponnese.0.7.1-beta\lib\net45\Microsoft.Research.Peloponnese.HadoopBridge.dll</HintPath>
+      <HintPath>..\packages\Microsoft.Research.Peloponnese.0.7.2-beta\lib\net45\Microsoft.Research.Peloponnese.HadoopBridge.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Research.Peloponnese.Utils, Version=0.7.0.0, Culture=neutral, processorArchitecture=AMD64">
+    <Reference Include="Microsoft.Research.Peloponnese.Utils, Version=0.7.2.0, Culture=neutral, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Microsoft.Research.Peloponnese.0.7.1-beta\lib\net45\Microsoft.Research.Peloponnese.Utils.dll</HintPath>
+      <HintPath>..\packages\Microsoft.Research.Peloponnese.0.7.2-beta\lib\net45\Microsoft.Research.Peloponnese.Utils.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Threading.Tasks, Version=1.0.12.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Microsoft.Bcl.Async.1.0.166\lib\net40\Microsoft.Threading.Tasks.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Threading.Tasks.Extensions, Version=1.0.12.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Microsoft.Bcl.Async.1.0.166\lib\net40\Microsoft.Threading.Tasks.Extensions.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Threading.Tasks.Extensions.Desktop, Version=1.0.166.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Microsoft.Bcl.Async.1.0.166\lib\net40\Microsoft.Threading.Tasks.Extensions.Desktop.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.WindowsAzure.Common, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Microsoft.WindowsAzure.Common.1.0.1\lib\net45\Microsoft.WindowsAzure.Common.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.WindowsAzure.Common.NetFramework, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Microsoft.WindowsAzure.Common.1.0.1\lib\net45\Microsoft.WindowsAzure.Common.NetFramework.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.WindowsAzure.Configuration, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.WindowsAzure.ConfigurationManager.2.0.3\lib\net40\Microsoft.WindowsAzure.Configuration.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.WindowsAzure.Management, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Microsoft.WindowsAzure.Management.1.0.0\lib\net40\Microsoft.WindowsAzure.Management.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.WindowsAzure.Management.HDInsight, Version=1.1.0.7, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -76,6 +100,10 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Microsoft.Hadoop.Client.1.1.0.7\lib\net40\Microsoft.WindowsAzure.Management.HDInsight.Framework.Core.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.WindowsAzure.Management.Storage, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Microsoft.WindowsAzure.Management.Storage.1.0.0\lib\net40\Microsoft.WindowsAzure.Management.Storage.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.WindowsAzure.Storage, Version=3.1.0.1, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\WindowsAzure.Storage.3.1.0.1\lib\net40\Microsoft.WindowsAzure.Storage.dll</HintPath>
@@ -86,7 +114,17 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Data.Services.Client" />
+    <Reference Include="System.Net" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Net.Http.Extensions, Version=2.2.19.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Microsoft.Net.Http.2.2.19\lib\net45\System.Net.Http.Extensions.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Net.Http.Primitives, Version=4.2.19.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Microsoft.Net.Http.2.2.19\lib\net45\System.Net.Http.Primitives.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Net.Http.WebRequest" />
     <Reference Include="System.Spatial, Version=5.6.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\System.Spatial.5.6.1\lib\net40\System.Spatial.dll</HintPath>
@@ -107,18 +145,31 @@
     <None Include="App.config">
       <SubType>Designer</SubType>
     </None>
-    <None Include="Microsoft.Research.Naiad.Cluster.nuspec" />
+    <None Include="Microsoft.Research.Naiad.Cluster.nuspec">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\DependencyLister\DependencyLister.csproj">
+      <Project>{4b1a2cc2-1798-472c-954b-9c808b2c0748}</Project>
+      <Name>DependencyLister</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Import Project="..\packages\Microsoft.Bcl.Build.1.0.14\tools\Microsoft.Bcl.Build.targets" Condition="Exists('..\packages\Microsoft.Bcl.Build.1.0.14\tools\Microsoft.Bcl.Build.targets')" />
+  <Target Name="EnsureBclBuildImported" BeforeTargets="BeforeBuild" Condition="'$(BclBuildImported)' == ''">
+    <Error Condition="!Exists('..\packages\Microsoft.Bcl.Build.1.0.14\tools\Microsoft.Bcl.Build.targets')" Text="This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=317567." HelpKeyword="BCLBUILD2001" />
+    <Error Condition="Exists('..\packages\Microsoft.Bcl.Build.1.0.14\tools\Microsoft.Bcl.Build.targets')" Text="The build restored NuGet packages. Build the project again to include these packages in the build. For more information, see http://go.microsoft.com/fwlink/?LinkID=317568." HelpKeyword="BCLBUILD2002" />
+  </Target>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\packages\Microsoft.Research.Peloponnese.0.7.1-beta\build\Microsoft.Research.Peloponnese.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Research.Peloponnese.0.7.1-beta\build\Microsoft.Research.Peloponnese.props'))" />
-    <Error Condition="!Exists('..\packages\Microsoft.Research.Peloponnese.0.7.1-beta\build\Microsoft.Research.Peloponnese.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Research.Peloponnese.0.7.1-beta\build\Microsoft.Research.Peloponnese.targets'))" />
+    <Error Condition="!Exists('..\packages\Microsoft.Research.Peloponnese.0.7.2-beta\build\Microsoft.Research.Peloponnese.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Research.Peloponnese.0.7.2-beta\build\Microsoft.Research.Peloponnese.props'))" />
+    <Error Condition="!Exists('..\packages\Microsoft.Research.Peloponnese.0.7.2-beta\build\Microsoft.Research.Peloponnese.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Research.Peloponnese.0.7.2-beta\build\Microsoft.Research.Peloponnese.targets'))" />
   </Target>
-  <Import Project="..\packages\Microsoft.Research.Peloponnese.0.7.1-beta\build\Microsoft.Research.Peloponnese.targets" Condition="Exists('..\packages\Microsoft.Research.Peloponnese.0.7.1-beta\build\Microsoft.Research.Peloponnese.targets')" />
+  <Import Project="..\packages\Microsoft.Research.Peloponnese.0.7.2-beta\build\Microsoft.Research.Peloponnese.targets" Condition="Exists('..\packages\Microsoft.Research.Peloponnese.0.7.2-beta\build\Microsoft.Research.Peloponnese.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -27,7 +27,7 @@ using System.Linq.Expressions;
 using System.Net.Sockets;
 using System.Text;
 using Microsoft.Research.Naiad.Dataflow.Channels;
-using Microsoft.Research.Naiad.FaultTolerance;
+using Microsoft.Research.Naiad.Serialization;
 using Microsoft.Research.Naiad.Frameworks;
 using Microsoft.Research.Naiad.Scheduling;
 using System.Collections.Concurrent;
@@ -47,15 +47,17 @@ namespace Microsoft.Research.Naiad.Runtime.Controlling
 
         Scheduler this[int index] { get; }
 
-        void NotifySchedulerStarting(Scheduler scheduler);
-        void NotifySchedulerWaking(Scheduler scheduler);
-        void NotifyOperatorStarting(Scheduler scheduler, Scheduler.WorkItem work);
-        void NotifyOperatorEnding(Scheduler scheduler, Scheduler.WorkItem work);
-        void NotifyOperatorEnqueued(Scheduler scheduler, Scheduler.WorkItem work);
+        void NotifyWorkerStarting(Scheduler scheduler);
+        void NotifyWorkerWaking(Scheduler scheduler);
+        void NotifyVertexStarting(Scheduler scheduler, Scheduler.WorkItem work);
+        void NotifyVertexEnding(Scheduler scheduler, Scheduler.WorkItem work);
+        void NotifyVertexEnqueued(Scheduler scheduler, Scheduler.WorkItem work);
         void NotifySchedulerSleeping(Scheduler scheduler);
         void NotifySchedulerTerminating(Scheduler scheduler);
+#if false
         void NotifyOperatorReceivedRecords(Dataflow.Vertex op, int channelId, int recordsReceived);
         void NotifyOperatorSentRecords(Dataflow.Vertex op, int channelId, int recordsSent);
+#endif
 
         /// <summary>
         /// Blocks the scheduler waiting for the event to be signalled.

@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -28,11 +28,27 @@ using Microsoft.Research.Naiad;
 
 namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
 {
-    public struct Weighted<T> : IEquatable<Weighted<T>> where T : IEquatable<T>
+    /// <summary>
+    /// A record with a signed 64-bit weight, which corresponds to the multiplicity of the record
+    /// in a multiset.
+    /// </summary>
+    /// <typeparam name="TRecord">The type of the record.</typeparam>
+    public struct Weighted<TRecord> : IEquatable<Weighted<TRecord>> where TRecord : IEquatable<TRecord>
     {
-        public T record;
+        /// <summary>
+        /// The record.
+        /// </summary>
+        public TRecord record;
+
+        /// <summary>
+        /// The weight.
+        /// </summary>
         public Int64 weight;
 
+        /// <summary>
+        /// Returns a string representation of this weighted record.
+        /// </summary>
+        /// <returns>A string representation of this weighted record.</returns>
         public override string ToString()
         {
             if (weight > 0)
@@ -41,41 +57,21 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
                 return String.Format("[ {0}, {1} ]", record.ToString(), weight);
         }
 
-        public bool Equals(Weighted<T> that)
+        /// <summary>
+        /// Returns <c>true</c> if and only if this and the <paramref name="other"/> object have equal records and weights.
+        /// </summary>
+        /// <param name="other">The other object.</param>
+        /// <returns><c>true</c> if and only if this and the <paramref name="other"/> object have equal records and weights.</returns>
+        public bool Equals(Weighted<TRecord> other)
         {
-            return this.weight == that.weight && this.record.Equals(that.record);
+            return this.weight == other.weight && this.record.Equals(other.record);
         }
 
-        public Weighted(T r, Int64 w) { record = r; weight = w; }
-    }
-
-    public struct NaiadRecord<S, T> : IEquatable<NaiadRecord<S,T>>
-        where S : IEquatable<S>
-        where T : Time<T>
-    {
-        public S record;
-        public Int64 weight;
-        public T time;
-
-        public bool Equals(NaiadRecord<S,T> that)
-        {
-            return record.Equals(that.record) && weight == that.weight && time.Equals(that.time);
-        }
-
-        public NaiadRecord<S,T> Negate() { return new NaiadRecord<S,T>(record, -weight, time); }
-
-        public override int GetHashCode() { return record.GetHashCode(); }
-
-        public NaiadRecord(S r, Int64 w, T t) { record = r; weight = w; time = t; }
-
-        public override string ToString()
-        {
-            if (weight >= 0)
-                return string.Format("[{0}, +{1}, {2}]", record, weight, time);
-
-            return string.Format("[{0}, {1}, {2}]", record, weight, time);
-        }
-
-        public Weighted<S> ToWeighted() { return new Weighted<S> { record = record, weight = weight }; }
+        /// <summary>
+        /// Constructs a new weighted object from the given <paramref name="record"/> and <paramref name="weight"/>.
+        /// </summary>
+        /// <param name="record">The record.</param>
+        /// <param name="weight">The weight.</param>
+        public Weighted(TRecord record, Int64 weight) { this.record = record; this.weight = weight; }
     }
 }

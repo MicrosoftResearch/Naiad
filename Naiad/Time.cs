@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -23,155 +23,377 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Diagnostics;
-using Microsoft.Research.Naiad.CodeGeneration;
+using Microsoft.Research.Naiad.Serialization;
+using Microsoft.Research.Naiad.Runtime.Progress;
 
 namespace Microsoft.Research.Naiad
 {
     /// <summary>
-    /// The typed equivalent of a Pointstamp's "Timestamp" field, corresponding to a sequence of integers.
-    /// Main use is Join/Meet, and conversion to and from Pointstamp representation.
+    /// Represents a logical timestamp in a timely dataflow computation. All messages in a
+    /// timely dataflow computation are labeled with a logical timestamp.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-
-    public interface Time<T> : IEquatable<T>, IComparable<T>, Scheduling.PartialOrder<T>
+    /// <remarks>
+    /// This interface and its concrete implementations <see cref="Dataflow.Epoch"/> and <see cref="Dataflow.IterationIn{TTime}"/> are the typed equivalent of the <see cref="Pointstamp.Timestamp"/> field,
+    /// corresponding to a sequence of integers.
+    /// </remarks>
+    /// <seealso cref="Microsoft.Research.Naiad.Dataflow.Epoch"/>
+    /// <seealso cref="Microsoft.Research.Naiad.Dataflow.IterationIn{TTime}"/>
+    /// <typeparam name="TTime">The concrete type of the timestamp.</typeparam>
+    public interface Time<TTime> : IEquatable<TTime>, IComparable<TTime>
     {
+        /// <summary>
+        /// Returns a hashcode for this time.
+        /// </summary>
+        /// <returns>Returns a hashcode for this time.</returns>
         int GetHashCode();
 
-        T Join(T that);
-        T Meet(T that);
+        /// <summary>
+        /// Returns <c>true</c> if and only if this time is less than or equal to the <paramref name="other"/>
+        /// time, according to the partial order defined on those times.
+        /// </summary>
+        /// <param name="other">The other time.</param>
+        /// <returns><c>true</c> if and only if <c>this</c> is less than or equal to <c>other</c>.</returns>
+        bool LessThan(TTime other);
 
-        int Coordinates();
-        int Populate(ref Scheduling.Pointstamp version);
+        /// <summary>
+        /// Computes the least upper bound of this and <paramref name="other"/>, according to the
+        /// partial order defined on those times.
+        /// </summary>
+        /// <param name="other">The other time.</param>
+        /// <returns>The least upper bound of the two times.</returns>
+        TTime Join(TTime other);
 
-        T InitializeFrom(Scheduling.Pointstamp version, int length);
+        /// <summary>
+        /// Computes the greatest lower bound of this and <paramref name="other"/>, according to the
+        /// partial order defined on those times.
+        /// </summary>
+        /// <param name="other">The other time.</param>
+        /// <returns>The greatest lower bound of the two times.</returns>
+        TTime Meet(TTime other);
+
+        /// <summary>
+        /// The number of integer coordinates in timestamps of this type.
+        /// </summary>
+        int Coordinates { get; }
+
+        /// <summary>
+        /// Populates a <see cref="Pointstamp"/> from a typed timestamp.
+        /// </summary>
+        /// <param name="pointstamp">The <see cref="Pointstamp"/> to be populated.</param>
+        /// <returns>The number of coordinates populated.</returns>
+        int Populate(ref Pointstamp pointstamp);
+
+        /// <summary>
+        /// Returns a timestamp initialized from the given <paramref name="pointstamp"/>.
+        /// </summary>
+        /// <param name="pointstamp">The pointstamp.</param>
+        /// <param name="length">The number of coordinates to use.</param>
+        /// <returns>The initialized timestamp.</returns>
+        TTime InitializeFrom(Pointstamp pointstamp, int length);
     }
+}
 
+namespace Microsoft.Research.Naiad.Dataflow
+{
+ 
+    /// <summary>
+    /// Represents a non-varying logical time.
+    /// </summary>
     public struct Empty : Time<Empty>
     {
+        /// <summary>
+        /// A dummy value, for compatibility with the current serializer.
+        /// </summary>
         public int zero;
 
-        public Empty Join(Empty that) { return this; }
-        public Empty Meet(Empty that) { return this; }
-        public int Coordinates() { return 0; }
-        public int Populate(ref Scheduling.Pointstamp version) { return 0; }
-        public Empty InitializeFrom(Scheduling.Pointstamp version, int length) { return new Empty(); }
+        /// <summary>
+        /// Returns an empty time.
+        /// </summary>
+        /// <param name="other">The other time.</param>
+        /// <returns>An empty time.</returns>
+        public Empty Join(Empty other) { return this; }
+
+        /// <summary>
+        /// Returns an empty time.
+        /// </summary>
+        /// <param name="other">The other time.</param>
+        /// <returns>An empty time.</returns>
+        public Empty Meet(Empty other) { return this; }
+
+        /// <summary>
+        /// The number of integer coordinates in timestamps of this type (i.e. zero).
+        /// </summary>
+        public int Coordinates { get { return 0; } }
+
+        /// <summary>
+        /// Populates a <see cref="Pointstamp"/> with an empty timestamp.
+        /// </summary>
+        /// <param name="pointstamp">The <see cref="Pointstamp"/> to be populated.</param>
+        /// <returns>The number of coordinates populated (i.e. zero).</returns>
+        public int Populate(ref Pointstamp pointstamp) { return 0; }
+
+        /// <summary>
+        /// Returns an empty time.
+        /// </summary>
+        /// <param name="pointstamp">Ignored.</param>
+        /// <param name="length">Ignored.</param>
+        /// <returns>An empty time.</returns>
+        public Empty InitializeFrom(Pointstamp pointstamp, int length) { return new Empty(); }
+
+        /// <summary>
+        /// Returns <c>true</c>.
+        /// </summary>
+        /// <param name="other">The other time.</param>
+        /// <returns><c>true</c>.</returns>
         public bool Equals(Empty other) { return true; }
+
+        /// <summary>
+        /// Returns <c>0</c>.
+        /// </summary>
+        /// <param name="other">The other time.</param>
+        /// <returns>0</returns>
         public int CompareTo(Empty other) { return 0; }
-        public bool LessThan(Empty that) { return true; }
+
+        /// <summary>
+        /// Returns <c>true</c>.
+        /// </summary>
+        /// <param name="other">The other time.</param>
+        /// <returns><c>true</c></returns>
+        public bool LessThan(Empty other) { return true; }
     }
 
+    /// <summary>
+    /// Represents the logical timestamp in a streaming context.
+    /// </summary>
     public struct Epoch : Time<Epoch>
     {
-        [IntSerialization(IntSerialization.VariableLength)]
-        public int t;
+        /// <summary>
+        /// The integer epoch ID.
+        /// </summary>
+        public int epoch;
 
-        public bool LessThan(Epoch that) { return this.t <= that.t; }
+        /// <summary>
+        /// Returns <c>true</c> if and only if this epoch is less than or equal to the <paramref name="other"/>
+        /// epoch.
+        /// </summary>
+        /// <param name="other">The other epoch.</param>
+        /// <returns><c>true</c> if and only if <c>this</c> is less than or equal to <c>other</c>.</returns>
+        public bool LessThan(Epoch other) { return this.epoch <= other.epoch; }
         
-        public bool Equals(Epoch that) { return this.t == that.t; }
-        public int CompareTo(Epoch that) { return this.t - that.t; }
+        /// <summary>
+        /// Returns <c>true</c> if and only if this epoch is equal to the <paramref name="other"/>
+        /// epoch.
+        /// </summary>
+        /// <param name="other">The other epoch.</param>
+        /// <returns><c>true</c> if and only if <c>this</c> is equal to <c>other</c>.</returns>
+        public bool Equals(Epoch other) { return this.epoch == other.epoch; }
 
-        public Epoch Join(Epoch that) { return this.t < that.t ? that : this; }
-        public Epoch Meet(Epoch that) { return this.t < that.t ? this : that; }
+        /// <summary>
+        /// Compares this epoch with the <paramref name="other"/> epoch.
+        /// </summary>
+        /// <param name="other">The other epoch.</param>
+        /// <returns>A value that indicates the relative order of the objects being compared.</returns>
+        public int CompareTo(Epoch other) { return this.epoch - other.epoch; }
 
+        /// <summary>
+        /// Returns the later of this and the <paramref name="other"/> epochs.
+        /// </summary>
+        /// <param name="other">The other epoch.</param>
+        /// <returns>The later of this and the <paramref name="other"/> epochs.</returns>
+        public Epoch Join(Epoch other) { return this.epoch < other.epoch ? other : this; }
+
+        /// <summary>
+        /// Returns the earlier of this and the <paramref name="other"/> epochs.
+        /// </summary>
+        /// <param name="other">The other epoch.</param>
+        /// <returns>The earlier of this and the <paramref name="other"/> epochs.</returns>
+        public Epoch Meet(Epoch other) { return this.epoch < other.epoch ? this : other; }
+
+        /// <summary>
+        /// Returns a string representation of this epoch.
+        /// </summary>
+        /// <returns>A string representation of this epoch.</returns>
         public override string ToString()
         {
-            return t.ToString();
+            return epoch.ToString();
         }
+
+        /// <summary>
+        /// Returns a hashcode for this epoch.
+        /// </summary>
+        /// <returns>A hashcode for this epoch.</returns>
         public override int GetHashCode()
         {
-            return t;
+            return epoch;
         }
 
-        public int Coordinates() { return 1; }
+        /// <summary>
+        /// The number of integer coordinates in timestamps of this type (i.e. one).
+        /// </summary>
+        public int Coordinates { get { return 1; } }
 
-        public int Populate(ref Scheduling.Pointstamp version)
+        /// <summary>
+        /// Populates a <see cref="Pointstamp"/> from this epoch.
+        /// </summary>
+        /// <param name="pointstamp">The <see cref="Pointstamp"/> to be populated.</param>
+        /// <returns>The number of coordinates populated (i.e. one).</returns>
+        public int Populate(ref Pointstamp pointstamp)
         {
-            if (0 < version.Timestamp.Length)
-                version.Timestamp[0] = t;
+            if (0 < pointstamp.Timestamp.Length)
+                pointstamp.Timestamp[0] = epoch;
 
             return 1;
         }
 
-        public Epoch(int tt) { t = tt; }
+        /// <summary>
+        /// Constructs new Epoch from the given integer ID.
+        /// </summary>
+        /// <param name="epoch">The integer epoch ID.</param>
+        public Epoch(int epoch) { this.epoch = epoch; }
 
-#if false
-        public static implicit operator Epoch(int i)
+        /// <summary>
+        /// Returns an epoch initialized from the given <paramref name="pointstamp"/>.
+        /// </summary>
+        /// <param name="pointstamp">The pointstamp.</param>
+        /// <param name="length">The number of coordinates to use, which should be <c>1</c>.</param>
+        /// <returns>The initialized epoch.</returns>
+        public Epoch InitializeFrom(Pointstamp pointstamp, int length)
         {
-            return new Epoch(i);
-        }
-#endif
-        public Epoch InitializeFrom(Scheduling.Pointstamp version, int length)
-        {
-            t = version.Timestamp[0];
+            epoch = pointstamp.Timestamp[0];
             return this;
         }
     }
 
-    public struct IterationIn<S> : Time<IterationIn<S>>
-        where S : Time<S>
+    /// <summary>
+    /// Represents the logical timestamp containing a loop counter nested within another logical <typeparamref name="TTime"/> context.
+    /// </summary>
+    /// <typeparam name="TTime">The type of the outer timestamp.</typeparam>
+    public struct IterationIn<TTime> : Time<IterationIn<TTime>>
+        where TTime : Time<TTime>
     {
-        public S s;
-        [IntSerialization(IntSerialization.VariableLength)]
-        public int t;
+        /// <summary>
+        /// The outer time.
+        /// </summary>
+        public TTime outerTime;
 
-        public int CompareTo(IterationIn<S> that)
+        /// <summary>
+        /// The loop counter.
+        /// </summary>
+        public int iteration;
+
+        /// <summary>
+        /// Compares this timestamp with the <paramref name="other"/> timestamp.
+        /// </summary>
+        /// <param name="other">The other timestamp.</param>
+        /// <returns>A value that indicates the relative order of the objects being compared.</returns>
+        public int CompareTo(IterationIn<TTime> other)
         {
-            var sCompare = this.s.CompareTo(that.s);
+            var sCompare = this.outerTime.CompareTo(other.outerTime);
             if (sCompare != 0)
                 return sCompare;
             else
-                return this.t - that.t;
-        }
-        public bool Equals(IterationIn<S> that)
-        {
-            return this.t == that.t && this.s.Equals(that.s);
+                return this.iteration - other.iteration;
         }
 
-        public bool LessThan(IterationIn<S> that)
+        /// <summary>
+        /// Returns <c>true</c> if and only if this timestamp is equal to the <paramref name="other"/>
+        /// timestamp.
+        /// </summary>
+        /// <param name="other">The other timestamp.</param>
+        /// <returns><c>true</c> if and only if <c>this</c> is equal to <c>other</c>.</returns>
+        public bool Equals(IterationIn<TTime> other)
         {
-            if (this.t <= that.t)
-                return this.s.LessThan(that.s);
+            return this.iteration == other.iteration && this.outerTime.Equals(other.outerTime);
+        }
+
+        /// <summary>
+        /// Returns <c>true</c> if and only if this timestamp is less than or equal to the <paramref name="other"/>
+        /// timestamp.
+        /// </summary>
+        /// <param name="other">The other timestamp.</param>
+        /// <returns><c>true</c> if and only if <c>this</c> is less than or equal to <c>other</c>.</returns>
+        public bool LessThan(IterationIn<TTime> other)
+        {
+            if (this.iteration <= other.iteration)
+                return this.outerTime.LessThan(other.outerTime);
             else
                 return false;
         }
 
+        /// <summary>
+        /// Returns a string representation of this timestamp.
+        /// </summary>
+        /// <returns>A string representation of this timestamp.</returns>
         public override string ToString()
         {
-            return String.Format("[{0}, {1}]", s.ToString(), t.ToString());
+            return String.Format("[{0}, {1}]", outerTime.ToString(), iteration.ToString());
         }
 
+        /// <summary>
+        /// Returns a hashcode for this epoch.
+        /// </summary>
+        /// <returns>A hashcode for this epoch.</returns>
         public override int GetHashCode()
         {
-            return 134123 * s.GetHashCode() + t;
+            return 134123 * outerTime.GetHashCode() + iteration;
         }
 
-        public int Coordinates() { return s.Coordinates() + 1; }
+        /// <summary>
+        /// The number of integer coordinates in timestamps of this type.
+        /// </summary>
+        public int Coordinates { get { return outerTime.Coordinates + 1; } }
 
-        public int Populate(ref Scheduling.Pointstamp version)
+        /// <summary>
+        /// Populates a <see cref="Pointstamp"/> from this timestamp.
+        /// </summary>
+        /// <param name="pointstamp">The <see cref="Pointstamp"/> to be populated.</param>
+        /// <returns>The number of coordinates populated.</returns>
+        public int Populate(ref Pointstamp pointstamp)
         {
-            var position = s.Populate(ref version);
-            if (position < version.Timestamp.Length)
-                version.Timestamp[position] = t;
+            var position = outerTime.Populate(ref pointstamp);
+            if (position < pointstamp.Timestamp.Length)
+                pointstamp.Timestamp[position] = iteration;
 
             return position + 1;
         }
 
-        public IterationIn<S> Join(IterationIn<S> that)
+        /// <summary>
+        /// Returns the later of this and the <paramref name="other"/> timestamps.
+        /// </summary>
+        /// <param name="other">The other timestamp.</param>
+        /// <returns>The later of this and the <paramref name="other"/> timestamps.</returns>
+        public IterationIn<TTime> Join(IterationIn<TTime> other)
         {
-            return new IterationIn<S>(this.s.Join(that.s), Math.Max(this.t, that.t));
-        }
-    
-        public IterationIn<S> Meet(IterationIn<S> that)
-        {
-            return new IterationIn<S>(this.s.Meet(that.s), Math.Min(this.t, that.t));
+            return new IterationIn<TTime>(this.outerTime.Join(other.outerTime), Math.Max(this.iteration, other.iteration));
         }
 
-        public IterationIn(S ss, int tt) { s = ss; t = tt; }
-
-        public IterationIn<S> InitializeFrom(Scheduling.Pointstamp version, int length)
+        /// <summary>
+        /// Returns the earlier of this and the <paramref name="other"/> timestamps.
+        /// </summary>
+        /// <param name="other">The other timestamps.</param>
+        /// <returns>The earlier of this and the <paramref name="other"/> timestamps.</returns>
+        public IterationIn<TTime> Meet(IterationIn<TTime> other)
         {
-            t = version.Timestamp[length - 1];
-            s = s.InitializeFrom(version, length - 1);
+            return new IterationIn<TTime>(this.outerTime.Meet(other.outerTime), Math.Min(this.iteration, other.iteration));
+        }
+
+        /// <summary>
+        /// Constructs a new timestamp from an outer time and the given loop counter.
+        /// </summary>
+        /// <param name="outerTime">The outer time.</param>
+        /// <param name="iteration">The loop counter.</param>
+        public IterationIn(TTime outerTime, int iteration) { this.outerTime = outerTime; this.iteration = iteration; }
+
+        /// <summary>
+        /// Returns a timestamp initialized from the given <paramref name="pointstamp"/>.
+        /// </summary>
+        /// <param name="pointstamp">The pointstamp.</param>
+        /// <param name="length">The number of coordinates to use.</param>
+        /// <returns>The initialized epoch.</returns>
+        public IterationIn<TTime> InitializeFrom(Pointstamp pointstamp, int length)
+        {
+            iteration = pointstamp.Timestamp[length - 1];
+            outerTime = outerTime.InitializeFrom(pointstamp, length - 1);
             return this;
         }
     }

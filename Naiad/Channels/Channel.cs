@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -35,18 +35,18 @@ namespace Microsoft.Research.Naiad.Dataflow
     /// <summary>
     /// A message containing typed records all with a common time
     /// </summary>
-    /// <typeparam name="S">record type</typeparam>
-    /// <typeparam name="T">time type</typeparam>
-    public struct Message<S, T>
-        where T : Time<T>
+    /// <typeparam name="TRecord">record type</typeparam>
+    /// <typeparam name="TTime">time type</typeparam>
+    public struct Message<TRecord, TTime>
+        where TTime : Time<TTime>
     {
         private const int DEFAULT_MESSAGE_LENGTH = 256;
-        internal static S[] Empty = new S[] { };
+        internal static TRecord[] Empty = new TRecord[] { };
 
         /// <summary>
         /// Payload of typed records
         /// </summary>
-        public S[] payload;
+        public TRecord[] payload;
 
         /// <summary>
         /// Number of valid typed records
@@ -56,92 +56,78 @@ namespace Microsoft.Research.Naiad.Dataflow
         /// <summary>
         /// Time common to all records
         /// </summary>
-        public T time;
+        public TTime time;
 
-        internal bool Unallocated { get { return this.payload == null || this.payload == Message<S,T>.Empty; } }
+        /// <summary>
+        /// Tests whether the message points at valid data or not
+        /// </summary>
+        public bool Unallocated { get { return this.payload == null || this.payload == Message<TRecord,TTime>.Empty; } }
 
-        internal void Allocate()
+        /// <summary>
+        /// Causes an unallocated message to point at empty valid data
+        /// </summary>
+        public void Allocate()
         {
             if (!this.Unallocated)
                 throw new Exception("Attempting to allocate an already allocated message.");
 
             // acquire from a shared queue.
-            this.payload = ThreadLocalBufferPools<S>.pool.Value.CheckOut(DEFAULT_MESSAGE_LENGTH);                
+            this.payload = ThreadLocalBufferPools<TRecord>.pool.Value.CheckOut(DEFAULT_MESSAGE_LENGTH);                
         }
 
-        internal void Release()
+        /// <summary>
+        /// Releases the memory held by an allocated message back to a pool. Only call when no other references to the message are held.
+        /// </summary>
+        public void Release()
         {
             if (this.Unallocated)
                 throw new Exception("Attempting to release an unallocated message.");
 
             // return to a shared queue.
-            ThreadLocalBufferPools<S>.pool.Value.CheckIn(this.payload);
+            ThreadLocalBufferPools<TRecord>.pool.Value.CheckIn(this.payload);
             
-            this.payload = Message<S, T>.Empty;
+            this.payload = Message<TRecord, TTime>.Empty;
             this.length = 0;
         }
 
-        internal Message(T time)
+        /// <summary>
+        /// Constructs an unallocated message for a specified time
+        /// </summary>
+        /// <param name="time"></param>
+        internal Message(TTime time)
         {
-            this.payload = Message<S, T>.Empty;
+            this.payload = Message<TRecord, TTime>.Empty;
             this.length = 0;
             this.time = time;
         }
     }
-}
 
-namespace Microsoft.Research.Naiad.Dataflow.Channels
-{    
     /// <summary>
-    /// The external interface for the receiver side of a channel.
-    /// 
-    /// The consumer of channel data (which may be a channels ifself) Subscribes to
-    /// the RecvChannel, and invokes the Recv method to obtain data from the channel.
+    /// Represents the recipient of a <see cref="Message{TRecord,TTime}"/>
     /// </summary>
-    /// <typeparam name="T">The element type in a channel message.</typeparam>
-    public interface RecvChannel<T>
+    /// <typeparam name="TRecord">record type</typeparam>
+    /// <typeparam name="TTime">time type</typeparam>
+    public interface SendChannel<TRecord, TTime>
+        where TTime : Time<TTime>
     {
-        void Drain();
-    }
+        /// <summary>
+        /// Inserts the given <paramref name="message"/>into the channel.
+        /// </summary>
+        /// <param name="message">The message to be sent.</param>
+        void Send(Message<TRecord, TTime> message);
 
-    public interface SendChannel
-    {
         /// <summary>
         /// Flushes any buffered messages to the receiver.
         /// </summary>
         void Flush();
     }
+}
 
-    /// <summary>
-    /// The external interface for the sender side of a channel.
-    /// 
-    /// The producer of channel data (which may be a channel itself) invokes a Send method to insert
-    /// data into the channel.
-    /// </summary>
-    /// <typeparam name="T">The element type in a channel message.</typeparam>
-    public interface SendChannel<T> : SendChannel
-    {        
-        /// <summary>
-        /// Inserts a single element into the channel.
-        /// </summary>
-        /// <param name="elem">The element to be inserted.</param>
-        void Send(T elem);
-    }
+namespace Microsoft.Research.Naiad.Dataflow.Channels
+{ 
 
 
-
-    public interface SendWire<S, T> : SendChannel<Message<S, T>>
-        where T : Time<T>
-    {
-        int RecordSizeHint { get; }
-    }
-
-    public interface RecvWire<S, T> : RecvChannel<Message<S, T>>
-        where T : Time<T>
-    { 
-    }
-
-    public static class Channel
+    internal static class Channel
     {
         [Flags]
         public enum Flags
@@ -163,23 +149,18 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
         {
             return sender.ForStage.Placement.Equals(receiver.ForStage.Placement) 
                 && sender.PartitionedBy != null 
-                && receiver.PartitionedBy != null 
-                && CodeGeneration.ExpressionComparer.Instance.Equals(sender.PartitionedBy, receiver.PartitionedBy);
+                && receiver.PartitionedBy != null
+                && Utilities.ExpressionComparer.Instance.Equals(sender.PartitionedBy, receiver.PartitionedBy);
         }
     }
 
-    public interface Cable
-    {
-        Dataflow.Stage SourceStage{ get; }
-        Dataflow.Stage DestinationStage{ get; }
-        int ChannelId { get; }
-    }
-
-    public interface Cable<S, T> : Cable
+    internal interface Cable<S, T>
         where T : Time<T>
     {
-        SendWire<S, T> GetSendFiber(int i);
-        RecvWire<S, T> GetRecvFiber(int i);
-    }
+        SendChannel<S, T> GetSendChannel(int i);
 
+        Dataflow.Stage SourceStage { get; }
+        Dataflow.Stage DestinationStage { get; }
+        int ChannelId { get; }
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -24,9 +24,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Microsoft.Research.Naiad
+namespace Microsoft.Research.Naiad.Serialization
 {
-    public static class NativeSASerializers {
+    internal static class NativeSASerializers {
         
         public static unsafe NativeSA Serialize(NativeSA target, byte[] array)
         {
@@ -131,33 +131,6 @@ namespace Microsoft.Research.Naiad
             return target;            
         }
 
-        // CAT I have not checked for the semantic correctness of this code.
-        //
-        public static unsafe bool SerializeVarLength(NativeSA target, int source)
-        {
-            uint uSource = (uint)source;
-
-            if (target.EnsureAvailable(sizeof(int))) {
-                uint offset = 0;
-                byte* ptr = (byte*)(target.ArrayBegin + target.CurPos);
-
-                do {
-                    ptr[offset] = (byte)(uSource & 0x7f);
-                    uSource >>= 7;
-                    if (uSource > 0) {
-                        ptr[offset] |= 0x80;
-                    }
-                    ++offset;
-                } while (uSource != 0);
-                target.CurPos += (int)offset;
-
-                return true;
-                //Console.WriteLine("Wrote {0} bytes\t{1:x8}", offset, Convert.ToString(source, 2).PadLeft(32, '0'));
-            } else {
-                return false;
-            }
-        }
-
         public static unsafe NativeSA Serialize(NativeSA target, int source)
         {
             if (target.EnsureAvailable(sizeof(int))) {
@@ -219,9 +192,17 @@ namespace Microsoft.Research.Naiad
         }
     }
 
-
+    /// <summary>
+    /// Serializer implementations for primitive types.
+    /// </summary>
     public static class Serializers
     {
+        /// <summary>
+        /// Attempts to serialize the given array to the given target buffer.
+        /// </summary>
+        /// <param name="target">The target buffer.</param>
+        /// <param name="array">The array to be serialized.</param>
+        /// <returns>The original target buffer if serialization failed, otherwise the updated target buffer.</returns>
         public static unsafe SubArray<byte> Serialize(this SubArray<byte> target, byte[] array)
         {
             int arrayLength = array.Length;
@@ -246,6 +227,12 @@ namespace Microsoft.Research.Naiad
             return target;
         }
 
+        /// <summary>
+        /// Attempts to serialize the given array to the given target buffer.
+        /// </summary>
+        /// <param name="target">The target buffer.</param>
+        /// <param name="array">The array to be serialized.</param>
+        /// <returns>The original target buffer if serialization failed, otherwise the updated target buffer.</returns>
         public static unsafe SubArray<byte> Serialize(this SubArray<byte> target, float[] array)
         {
             int arrayLength = array.Length;
@@ -271,6 +258,12 @@ namespace Microsoft.Research.Naiad
             return target;
         }
 
+        /// <summary>
+        /// Attempts to serialize the given array to the given target buffer.
+        /// </summary>
+        /// <param name="target">The target buffer.</param>
+        /// <param name="array">The array to be serialized.</param>
+        /// <returns>The original target buffer if serialization failed, otherwise the updated target buffer.</returns>
         public static unsafe SubArray<byte> Serialize(this SubArray<byte> target, int[] array)
         {
             if (target.EnsureAvailable(array.Length * sizeof(int) + sizeof(int))) {
@@ -294,16 +287,12 @@ namespace Microsoft.Research.Naiad
             return target;
         }
 
-#if false
-        public static SubArray<byte> Serialize<K, V>(this SubArray<byte> target, Dictionary<K, V> dictionary)
-        {
-            var temp = dictionary.Select(x => new Pair<K, V>(x.Key, x.Value)).ToArray();
-            var serializer = CodeGeneration.AutoSerialization.GetSerializer<Pair<K, V>[]>();
-            serializer.Serialize(ref target, temp);
-            return target;
-        }
-#endif
-
+        /// <summary>
+        /// Attempts to serialize the given string to the given target buffer.
+        /// </summary>
+        /// <param name="target">The target buffer.</param>
+        /// <param name="source">The string to be serialized.</param>
+        /// <returns>The original target buffer if serialization failed, otherwise the updated target buffer.</returns>
         public static unsafe SubArray<byte> Serialize(this SubArray<byte> target, string source)
         {
             int stringLength = source.Length;
@@ -330,6 +319,12 @@ namespace Microsoft.Research.Naiad
             return target;
         }
 
+        /// <summary>
+        /// Attempts to serialize the given value to the given target buffer.
+        /// </summary>
+        /// <param name="target">The target buffer.</param>
+        /// <param name="source">The value to be serialized.</param>
+        /// <returns>The original target buffer if serialization failed, otherwise the updated target buffer.</returns>
         public static unsafe SubArray<byte> Serialize(this SubArray<byte> target, long source)
         {
             if (target.EnsureAvailable(sizeof(long)))
@@ -344,6 +339,12 @@ namespace Microsoft.Research.Naiad
             return target;
         }
 
+        /// <summary>
+        /// Attempts to serialize the given value to the given target buffer.
+        /// </summary>
+        /// <param name="target">The target buffer.</param>
+        /// <param name="source">The value to be serialized.</param>
+        /// <returns>The original target buffer if serialization failed, otherwise the updated target buffer.</returns>
         public static unsafe SubArray<byte> Serialize(this SubArray<byte> target, ulong source)
         {
             if (target.EnsureAvailable(4))
@@ -358,6 +359,12 @@ namespace Microsoft.Research.Naiad
             return target;
         }
 
+        /// <summary>
+        /// Attempts to serialize the given value to the given target buffer.
+        /// </summary>
+        /// <param name="target">The target buffer.</param>
+        /// <param name="source">The value to be serialized.</param>
+        /// <returns>The original target buffer if serialization failed, otherwise the updated target buffer.</returns>
         public static unsafe SubArray<byte> Serialize(this SubArray<byte> target, short source)
         {
             if (target.EnsureAvailable(sizeof(short)))
@@ -372,36 +379,12 @@ namespace Microsoft.Research.Naiad
             return target;
         }
 
-        public static unsafe bool SerializeVarLength(ref SubArray<byte> target, int source)
-        {
-            
-            uint uSource = (uint)source;
-            
-            
-            if (target.EnsureAvailable(4))
-            {
-                uint offset = 0;
-                fixed (byte* ptr = &target.Array[target.Count])
-                {
-                    do
-                    {
-                        ptr[offset] = (byte)(uSource & 0x7f);
-                        uSource >>= 7;
-                        if (uSource > 0)
-                            ptr[offset] |= 0x80;
-                        ++offset;
-                    } while (uSource != 0);
-                }
-                target.Count += (int)offset;
-                return true;
-                //Console.WriteLine("Wrote {0} bytes\t{1:x8}", offset, Convert.ToString(source, 2).PadLeft(32, '0'));
-            }
-            else
-                return false;
-        }
-
-
-
+        /// <summary>
+        /// Attempts to serialize the given value to the given target buffer.
+        /// </summary>
+        /// <param name="target">The target buffer.</param>
+        /// <param name="source">The value to be serialized.</param>
+        /// <returns>The original target buffer if serialization failed, otherwise the updated target buffer.</returns>
         public static unsafe SubArray<byte> Serialize(this SubArray<byte> target, int source)
         {
 
@@ -423,6 +406,12 @@ namespace Microsoft.Research.Naiad
             return target;
         }
 
+        /// <summary>
+        /// Attempts to serialize the given value to the given target buffer.
+        /// </summary>
+        /// <param name="target">The target buffer.</param>
+        /// <param name="source">The value to be serialized.</param>
+        /// <returns>The original target buffer if serialization failed, otherwise the updated target buffer.</returns>
         public static unsafe SubArray<byte> Serialize(this SubArray<byte> target, uint source)
         {
 
@@ -439,11 +428,23 @@ namespace Microsoft.Research.Naiad
             return target;
         }
 
+        /// <summary>
+        /// Attempts to serialize the given value to the given target buffer.
+        /// </summary>
+        /// <param name="target">The target buffer.</param>
+        /// <param name="source">The value to be serialized.</param>
+        /// <returns>The original target buffer if serialization failed, otherwise the updated target buffer.</returns>
         public static unsafe SubArray<byte> Serialize(this SubArray<byte> target, bool source)
         {
             return Serialize(target, (int)(source ? 1 : 0));
         }
 
+        /// <summary>
+        /// Attempts to serialize the given value to the given target buffer.
+        /// </summary>
+        /// <param name="target">The target buffer.</param>
+        /// <param name="source">The value to be serialized.</param>
+        /// <returns>The original target buffer if serialization failed, otherwise the updated target buffer.</returns>
         public static SubArray<byte> Serialize(this SubArray<byte> target, byte source)
         {
             if (target.EnsureAvailable(1))
@@ -453,6 +454,12 @@ namespace Microsoft.Research.Naiad
             return target;
         }
 
+        /// <summary>
+        /// Attempts to serialize the given value to the given target buffer.
+        /// </summary>
+        /// <param name="target">The target buffer.</param>
+        /// <param name="source">The value to be serialized.</param>
+        /// <returns>The original target buffer if serialization failed, otherwise the updated target buffer.</returns>
         public static unsafe SubArray<byte> Serialize(this SubArray<byte> target, double source)
         {
             if (target.EnsureAvailable(8))
@@ -469,6 +476,12 @@ namespace Microsoft.Research.Naiad
             return target;
         }
 
+        /// <summary>
+        /// Attempts to serialize the given value to the given target buffer.
+        /// </summary>
+        /// <param name="target">The target buffer.</param>
+        /// <param name="source">The value to be serialized.</param>
+        /// <returns>The original target buffer if serialization failed, otherwise the updated target buffer.</returns>
         public static unsafe SubArray<byte> Serialize(this SubArray<byte> target, float source)
         {
             if (target.EnsureAvailable(sizeof(float)))
@@ -486,6 +499,9 @@ namespace Microsoft.Research.Naiad
         }
     }
 
+    /// <summary>
+    /// Deserializer implementations for primitive types.
+    /// </summary>
     public static class Deserializers
     {
 #if false
@@ -503,6 +519,12 @@ namespace Microsoft.Research.Naiad
         }
 #endif
 
+        /// <summary>
+        /// Attempts to deserialize a value from the given source buffer.
+        /// </summary>
+        /// <param name="source">The target buffer. In the event of success, the current position of the buffer will be advanced.</param>
+        /// <param name="value">The deserialized value, if this method returns true.</param>
+        /// <returns>True if deserialization succeeded, otherwise false.</returns>
         public unsafe static bool TryDeserialize(ref RecvBuffer source, out bool value)
         {
             value = false;
@@ -517,6 +539,12 @@ namespace Microsoft.Research.Naiad
             return false;
         }
 
+        /// <summary>
+        /// Attempts to deserialize a value from the given source buffer.
+        /// </summary>
+        /// <param name="source">The target buffer. In the event of success, the current position of the buffer will be advanced.</param>
+        /// <param name="value">The deserialized value, if this method returns true.</param>
+        /// <returns>True if deserialization succeeded, otherwise false.</returns>
         public unsafe static bool TryDeserialize(ref RecvBuffer source, out byte value)
         {
             if (source.End - source.CurrentPos < sizeof(byte))
@@ -534,6 +562,12 @@ namespace Microsoft.Research.Naiad
             return true;
         }
 
+        /// <summary>
+        /// Attempts to deserialize a value from the given source buffer.
+        /// </summary>
+        /// <param name="source">The target buffer. In the event of success, the current position of the buffer will be advanced.</param>
+        /// <param name="value">The deserialized value, if this method returns true.</param>
+        /// <returns>True if deserialization succeeded, otherwise false.</returns>
         public unsafe static bool TryDeserialize(ref RecvBuffer source, out char value)
         {
             if (source.End - source.CurrentPos < sizeof(char))
@@ -551,6 +585,12 @@ namespace Microsoft.Research.Naiad
             return true;
         }
 
+        /// <summary>
+        /// Attempts to deserialize a value from the given source buffer.
+        /// </summary>
+        /// <param name="source">The target buffer. In the event of success, the current position of the buffer will be advanced.</param>
+        /// <param name="value">The deserialized value, if this method returns true.</param>
+        /// <returns>True if deserialization succeeded, otherwise false.</returns>
         public unsafe static bool TryDeserialize(ref RecvBuffer source, out short value)
         {
             if (source.End - source.CurrentPos < sizeof(short))
@@ -568,39 +608,12 @@ namespace Microsoft.Research.Naiad
             return true;
         }
 
-        public unsafe static bool TryDeserializeVarLength(ref RecvBuffer source, out int value)
-        {
-            value = 0;
-            if (source.End == source.CurrentPos)
-                return false;
-
-            uint uvalue = 0;
-
-            //int shift = 0;
-            uint offset = 0;
-            int shift = 0;
-            fixed (byte* ptr = &source.Buffer[source.CurrentPos])
-            {
-                while (true)
-                {
-                    byte nextByte = ptr[offset];
-                    int nextBits = nextByte & 0x7f;
-                    uvalue = uvalue | (uint)(nextBits << shift);
-                    ++offset;
-                    if ((nextByte & 0x80) == 0)
-                        break;
-                    shift += 7;
-                }
-
-            }
-
-            source.CurrentPos += (int)offset;
-            value = (int)uvalue;
-
-            //Console.WriteLine("Read {0} bytes\t{1:x8}", offset, Convert.ToString(value, 2).PadLeft(32, '0')); 
-            return true;
-        }
-
+        /// <summary>
+        /// Attempts to deserialize a value from the given source buffer.
+        /// </summary>
+        /// <param name="source">The target buffer. In the event of success, the current position of the buffer will be advanced.</param>
+        /// <param name="value">The deserialized value, if this method returns true.</param>
+        /// <returns>True if deserialization succeeded, otherwise false.</returns>
         public unsafe static bool TryDeserialize(ref RecvBuffer source, out int value)
         {
             if (source.End - source.CurrentPos < sizeof(int))
@@ -617,6 +630,13 @@ namespace Microsoft.Research.Naiad
             source.CurrentPos += sizeof(int);
             return true;
         }
+
+        /// <summary>
+        /// Attempts to deserialize a value from the given source buffer.
+        /// </summary>
+        /// <param name="source">The target buffer. In the event of success, the current position of the buffer will be advanced.</param>
+        /// <param name="value">The deserialized value, if this method returns true.</param>
+        /// <returns>True if deserialization succeeded, otherwise false.</returns>
         public unsafe static bool TryDeserialize(ref RecvBuffer source, out uint value)
         {
             if (source.End - source.CurrentPos < sizeof(uint))
@@ -634,6 +654,12 @@ namespace Microsoft.Research.Naiad
             return true;
         }
 
+        /// <summary>
+        /// Attempts to deserialize a value from the given source buffer.
+        /// </summary>
+        /// <param name="source">The target buffer. In the event of success, the current position of the buffer will be advanced.</param>
+        /// <param name="value">The deserialized value, if this method returns true.</param>
+        /// <returns>True if deserialization succeeded, otherwise false.</returns>
         public unsafe static bool TryDeserialize(ref RecvBuffer source, out long value)
         {
             if (source.End - source.CurrentPos < sizeof(long))
@@ -651,7 +677,12 @@ namespace Microsoft.Research.Naiad
             return true;
         }
 
-
+        /// <summary>
+        /// Attempts to deserialize a value from the given source buffer.
+        /// </summary>
+        /// <param name="source">The target buffer. In the event of success, the current position of the buffer will be advanced.</param>
+        /// <param name="value">The deserialized value, if this method returns true.</param>
+        /// <returns>True if deserialization succeeded, otherwise false.</returns>
         public unsafe static bool TryDeserialize(ref RecvBuffer source, out ulong value)
         {
             if (source.End - source.CurrentPos < sizeof(ulong))
@@ -669,6 +700,12 @@ namespace Microsoft.Research.Naiad
             return true;
         }
 
+        /// <summary>
+        /// Attempts to deserialize a value from the given source buffer.
+        /// </summary>
+        /// <param name="source">The target buffer. In the event of success, the current position of the buffer will be advanced.</param>
+        /// <param name="value">The deserialized value, if this method returns true.</param>
+        /// <returns>True if deserialization succeeded, otherwise false.</returns>
         public unsafe static bool TryDeserialize(ref RecvBuffer source, out float value)
         {
             if (source.End - source.CurrentPos < sizeof(float))
@@ -686,6 +723,12 @@ namespace Microsoft.Research.Naiad
             return true;
         }
 
+        /// <summary>
+        /// Attempts to deserialize a value from the given source buffer.
+        /// </summary>
+        /// <param name="source">The target buffer. In the event of success, the current position of the buffer will be advanced.</param>
+        /// <param name="value">The deserialized value, if this method returns true.</param>
+        /// <returns>True if deserialization succeeded, otherwise false.</returns>
         public unsafe static bool TryDeserialize(ref RecvBuffer source, out double value)
         {
             if (source.End - source.CurrentPos < sizeof(double))
@@ -703,6 +746,12 @@ namespace Microsoft.Research.Naiad
             return true;
         }
 
+        /// <summary>
+        /// Attempts to deserialize a string from the given source buffer.
+        /// </summary>
+        /// <param name="source">The target buffer. In the event of success, the current position of the buffer will be advanced.</param>
+        /// <param name="value">The deserialized string, if this method returns true.</param>
+        /// <returns>True if deserialization succeeded, otherwise false.</returns>
         public unsafe static bool TryDeserialize(ref RecvBuffer source, out string value)
         {
             int resetPosition = source.CurrentPos;
@@ -732,6 +781,12 @@ namespace Microsoft.Research.Naiad
             return true;
         }
 
+        /// <summary>
+        /// Attempts to deserialize an array from the given source buffer.
+        /// </summary>
+        /// <param name="source">The target buffer. In the event of success, the current position of the buffer will be advanced.</param>
+        /// <param name="value">The deserialized array, if this method returns true.</param>
+        /// <returns>True if deserialization succeeded, otherwise false.</returns>
         public unsafe static bool TryDeserialize(ref RecvBuffer source, out byte[] value)
         {
             int resetPosition = source.CurrentPos;
@@ -767,6 +822,12 @@ namespace Microsoft.Research.Naiad
             return true;
         }
 
+        /// <summary>
+        /// Attempts to deserialize an array from the given source buffer.
+        /// </summary>
+        /// <param name="source">The target buffer. In the event of success, the current position of the buffer will be advanced.</param>
+        /// <param name="value">The deserialized array, if this method returns true.</param>
+        /// <returns>True if deserialization succeeded, otherwise false.</returns>
         public unsafe static bool TryDeserialize(ref RecvBuffer source, out int[] value)
         {
             int resetPosition = source.CurrentPos;
@@ -802,6 +863,12 @@ namespace Microsoft.Research.Naiad
             return true;
         }
 
+        /// <summary>
+        /// Attempts to deserialize an array from the given source buffer.
+        /// </summary>
+        /// <param name="source">The target buffer. In the event of success, the current position of the buffer will be advanced.</param>
+        /// <param name="value">The deserialized array, if this method returns true.</param>
+        /// <returns>True if deserialization succeeded, otherwise false.</returns>
         public unsafe static bool TryDeserialize(ref RecvBuffer source, out float[] value)
         {
             int resetPosition = source.CurrentPos;
@@ -835,19 +902,6 @@ namespace Microsoft.Research.Naiad
             source.CurrentPos += arrayLength * sizeof(float);
 
             return true;
-        }
-    }
-
-    public static class HashCode
-    {
-        public static int SafeGetHashCode<T>(T val)
-        {
-            if (val != null)
-            {
-                return val.GetHashCode();
-            }
-
-            return 0;
         }
     }
 }

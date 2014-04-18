@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -26,6 +26,8 @@ using System.Linq.Expressions;
 using System.Text;
 
 using Microsoft.Research.Naiad.Dataflow.Channels;
+
+using Microsoft.Research.Naiad.Diagnostics;
 
 namespace Microsoft.Research.Naiad.Dataflow
 {
@@ -67,8 +69,8 @@ namespace Microsoft.Research.Naiad.Dataflow
 
             materialized = true;
 
-            Debug.Assert(Source.ForStage.InternalGraphManager == Target.ForStage.InternalGraphManager);
-            var controller = Source.ForStage.InternalGraphManager.Controller;
+            Debug.Assert(Source.ForStage.InternalComputation == Target.ForStage.InternalComputation);
+            var controller = Source.ForStage.InternalComputation.Controller;
 
             // if direct pipelining is possible, do that
             if (Channel.Pipelineable(Source, Target, PartitionFunction) || Channel.PartitionedEquivalently(Source, Target))
@@ -105,7 +107,7 @@ namespace Microsoft.Research.Naiad.Dataflow
             this.PartitionFunction = partitionFunction;
             this.Flags = flags;
 
-            this.channelId = stream.ForStage.InternalGraphManager.Register(this);
+            this.channelId = stream.ForStage.InternalComputation.Register(this);
 
             this.exchanges = !(Channel.Pipelineable(Source, Target, PartitionFunction) || Channel.PartitionedEquivalently(Source, Target));
         }

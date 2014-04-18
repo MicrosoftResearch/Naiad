@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -26,7 +26,7 @@ using System.Text;
 using Microsoft.Research.Naiad;
 using Microsoft.Research.Naiad.Frameworks.DifferentialDataflow;
 
-namespace Examples.DifferentialDataflow
+namespace Microsoft.Research.Naiad.Examples.DifferentialDataflow
 {
     /// <summary>
     /// Demonstrates an interactive Naiad computation.
@@ -41,42 +41,44 @@ namespace Examples.DifferentialDataflow
         public void Execute(string[] args)
         {
             // first, construct a Naiad controller.
-            using (var controller = NewController.FromArgs(ref args))
+            using (var computation = NewComputation.FromArgs(ref args))
             {
-                using (var graph = controller.NewComputation())
+                // create an incrementally updateable collection
+                var text = computation.NewInputCollection<string>();
+
+                // segment strings, count, and print
+                text.SelectMany(x => x.Split(' '))
+                    .Count(y => y, (k, c) => k + ":" + c)   // yields "word:count" for each word
+                    .Subscribe(l => { foreach (var element in l) Console.WriteLine(element); });
+
+                computation.Activate();
+
+                if (computation.Configuration.ProcessID == 0)
                 {
-                    // create an incrementally updateable collection
-                    var text = new IncrementalCollection<string>(graph);//.NewInput<string>();
+                    Console.WriteLine("Start entering lines of text. An empty line will exit the program.");
+                    Console.WriteLine("Naiad will display counts (and changes in counts) of words you type.");
 
-                    // segment strings, count, and print
-                    text.SelectMany(x => x.Split(' '))
-                        .Count(y => y, (k, c) => k + ":" + c)   // yields "word:count" for each word
-                        .Subscribe(l => { foreach (var element in l) Console.WriteLine(element); });
-
-                    graph.Activate();
-
-                    if (controller.Configuration.ProcessID == 0)
+                    var line = Console.ReadLine();
+                    for (int i = 0; line != ""; i++)
                     {
-                        Console.WriteLine("Start entering lines of text. An empty line will exit the program.");
-                        Console.WriteLine("Naiad will display counts (and changes in counts) of words you type.");
-
-                        var line = Console.ReadLine();
-                        for (int i = 0; line != ""; i++)
-                        {
-                            text.OnNext(line);
-                            graph.Sync(i);
-                            line = Console.ReadLine();
-                        }
+                        text.OnNext(line);
+                        computation.Sync(i);
+                        line = Console.ReadLine();
                     }
-
-                    text.OnCompleted(); // closes input
-                    graph.Join();
                 }
 
-                controller.Join();  // blocks until flushed
+                text.OnCompleted(); // closes input
+                computation.Join();
             }
+
         }
 
         public string Usage { get { return ""; } }
+
+
+        public string Help
+        {
+            get { return "Demonstrates a simple differential dataflow program for interactively counting words in lines of text."; }
+        }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -24,11 +24,10 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using Microsoft.Research.Naiad.Dataflow.Channels;
-using Microsoft.Research.Naiad.CodeGeneration;
-using Microsoft.Research.Naiad.Runtime.Controlling;
+using Microsoft.Research.Naiad.Serialization;
 using Microsoft.Research.Naiad.DataStructures;
-using Microsoft.Research.Naiad.FaultTolerance;
 using Microsoft.Research.Naiad.Frameworks;
+using Microsoft.Research.Naiad.Runtime.Progress;
 using Microsoft.Research.Naiad.Scheduling;
 using System.IO;
 using Microsoft.Research.Naiad.Dataflow.Reporting;
@@ -36,22 +35,35 @@ using Microsoft.Research.Naiad.Dataflow.Reporting;
 namespace Microsoft.Research.Naiad.Dataflow
 {
     /// <summary>
-    /// Base class for stages without committing to a time type. Supports input/output creation, tracks topology, etc.
-    /// It is often important to have lists of stages with varying time types, and these support common functionality.
+    /// Represents an abstract stage in a dataflow graph, which comprises one or more dataflow vertices that each
+    /// handle a partition of the data received by the stage.
     /// </summary>
+    /// <remarks>
+    /// This class cannot be instantiated directly: instead use the <see cref="Stage{TVertex,TTime}(TimeContext{TTime},Func{int,Stage{TTime},TVertex},string)"/> constructor, or
+    /// the static factory and extension methods in <see cref="StandardVertices.Foundry"/>.
+    /// </remarks>
     public abstract class Stage
     {
-        private readonly InternalGraphManager graphManager;
-        internal InternalGraphManager InternalGraphManager { get { return this.graphManager; } }
+        private readonly InternalComputation internalComputation;
+        internal InternalComputation InternalComputation { get { return this.internalComputation; } }
 
-        public GraphManager GraphManager { get { return this.graphManager.ExternalGraphManager; } }
+        /// <summary>
+        /// the graph manager associated with the stage
+        /// </summary>
+        public Computation Computation { get { return this.internalComputation.ExternalComputation; } }
 
+        /// <summary>
+        /// the unique identifier associated with the stage
+        /// </summary>
         public readonly int StageId;
         internal abstract Pointstamp DefaultVersion { get; }
 
         private List<Edge> targets;
         internal List<Edge> Targets { get { return targets; } }
 
+        /// <summary>
+        /// the placement used for the stage
+        /// </summary>
         public readonly Placement Placement;
 
         internal enum OperatorType { Unknown, Default, IterationAdvance, IterationIngress, IterationEgress };
@@ -63,20 +75,23 @@ namespace Microsoft.Research.Naiad.Dataflow
 
         internal abstract IEnumerable<Vertex> Vertices { get; }
 
-        public virtual void Restore(NaiadReader reader)
-        {
-            throw new NotImplementedException();
-        }
-
         internal abstract void Materialize();
 
         #region Input/Output creation
 
         bool inputsSealed = false;
 
-        // creates a new receive port for the stage to read records from.
-        public StageInput<R, T> NewInput<R, T>(Stream<R, T> stream, Expression<Func<R, int>> partitioning)
-            where T : Time<T>
+        /// <summary>
+        /// Creates a new input for this stage, with the given <paramref name="partitioning"/> requirement.
+        /// </summary>
+        /// <typeparam name="TRecord">The record type.</typeparam>
+        /// <typeparam name="TTime">The time type.</typeparam>
+        /// <param name="stream">The stream from which this input will receive records.</param>
+        /// <param name="partitioning">Function that maps records to integers, implying the requirement that all records
+        /// mapping to the same integer must be processed by the same <see cref="Vertex"/>.</param>
+        /// <returns>An object that represents the stage input.</returns>
+        public StageInput<TRecord, TTime> NewInput<TRecord, TTime>(Stream<TRecord, TTime> stream, Expression<Func<TRecord, int>> partitioning)
+            where TTime : Time<TTime>
         {
             if (inputsSealed)
                 throw new Exception("Inputs for a stage may not be added after outputs");
@@ -84,9 +99,9 @@ namespace Microsoft.Research.Naiad.Dataflow
             if (stream == null)
                 throw new ArgumentNullException("stream");
 
-            var result = new StageInput<R, T>(this, partitioning);
+            var result = new StageInput<TRecord, TTime>(this, partitioning);
 
-            this.InternalGraphManager.Connect(stream.StageOutput, result, partitioning, Channel.Flags.None);
+            this.InternalComputation.Connect(stream.StageOutput, result, partitioning, Channel.Flags.None);
 
             return result;
         }
@@ -100,12 +115,6 @@ namespace Microsoft.Research.Naiad.Dataflow
             var result = new StageInput<R, T>(this, partitioning);
 
             return result;
-        }
-
-        public StageInput<R, T> NewInput<R, T>(Stream<R, T> stream)
-            where T : Time<T>
-        {
-            return this.NewInput(stream, null);
         }
 
         internal StageOutput<R, T> NewOutput<R, T>(ITimeContext<T> context, Expression<Func<R,int>> partitionedBy)
@@ -130,8 +139,9 @@ namespace Microsoft.Research.Naiad.Dataflow
 
         private readonly string MyName;
         /// <summary>
-        /// Returns the stage name decorated by stage id
+        /// Returns the stage name decorated with the stage ID.
         /// </summary>
+        /// <returns>The stage name decorated with the stage ID.</returns>
         public override string ToString()
         {
             return MyName;
@@ -143,11 +153,11 @@ namespace Microsoft.Research.Naiad.Dataflow
         /// </summary>
         public string Name { get { return name; } }
 
-        internal Stage(Placement placement, InternalGraphManager graphManager, OperatorType operatorType, string name)
+        internal Stage(Placement placement, InternalComputation internalComputation, OperatorType operatorType, string name)
         {
-            this.graphManager = graphManager;
+            this.internalComputation = internalComputation;
             this.targets = new List<Edge>();
-            this.StageId = this.InternalGraphManager.Register(this);
+            this.StageId = this.InternalComputation.Register(this);
             this.collectionType = operatorType;
             this.Placement = placement;
             this.name = name;
@@ -159,16 +169,23 @@ namespace Microsoft.Research.Naiad.Dataflow
     }
 
     /// <summary>
-    /// Stage with a committed time type, supporting a Context for the stage to use. This is less specific than a stage 
-    /// with a time and an OP, which makes many generics and type inference problems easier. It is possible that this role 
-    /// could be played by Stage above.
+    /// Represents an abstract stage in a dataflow graph, which comprises one or more dataflow vertices that each
+    /// handle a partition of the data received by the stage, with a time type that
+    /// indicates its level of nesting in the graph.
     /// </summary>
-    /// <typeparam name="TTime">Time type</typeparam>
+    /// <remarks>
+    /// This class cannot be instantiated directly: instead use the <see cref="Stage{TVertex,TTime}(TimeContext{TTime},Func{int,Stage{TTime},TVertex},string)"/> constructor, or
+    /// the static factory and extension methods in <see cref="StandardVertices.Foundry"/>.
+    /// </remarks>
+    /// <typeparam name="TTime">The type of timestamps on messages that this stage processes.</typeparam>
     public abstract class Stage<TTime> : Stage
         where TTime : Time<TTime>
     {
+        /// <summary>
+        /// The time context (e.g. loop body) to which this stage belongs.
+        /// </summary>
+        public TimeContext<TTime> Context { get { return new TimeContext<TTime>(context); } }
         private readonly ITimeContext<TTime> context;
-        public OpaqueTimeContext<TTime> Context { get { return new OpaqueTimeContext<TTime>(context); } }
 
         private readonly IStageContext<TTime> localContext;
         internal IStageContext<TTime> LocalContext { get { return localContext; } }
@@ -178,8 +195,8 @@ namespace Microsoft.Research.Naiad.Dataflow
             get { return default(TTime).ToPointstamp(this.StageId); }
         }
 
-        internal Stage(Placement placement, OpaqueTimeContext<TTime> c, OperatorType opType, string name)
-            : base(placement, c.Context.Manager.GraphManager, opType, name)
+        internal Stage(Placement placement, TimeContext<TTime> c, OperatorType opType, string name)
+            : base(placement, c.Context.Manager.InternalComputation, opType, name)
         {
             context = c.Context;
 
@@ -210,12 +227,15 @@ namespace Microsoft.Research.Naiad.Dataflow
     }
 
     /// <summary>
-    /// Represents a stage of vertices all of type OP. 
-    /// This information allows users to access OP-specific fields and methods, 
-    /// useful in connecting each instance of OP to stage inputs and outputs.
+    /// Represents a stage in a dataflow graph, which comprises one or more dataflow vertices of a particular type that each
+    /// handle a partition of the data received by the stage.
     /// </summary>
-    /// <typeparam name="TVertex"></typeparam>
-    /// <typeparam name="TTime"></typeparam>
+    /// <remarks>
+    /// This class can be instantiated directly using the <see cref="Stage{TVertex,TTime}(TimeContext{TTime},Func{int,Stage{TTime},TVertex},string)"/> constructor, or indirectly
+    /// using the static factory and extension methods in <see cref="StandardVertices.Foundry"/>.
+    /// </remarks>
+    /// <typeparam name="TVertex">The type of dataflow vertices in this stage.</typeparam>
+    /// <typeparam name="TTime">The type of timestamps on messages that this stage processes.</typeparam>
     public class Stage<TVertex, TTime> : Stage<TTime>
         where TVertex : Vertex<TTime>
         where TTime : Time<TTime>
@@ -229,9 +249,9 @@ namespace Microsoft.Research.Naiad.Dataflow
             return vertices[vertexIndex];
         }
 
-        protected void AddVertex(TVertex vertex) { vertices.Add(vertex.VertexId, vertex); }
+        internal void AddVertex(TVertex vertex) { vertices.Add(vertex.VertexId, vertex); }
 
-        internal Stage(Placement placement, OpaqueTimeContext<TTime> context, OperatorType optype, Func<int, Stage<TTime>, TVertex> factory, string name)
+        internal Stage(Placement placement, TimeContext<TTime> context, OperatorType optype, Func<int, Stage<TTime>, TVertex> factory, string name)
             : base(placement, context, optype, name)
         {
             vertices = new Dictionary<int, TVertex>();
@@ -241,12 +261,34 @@ namespace Microsoft.Research.Naiad.Dataflow
                 throw new ArgumentNullException("factory");
         }
 
-        internal Stage(OpaqueTimeContext<TTime> context, OperatorType optype, Func<int, Stage<TTime>, TVertex> factory, string name)
-            : this(context.Context.Manager.GraphManager.DefaultPlacement, context, optype, factory, name)
+        internal Stage(TimeContext<TTime> context, OperatorType optype, Func<int, Stage<TTime>, TVertex> factory, string name)
+            : this(context.Context.Manager.InternalComputation.DefaultPlacement, context, optype, factory, name)
         {
         }
 
-        public Stage(OpaqueTimeContext<TTime> context, Func<int, Stage<TTime>, TVertex> factory, string name)
+        /// <summary>
+        /// Constructs a new stage in the given time context, using the given vertex factory to construct the constituent vertices.
+        /// </summary>
+        /// <param name="context">The time context.</param>
+        /// <param name="factory">A factory for vertices in this stage.</param>
+        /// <param name="name">A human-readable name for this stage.</param>
+        /// <example>
+        /// To use this constructor, the programmer must pass a vertex factory, which is a function from an integer ID and stage to the vertex type (TVertex). The factory
+        /// arguments must be passed through to the <see cref="Vertex{TTime}(int,Stage{TTime})"/> constructor. For example:
+        /// <code>
+        /// class MyVertex : Vertex&lt;TTime&gt; where TTime : Time&lt;TTime&gt;
+        /// {
+        ///     public MyVertex(int id, Stage&lt;TTime&gt; stage, ...)
+        ///         : base(id, stage)
+        ///     {
+        ///         /* Other initialization. */
+        ///     }
+        /// }
+        /// 
+        /// var stage = new Stage&lt;TTime, MyVertex&gt;(context, (i, s) => new MyVertex(i, s, ...), "MyStage");
+        /// </code>
+        /// </example>
+        public Stage(TimeContext<TTime> context, Func<int, Stage<TTime>, TVertex> factory, string name)
             : this(context, OperatorType.Default, factory, name)
         {
         }
@@ -263,7 +305,7 @@ namespace Microsoft.Research.Naiad.Dataflow
         /// <param name="vertexInput">VertexInput selector</param>
         /// <param name="partitionedBy">partitioning expression, or null</param>
         /// <returns>StageInput</returns>
-        public StageInput<TRecord, TTime> NewInput<TRecord>(Stream<TRecord, TTime> stream, Func<TVertex, VertexInput<TRecord, TTime>> vertexInput, Expression<Func<TRecord, int>> partitionedBy)
+        internal StageInput<TRecord, TTime> NewInput<TRecord>(Stream<TRecord, TTime> stream, Func<TVertex, VertexInput<TRecord, TTime>> vertexInput, Expression<Func<TRecord, int>> partitionedBy)
         {
             var ret = this.NewInput(stream, partitionedBy);
 
@@ -273,20 +315,21 @@ namespace Microsoft.Research.Naiad.Dataflow
         }
 
         /// <summary>
-        /// Creates a new input from a stream, a message callback, and partitioning information.
+        /// Creates a new input that consumes records from the given stream, partitioned by the given partitioning function,
+        /// and delivers them to a vertex through the given onReceive callback.
         /// </summary>
         /// <typeparam name="TRecord">Record type</typeparam>
-        /// <param name="stream">source stream</param>
-        /// <param name="onRecv">message callback</param>
-        /// <param name="partitionedBy">partitioning expression, or null</param>
-        /// <returns>StageInput</returns>
-        public StageInput<TRecord, TTime> NewInput<TRecord>(Stream<TRecord, TTime> stream, Action<Message<TRecord, TTime>, TVertex> onRecv, Expression<Func<TRecord, int>> partitionedBy)
+        /// <param name="stream">The stream from which records will be consumed.</param>
+        /// <param name="onReceive">A callback that will be invoked on a message and vertex when that message is to be delivered to that vertex.</param>
+        /// <param name="partitionedBy">A partitioning expression, or <c>null</c> if the records need not be repartitioned.</param>
+        /// <returns>A handle to the input.</returns>
+        public StageInput<TRecord, TTime> NewInput<TRecord>(Stream<TRecord, TTime> stream, Action<Message<TRecord, TTime>, TVertex> onReceive, Expression<Func<TRecord, int>> partitionedBy)
         {
-            return this.NewInput<TRecord>(stream, s => new ActionReceiver<TRecord, TTime>(s, m => onRecv(m, s)), partitionedBy);
+            return this.NewInput<TRecord>(stream, s => new ActionReceiver<TRecord, TTime>(s, m => onReceive(m, s)), partitionedBy);
         }
 
         /// <summary>
-        /// Ok, listen. This is used in very few places when we need to violate the "inputs before outputs" rule. We create the input anyhow, and assign the stream later on
+        /// Ok, listen. This is used in very few places when we need to violate the "inputs before outputs" rule. We create the input anyhow, and assign the stream later on.
         /// </summary>
         internal StageInput<S, TTime> NewUnconnectedInput<S>(Func<TVertex, VertexInput<S, TTime>> vertexInput, Expression<Func<S, int>> partitionedBy)
         {
@@ -317,11 +360,24 @@ namespace Microsoft.Research.Naiad.Dataflow
 
         #region Output creation
 
+        /// <summary>
+        /// Creates a new output with no partitioning guarantee.
+        /// </summary>
+        /// <typeparam name="R">record type</typeparam>
+        /// <param name="vertexOutput">A function that, given a vertex in this stage, returns the corresponding vertex-level output.</param>
+        /// <returns>A handle to the output stream.</returns>
         public Stream<R, TTime> NewOutput<R>(Func<TVertex, VertexOutput<R, TTime>> vertexOutput) 
         { 
             return this.NewOutput(vertexOutput, null); 
         }
 
+        /// <summary>
+        /// Creates a new output with a partitioning guarantee
+        /// </summary>
+        /// <typeparam name="R">record type</typeparam>
+        /// <param name="vertexOutput">Given a vertex in this stage, returns the corresponding vertex-level output.</param>
+        /// <param name="partitionedBy">A partitioning guarantee, or null if there is no known partitioning guarantee.</param>
+        /// <returns>A handle to the output stream.</returns>
         public Stream<R, TTime> NewOutput<R>(Func<TVertex, VertexOutput<R, TTime>> vertexOutput, Expression<Func<R, int>> partitionedBy) 
         { 
             var ret = this.NewOutput<R, TTime>(this.Context.Context, partitionedBy);
@@ -331,8 +387,14 @@ namespace Microsoft.Research.Naiad.Dataflow
             return new Stream<R, TTime>(ret);
         }
 
-        // experimental; the callback doesn't do flush suppression like a VertexOutput, but perhaps the SendWire should instead...
-        internal Stream<R, TTime> NewOutput<R>(Action<SendWire<R, TTime>, TVertex> newListener, Expression<Func<R, int>> partitionedBy)
+        /// <summary>
+        /// Adds an output with a partitioning guarantee
+        /// </summary>
+        /// <typeparam name="R">record type</typeparam>
+        /// <param name="newListener">new listener callback</param>
+        /// <param name="partitionedBy">partitoining guarantee</param>
+        /// <returns>output stream</returns>
+        internal Stream<R, TTime> NewOutput<R>(Action<SendChannel<R, TTime>, TVertex> newListener, Expression<Func<R, int>> partitionedBy)
         {
             return this.NewOutput<R>(vertex => new ActionSubscriber<R, TTime>(vertex, listener => { newListener(listener, vertex); vertex.AddOnFlushAction(() => listener.Flush()); }), partitionedBy);
         }
@@ -358,7 +420,7 @@ namespace Microsoft.Research.Naiad.Dataflow
 
             foreach (var loc in Placement)
             {
-                if (loc.ProcessId == this.InternalGraphManager.Controller.Configuration.ProcessID)
+                if (loc.ProcessId == this.InternalComputation.Controller.Configuration.ProcessID)
                 {
                     var vertex = this.factory(loc.VertexId, this);
                     AddVertex(vertex);

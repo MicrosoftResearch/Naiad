@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -29,15 +29,14 @@ using Microsoft.Research.Naiad.DataStructures;
 using System.Diagnostics;
 using Microsoft.Research.Naiad.Dataflow.Channels;
 using System.Linq.Expressions;
-using Microsoft.Research.Naiad.CodeGeneration;
+using Microsoft.Research.Naiad.Serialization;
 using System.Threading;
 using System.Net.Sockets;
 using System.Net;
 using System.IO;
 using Microsoft.Research.Naiad.Scheduling;
 using Microsoft.Research.Naiad.Runtime.Controlling;
-using Microsoft.Research.Naiad.FaultTolerance;
-using Microsoft.Research.Naiad.Frameworks;
+using Microsoft.Research.Naiad.Dataflow.StandardVertices;
 using Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.OperatorImplementations;
 
 using Microsoft.Research.Naiad;
@@ -45,15 +44,15 @@ using Microsoft.Research.Naiad.Dataflow;
 
 namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
 {
-    public static class ExtensionHelpers
+    internal static class ExtensionHelpers
     {
         private static List<Pair<Expression, Expression>> expressionMapping = new List<Pair<Expression, Expression>>();
 
         public static Expression ReverseLookUp(this Expression target)
         {
             for (int i = 0; i < expressionMapping.Count; i++)
-                if (Microsoft.Research.Naiad.CodeGeneration.ExpressionComparer.Instance.Equals(target, expressionMapping[i].v2))
-                    return expressionMapping[i].v1;
+                if (Microsoft.Research.Naiad.Utilities.ExpressionComparer.Instance.Equals(target, expressionMapping[i].Second))
+                    return expressionMapping[i].First;
 
             return null;
         }
@@ -61,8 +60,8 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
         public static Expression LookUp(this Expression source)
         {
             for (int i = 0; i < expressionMapping.Count; i++)
-                if (Microsoft.Research.Naiad.CodeGeneration.ExpressionComparer.Instance.Equals(source, expressionMapping[i].v1))
-                    return expressionMapping[i].v2;
+                if (Microsoft.Research.Naiad.Utilities.ExpressionComparer.Instance.Equals(source, expressionMapping[i].First))
+                    return expressionMapping[i].Second;
 
             return null;
         }
@@ -70,8 +69,8 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
         public static Expression LookUpOrAdd(this Expression source, Expression alternate)
         {
             for (int i = 0; i < expressionMapping.Count; i++)
-                if (Microsoft.Research.Naiad.CodeGeneration.ExpressionComparer.Instance.Equals(source, expressionMapping[i].v1))
-                    return expressionMapping[i].v2;
+                if (Microsoft.Research.Naiad.Utilities.ExpressionComparer.Instance.Equals(source, expressionMapping[i].First))
+                    return expressionMapping[i].Second;
 
             expressionMapping.Add(new Pair<Expression, Expression>(source, alternate));
             return alternate;
@@ -105,20 +104,14 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
         }
     }
 
-    public abstract class TypedCollection<R, T> : Collection<R, T>
+    internal abstract class TypedCollection<R, T> : Collection<R, T>
         where R : IEquatable<R>
         where T : Time<T>
     {
         internal bool immutable = false;
         internal bool Immutable { get { return immutable; } }
 
-        #region Properties to be overridden by decorators.
-        internal virtual Channel.Flags ChannelFlags { get { return Channel.Flags.None; } }
-
-        //internal abstract Placement DownstreamPlacement { get; }
-        #endregion
-
-        public abstract Microsoft.Research.Naiad.Dataflow.Stream<Weighted<R>, T> Output { get; }
+        public abstract Stream<Weighted<R>, T> Output { get; }
 
         internal virtual Expression OutputPartitionedBy
         {
@@ -162,12 +155,12 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
 
         #region Lattice adjustment
 
-        public Collection<R, T> AdjustLattice(Func<R, T, T> adjustment)
+        public Collection<R, T> AdjustTime(Func<R, T, T> adjustment)
         {
             if (adjustment == null)
                 throw new ArgumentNullException("adjustment");
 
-            var result = this.Manufacture((i, v) => new Operators.AdjustLattice<R, T>(i, v, adjustment), this.Output.PartitionedBy, this.Output.PartitionedBy, "AdjustLattice");
+            var result = this.Manufacture((i, v) => new Operators.AdjustTime<R, T>(i, v, adjustment), this.Output.PartitionedBy, this.Output.PartitionedBy, "AdjustLattice");
 
             result.immutable = false;
 
@@ -470,7 +463,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
             where K : IEquatable<K>
         {
             return this.Count(key, (k, c) => new Pair<K, Int64>(k, c))
-                       .AssumePartitionedBy(x => x.v1);
+                       .AssumePartitionedBy(x => x.First);
         }
 
         public Collection<R2, T> Count<K, R2>(Expression<Func<R, K>> key, Expression<Func<K, Int64, R2>> reducer)
@@ -571,10 +564,10 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
             if (useDenseIntKeys)
                 return this.Manufacture<R>((i,v) => new Operators.MinIntKeyed<V, M, R, T>(i, v, this.Immutable, key, value, minBy, reducer), key.ConvertToWeightedFuncAndHashCode(), null, "Min");
             else
-                return this.Min<int, V, M>(key, value, minBy, reducer);
+                return this.Min<int, M, V>(key, value, minBy, reducer);
         }
 
-        public Collection<R, T> Min<K, V, M>(Expression<Func<R, K>> key, Expression<Func<R, V>> value, Expression<Func<K,V,M>> minBy, Expression<Func<K, V, R>> reducer)
+        public Collection<R, T> Min<K, M, V>(Expression<Func<R, K>> key, Expression<Func<R, V>> value, Expression<Func<K,V,M>> minBy, Expression<Func<K, V, R>> reducer)
             where K : IEquatable<K>
             where V : IEquatable<V>
             where M : IEquatable<M>, IComparable<M>
@@ -685,7 +678,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
                 throw new ArgumentException("Other collection must implement TypedCollection<R, T>", "other");
 
             var partitionFunction = this.Output.PartitionedBy;
-            if (!Microsoft.Research.Naiad.CodeGeneration.ExpressionComparer.Instance.Equals(this.Output.PartitionedBy, that.Output.PartitionedBy))
+            if (!Microsoft.Research.Naiad.Utilities.ExpressionComparer.Instance.Equals(this.Output.PartitionedBy, that.Output.PartitionedBy))
                 partitionFunction = null;
 
             return this.Manufacture(that, (i, v) => new Operators.Concat<R, T>(i, v), partitionFunction, partitionFunction, partitionFunction, "Concat");
@@ -700,7 +693,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
                 throw new ArgumentException("Other collection must implement TypedCollection<R, T>", "other");
 
             var partitionFunction = this.Output.PartitionedBy;
-            if (!Microsoft.Research.Naiad.CodeGeneration.ExpressionComparer.Instance.Equals(this.Output.PartitionedBy, that.Output.PartitionedBy))
+            if (!Microsoft.Research.Naiad.Utilities.ExpressionComparer.Instance.Equals(this.Output.PartitionedBy, that.Output.PartitionedBy))
                 partitionFunction = null;
 
             return this.Manufacture(that, (i, v) => new Operators.Except<R, T>(i, v), partitionFunction, partitionFunction, partitionFunction, "Except");
@@ -713,21 +706,22 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
         /// <summary>
         /// Adds a temporal dimension to each record.
         /// </summary>
-        /// <param name="name">an identifier, for purposes of printing and reading</param>
+        /// <param name="context">Loop context</param>
         /// <returns></returns>
-        public Collection<R, IterationIn<T>> EnterLoop(Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext<T> helper)
+        public Collection<R, IterationIn<T>> EnterLoop(Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext<T> context)
         {
-            return helper.EnterLoop(this.Output).ToCollection(this.Immutable);
+            return context.EnterLoop(this.Output).ToCollection(this.Immutable);
         }
 
         /// <summary>
         /// Adds a temporal dimension to each record.
         /// </summary>
-        /// <param name="name">an identifier, for purposes of printing and reading</param>
+        /// <param name="context">Loop context</param>
+        /// <param name="initialIteration">initial iteration selector</param>
         /// <returns></returns>
-        public Collection<R, IterationIn<T>> EnterLoop(Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext<T> helper, Func<R, int> initialIteration)
+        public Collection<R, IterationIn<T>> EnterLoop(Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext<T> context, Func<R, int> initialIteration)
         {
-            return helper.EnterLoop(this.Output, x => initialIteration(x.record)).ToCollection(this.Immutable);
+            return context.EnterLoop(this.Output, (Weighted<R> x) => initialIteration(x.record)).ToCollection(this.Immutable);
         }
 
         public Collection<R, T> GeneralFixedPoint<K>(
@@ -820,7 +814,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
         /// </summary>
         /// <param name="action">Action to be applied to each group of records</param>
         /// <returns>Input collection</returns>
-        public Collection<R, T> Monitor(Action<int, List<NaiadRecord<R, T>>> action)
+        public Collection<R, T> Monitor(Action<int, List<Pair<Weighted<R>, T>>> action)
         {
             return this.Manufacture((i,v) => new Operators.Monitor<R, T>(i, v, this.Immutable, action), this.Output.PartitionedBy, this.Output.PartitionedBy, "Monitor");
         }
@@ -829,7 +823,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
 
         #endregion Naiad Operators
 
-        internal abstract OpaqueTimeContext<T> Statistics { get; }
+        internal abstract TimeContext<T> Statistics { get; }
 
         #region Constructor
         internal TypedCollection() { }
@@ -842,19 +836,19 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
         where R : IEquatable<R>
         where T : Time<T>
     {
-        private readonly Microsoft.Research.Naiad.Dataflow.Stream<Weighted<R>, T> output;
+        private readonly Stream<Weighted<R>, T> output;
 
-        public override Microsoft.Research.Naiad.Dataflow.Stream<Weighted<R>, T> Output
+        public override Stream<Weighted<R>, T> Output
         {
             get { return this.output; }
         }
 
-        internal override OpaqueTimeContext<T> Statistics
+        internal override TimeContext<T> Statistics
         {
             get { return this.output.Context; }
         }
 
-        public DataflowCollection(Microsoft.Research.Naiad.Dataflow.Stream<Weighted<R>, T> output)
+        public DataflowCollection(Stream<Weighted<R>, T> output)
         {
             this.output = output;
         }
@@ -866,9 +860,9 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
     {
         private readonly Stream<Weighted<R>,T> output;
 
-        public override Microsoft.Research.Naiad.Dataflow.Stream<Weighted<R>, T> Output { get { return this.output; } }
+        public override Stream<Weighted<R>, T> Output { get { return this.output; } }
 
-        internal override OpaqueTimeContext<T> Statistics
+        internal override TimeContext<T> Statistics
         {
             get { return output.Context; }
         }

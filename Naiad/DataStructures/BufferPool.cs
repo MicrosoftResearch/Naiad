@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -28,15 +28,23 @@ using System.Diagnostics;
 using System.Collections.Concurrent;
 using System.Reflection.Emit;
 
+using Microsoft.Research.Naiad.Diagnostics;
+
 namespace Microsoft.Research.Naiad
 {
-    // thread-local buffer pools
+    /// <summary>
+    /// Thread-local buffer pool
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     static internal class ThreadLocalBufferPools<T>
     {
+        /// <summary>
+        /// A buffer pool
+        /// </summary>
         public static ThreadLocal<BufferPool<T>> pool = new ThreadLocal<BufferPool<T>>(() => new ThreadLocalBufferPool<T>(16));
     }
 
-    static public class BufferPoolUtils
+    static internal class BufferPoolUtils
     {
 
         public static int Log2(int x)
@@ -51,7 +59,7 @@ namespace Microsoft.Research.Naiad
 
     }
 
-    public interface BufferPool<T>
+    internal interface BufferPool<T>
     {
         T[] CheckOut(int size);
         T[] CheckOutInitialized(int size);
@@ -75,7 +83,6 @@ namespace Microsoft.Research.Naiad
         /// Dynamically determines the size in bytes of a generic type struct
         /// </summary>
         /// <param name="type">The type</param>
-        /// <param name="size">Set to the size in bytes</param>
         public static int ManagedSize(Type type)
         {
 #if  true
@@ -165,7 +172,7 @@ namespace Microsoft.Research.Naiad
                     Logging.Fatal("BufferPool.CheckOut exception {0}", e);
                     Logging.Fatal("Size {0}, Type {1}", logSize, typeof(T));
                     Logging.Fatal(e.StackTrace);
-                    throw new FatalException();
+                    throw;
                 }
             }
         }
@@ -222,7 +229,7 @@ namespace Microsoft.Research.Naiad
     /// Pool with locks for concurrent access.
     /// </summary>
     /// <typeparam name="T">Type of buffers in pool</typeparam>
-    public class LockedBufferPool<T> : BufferPool<T>
+    internal class LockedBufferPool<T> : BufferPool<T>
     {
         public const int MaximumStackLength = 10;// Int32.MaxValue;
 

@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -27,15 +27,16 @@ using System.Collections.Concurrent;
 using System.Threading;
 
 using Microsoft.Research.Naiad.DataStructures;
-using Microsoft.Research.Naiad.Dataflow.Channels;
+using Microsoft.Research.Naiad.Dataflow;
 using Microsoft.Research.Naiad.Scheduling;
 using Microsoft.Research.Naiad.Runtime.Controlling;
-using Microsoft.Research.Naiad.CodeGeneration;
+using Microsoft.Research.Naiad.Serialization;
+using Microsoft.Research.Naiad.Input;
 using Microsoft.Research.Naiad;
 
 namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
 {
-    public class RecordObserver<R> : IObserver<R> where R : IEquatable<R>
+    internal class RecordObserver<R> : IObserver<R> where R : IEquatable<R>
     {
         private bool completedCalled;
         private readonly IObserver<IEnumerable<Weighted<R>>> collection;
@@ -71,14 +72,31 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
         }
     }
 
-    public class IncrementalCollection<R> : TypedCollection<R, Epoch>, InputCollection<R>
+    /// <summary>
+    /// Extension methods
+    /// </summary>
+    public static class InputCollectionExtensionMethods
+    {
+        /// <summary>
+        /// Creates a new <see cref="InputCollection{TRecord}"/> in the given computation.
+        /// </summary>
+        /// <typeparam name="TRecord">The type of records in the collection.</typeparam>
+        /// <param name="computation">The graph manager for the computation.</param>
+        /// <returns>The new <see cref="InputCollection{TRecord}"/>.</returns>
+        public static InputCollection<TRecord> NewInputCollection<TRecord>(this Computation computation)
+            where TRecord : IEquatable<TRecord>
+        {
+            return new IncrementalCollection<TRecord>(computation);
+        }
+    }
+
+    internal class IncrementalCollection<R> : TypedCollection<R, Epoch>, InputCollection<R>
         where R : IEquatable<R>
     {
-        //private readonly Naiad.Dataflow.InputStage<Weighted<R>> inputVertex;
-        private readonly Microsoft.Research.Naiad.Dataflow.BatchedDataSource<Weighted<R>> inputVertex;
-        private readonly Microsoft.Research.Naiad.Dataflow.Stream<Weighted<R>, Epoch> stream;
+        private readonly Microsoft.Research.Naiad.Input.BatchedDataSource<Weighted<R>> inputVertex;
+        private readonly Stream<Weighted<R>, Epoch> stream;
 
-        public override Microsoft.Research.Naiad.Dataflow.Stream<Weighted<R>, Epoch> Output
+        public override Stream<Weighted<R>, Epoch> Output
         {
             get { return this.stream; }
         }
@@ -93,21 +111,6 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
             inputVertex.OnCompleted(value);
         }
 
-        public void OnCompleted(IEnumerable<R> values)
-        {
-            inputVertex.OnCompleted(values.Select(x => x.ToWeighted(1)));
-        }
-
-        public void OnCompleted(Weighted<R> value)
-        {
-            inputVertex.OnCompleted(value);
-        }
-
-        public void OnCompleted(R value)
-        {
-            inputVertex.OnCompleted(new Weighted<R>(value, 1));
-        }
-
         public void OnError(Exception error)
         {
             inputVertex.OnError(error);
@@ -118,11 +121,11 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
             inputVertex.OnNext(value);
         }
 
-        internal override Microsoft.Research.Naiad.Dataflow.OpaqueTimeContext<Epoch> Statistics { get { return this.stream.Context; } }
+        internal override Microsoft.Research.Naiad.Dataflow.TimeContext<Epoch> Statistics { get { return this.stream.Context; } }
 
-        public IncrementalCollection(Microsoft.Research.Naiad.GraphManager manager)
+        public IncrementalCollection(Microsoft.Research.Naiad.Computation manager)
         {
-            this.inputVertex = new Dataflow.BatchedDataSource<Weighted<R>>();
+            this.inputVertex = new BatchedDataSource<Weighted<R>>();
             this.stream = manager.NewInput(inputVertex);
         }
     }

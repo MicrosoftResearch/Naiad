@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -23,9 +23,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Microsoft.Research.Naiad.Dataflow.Channels;
-using Microsoft.Research.Naiad.CodeGeneration;
+using Microsoft.Research.Naiad.Serialization;
 using Microsoft.Research.Naiad.DataStructures;
-using Microsoft.Research.Naiad.FaultTolerance;
+
+using Microsoft.Research.Naiad.Diagnostics;
 
 namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.CollectionTrace
 {
@@ -61,7 +62,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.CollectionTra
         /// 
         /// After executing this method, the destKeyIndex and sourceKeyIndex may have changed.
         /// </summary>
-        /// <param name="destKeyIndex">The index for the destination, which will be updated.</param>
+        /// <param name="destkeyIndex">The index for the destination, which will be updated.</param>
         /// <param name="sourceKeyIndex">The index for the source for the the update.</param>
         /// <param name="delete">If true, this will free the storage associated with the sourceKeyIndex.</param>
         void IntroduceFrom(ref int destkeyIndex, ref int sourceKeyIndex, bool delete = true);
@@ -134,9 +135,12 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.CollectionTra
         void Compact();
     }
 
-    internal interface CollectionTraceCheckpointable<R> : CollectionTrace<R>, ICheckpointable
+    internal interface CollectionTraceCheckpointable<R> : CollectionTrace<R>
         where R : IEquatable<R>
-    { }
+    {
+        void Checkpoint(NaiadWriter writer);
+        void Restore(NaiadReader reader);
+    }
 
     /// <summary>
     /// Represents a collection trace for a collection that is constant with respect to time.
@@ -193,7 +197,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.CollectionTra
                 }
 
                 if (weight < 0)
-                    Microsoft.Research.Naiad.Logging.Error("Subtracting records from Immutable collection (Consolidate first?)");
+                    Logging.Error("Subtracting records from Immutable collection (Consolidate first?)");
 
                 for (int i = 0; i < weight; i++)
                 {
@@ -202,7 +206,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.CollectionTra
                 }
             }
             else
-                Microsoft.Research.Naiad.Logging.Error("Adding records to Immutable collection after compacting it");
+                Logging.Error("Adding records to Immutable collection after compacting it");
         }
 
         public void IntroduceFrom(ref int thisKeyIndex, ref int thatKeyIndex, bool delete = true)
@@ -222,8 +226,8 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.CollectionTra
                     int index = heads[thatKeyIndex];
                     while (index != -1)
                     {
-                        Introduce(ref thisKeyIndex, links.ElementAt(index).v1, 1, 0);
-                        index = links.ElementAt(index).v2;
+                        Introduce(ref thisKeyIndex, links.ElementAt(index).First, 1, 0);
+                        index = links.ElementAt(index).Second;
                     }
 
                     if (delete)
@@ -231,7 +235,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.CollectionTra
                 }
             }
             else
-                Microsoft.Research.Naiad.Logging.Error("Adding records to Immutable collection after compacting it");
+                Logging.Error("Adding records to Immutable collection after compacting it");
         }
         
         public void SubtractStrictlyPriorDifferences(ref int keyIndex, int timeIndex)
@@ -250,7 +254,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.CollectionTra
                 keyIndex = 0;
             }
             else
-                Microsoft.Research.Naiad.Logging.Error("Zeroing parts of Immutable collection after compacting it");
+                Logging.Error("Zeroing parts of Immutable collection after compacting it");
 
         }
 
@@ -270,8 +274,8 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.CollectionTra
                     int index = heads[keyIndex];
                     while (index != -1)
                     {
-                        toFill.Add(links.ElementAt(index).v1.ToWeighted(1));
-                        index = links.ElementAt(index).v2;
+                        toFill.Add(links.ElementAt(index).First.ToWeighted(1));
+                        index = links.ElementAt(index).Second;
                     }
                 }
                 else
@@ -293,8 +297,8 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.CollectionTra
                     int index = heads[keyIndex];
                     while (index != -1)
                     {
-                        toFill.Add(links.ElementAt(index).v1.ToWeighted(1));
-                        index = links.ElementAt(index).v2;
+                        toFill.Add(links.ElementAt(index).First.ToWeighted(1));
+                        index = links.ElementAt(index).Second;
                     }
                 }
                 else
@@ -341,7 +345,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.CollectionTra
                     while (index != -1)
                     {
                         counts[i]++;
-                        index = links.ElementAt(index).v2;
+                        index = links.ElementAt(index).Second;
                     }
                 }
 
@@ -356,8 +360,8 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.CollectionTra
                     int index = heads[i];
                     while (index != -1)
                     {
-                        data[pos++] = links.ElementAt(index).v1;
-                        index = links.ElementAt(index).v2;
+                        data[pos++] = links.ElementAt(index).First;
+                        index = links.ElementAt(index).Second;
                     }
                 }
 

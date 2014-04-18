@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -28,7 +28,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Operators
 {
     internal class Abs<S, T> : OperatorImplementations.UnaryStatefulOperator<S, T>
         where S : IEquatable<S>
-        where T : Microsoft.Research.Naiad.Time<T>
+        where T : Time<T>
     {
         protected override Int64 WeightFunction(Int64 weight)
         {

@@ -1,0 +1,53 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<topic id="6163523e-3519-436b-a09a-0c71d98f6f25" revisionNumber="1">
+  <developerConceptualDocument
+    xmlns="http://ddue.schemas.microsoft.com/authoring/2003/5"
+    xmlns:xlink="http://www.w3.org/1999/xlink">
+
+    <summary>
+      <para>
+        The first release of Naiad with support for running computations on Microsoft Azure HDInsight and Hadoop 2.0 (YARN),
+        version 0.3 was released alongside binary packages on NuGet.
+      </para>
+    </summary>
+
+    <introduction>
+      <para>Version 0.3 was released on April 4th 2014.</para>
+    </introduction>
+
+    <section>
+      <title>Changes in This Release</title>
+      <content>
+
+        <list class="bullet">
+          <listItem>
+            <para>
+              Added the <codeInline>ClusterSubmission</codeInline> solution, which contains support
+              for launching Naiad programs in a variety of distributed settings, including:
+            </para>
+            <list class="bullet">
+              <listItem>
+                <para>Microsoft Azure HDInsight 3.0.</para>
+              </listItem>
+              <listItem>
+                <para>Hadoop 2.0 (YARN) on Windows.</para>
+              </listItem>
+            </list>
+          </listItem>
+          <listItem>
+            <para>
+              The AzureSupport framework makes it easier to use Naiad programs with Microsoft Azure Storage
+              Blobs and Tables.
+            </para>
+          </listItem>
+        </list>
+
+      </content>
+    </section>
+
+    <relatedTopics>
+      <link xlink:href="c2a31aaa-d867-4d3b-9315-dbb7c7527659" />
+    </relatedTopics>
+
+  </developerConceptualDocument>
+</topic>

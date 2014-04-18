@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -26,7 +26,7 @@ using System.Text;
 using Microsoft.Research.Naiad;
 using Microsoft.Research.Naiad.Frameworks.DifferentialDataflow;
 
-namespace Examples.DifferentialDataflow
+namespace Microsoft.Research.Naiad.Examples.DifferentialDataflow
 {
     public static class StronglyConnectedComponentsExtensionMethods
     {
@@ -188,7 +188,7 @@ namespace Examples.DifferentialDataflow
 
         public void Execute(string[] args)
         {
-            using (var controller = NewController.FromArgs(ref args))
+            using (var computation = NewComputation.FromArgs(ref args))
             {
                 // establish numbers of nodes and edges from input or from defaults.
                 if (args.Length == 3)
@@ -203,60 +203,62 @@ namespace Examples.DifferentialDataflow
                 for (int i = 0; i < edgeCount; i++)
                     graph[i] = new Edge(random.Next(nodeCount), random.Next(nodeCount));
 
-                using (var manager = controller.NewComputation())
+                // set up the SCC computation
+                var edges = computation.NewInputCollection<Edge>();
+
+                var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+                var result = edges.TrimLeavesAndFlip()
+                                  .TrimLeavesAndFlip()
+                                  .SCC()
+                                  .Subscribe(x => Console.WriteLine("{1}\tNet edge changes within SCCs: {0}", x.Sum(y => y.weight), stopwatch.Elapsed));
+
+                Console.WriteLine("Strongly connected components on a random graph ({0} nodes, {1} edges)", nodeCount, edgeCount);
+                Console.WriteLine("Reporting the numbers of edges within SCCs (may take a moment):");
+
+                computation.Activate();
+
+                // input graph and wait
+                if (computation.Configuration.ProcessID == 0)
+                    edges.OnNext(graph);
+                else
+                    edges.OnNext();
+
+                result.Sync(0);
+
+                Console.WriteLine("Computation completed");
+
+                // if we are up for interactive access ...
+                if (computation.Configuration.Processes == 1)
                 {
-                    // set up the CC computation
-                    var edges = new IncrementalCollection<Edge>(manager);//.NewInput<Edge>();
+                    Console.WriteLine();
+                    Console.WriteLine("Press [enter] repeatedly to rewire random edges in the graph. (\"done\" to exit)");
 
-                    var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-
-                    var result = edges.TrimLeavesAndFlip()
-                                      .TrimLeavesAndFlip()
-                                      .SCC()
-                                      .Subscribe(x => Console.WriteLine("{1}\tNet edge changes within SCCs: {0}", x.Sum(y => y.weight), stopwatch.Elapsed));
-
-                    Console.WriteLine("Strongly connected components on a random graph ({0} nodes, {1} edges)", nodeCount, edgeCount);
-                    Console.WriteLine("Reporting the numbers of edges within SCCs (may take a moment):");
-
-                    manager.Activate();
-
-                    // input graph and wait
-                    if (controller.Configuration.ProcessID == 0)
-                        edges.OnNext(graph);
-                    else
-                        edges.OnNext();
-
-                    result.Sync(new Epoch(0));
-
-                    Console.WriteLine("Computation completed");
-
-                    // if we are up for interactive access ...
-                    if (controller.Configuration.Processes == 1)
+                    for (int i = 0; i < graph.Length; i++)
                     {
-                        Console.WriteLine();
-                        Console.WriteLine("Press [enter] repeatedly to rewire random edges in the graph. (\"done\" to exit)");
-
-                        for (int i = 0; i < graph.Length; i++)
-                        {
-                            var line = Console.ReadLine();
-                            if (line == "done")
-                                break;
-                            stopwatch.Restart();
-                            var newEdge = new Edge(random.Next(nodeCount), random.Next(nodeCount));
-                            Console.WriteLine("Rewiring edge: {0} -> {1}", graph[i], newEdge);
-                            edges.OnNext(new[] { new Weighted<Edge>(graph[i], -1), new Weighted<Edge>(newEdge, 1) });
-                            result.Sync(new Epoch(i + 1));
-                        }
+                        var line = Console.ReadLine();
+                        if (line == "done")
+                            break;
+                        stopwatch.Restart();
+                        var newEdge = new Edge(random.Next(nodeCount), random.Next(nodeCount));
+                        Console.WriteLine("Rewiring edge: {0} -> {1}", graph[i], newEdge);
+                        edges.OnNext(new[] { new Weighted<Edge>(graph[i], -1), new Weighted<Edge>(newEdge, 1) });
+                        result.Sync(i + 1);
                     }
-
-                    edges.OnCompleted();
-                    manager.Join();
                 }
 
-                controller.Join();
+                edges.OnCompleted();
+                computation.Join();
             }
+
         }
 
         public string Usage { get { return "[nodecount edgecount]"; } }
+
+
+        public string Help
+        {
+            get { return "Demonstrates how complex algorithms like strongly connected components can be implemented as multiply nested loops.\nAdditionally demonstrates how interactive updates to the data source can be resolved with very low latency"; }
+        }
     }
 }

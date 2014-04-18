@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -23,14 +23,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Microsoft.Research.Naiad.Dataflow.Channels;
-using Microsoft.Research.Naiad.CodeGeneration;
-using Microsoft.Research.Naiad.FaultTolerance;
+using Microsoft.Research.Naiad.Serialization;
 using Microsoft.Research.Naiad.Scheduling;
 
-namespace Microsoft.Research.Naiad.DataStructures
+namespace Microsoft.Research.Naiad.Runtime.Progress
 {
+
+#if false
     // used for antichain of pointstamps, and pointstamps only
-    public class MinimalAntichain<T> where T : Scheduling.PartialOrder<T>
+    internal class MinimalAntichain<T> where T : Scheduling.PartialOrder<T>
     {
         public NaiadList<T> Antichain = new NaiadList<T>(0);
 
@@ -140,14 +141,16 @@ namespace Microsoft.Research.Naiad.DataStructures
         }
     }
 
-    public class PointstampFrontier
+#endif
+
+    internal class PointstampFrontier
     {
         internal Reachability Reachability;
 
-        public NaiadList<Pointstamp> Antichain = new NaiadList<Pointstamp>(0);
+        public List<Pointstamp> Antichain = new List<Pointstamp>();
 
-        NaiadList<Pointstamp> elements = new NaiadList<Pointstamp>(0);
-        NaiadList<int> precedents = new NaiadList<int>(0);
+        private List<Pointstamp> elements = new List<Pointstamp>();
+        private List<int> precedents = new List<int>();
 
         internal PointstampFrontier(Reachability reachability)
         {
@@ -158,29 +161,29 @@ namespace Microsoft.Research.Naiad.DataStructures
         {
             Antichain.Clear();
             for (int i = 0; i < elements.Count; i++)
-                if (precedents.Array[i] == 0)
-                    Antichain.Add(elements.Array[i]);
+                if (precedents[i] == 0)
+                    Antichain.Add(elements[i]);
 
             if (Antichain.Count == 0 && elements.Count > 0)
                 throw new Exception("Empty Antichain from non-empty set");
         }
 
-        public bool Add(Pointstamp element)
+        internal bool Add(Pointstamp element)
         {
             var newPrecedents = 0;
 
             for (int i = 0; i < elements.Count; i++)
             {
-                if (this.Reachability.LessThan(element, elements.Array[i]))
-                    precedents.Array[i]++;
+                if (this.Reachability.LessThan(element, elements[i]))
+                    precedents[i]++;
 
-                if (this.Reachability.LessThan(elements.Array[i], element))
+                if (this.Reachability.LessThan(elements[i], element))
                     newPrecedents++;
 
-                if (this.Reachability.LessThan(element, elements.Array[i]) && this.Reachability.LessThan(elements.Array[i], element) && !elements.Array[i].Equals(element))
+                if (this.Reachability.LessThan(element, elements[i]) && this.Reachability.LessThan(elements[i], element) && !elements[i].Equals(element))
                 {
-                    this.Reachability.LessThan(element, elements.Array[i]);
-                    throw new Exception("Ordering violation " + element + "," + elements.Array[i]);
+                    this.Reachability.LessThan(element, elements[i]);
+                    throw new Exception("Ordering violation " + element + "," + elements[i]);
                 }
             }
 
@@ -189,7 +192,7 @@ namespace Microsoft.Research.Naiad.DataStructures
 
             var changes = newPrecedents == 0;
             for (int i = 0; i < Antichain.Count; i++)
-                if (this.Reachability.LessThan(element, Antichain.Array[i]))
+                if (this.Reachability.LessThan(element, Antichain[i]))
                     changes = true;
 
             if (changes)
@@ -198,17 +201,17 @@ namespace Microsoft.Research.Naiad.DataStructures
             return changes;
         }
 
-        public bool Remove(Pointstamp element)
+        internal bool Remove(Pointstamp element)
         {
             int position = elements.Count;
             for (int i = 0; i < elements.Count; i++)
             {
-                if (this.Reachability.LessThan(element, elements.Array[i]))
+                if (this.Reachability.LessThan(element, elements[i]))
                 {
-                    if (position == elements.Count && element.Equals(elements.Array[i]))
+                    if (position == elements.Count && element.Equals(elements[i]))
                         position = i;
                     else
-                        precedents.Array[i]--;
+                        precedents[i]--;
                 }
             }
 
@@ -217,16 +220,18 @@ namespace Microsoft.Research.Naiad.DataStructures
 
             if (position < elements.Count)
             {
-                elements.Array[position] = elements.Array[elements.Count - 1];
-                elements.Count--;
+                elements[position] = elements[elements.Count - 1];
+                //elements.Count--;
+                elements.RemoveAt(elements.Count - 1);
 
-                precedents.Array[position] = precedents.Array[precedents.Count - 1];
-                precedents.Count--;
+                precedents[position] = precedents[precedents.Count - 1];
+                precedents.RemoveAt(precedents.Count - 1);
+                //precedents.Count--;
             }
 
             var changes = false;
             for (int i = 0; i < Antichain.Count; i++)
-                if (element.Equals(Antichain.Array[i]))
+                if (element.Equals(Antichain[i]))
                     changes = true;
 
             if (changes)

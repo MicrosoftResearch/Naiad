@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -24,13 +24,13 @@ using System.Linq;
 using System.Text;
 using System.Linq.Expressions;
 using Microsoft.Research.Naiad.Dataflow;
+using Microsoft.Research.Naiad.Dataflow.StandardVertices;
 
 namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Operators
 {
     internal class SelectMany<S, T, R> : UnaryVertex<Weighted<S>, Weighted<R>, T>
-        //OperatorImplementations.UnaryStatelessOperator<S, R, T>
         where S : IEquatable<S>
-        where T : Microsoft.Research.Naiad.Time<T>
+        where T : Time<T>
         where R : IEquatable<R>
     {
         protected Func<S, IEnumerable<R>> selector;

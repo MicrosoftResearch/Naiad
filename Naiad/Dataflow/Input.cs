@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -23,16 +23,18 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Microsoft.Research.Naiad.Dataflow.Channels;
-using Microsoft.Research.Naiad.CodeGeneration;
-using Microsoft.Research.Naiad.Runtime.Controlling;
-using Microsoft.Research.Naiad.FaultTolerance;
+using Microsoft.Research.Naiad.Serialization;
+using Microsoft.Research.Naiad.Dataflow.StandardVertices;
 using Microsoft.Research.Naiad.Frameworks;
 using Microsoft.Research.Naiad.Scheduling;
 using System.Diagnostics;
 
+using Microsoft.Research.Naiad.Diagnostics;
+using Microsoft.Research.Naiad.Input;
+
 namespace Microsoft.Research.Naiad.Dataflow
 {
-    internal interface InputStage : ICheckpointable
+    internal interface InputStage
     {
         /// <summary>
         /// Returns true if OnCompleted() has been called on the input.
@@ -68,7 +70,7 @@ namespace Microsoft.Research.Naiad.Dataflow
                 if (vertexId == vertex.Key)
                     return vertex.Value;
 
-            throw new Exception(String.Format("Vertex {0} not found in Input {1} on Process {2}", vertexId, stage.StageId, stage.InternalGraphManager.Controller.Configuration.ProcessID));
+            throw new Exception(String.Format("Vertex {0} not found in Input {1} on Process {2}", vertexId, stage.StageId, stage.InternalComputation.Controller.Configuration.ProcessID));
         }
 
         public int InputId { get { return this.stage.StageId; } }
@@ -85,8 +87,8 @@ namespace Microsoft.Research.Naiad.Dataflow
 
         public static implicit operator Stream<TRecord, Epoch>(InputStage<TRecord> stage) { return stage.Stream; }
 
-        public OpaqueTimeContext<Epoch> Context { get { return this.stage.Context; } }
-        internal InternalGraphManager InternalGraphManager { get { return this.stage.InternalGraphManager; } }
+        public TimeContext<Epoch> Context { get { return this.stage.Context; } }
+        internal InternalComputation InternalComputation { get { return this.stage.InternalComputation; } }
         public Placement Placement { get { return this.stage.Placement; } }
 
         private readonly string inputName;
@@ -94,17 +96,17 @@ namespace Microsoft.Research.Naiad.Dataflow
 
         private readonly Stage<InputVertex<TRecord>, Epoch> stage;
 
-        internal InputStage(Placement placement, InternalGraphManager graphManager, string inputName)
+        internal InputStage(Placement placement, InternalComputation internalComputation, string inputName)
         {
             this.inputName = inputName;
 
-            stage = Foundry.NewStage(new OpaqueTimeContext<Epoch>(graphManager.ContextManager.RootContext), (i, v) => new InputVertex<TRecord>(i, v), this.inputName);
+            stage = Foundry.NewStage(new TimeContext<Epoch>(internalComputation.ContextManager.RootContext), (i, v) => new InputVertex<TRecord>(i, v), this.inputName);
 
             this.output = stage.NewOutput(vertex => vertex.Output);
 
             stage.Materialize();
 
-            this.localVertices = placement.Where(x => x.ProcessId == graphManager.Controller.Configuration.ProcessID)
+            this.localVertices = placement.Where(x => x.ProcessId == internalComputation.Controller.Configuration.ProcessID)
                                         .Select(x => new KeyValuePair<int, InputVertex<TRecord>>(x.VertexId, stage.GetVertex(x.VertexId) as InputVertex<TRecord>))
                                         .ToArray();
 
@@ -113,10 +115,10 @@ namespace Microsoft.Research.Naiad.Dataflow
             this.currentEpoch = 0;
 
             // results in pointstamps comparisons which assert w/o this.
-            this.InternalGraphManager.Reachability.UpdateReachabilityPartialOrder(graphManager);
-            this.InternalGraphManager.Reachability.DoNotImpersonate(stage.StageId);
+            this.InternalComputation.Reachability.UpdateReachabilityPartialOrder(internalComputation);
+            this.InternalComputation.Reachability.DoNotImpersonate(stage.StageId);
 
-            var initialVersion = new Scheduling.Pointstamp(stage.StageId, new int[] { 0 });
+            var initialVersion = new Runtime.Progress.Pointstamp(stage.StageId, new int[] { 0 });
 
             //if (this.Controller.Configuration.Impersonation)
             //{
@@ -125,14 +127,14 @@ namespace Microsoft.Research.Naiad.Dataflow
             //}
             //else
                 
-            graphManager.ProgressTracker.BroadcastProgressUpdate(initialVersion, placement.Count);
+            internalComputation.ProgressTracker.BroadcastProgressUpdate(initialVersion, placement.Count);
         }
 
         private void EnsureProgressTrackerActivated()
         {
             if (!this.hasActivatedProgressTracker)
             {
-                stage.InternalGraphManager.Activate();
+                stage.InternalComputation.Activate();
                 this.hasActivatedProgressTracker = true;
             }
         }
@@ -222,16 +224,16 @@ namespace Microsoft.Research.Naiad.Dataflow
 
         public void Checkpoint(NaiadWriter writer)
         {
-            writer.Write(currentEpoch, this.InternalGraphManager.CodeGenerator.GetSerializer<int>());
-            writer.Write(completedCalled, this.InternalGraphManager.CodeGenerator.GetSerializer<bool>());
-            writer.Write(hasActivatedProgressTracker, this.InternalGraphManager.CodeGenerator.GetSerializer<bool>());
+            writer.Write(currentEpoch, this.InternalComputation.SerializationFormat.GetSerializer<int>());
+            writer.Write(completedCalled, this.InternalComputation.SerializationFormat.GetSerializer<bool>());
+            writer.Write(hasActivatedProgressTracker, this.InternalComputation.SerializationFormat.GetSerializer<bool>());
         }
 
         public void Restore(NaiadReader reader)
         {
-            this.currentEpoch = reader.Read<int>(this.InternalGraphManager.CodeGenerator.GetSerializer<int>());
-            this.completedCalled = reader.Read<bool>(this.InternalGraphManager.CodeGenerator.GetSerializer<bool>());
-            this.hasActivatedProgressTracker = reader.Read<bool>(this.InternalGraphManager.CodeGenerator.GetSerializer<bool>());
+            this.currentEpoch = reader.Read<int>(this.InternalComputation.SerializationFormat.GetSerializer<int>());
+            this.completedCalled = reader.Read<bool>(this.InternalComputation.SerializationFormat.GetSerializer<bool>());
+            this.hasActivatedProgressTracker = reader.Read<bool>(this.InternalComputation.SerializationFormat.GetSerializer<bool>());
         }
 
         public bool Stateful { get { return true; } }
@@ -270,7 +272,7 @@ namespace Microsoft.Research.Naiad.Dataflow
 
         internal override void PerformAction(Scheduling.Scheduler.WorkItem workItem)
         {
-            var epoch = new Epoch().InitializeFrom(workItem.Requirement, 1).t;
+            var epoch = new Epoch().InitializeFrom(workItem.Requirement, 1).epoch;
 
             for (int i = nextSendEpoch; i <= epoch; i++)
             {
@@ -290,11 +292,11 @@ namespace Microsoft.Research.Naiad.Dataflow
                 }
 
                 if (!nextInstruction.isLast)
-                    this.Scheduler.State(this.Stage.InternalGraphManager).Producer.UpdateRecordCounts(new Scheduling.Pointstamp(this.Stage.StageId, new int[] { i + 1 }), +1);
+                    this.Scheduler.State(this.Stage.InternalComputation).Producer.UpdateRecordCounts(new Runtime.Progress.Pointstamp(this.Stage.StageId, new int[] { i + 1 }), +1);
                 else
                     Logging.Progress("Completing input {0}", this.VertexId);
 
-                this.scheduler.State(this.Stage.InternalGraphManager).Producer.UpdateRecordCounts(new Scheduling.Pointstamp(this.Stage.StageId, new int[] { i }), -1);
+                this.scheduler.State(this.Stage.InternalComputation).Producer.UpdateRecordCounts(new Runtime.Progress.Pointstamp(this.Stage.StageId, new int[] { i }), -1);
             }
 
             nextSendEpoch = epoch + 1;
@@ -342,13 +344,13 @@ namespace Microsoft.Research.Naiad.Dataflow
 
         private static NaiadSerialization<S> weightedSSerializer = null;
 
-        public override void Checkpoint(NaiadWriter writer)
+        protected override void Checkpoint(NaiadWriter writer)
         {
             if (weightedSSerializer == null)
-                weightedSSerializer = this.CodeGenerator.GetSerializer<S>();
+                weightedSSerializer = this.SerializationFormat.GetSerializer<S>();
 
-            var intSerializer = this.CodeGenerator.GetSerializer<Int32>();
-            var boolSerializer = this.CodeGenerator.GetSerializer<bool>();
+            var intSerializer = this.SerializationFormat.GetSerializer<Int32>();
+            var boolSerializer = this.SerializationFormat.GetSerializer<bool>();
 
             writer.Write(this.nextAvailableEpoch, intSerializer);
             writer.Write(this.nextSendEpoch, intSerializer);
@@ -360,14 +362,14 @@ namespace Microsoft.Research.Naiad.Dataflow
             }
         }
 
-        public override void Restore(NaiadReader reader)
+        protected override void Restore(NaiadReader reader)
         {
             this.nextAvailableEpoch = reader.Read<int>();
             this.nextSendEpoch = reader.Read<int>();
             int inputQueueCount = reader.Read<int>();
             for (int i = 0; i < inputQueueCount; ++i)
             {
-                S[] array = FaultToleranceExtensionMethods.RestoreArray<S>(reader, n => new S[n]);
+                S[] array = CheckpointRestoreExtensionMethods.RestoreArray<S>(reader, n => new S[n]);
                 bool isLast = reader.Read<bool>();
                 this.inputQueue.Enqueue(new Instruction(array, isLast));
             }
@@ -382,9 +384,9 @@ namespace Microsoft.Research.Naiad.Dataflow
     }
 
     /// <summary>
-    /// An input supporting Naiad's streaming input operations.
+    /// Represents a streaming input to a Naiad computation.
     /// </summary>
-    /// <typeparam name="TRecord"></typeparam>
+    /// <typeparam name="TRecord">The type of records accepted by this input.</typeparam>
     public interface StreamingInput<TRecord>
     {
         /// <summary>
@@ -442,7 +444,7 @@ namespace Microsoft.Research.Naiad.Dataflow
 
         internal override void PerformAction(Scheduling.Scheduler.WorkItem workItem)
         {
-            var epoch = new Epoch().InitializeFrom(workItem.Requirement, 1).t;
+            var epoch = new Epoch().InitializeFrom(workItem.Requirement, 1).epoch;
 
             Instruction nextInstruction;
             bool success = inputQueue.TryDequeue(out nextInstruction);
@@ -457,7 +459,7 @@ namespace Microsoft.Research.Naiad.Dataflow
                 {
                     if (!this.isCompleted)
                     {
-                        this.scheduler.State(this.Stage.InternalGraphManager).Producer.UpdateRecordCounts(new Scheduling.Pointstamp(this.Stage.StageId, new int[] { this.currentVertexHold }), -1);
+                        this.scheduler.State(this.Stage.InternalComputation).Producer.UpdateRecordCounts(new Runtime.Progress.Pointstamp(this.Stage.StageId, new int[] { this.currentVertexHold }), -1);
                         this.isCompleted = true;
                     }
                     else
@@ -477,8 +479,8 @@ namespace Microsoft.Research.Naiad.Dataflow
 
                     if (nextInstruction.Epoch >= this.currentVertexHold)
                     {
-                        this.scheduler.State(this.Stage.InternalGraphManager).Producer.UpdateRecordCounts(new Scheduling.Pointstamp(this.Stage.StageId, new int[] { nextInstruction.Epoch + 1 }), +1);
-                        this.scheduler.State(this.Stage.InternalGraphManager).Producer.UpdateRecordCounts(new Scheduling.Pointstamp(this.Stage.StageId, new int[] { this.currentVertexHold }), -1);
+                        this.scheduler.State(this.Stage.InternalComputation).Producer.UpdateRecordCounts(new Runtime.Progress.Pointstamp(this.Stage.StageId, new int[] { nextInstruction.Epoch + 1 }), +1);
+                        this.scheduler.State(this.Stage.InternalComputation).Producer.UpdateRecordCounts(new Runtime.Progress.Pointstamp(this.Stage.StageId, new int[] { this.currentVertexHold }), -1);
                         this.currentVertexHold = nextInstruction.Epoch + 1;
                     }
                     else
@@ -550,9 +552,9 @@ namespace Microsoft.Research.Naiad.Dataflow
             this.output = new VertexOutputBuffer<S,Epoch>(this);
         }
 
-        internal static Stream<S, Epoch> MakeStage(DataSource<S> source, InternalGraphManager graphManager, Placement placement, string inputName)
+        internal static Stream<S, Epoch> MakeStage(DataSource<S> source, InternalComputation internalComputation, Placement placement, string inputName)
         {
-            var stage = new StreamingInputStage<S>(source, placement, graphManager, inputName);
+            var stage = new StreamingInputStage<S>(source, placement, internalComputation, inputName);
          
             return stage;
         }
@@ -568,7 +570,7 @@ namespace Microsoft.Research.Naiad.Dataflow
                 if (vertexId == vertex.VertexId)
                     return vertex;
 
-            throw new Exception(String.Format("Vertex {0} not found in Input {1} on Process {2}", vertexId, stage.StageId, stage.InternalGraphManager.Controller.Configuration.ProcessID));
+            throw new Exception(String.Format("Vertex {0} not found in Input {1} on Process {2}", vertexId, stage.StageId, stage.InternalComputation.Controller.Configuration.ProcessID));
         }
 
         public int InputId { get { return this.stage.StageId; } }
@@ -583,8 +585,8 @@ namespace Microsoft.Research.Naiad.Dataflow
 
         public static implicit operator Stream<R, Epoch>(StreamingInputStage<R> stage) { return stage.Output; }
 
-        public OpaqueTimeContext<Epoch> Context { get { return this.stage.Context; } }
-        internal InternalGraphManager InternalGraphManager { get { return this.stage.InternalGraphManager; } }
+        public TimeContext<Epoch> Context { get { return this.stage.Context; } }
+        internal InternalComputation InternalComputation { get { return this.stage.InternalComputation; } }
         public Placement Placement { get { return this.stage.Placement; } }
 
         private readonly string inputName;
@@ -608,17 +610,17 @@ namespace Microsoft.Research.Naiad.Dataflow
         public void Checkpoint(NaiadWriter writer) { throw new NotImplementedException(); }
         public void Restore(NaiadReader reader) { throw new NotImplementedException(); } 
 
-        internal StreamingInputStage(DataSource<R> source, Placement placement, InternalGraphManager graphManager, string inputName)
+        internal StreamingInputStage(DataSource<R> source, Placement placement, InternalComputation internalComputation, string inputName)
         {
             this.inputName = inputName;
 
-            this.stage = Foundry.NewStage(new OpaqueTimeContext<Epoch>(graphManager.ContextManager.RootContext), (i, v) => new StreamingInputVertex<R>(i, v), this.inputName);
+            this.stage = Foundry.NewStage(new TimeContext<Epoch>(internalComputation.ContextManager.RootContext), (i, v) => new StreamingInputVertex<R>(i, v), this.inputName);
 
             this.output = stage.NewOutput(vertex => vertex.output);
 
             this.stage.Materialize();
 
-            this.localVertices = placement.Where(x => x.ProcessId == graphManager.Controller.Configuration.ProcessID)
+            this.localVertices = placement.Where(x => x.ProcessId == internalComputation.Controller.Configuration.ProcessID)
                                         .Select(x => this.stage.GetVertex(x.VertexId) as StreamingInputVertex<R>)
                                         .ToArray();
 
@@ -628,19 +630,19 @@ namespace Microsoft.Research.Naiad.Dataflow
             this.hasActivatedProgressTracker = false;
 
             // results in pointstamp comparisons which assert w/o this.
-            this.InternalGraphManager.Reachability.UpdateReachabilityPartialOrder(graphManager);
-            this.InternalGraphManager.Reachability.DoNotImpersonate(stage.StageId);
+            this.InternalComputation.Reachability.UpdateReachabilityPartialOrder(internalComputation);
+            this.InternalComputation.Reachability.DoNotImpersonate(stage.StageId);
 
-            var initialVersion = new Scheduling.Pointstamp(stage.StageId, new int[] { 0 });
+            var initialVersion = new Runtime.Progress.Pointstamp(stage.StageId, new int[] { 0 });
 
-            graphManager.ProgressTracker.BroadcastProgressUpdate(initialVersion, placement.Count);
+            internalComputation.ProgressTracker.BroadcastProgressUpdate(initialVersion, placement.Count);
         }
 
         private void EnsureProgressTrackerActivated()
         {
             if (!this.hasActivatedProgressTracker)
             {
-                stage.InternalGraphManager.Activate();
+                stage.InternalComputation.Activate();
                 this.hasActivatedProgressTracker = true;
             }
         }

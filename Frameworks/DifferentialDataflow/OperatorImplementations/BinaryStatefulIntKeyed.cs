@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -30,18 +30,18 @@ using Microsoft.Research.Naiad.DataStructures;
 using Microsoft.Research.Naiad.Dataflow.Channels;
 using Microsoft.Research.Naiad.Scheduling;
 using Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.CollectionTrace;
-using Microsoft.Research.Naiad.FaultTolerance;
+using Microsoft.Research.Naiad.Serialization;
 
 using System.Linq.Expressions;
 using System.Diagnostics;
 using Microsoft.Research.Naiad;
-using Microsoft.Research.Naiad.CodeGeneration;
 using Microsoft.Research.Naiad.Dataflow;
+using Microsoft.Research.Naiad.Dataflow.StandardVertices;
+using Microsoft.Research.Naiad.Runtime.Progress;
 
 namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.OperatorImplementations
 {
     internal class BinaryStatefulIntKeyedOperator<V1, V2, S1, S2, T, R> : BinaryBufferingVertex<Weighted<S1>, Weighted<S2>, Weighted<R>, T>
-        //: BinaryOperator<S1, S2, R, T>
         where V1 : IEquatable<V1>
         where V2 : IEquatable<V2>
         where S1 : IEquatable<S1>
@@ -75,7 +75,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.OperatorImple
             keyIndices = null;
         }
         
-        public override void UpdateReachability(NaiadList<Pointstamp> versions)
+        protected override void UpdateReachability(List<Pointstamp> versions)
         {
             base.UpdateReachability(versions);
 
@@ -107,7 +107,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.OperatorImple
 
         protected CollectionTraceCheckpointable<V2> createInputTrace2()
         {
-            if (Microsoft.Research.Naiad.CodeGeneration.ExpressionComparer.Instance.Equals(keyExpression2, valueExpression2))
+            if (Microsoft.Research.Naiad.Utilities.ExpressionComparer.Instance.Equals(keyExpression2, valueExpression2))
             {
                 if (this.inputImmutable2)
                     return new CollectionTraceImmutableNoHeap<V2>();
@@ -127,7 +127,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.OperatorImple
 
         protected CollectionTraceCheckpointable<V1> createInputTrace1()
         {
-            if (Microsoft.Research.Naiad.CodeGeneration.ExpressionComparer.Instance.Equals(keyExpression1, valueExpression1))
+            if (Microsoft.Research.Naiad.Utilities.ExpressionComparer.Instance.Equals(keyExpression1, valueExpression1))
             {
                 if (this.inputImmutable1)
                     return new CollectionTraceImmutableNoHeap<V1>();
@@ -365,7 +365,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.OperatorImple
         //private static NaiadSerialization<Weighted<S1>> weightedS1Serializer = null;
         //private static NaiadSerialization<Weighted<S2>> weightedS2Serializer = null;
 
-        public override void Checkpoint(NaiadWriter writer)
+        protected override void Checkpoint(NaiadWriter writer)
         {
             base.Checkpoint(writer);
             writer.Write(this.isShutdown);
@@ -396,7 +396,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.OperatorImple
         protected readonly bool inputImmutable1 = false;
         protected readonly bool inputImmutable2 = false;
 
-        public override void Restore(NaiadReader reader)
+        protected override void Restore(NaiadReader reader)
         {
             base.Restore(reader);
             

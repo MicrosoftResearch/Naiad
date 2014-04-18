@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -22,12 +22,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Microsoft.Research.Naiad.CodeGeneration;
+using Microsoft.Research.Naiad.Serialization;
 
 namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
 {
-
-    public struct UnaryKeyIndices : IEquatable<UnaryKeyIndices>
+    internal struct UnaryKeyIndices : IEquatable<UnaryKeyIndices>
     {
         public int unprocessed;
         public int processed;
@@ -43,7 +42,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
         public UnaryKeyIndices(int u, int p, int r) { unprocessed = u; processed = p; output = r; }
     }
 
-    public struct BinaryKeyIndices : IEquatable<BinaryKeyIndices>
+    internal struct BinaryKeyIndices : IEquatable<BinaryKeyIndices>
     {
         //public K key;
         public int unprocessed1;
@@ -65,7 +64,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
     }
 
     // Join doesn't need all the KeyIndices cruft
-    public struct JoinKeyIndices : IEquatable<JoinKeyIndices>
+    internal struct JoinKeyIndices : IEquatable<JoinKeyIndices>
     {
         public int processed1;
         public int processed2;
@@ -81,7 +80,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
     }
 
     // Join doesn't need all the KeyIndices cruft
-    public struct JoinIntKeyIndices
+    internal struct JoinIntKeyIndices
     {
         public int processed1;
         public int processed2;

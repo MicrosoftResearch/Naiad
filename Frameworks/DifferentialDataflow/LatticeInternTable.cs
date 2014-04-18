@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -27,8 +27,8 @@ using Microsoft.Research.Naiad;
 using Microsoft.Research.Naiad.DataStructures;
 using System.Diagnostics;
 using Microsoft.Research.Naiad.Dataflow.Channels;
-using Microsoft.Research.Naiad.FaultTolerance;
-using Microsoft.Research.Naiad.CodeGeneration;
+using Microsoft.Research.Naiad.Serialization;
+using Microsoft.Research.Naiad.Runtime.Progress;
 
 namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
 {
@@ -78,12 +78,12 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
         /// set of equivalent times, based on the givne set of versions that can reach this table's operator.
         /// </summary>
         /// <param name="causalTimes"></param>
-        public void UpdateReachability(NaiadList<Scheduling.Pointstamp> causalTimes)
+        public void UpdateReachability(List<Pointstamp> causalTimes)
         {
             // Convert the given VertexVersions into local T times.
             this.reachableTimes.Clear();
             for (int i = 0; i < causalTimes.Count; i++)
-                this.reachableTimes.Add(default(T).InitializeFrom(causalTimes.Array[i], causalTimes.Array[i].Timestamp.Length));
+                this.reachableTimes.Add(default(T).InitializeFrom(causalTimes[i], causalTimes[i].Timestamp.Length));
 
             // it would be nice to redirect to the *oldest* equivalent time, 
             // so that as many times as possible stay stable.
@@ -229,12 +229,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
 
         public void Checkpoint(NaiadWriter writer)
         {
-            int before = writer.objectsWritten;
-
             this.indices.Checkpoint(writer);
-
-            //Console.Error.WriteLine("% LIT.indices wrote {0} objects", writer.objectsWritten - before);
-            before = writer.objectsWritten;
 
             this.times.Checkpoint(this.count, writer);
 
@@ -242,10 +237,6 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
 
             writer.Write(this.lastInterned);
             writer.Write(this.lastInternedResult);
-
-            int after = writer.objectsWritten;
-
-           // Console.Error.WriteLine("% LIT wrote {0} objects", after - before);
         }
 
         public void Restore(NaiadReader reader)
@@ -255,12 +246,12 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
             //Console.Error.WriteLine("% LIT.indices read {0} objects", reader.objectsRead - before);
             //before = reader.objectsRead;
 
-            this.times = FaultToleranceExtensionMethods.RestoreArray<T>(reader, n => {
+            this.times = CheckpointRestoreExtensionMethods.RestoreArray<T>(reader, n => {
                 this.count = n; 
-                return this.times.Length >= n ? this.times : new T[1 << BufferPoolUtils.Log2(n)]; 
+                return this.times.Length >= n ? this.times : new T[n]; 
             });
 
-            this.redirection = FaultToleranceExtensionMethods.RestoreArray<int>(reader, n => new int[n]);
+            this.redirection = CheckpointRestoreExtensionMethods.RestoreArray<int>(reader, n => new int[n]);
 
             //Console.Error.WriteLine("% LIT.times read {0} objects", reader.objectsRead - before);
 

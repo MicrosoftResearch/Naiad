@@ -1,5 +1,5 @@
 ﻿/*
- * Naiad ver. 0.3
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -32,7 +32,7 @@ namespace Microsoft.Research.Naiad.Cluster.NativeYarn
     {
         public NativeYarnSubmission(string headnode, int port, int webPort, int numberOfProcesses, string[] args)
             : base(new WebHdfsClient(headnode, port, webPort),
-                   new NativeYarnClient(headnode, 9000),
+                   new NativeYarnClient(headnode, 9000, 8471),
                    numberOfProcesses, args)
         {
         }

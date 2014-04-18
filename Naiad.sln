@@ -16,6 +16,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AzureSupport", "Frameworks\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NugetSample", "NugetSample\NugetSample.csproj", "{42700533-D646-424C-BC88-CEA7C4F5D86D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GraphLINQ", "Frameworks\GraphLINQ\GraphLINQ.csproj", "{BDBEACA4-1235-4FDC-BBF5-9F9B7AB553AD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -140,6 +142,24 @@ Global
 		{42700533-D646-424C-BC88-CEA7C4F5D86D}.Tracing|Mixed Platforms.Build.0 = Release|Any CPU
 		{42700533-D646-424C-BC88-CEA7C4F5D86D}.Tracing|x64.ActiveCfg = Release|Any CPU
 		{42700533-D646-424C-BC88-CEA7C4F5D86D}.Tracing|x86.ActiveCfg = Release|Any CPU
+		{BDBEACA4-1235-4FDC-BBF5-9F9B7AB553AD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BDBEACA4-1235-4FDC-BBF5-9F9B7AB553AD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BDBEACA4-1235-4FDC-BBF5-9F9B7AB553AD}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{BDBEACA4-1235-4FDC-BBF5-9F9B7AB553AD}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{BDBEACA4-1235-4FDC-BBF5-9F9B7AB553AD}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{BDBEACA4-1235-4FDC-BBF5-9F9B7AB553AD}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{BDBEACA4-1235-4FDC-BBF5-9F9B7AB553AD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BDBEACA4-1235-4FDC-BBF5-9F9B7AB553AD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BDBEACA4-1235-4FDC-BBF5-9F9B7AB553AD}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{BDBEACA4-1235-4FDC-BBF5-9F9B7AB553AD}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{BDBEACA4-1235-4FDC-BBF5-9F9B7AB553AD}.Release|x64.ActiveCfg = Release|Any CPU
+		{BDBEACA4-1235-4FDC-BBF5-9F9B7AB553AD}.Release|x86.ActiveCfg = Release|Any CPU
+		{BDBEACA4-1235-4FDC-BBF5-9F9B7AB553AD}.Tracing|Any CPU.ActiveCfg = Release|Any CPU
+		{BDBEACA4-1235-4FDC-BBF5-9F9B7AB553AD}.Tracing|Any CPU.Build.0 = Release|Any CPU
+		{BDBEACA4-1235-4FDC-BBF5-9F9B7AB553AD}.Tracing|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{BDBEACA4-1235-4FDC-BBF5-9F9B7AB553AD}.Tracing|Mixed Platforms.Build.0 = Release|Any CPU
+		{BDBEACA4-1235-4FDC-BBF5-9F9B7AB553AD}.Tracing|x64.ActiveCfg = Release|Any CPU
+		{BDBEACA4-1235-4FDC-BBF5-9F9B7AB553AD}.Tracing|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -148,5 +168,6 @@ Global
 		{A6BEE749-A036-4A34-80CD-689C496D1A56} = {F9A9EDB5-BA4A-4FC6-AC09-CD88F30795D8}
 		{BDC6546C-7BA0-472B-B260-0D596B6152E4} = {F9A9EDB5-BA4A-4FC6-AC09-CD88F30795D8}
 		{E2347F7A-DDB2-4CCD-8A37-44202D7BBAA7} = {F9A9EDB5-BA4A-4FC6-AC09-CD88F30795D8}
+		{BDBEACA4-1235-4FDC-BBF5-9F9B7AB553AD} = {F9A9EDB5-BA4A-4FC6-AC09-CD88F30795D8}
 	EndGlobalSection
 EndGlobal

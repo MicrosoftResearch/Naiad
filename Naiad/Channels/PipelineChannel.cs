@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -31,21 +31,12 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
     internal class PipelineChannel<S, T> : Cable<S, T>
         where T : Time<T>
     {
-        private class Fiber : SendWire<S, T>, RecvWire<S, T>
+        private class Fiber : SendChannel<S, T>
         {
             private readonly PipelineChannel<S, T> bundle;
             private readonly int index;
             private VertexInput<S, T> receiver;
-
-            public int RecordSizeHint { get { return int.MaxValue; } }
-
-            public void Drain() 
-            { 
-                //throw new Exception("Attempting to Drain a pipeline channel"); 
-            }
-
-            public Cable<S, T> ChannelBundle { get { return this.bundle; } }
-
+                        
             public Fiber(PipelineChannel<S, T> bundle, VertexInput<S, T> receiver, int index)
             {
                 this.bundle = bundle;
@@ -55,7 +46,7 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
 
             public void Send(Message<S, T> records)
             {
-                this.receiver.OnReceive(records, new RemotePostbox());
+                this.receiver.OnReceive(records, new ReturnAddress());
             }
 
             public override string ToString()
@@ -63,15 +54,6 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
                 return string.Format("Pipeline({0} => {1})", this.bundle.SourceStage, this.bundle.DestinationStage);
             }
 
-#if false
-            public bool Recv(ref Message<Pair<S, T>> message)
-            {
-                ThreadLocalBufferPools<Pair<S, T>>.pool.Value.CheckIn(message.payload);
-                message.payload = null;
-                message.length = -1;
-                return message.length >= 0;
-            }
-#endif
             public void Flush()
             {
                 this.receiver.Flush();
@@ -95,20 +77,15 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
 
             this.subChannels = new Dictionary<int, Fiber>();
             foreach (VertexLocation loc in sender.ForStage.Placement)
-                if (loc.ProcessId == sender.ForStage.InternalGraphManager.Controller.Configuration.ProcessID)
+                if (loc.ProcessId == sender.ForStage.InternalComputation.Controller.Configuration.ProcessID)
                     this.subChannels[loc.VertexId] = new Fiber(this, receiver.GetPin(loc.VertexId), loc.VertexId);
         }
 
-        public SendWire<S, T> GetSendFiber(int i)
+        public SendChannel<S, T> GetSendChannel(int i)
         {
             return this.subChannels[i];
         }
-
-        public RecvWire<S, T> GetRecvFiber(int i)
-        {
-            return this.subChannels[i];
-        }
-        
+                
         public Dataflow.Stage SourceStage { get { return this.sender.ForStage; } }
         public Dataflow.Stage DestinationStage { get { return this.receiver.ForStage; } }
 

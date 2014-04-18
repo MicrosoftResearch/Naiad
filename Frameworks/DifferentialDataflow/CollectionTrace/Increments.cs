@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -26,7 +26,7 @@ using System.Text;
 namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.CollectionTrace
 {
 
-    public struct CollectionTraceWithHeapIncrement : IEquatable<CollectionTraceWithHeapIncrement>
+    internal struct CollectionTraceWithHeapIncrement : IEquatable<CollectionTraceWithHeapIncrement>
     {
         public OffsetLength OffsetLength;
         public int TimeIndex;
@@ -42,7 +42,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.CollectionTra
         public CollectionTraceWithHeapIncrement(int t) { OffsetLength = new OffsetLength(); TimeIndex = t; }
     }
 
-    public struct CollectionTraceWithAggregationIncrement<S> : IEquatable<CollectionTraceWithAggregationIncrement<S>>
+    internal struct CollectionTraceWithAggregationIncrement<S> : IEquatable<CollectionTraceWithAggregationIncrement<S>>
         where S : IEquatable<S>
     {
         public Int64 Weight;
@@ -67,7 +67,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.CollectionTra
         public CollectionTraceWithAggregationIncrement(int t) { Weight = 0; TimeIndex = t; Value = default(S); }
     }
 
-    public struct CollectionTraceWithoutHeapIncrement : IEquatable<CollectionTraceWithoutHeapIncrement>
+    internal struct CollectionTraceWithoutHeapIncrement : IEquatable<CollectionTraceWithoutHeapIncrement>
     {
         public Int64 Weight;
         public int TimeIndex;

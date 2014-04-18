@@ -1,4 +1,4 @@
-/* Naiad ver. 0.2
+/* Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -24,9 +24,9 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Microsoft.Research.Naiad.Util
+namespace Microsoft.Research.Naiad.Utilities
 {
-    public class DependencyLister : MarshalByRefObject
+    internal class DependencyLister : MarshalByRefObject
     {
         private static string[] FrameworkAssemblyNames = { "System", "System.Core", "mscorlib", "System.Xml" };
 
@@ -62,7 +62,7 @@ namespace Microsoft.Research.Naiad.Util
         /// <summary>
         /// Returns the locations of non-framework assemblies on which the assembly with the given filename depends.
         /// </summary>
-        /// <param name="source">The filename of the assembly</param>
+        /// <param name="assemblyFilename">The filename of the assembly</param>
         /// <returns>An array of filenames for non-framework assemblies on which the given assembly depends</returns>
         public string[] ListDependencies(string assemblyFilename)
         {

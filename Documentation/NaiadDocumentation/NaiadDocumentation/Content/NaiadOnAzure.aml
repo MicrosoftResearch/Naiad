@@ -1,0 +1,199 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<topic id="b3ff7ae9-7d4a-49b5-89c4-4e8832660d8d" revisionNumber="1">
+  <developerWalkthroughDocument
+    xmlns="http://ddue.schemas.microsoft.com/authoring/2003/5"
+    xmlns:xlink="http://www.w3.org/1999/xlink">
+
+
+    <introduction>
+      <para>
+        Naiad programs can be run on Microsoft Azure using the HDInsight 3.0 platform.
+        The same Naiad programs you run on your computer or cluster of computers can be run on Azure with some configuration of your environment, some Azure hints for your program, and a simple loader program.
+      </para>
+    </introduction>
+
+    <!-- <prerequisites><content>Optional prerequisites info</content></prerequisites> -->
+
+    <!-- One or more procedure or section with procedure -->
+    <procedure>
+      <title>Setting up your environment</title>
+      <steps class="ordered">
+        <step>
+          <content>
+            <para>Set up powershell and configure Azure using 
+            <externalLink>
+              <linkText>
+                these instructions
+              </linkText>
+              <linkUri>
+                http://azure.microsoft.com/en-us/documentation/articles/install-configure-powershell/
+              </linkUri>
+            </externalLink>.
+            In the "How to: Connect your subcription" item, follow the instructions under "Use the certificate method".
+            Ensure that your environment is correctly set up by running <codeInline>Get-AzureSubscription</codeInline> and verifying that your subscription has "IsDefault:True" and information identifying the management certificate.
+            </para>
+          </content>
+        </step>
+        <step>
+          <content>
+            <para>
+              Create a HDInsight 3.0 cluster using 
+              <externalLink>
+                <linkText>
+                  these instructions
+                </linkText>
+                <linkUri>
+                  http://azure.microsoft.com/en-us/documentation/articles/hdinsight-get-started-30/
+                </linkUri>
+              </externalLink>.
+            </para>
+          </content>
+        </step>
+      </steps>
+      <conclusion>
+        <content>
+          <para>
+            These steps can take some time, but while you are waiting you can read ahead to the next section where we learn how we may need to modify a Naiad program to behave well in Azure.
+            Technically, no modifications are required of a Naiad program, but when running in Azure your program may need read from and write to resources other than your console or local filesystem.
+          </para>
+        </content>
+      </conclusion>
+    </procedure>
+
+    <procedure>
+      <title>
+        Modifying a Naiad program to run well on Azure
+      </title>
+      <steps class="ordered">
+        <step>
+          <content>
+            <para>
+              The first step you will want to take is to add a reference to Naiad's Azure support framework.
+              This library can be acquired through NuGet.org or compiled from Naiad source.
+              Once you have included a reference to <codeInline>Microsoft.Research.Naiad.Azure</codeInline>, you will want to add the following to the top of your program:
+            </para>
+            <code>
+              using Microsoft.Research.Naiad.Frameworks.Azure;
+            </code>
+          </content>
+        </step>
+        <step>
+          <content>
+            <para>
+              Just after creating a new computation, step 1 in the first example, it is good to redirect <codeInline>Console.Out</codeInline> and possibly <codeInline>Console.Error</codeInline> to write to Azure blobs. 
+              This can be done by invoking the <codeInline>SetConsoleOut</codeInline> and <codeInline>SetConsoleError</codeInline> methods on a computation's controller.
+              These methods require an Azure container, and a format string which accepts one parameter, the process identifier.
+              For example, the line
+            </para>
+            <code>
+              computation.Controller.SetConsoleOutput(container, "naiad/out-{0}.txt");
+            </code>
+            <para>
+              would redirect <codeInline>Console.Out</codeInline> for each process to the corresponding Azure blobs where <codeInline>"{0}"</codeInline> is replaced by the process identifier.
+            </para>
+            <para>
+              Importantly, you should also add a <codeInline>Console.Out.Close();</codeInline> line after calling <codeInline>Join</codeInline> on the computation, to ensure that all writes are flushed to Azure before your program exits.
+            </para>
+          </content>
+        </step>
+        <step>
+          <content>
+            <para>
+              Naiad's Azure framework also contains helper methods to write streams to Azure blobs and read streams from Azure blobs.
+              If your Naiad program was previously taking inputs from and writing back to your local file systems, it will want to read them from and write them to Azure blob storage instead.
+              Note that your Naiad progams can read from and write to Azure storage even without being run on Azure; the same calls will work on your local computer or cluster, but the data movement is more efficient (and cheaper) when run in Azure.
+            </para>
+          </content>
+        </step>
+      </steps>
+      <conclusion>
+        <content>
+          <para>
+            These steps are, strictly speaking, optional. 
+            Any Naiad program can be run unmodified in Azure, but without access to the console or local filesystems it can be difficult to determine if it has behaved successfully.
+          </para>
+        </content>
+      </conclusion>
+    </procedure>
+    
+    <procedure>
+      <title>Running Naiad programs on Azure HDInsight 3.0</title>
+      <steps class="ordered">
+        <step>
+          <content>
+            <para>
+              Install "Naiad - Azure submission tool" from NuGet.org, or build <codeInline>NaiadAzureSubmission.exe</codeInline> from the Naiad source repository.
+            </para>
+          </content>
+        </step>
+        <step>
+          <content>
+            <para>
+              To see the arguments that Naiad's Azure tools require, run: <codeInline>./NaiadAzureSubmission.exe</codeInline>
+            </para>
+          </content>
+        </step>
+        <step>
+          <content>
+            <para>
+              Double-check that you have followed the steps above to bind your subscription ID in powershell.
+            </para>
+          </content>
+        </step>
+        <step>
+          <content>
+            <para>
+              To run a Naiad program in Azure you will need to provide an HDInsight cluster name to <codeInline>NaiadAzureSubmission.exe</codeInline>. 
+              If your cluster name is <codeInline>myCluster</codeInline> and your program compiles to <codeInline>NaiadProgram.exe</codeInline>, you would type
+            </para>
+            <code>
+              ./NaiadAzureSubmission --cluster myCluster NaiadProgram.exe [args]
+            </code>
+          </content>
+        </step>
+      </steps>
+      <conclusion>
+        <content>
+          <para>
+            If all is working well, your Naiad program should be launched on the corresponding HDInsight cluster, using the number of processes you have specified. 
+            When it completes, you should be able to find its outputs in Azure storage at the locations you have specified.
+          </para>
+        </content>
+      </conclusion>
+    </procedure>
+    
+    <relatedTopics>
+      <!-- One or more of the following:
+           - A local link
+           - An external link
+           - A code entity reference
+
+      <link xlink:href="Other Topic's ID">Link text</link>
+      <externalLink>
+          <linkText>Link text</linkText>
+          <linkAlternateText>Optional alternate link text</linkAlternateText>
+          <linkUri>URI</linkUri>
+      </externalLink>
+      <codeEntityReference>API member ID</codeEntityReference>
+
+      Examples:
+
+      <link xlink:href="00e97994-e9e6-46e0-b420-5be86b2f8278">Some other topic</link>
+
+      <externalLink>
+          <linkText>SHFB on CodePlex</linkText>
+          <linkAlternateText>Go to CodePlex</linkAlternateText>
+          <linkUri>http://shfb.codeplex.com</linkUri>
+      </externalLink>
+
+      <codeEntityReference>T:TestDoc.TestClass</codeEntityReference>
+      <codeEntityReference>P:TestDoc.TestClass.SomeProperty</codeEntityReference>
+      <codeEntityReference>M:TestDoc.TestClass.#ctor</codeEntityReference>
+      <codeEntityReference>M:TestDoc.TestClass.#ctor(System.String,System.Int32)</codeEntityReference>
+      <codeEntityReference>M:TestDoc.TestClass.ToString</codeEntityReference>
+      <codeEntityReference>M:TestDoc.TestClass.FirstMethod</codeEntityReference>
+      <codeEntityReference>M:TestDoc.TestClass.SecondMethod(System.Int32,System.String)</codeEntityReference>
+      -->
+    </relatedTopics>
+  </developerWalkthroughDocument>
+</topic>

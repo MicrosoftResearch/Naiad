@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -28,16 +28,16 @@ using System.IO;
 
 using Microsoft.Research.Naiad.DataStructures;
 using Microsoft.Research.Naiad.Dataflow.Channels;
-using Microsoft.Research.Naiad.FaultTolerance;
-using Microsoft.Research.Naiad.CodeGeneration;
+using Microsoft.Research.Naiad.Serialization;
 using Microsoft.Research.Naiad;
 using Microsoft.Research.Naiad.Dataflow;
+using Microsoft.Research.Naiad.Dataflow.StandardVertices;
 
 namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Operators
 {
     internal class Consolidate<S, T> : UnaryVertex<Weighted<S>, Weighted<S>, T>
         where S : IEquatable<S>
-        where T : Microsoft.Research.Naiad.Time<T>
+        where T : Time<T>
     {
         Dictionary<T, Dictionary<S, Int64>> accumulations = new Dictionary<T, Dictionary<S, Int64>>();
 
@@ -94,7 +94,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Operators
          *     (T, Dictionary<S,int>)*accumulationsCount accumulations
          */
         
-        public override void Checkpoint(NaiadWriter writer)
+        protected override void Checkpoint(NaiadWriter writer)
         {
             base.Checkpoint(writer);
             //if (!this.terminated)
@@ -108,7 +108,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Operators
             }
         }
 
-        public override void Restore(NaiadReader reader)
+        protected override void Restore(NaiadReader reader)
         {
             base.Restore(reader);
             //if (!this.terminated)

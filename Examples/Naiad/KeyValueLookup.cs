@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -26,15 +26,17 @@ using System.Threading.Tasks;
 
 using Microsoft.Research.Naiad;
 using Microsoft.Research.Naiad.Dataflow;
+using Microsoft.Research.Naiad.Input;
+using Microsoft.Research.Naiad.Dataflow.StandardVertices;
 
-namespace Examples.KeyValueLookup
+namespace Microsoft.Research.Naiad.Examples.KeyValueLookup
 {
     public static class ExtensionMethods
     {
         // key-value pairs on the first input are retrieved via the second input.
         public static Stream<Pair<TKey, TValue>, Epoch> KeyValueLookup<TKey, TValue>(this Stream<Pair<TKey, TValue>, Epoch> kvpairs, Stream<TKey, Epoch> requests)
         {
-            return Microsoft.Research.Naiad.Frameworks.Foundry.NewBinaryStage(kvpairs, requests, (i, s) => new KeyValueLookupVertex<TKey, TValue>(i, s), x => x.v1.GetHashCode(), y => y.GetHashCode(), null, "Lookup");
+            return Foundry.NewBinaryStage(kvpairs, requests, (i, s) => new KeyValueLookupVertex<TKey, TValue>(i, s), x => x.First.GetHashCode(), y => y.GetHashCode(), null, "Lookup");
         }
 
         /// <summary>
@@ -43,14 +45,14 @@ namespace Examples.KeyValueLookup
         /// </summary>
         /// <typeparam name="TKey">key type</typeparam>
         /// <typeparam name="TValue">value type</typeparam>
-        public class KeyValueLookupVertex<TKey, TValue> : Microsoft.Research.Naiad.Frameworks.BinaryVertex<Pair<TKey, TValue>, TKey, Pair<TKey, TValue>, Epoch>
+        public class KeyValueLookupVertex<TKey, TValue> : BinaryVertex<Pair<TKey, TValue>, TKey, Pair<TKey, TValue>, Epoch>
         {
             private readonly Dictionary<TKey, TValue> Values = new Dictionary<TKey, TValue>();
 
             public override void OnReceive1(Message<Pair<TKey, TValue>, Epoch> message)
             {
                 for (int i = 0; i < message.length; i++)
-                    this.Values[message.payload[i].v1] = message.payload[i].v2;
+                    this.Values[message.payload[i].First] = message.payload[i].Second;
             }
 
             public override void OnReceive2(Message<TKey, Epoch> message)
@@ -75,53 +77,55 @@ namespace Examples.KeyValueLookup
 
         public void Execute(string[] args)
         {
-            using (var controller = Microsoft.Research.Naiad.NewController.FromArgs(ref args))
+            using (var computation = NewComputation.FromArgs(ref args))
             {
-                using (var manager = controller.NewComputation())
+                var keyvals = new BatchedDataSource<Pair<string, string>>();
+                var queries = new BatchedDataSource<string>();
+
+                computation.NewInput(keyvals)
+                       .KeyValueLookup(computation.NewInput(queries))
+                       .Subscribe(list => { foreach (var l in list) Console.WriteLine("value[\"{0}\"]:\t\"{1}\"", l.First, l.Second); });
+
+                computation.Activate();
+
+                if (computation.Configuration.ProcessID == 0)
                 {
-                    var keyvals = new BatchedDataSource<Pair<string, string>>();
-                    var queries = new BatchedDataSource<string>();
+                    Console.WriteLine("Enter two strings to insert/overwrite a (key, value) pairs.");
+                    Console.WriteLine("Enter one string to look up a key.");
 
-                    manager.NewInput(keyvals)
-                         .KeyValueLookup(manager.NewInput(queries))
-                         .Subscribe(list => { foreach (var l in list) Console.WriteLine("value[\"{0}\"]:\t\"{1}\"", l.v1, l.v2); });
-
-                    manager.Activate();
-
-                    if (controller.Configuration.ProcessID == 0)
+                    // repeatedly read lines and introduce records based on their structure.
+                    // note: it is important to advance both inputs in order to make progress.
+                    for (var line = Console.ReadLine(); line.Length > 0; line = Console.ReadLine())
                     {
-                        Console.WriteLine("Enter two strings to insert/overwrite a (key, value) pairs.");
-                        Console.WriteLine("Enter one string to look up a key.");
+                        var split = line.Split();
 
-                        // repeatedly read lines and introduce records based on their structure.
-                        // note: it is important to advance both inputs in order to make progress.
-                        for (var line = Console.ReadLine(); line.Length > 0; line = Console.ReadLine())
+                        if (split.Length == 1)
                         {
-                            var split = line.Split();
-
-                            if (split.Length == 1)
-                            {
-                                queries.OnNext(line);
-                                keyvals.OnNext();
-                            }
-                            if (split.Length == 2)
-                            {
-                                queries.OnNext();
-                                keyvals.OnNext(split[0].PairWith(split[1]));
-                            }
-                            if (split.Length > 2)
-                                Console.Error.WriteLine("error: lines with three or more strings are not understood.");
+                            queries.OnNext(line);
+                            keyvals.OnNext();
                         }
+                        if (split.Length == 2)
+                        {
+                            queries.OnNext();
+                            keyvals.OnNext(split[0].PairWith(split[1]));
+                        }
+                        if (split.Length > 2)
+                            Console.Error.WriteLine("error: lines with three or more strings are not understood.");
                     }
-
-                    keyvals.OnCompleted();
-                    queries.OnCompleted();
-
-                    manager.Join();
                 }
 
-                controller.Join();
+                keyvals.OnCompleted();
+                queries.OnCompleted();
+
+                computation.Join();
             }
+
+        }
+
+
+        public string Help
+        {
+            get { return "Provides interactive get and set functionality for a distributed key-value store.\nDemonstrates how general data stores can be described in dataflow"; }
         }
     }
 }

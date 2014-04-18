@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -24,85 +24,93 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using Microsoft.Research.Naiad.Dataflow.Channels;
-using Microsoft.Research.Naiad.CodeGeneration;
 using Microsoft.Research.Naiad.DataStructures;
 
-namespace Microsoft.Research.Naiad.FaultTolerance
+namespace Microsoft.Research.Naiad.Serialization
 {
-    public static class FaultToleranceExtensionMethods
+    /// <summary>
+    /// A collection of extension methods that facilitate checkpointing and restoring
+    /// standard data structures.
+    /// </summary>
+    public static class CheckpointRestoreExtensionMethods
     {
         
-        /* Checkpoint format for NaiadList<S>:
-         * int     Count
-         * S*Count Array
-         */
-        public static void Checkpoint<S>(this NaiadList<S> list, NaiadWriter writer)
-        //    where S : IEquatable<S>
-        {
-            writer.Write(list.Count);
-            for (int i = 0; i < list.Count; ++i)
-                writer.Write(list.Array[i]);
-        }
-
-        public static void Restore<S>(this NaiadList<S> list, NaiadReader reader)
-        //    where S : IEquatable<S>
-        {
-            list.Clear();
-            int count = reader.Read<int>();
-            list.EnsureCapacity(count);
-            list.Count = count;
-            for (int i = 0; i < list.Count; ++i)
-                list.Array[i] = reader.Read<S>();
-        }
-
         /* Checkpoint format for List<S>:
          * int     Count
          * S*Count Array
          */
-        public static void Checkpoint<S>(this List<S> list, NaiadWriter writer, NaiadSerialization<S> serializer, NaiadSerialization<int> intSerializer)
-        //    where S : IEquatable<S>
+
+        /// <summary>
+        /// Writes this list to the given writer.
+        /// </summary>
+        /// <typeparam name="TElement">The type of elements in the list.</typeparam>
+        /// <param name="list">The list to be written.</param>
+        /// <param name="writer">The writer.</param>
+        public static void Checkpoint<TElement>(this List<TElement> list, NaiadWriter writer)
         {
-            writer.Write(list.Count, intSerializer);
+            writer.Write(list.Count);
             for (int i = 0; i < list.Count; ++i)
-                writer.Write(list[i], serializer);
+                writer.Write(list[i]);
         }
 
-        public static void Restore<S>(this List<S> list, NaiadReader reader, NaiadSerialization<S> serializer, NaiadSerialization<int> intSerializer)
-        //    where S : IEquatable<S>
+        /// <summary>
+        /// Reads this list from the given reader.
+        /// </summary>
+        /// <typeparam name="TElement">The type of elements in the list.</typeparam>
+        /// <param name="list">The list to be read.</param>
+        /// <param name="reader">The reader.</param>
+        public static void Restore<TElement>(this List<TElement> list, NaiadReader reader)
         {
             list.Clear();
-            int count = reader.Read<int>(intSerializer);
+            int count = reader.Read<int>();
             for (int i = 0; i < list.Count; ++i)
-                list.Add(reader.Read<S>(serializer));
+                list.Add(reader.Read<TElement>());
         }
 
-        public static void Checkpoint<K, V>(this Dictionary<K, V> dictionary, NaiadWriter writer)
-            //where K : IEquatable<K>
-            //where V : IEquatable<V>
+        /// <summary>
+        /// Writes this dictionary to the given writer.
+        /// </summary>
+        /// <typeparam name="TKey">The type of keys in the dictionary.</typeparam>
+        /// <typeparam name="TValue">The type of values in the dictionary.</typeparam>
+        /// <param name="dictionary">The dictionary to be written.</param>
+        /// <param name="writer">The writer.</param>
+        public static void Checkpoint<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, NaiadWriter writer)
         {
             writer.Write(dictionary.Count);
-            foreach (KeyValuePair<K, V> kvp in dictionary)
+            foreach (KeyValuePair<TKey, TValue> kvp in dictionary)
             {
                 writer.Write(kvp.Key);
                 writer.Write(kvp.Value);
             }
         }
 
-        public static void Restore<K, V>(this Dictionary<K, V> dictionary, NaiadReader reader)
-            //where K : IEquatable<K>
-            //where V : IEquatable<V>
+        /// <summary>
+        /// Reads this dictionary from the given reader.
+        /// </summary>
+        /// <typeparam name="TKey">The type of keys in the dictionary.</typeparam>
+        /// <typeparam name="TValue">The type of values in the dictionary.</typeparam>
+        /// <param name="dictionary">The dictionary to be read.</param>
+        /// <param name="reader">The reader.</param>
+        public static void Restore<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, NaiadReader reader)
         {
             dictionary.Clear();
             int count = reader.Read<int>();
             for (int i = 0; i < count; ++i)
             {
-                K key = reader.Read<K>();
-                V value = reader.Read<V>();
+                TKey key = reader.Read<TKey>();
+                TValue value = reader.Read<TValue>();
                 dictionary[key] = value;
             }
         }
 
-        public static void Checkpoint<T>(this T[] array, int count, NaiadWriter writer)
+        /// <summary>
+        /// Writes the given count of elements from this array to the given writer.
+        /// </summary>
+        /// <typeparam name="TElement">The type of elements in the array.</typeparam>
+        /// <param name="array">The array to be written.</param>
+        /// <param name="count">The number of elements to be written.</param>
+        /// <param name="writer">The writer.</param>
+        public static void Checkpoint<TElement>(this TElement[] array, int count, NaiadWriter writer)
         {
             Debug.Assert(count <= array.Length);
             writer.Write(count);
@@ -110,12 +118,19 @@ namespace Microsoft.Research.Naiad.FaultTolerance
                 writer.Write(array[i]);
         }
 
-        public static T[] RestoreArray<T>(NaiadReader reader, Func<int, T[]> allocator)
+        /// <summary>
+        /// Reads an array from the given reader.
+        /// </summary>
+        /// <typeparam name="TElement">The type of elements in the array.</typeparam>
+        /// <param name="reader">The reader.</param>
+        /// <param name="allocator">An allocator function that allocates an array with at least as many elements as its argument.</param>
+        /// <returns>The array.</returns>
+        public static TElement[] RestoreArray<TElement>(NaiadReader reader, Func<int, TElement[]> allocator)
         {
             int count = reader.Read<int>();
-            T[] ret = allocator(count);
+            TElement[] ret = allocator(count);
             for (int i = 0; i < count; ++i)
-                ret[i] = reader.Read<T>();
+                ret[i] = reader.Read<TElement>();
             return ret;
         }
 

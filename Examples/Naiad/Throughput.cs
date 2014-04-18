@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -20,6 +20,8 @@
 
 using Microsoft.Research.Naiad;
 using Microsoft.Research.Naiad.Dataflow;
+using Microsoft.Research.Naiad.Dataflow.StandardVertices;
+using Microsoft.Research.Naiad.Input;
 using Microsoft.Research.Naiad.Frameworks;
 using Microsoft.Research.Naiad.Runtime;
 using Microsoft.Research.Naiad.Scheduling;
@@ -29,7 +31,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 
-namespace Examples.Throughput
+namespace Microsoft.Research.Naiad.Examples.Throughput
 {
     public class ProducerVertex : Vertex<Epoch>
     {
@@ -54,7 +56,7 @@ namespace Examples.Throughput
 
         public static Stream<int, Epoch> MakeStage(int numberToSend, int numberOfPartitions, Stream<int, Epoch> input)
         {
-            Placement placement = new ExplicitPlacement(Enumerable.Range(0, numberOfPartitions).Select(x => new VertexLocation(x, 0, x)));
+            Placement placement = new Placement.Explicit(Enumerable.Range(0, numberOfPartitions).Select(x => new VertexLocation(x, 0, x)));
 
             Stage<ProducerVertex, Epoch> stage = Foundry.NewStage(placement, input.Context, (i, s) => new ProducerVertex(i, s, numberToSend), "Producer");
             stage.NewInput(input, (v, m) => { }, null);
@@ -92,7 +94,7 @@ namespace Examples.Throughput
 
         public static Stage<ConsumerVertex, Epoch> MakeStage(int numberToConsume, int numberOfPartitions, Stream<int, Epoch> stream)
         {
-            Placement placement = new ExplicitPlacement(Enumerable.Range(0, numberOfPartitions).Select(x => new VertexLocation(x, 1, x)));
+            Placement placement = new Placement.Explicit(Enumerable.Range(0, numberOfPartitions).Select(x => new VertexLocation(x, 1, x)));
 
             Stage<ConsumerVertex, Epoch> stage = Foundry.NewStage(placement, stream.Context, (i, s) => new ConsumerVertex(i, s, numberToConsume), "Consumer");
             stage.NewInput(stream, (m, v) => v.OnRecv(m), x => x);
@@ -109,23 +111,24 @@ namespace Examples.Throughput
 
         public void Execute(string[] args)
         {
-            using (Controller controller = NewController.FromArgs(ref args))
+            using (OneOffComputation computation = NewComputation.FromArgs(ref args))
             {
                 int numToExchange = args.Length > 1 ? int.Parse(args[1]) : 1000000;
 
-                using (GraphManager manager = controller.NewComputation())
-                {
-                    Stream<int, Epoch> input = manager.NewInput(new ConstantDataSource<int>(5));
+                Stream<int, Epoch> input = computation.NewInput(new ConstantDataSource<int>(5));
 
-                    Stream<int, Epoch> stream = ProducerVertex.MakeStage(numToExchange, controller.Configuration.WorkerCount, input);
-                    Stage<ConsumerVertex, Epoch> consumer = ConsumerVertex.MakeStage(numToExchange, controller.Configuration.WorkerCount, stream);
+                Stream<int, Epoch> stream = ProducerVertex.MakeStage(numToExchange, computation.Configuration.WorkerCount, input);
+                Stage<ConsumerVertex, Epoch> consumer = ConsumerVertex.MakeStage(numToExchange, computation.Configuration.WorkerCount, stream);
 
-                    manager.Activate();
-
-                    manager.Join();
-                }
-                controller.Join();
+                computation.Activate();
+                computation.Join();
             }
+        }
+
+
+        public string Help
+        {
+            get { return "Tests the throughput of Naiad by sending a user-specified number of records along a single exchange edge as fast as possible."; }
         }
     }
 }

@@ -1,30 +1,31 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+﻿<?xml version="1.0"?>
 <package >
   <metadata>
-    <id>Microsoft.Research.Naiad.Examples</id>
+    <id>Microsoft.Research.Naiad.Sample</id>
     <title>Naiad - Sample graph analysis program</title>
-    <version>0.3.0-beta011</version>
+    <version>0.4.0-beta</version>
     <authors>naiadquestions@microsoft.com</authors>
     <owners>naiadquestions@microsoft.com,Microsoft</owners>
     <licenseUrl>http://www.apache.org/licenses/LICENSE-2.0.html</licenseUrl>
     <projectUrl>http://research.microsoft.com/naiad/</projectUrl>
     <!--<iconUrl>http://ICON_URL_HERE_OR_DELETE_THIS_LINE</iconUrl>-->
     <requireLicenseAcceptance>true</requireLicenseAcceptance>
-    <description>An example Naiad program that uses Differential Dataflow to analyze a random graph, and stores the results in Azure.</description>
+    <description>Illustrates how to perform an iterative graph analysis using Naiad and Differential Dataflow.</description>
     <copyright>Microsoft Corporation</copyright>
     <language>en-US</language>
     <frameworkAssemblies>
-      <frameworkAssembly assemblyName="System" targetFramework=".NETFramework4.5" />
-      <frameworkAssembly assemblyName="System.Core" targetFramework=".NETFramework4.5" />
+      <frameworkAssembly assemblyName="System" targetFramework="net40-Client" />
+      <frameworkAssembly assemblyName="System.Core" targetFramework="net40-Client" />
     </frameworkAssemblies>
     <dependencies>
-      <group targetFramework=".NETFramework4.5">
-        <dependency id="Microsoft.Research.Naiad" version="0.3.0-beta011" />
-        <dependency id="Microsoft.Research.Naiad.DifferentialDataflow" version="0.3.0-beta011" />
-        <dependency id="Microsoft.Research.Naiad.AzureSupport" version="0.3.0-beta011" />
+      <group targetFramework="net40-Client">
+        <dependency id="Microsoft.Research.Naiad" version="0.4.0-beta" />
+        <dependency id="Microsoft.Research.Naiad.DifferentialDataflow" version="0.4.0-beta" />
+        <dependency id="Microsoft.Research.Naiad.AzureSupport" version="0.4.0-beta" />
       </group>
     </dependencies>
-    <references />
+    <references>
+    </references>
   </metadata>
   <files>
     <file src="Program.cs" target="content\Program.cs" />

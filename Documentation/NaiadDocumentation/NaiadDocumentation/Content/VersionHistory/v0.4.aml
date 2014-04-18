@@ -1,0 +1,41 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<topic id="576fa56a-c7d5-4dc9-81bb-6fbd7e312fec" revisionNumber="1">
+	<developerConceptualDocument xmlns="http://ddue.schemas.microsoft.com/authoring/2003/5" xmlns:xlink="http://www.w3.org/1999/xlink">
+
+    <summary>
+      <para>
+        The first release of Naiad with a fully-documented SDK, version 0.4 includes many API simplifications,
+        and a new framework with optimizations for graph-specific computations.
+      </para>
+    </summary>
+    
+    <introduction>
+			<para>Version 0.4 was released on April 17th 2014.
+			</para>
+		</introduction>
+
+		<section>
+			<title>Changes in This Release</title>
+			<content>
+
+				<list class="bullet">
+					<listItem>
+						<para>Comprehensive documentation of every public class, method, and property.</para>
+					</listItem>
+          <listItem>
+            <para>
+              The GraphLINQ framework contains data types and extension methods that add optimized graph-specific
+              operators for streams.
+            </para>
+          </listItem>
+				</list>
+
+			</content>
+		</section>
+
+		<relatedTopics>
+			<link xlink:href="c2a31aaa-d867-4d3b-9315-dbb7c7527659" />
+		</relatedTopics>
+
+	</developerConceptualDocument>
+</topic>

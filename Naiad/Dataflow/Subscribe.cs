@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -27,22 +27,34 @@ using Microsoft.Research.Naiad.Dataflow.Channels;
 using Microsoft.Research.Naiad.Runtime.Controlling;
 using Microsoft.Research.Naiad.Scheduling;
 using Microsoft.Research.Naiad.Dataflow;
-using Microsoft.Research.Naiad.Frameworks;
+using Microsoft.Research.Naiad.Dataflow.StandardVertices;
+
 
 namespace Microsoft.Research.Naiad
 {
     /// <summary>
-    /// Returned by Subscribe(), allowing threads to block until epochs have completed.
+    /// Represents an observable "output" of a Naiad computation, and provides a means
+    /// of synchronizing with the computation.
     /// </summary>
     public interface Subscription : IDisposable
     {
         /// <summary>
-        /// Blocks until each local subscribe has been notified for epoch.
+        /// Blocks the caller until this subscription has processed all inputs up to and
+        /// including the given epoch.
         /// </summary>
-        /// <param name="time">epoch</param>
-        void Sync(Epoch time);
+        /// <param name="time">The epoch.</param>
+        /// <remarks>
+        /// To synchronize on all subscriptions in a computation at a particular epoch, use the <see cref="Computation.Sync"/> method.
+        /// To block until the entire computation has terminated, use the <see cref="Computation.Join"/> method.
+        /// </remarks>
+        /// <seealso cref="Computation.Sync"/>
+        /// <seealso cref="Computation.Join"/>
+        void Sync(int time);
     }
 
+    /// <summary>
+    /// Extension methods
+    /// </summary>
     public static class SubscribeExtensionMethods
     {
         /// <summary>
@@ -51,7 +63,7 @@ namespace Microsoft.Research.Naiad
         /// <typeparam name="R">record type</typeparam>
         /// <param name="stream">input stream</param>
         /// <returns>subscription for synchronization</returns>
-        public static Subscription Subscribe<R>(this Dataflow.Stream<R, Epoch> stream)
+        public static Subscription Subscribe<R>(this Stream<R, Epoch> stream)
         {
             return stream.Subscribe(x => { });
         }
@@ -63,9 +75,9 @@ namespace Microsoft.Research.Naiad
         /// <param name="stream">input stream</param>
         /// <param name="action">callback</param>
         /// <returns>subscription for synchronization</returns>
-        public static Subscription Subscribe<R>(this Dataflow.Stream<R, Epoch> stream, Action<IEnumerable<R>> action)
+        public static Subscription Subscribe<R>(this Stream<R, Epoch> stream, Action<IEnumerable<R>> action)
         {
-            return new Subscription<R>(stream, new SingleVertexPlacement(0, 0), stream.Context, (j, t, l) => action(l));
+            return new Subscription<R>(stream, new Placement.SingleVertex(0, 0), stream.Context, (j, t, l) => action(l));
         }
 
         /// <summary>
@@ -75,7 +87,7 @@ namespace Microsoft.Research.Naiad
         /// <param name="stream">input stream</param>
         /// <param name="action">callback on worker id and records</param>
         /// <returns>subscription for synchronization</returns>
-        public static Subscription Subscribe<R>(this Dataflow.Stream<R, Epoch> stream, Action<int, IEnumerable<R>> action)
+        public static Subscription Subscribe<R>(this Stream<R, Epoch> stream, Action<int, IEnumerable<R>> action)
         {
             return stream.Subscribe((j, t, l) => action(j, l));
         }
@@ -87,7 +99,7 @@ namespace Microsoft.Research.Naiad
         /// <param name="stream">input stream</param>
         /// <param name="action">callback on worker id, epoch id, and records</param>
         /// <returns>subscription for synchronization</returns>
-        public static Subscription Subscribe<R>(this Dataflow.Stream<R, Epoch> stream, Action<int, int, IEnumerable<R>> action)
+        public static Subscription Subscribe<R>(this Stream<R, Epoch> stream, Action<int, int, IEnumerable<R>> action)
         {
             return new Subscription<R>(stream, stream.ForStage.Placement, stream.Context, action);
         }
@@ -101,7 +113,7 @@ namespace Microsoft.Research.Naiad
         /// <param name="onNotify">notification callback</param>
         /// <param name="onComplete">completion callback</param>
         /// <returns>subscription for synchronization</returns>
-        public static Subscription Subscribe<R>(this Dataflow.Stream<R, Epoch> stream, Action<Message<R, Epoch>, int> onRecv, Action<Epoch, int> onNotify, Action<int> onComplete)
+        public static Subscription Subscribe<R>(this Stream<R, Epoch> stream, Action<Message<R, Epoch>, int> onRecv, Action<Epoch, int> onNotify, Action<int> onComplete)
         {
             return new Subscription<R>(stream, stream.ForStage.Placement, stream.Context, onRecv, onNotify, onComplete);
         }
@@ -140,51 +152,51 @@ namespace Microsoft.Research.Naiad.Dataflow
             lock (this.Countdowns)
             {
                 // if this is the first mention of time.t, create a new countdown
-                if (!this.Countdowns.ContainsKey(time.t))
-                    this.Countdowns[time.t] = new CountdownEvent(this.LocalVertexCount);
+                if (!this.Countdowns.ContainsKey(time.epoch))
+                    this.Countdowns[time.epoch] = new CountdownEvent(this.LocalVertexCount);
 
-                if (this.Countdowns[time.t].CurrentCount > 0)
-                    this.Countdowns[time.t].Signal();
+                if (this.Countdowns[time.epoch].CurrentCount > 0)
+                    this.Countdowns[time.epoch].Signal();
                 else
-                    Console.Error.WriteLine("Too many Signal({0})", time.t);
+                    Console.Error.WriteLine("Too many Signal({0})", time.epoch);
 
                 // if the last signal, clean up a bit
-                if (this.Countdowns[time.t].CurrentCount == 0)
+                if (this.Countdowns[time.epoch].CurrentCount == 0)
                 {
-                    this.CompleteThrough = time.t; // bump completethrough int
-                    this.Countdowns.Remove(time.t); // remove countdown object
+                    this.CompleteThrough = time.epoch; // bump completethrough int
+                    this.Countdowns.Remove(time.epoch); // remove countdown object
                 }
             }
         }
 
         /// <summary>
-        /// Called by other threads, and should block until all local vertices have received OnNotify(time)
+        /// Blocks the caller until this subscription has completed the given epoch.
         /// </summary>
-        /// <param name="time">Time to wait until locally complete</param>
-        public void Sync(Epoch time)
+        /// <param name="epoch">Time to wait until locally complete</param>
+        public void Sync(int epoch)
         {
             CountdownEvent countdown;
             lock (this.Countdowns)
             {
                 // if we have already completed it, don't wait
-                if (time.t <= this.CompleteThrough)
+                if (epoch <= this.CompleteThrough)
                     return;
 
                 // if we haven't heard about it, create a new countdown
-                if (!this.Countdowns.ContainsKey(time.t))
-                    this.Countdowns[time.t] = new CountdownEvent(this.LocalVertexCount);
+                if (!this.Countdowns.ContainsKey(epoch))
+                    this.Countdowns[epoch] = new CountdownEvent(this.LocalVertexCount);
 
-                countdown = this.Countdowns[time.t];
+                countdown = this.Countdowns[epoch];
             }
 
             // having released the lock, wait.
             countdown.Wait();
         }
 
-        internal Subscription(Stream<R, Epoch> input, Placement placement, OpaqueTimeContext<Epoch> context, Action<Message<R, Epoch>, int> onRecv, Action<Epoch, int> onNotify, Action<int> onComplete)
+        internal Subscription(Stream<R, Epoch> input, Placement placement, TimeContext<Epoch> context, Action<Message<R, Epoch>, int> onRecv, Action<Epoch, int> onNotify, Action<int> onComplete)
         {
             foreach (var entry in placement)
-                if (entry.ProcessId == context.Context.Manager.GraphManager.Controller.Configuration.ProcessID)
+                if (entry.ProcessId == context.Context.Manager.InternalComputation.Controller.Configuration.ProcessID)
                     this.LocalVertexCount++;
 
             var stage = new Stage<SubscribeStreamingVertex<R>, Epoch>(placement, context, Stage.OperatorType.Default, (i, v) => new SubscribeStreamingVertex<R>(i, v, this, onRecv, onNotify, onComplete), "Subscribe");
@@ -195,19 +207,19 @@ namespace Microsoft.Research.Naiad.Dataflow
             this.CompleteThrough = -1;
 
             // important for reachability to be defined for the next test
-            stage.InternalGraphManager.Reachability.UpdateReachabilityPartialOrder(stage.InternalGraphManager);
+            stage.InternalComputation.Reachability.UpdateReachabilityPartialOrder(stage.InternalComputation);
 
             // should only schedule next epoch if at least one input who can reach this stage will have data for this.
-            this.SourceInputs = stage.InternalGraphManager.Inputs.Where(i => stage.InternalGraphManager.Reachability.ComparisonDepth[i.InputId][stage.StageId] != 0).ToArray();
+            this.SourceInputs = stage.InternalComputation.Inputs.Where(i => stage.InternalComputation.Reachability.ComparisonDepth[i.InputId][stage.StageId] != 0).ToArray();
 
             // add this subscription to the list of outputs.
-            stage.InternalGraphManager.Register(this);
+            stage.InternalComputation.Register(this);
         }
 
-        internal Subscription(Stream<R, Epoch> input, Placement placement, OpaqueTimeContext<Epoch> context, Action<int, int, IEnumerable<R>> action)
+        internal Subscription(Stream<R, Epoch> input, Placement placement, TimeContext<Epoch> context, Action<int, int, IEnumerable<R>> action)
         {
             foreach (var entry in placement)
-                if (entry.ProcessId == context.Context.Manager.GraphManager.Controller.Configuration.ProcessID)
+                if (entry.ProcessId == context.Context.Manager.InternalComputation.Controller.Configuration.ProcessID)
                     this.LocalVertexCount++;
 
             var stage = new Stage<SubscribeBufferingVertex<R>, Epoch>(placement, context, Stage.OperatorType.Default, (i, v) => new SubscribeBufferingVertex<R>(i, v, this, action), "Subscribe");
@@ -218,13 +230,13 @@ namespace Microsoft.Research.Naiad.Dataflow
             this.CompleteThrough = -1;
 
             // important for reachability to be defined for the next test
-            stage.InternalGraphManager.Reachability.UpdateReachabilityPartialOrder(stage.InternalGraphManager);
+            stage.InternalComputation.Reachability.UpdateReachabilityPartialOrder(stage.InternalComputation);
 
             // should only schedule next epoch if at least one input who can reach this stage will have data for this.
-            this.SourceInputs = stage.InternalGraphManager.Inputs.Where(i => stage.InternalGraphManager.Reachability.ComparisonDepth[i.InputId][stage.StageId] != 0).ToArray();
+            this.SourceInputs = stage.InternalComputation.Inputs.Where(i => stage.InternalComputation.Reachability.ComparisonDepth[i.InputId][stage.StageId] != 0).ToArray();
 
             // add this subscription to the list of outputs.
-            stage.InternalGraphManager.Register(this);
+            stage.InternalComputation.Register(this);
         }
     }
 
@@ -261,7 +273,7 @@ namespace Microsoft.Research.Naiad.Dataflow
             // test to see if inputs supplied data for this epoch, or terminated instead
             var validEpoch = false;
             for (int i = 0; i < this.Parent.SourceInputs.Length; i++)
-                if (this.Parent.SourceInputs[i].MaximumValidEpoch >= time.t)
+                if (this.Parent.SourceInputs[i].MaximumValidEpoch >= time.epoch)
                     validEpoch = true;
             
             if (validEpoch)
@@ -270,7 +282,7 @@ namespace Microsoft.Research.Naiad.Dataflow
             this.Parent.Signal(time);
 
             if (!this.Parent.Disposed && validEpoch)
-                this.NotifyAt(new Epoch(time.t + 1));         
+                this.NotifyAt(new Epoch(time.epoch + 1));         
         }
 
         public SubscribeStreamingVertex(int index, Stage<Epoch> stage, Subscription<R> parent, Action<Message<R, Epoch>, int> onrecv, Action<Epoch, int> onnotify, Action<int> oncomplete)
@@ -303,16 +315,16 @@ namespace Microsoft.Research.Naiad.Dataflow
         {
             var validEpoch = false;
             for (int i = 0; i < this.Parent.SourceInputs.Length; i++)
-                if (this.Parent.SourceInputs[i].MaximumValidEpoch >= time.t)
+                if (this.Parent.SourceInputs[i].MaximumValidEpoch >= time.epoch)
                     validEpoch = true;
 
             if (validEpoch)
-                Action(this.VertexId, time.t, Input.GetRecordsAt(time));
+                Action(this.VertexId, time.epoch, Input.GetRecordsAt(time));
             
             this.Parent.Signal(time);
 
             if (!this.Parent.Disposed && validEpoch)
-                this.NotifyAt(new Epoch(time.t + 1));
+                this.NotifyAt(new Epoch(time.epoch + 1));
         }
 
         public SubscribeBufferingVertex(int index, Stage<Epoch> stage, Subscription<R> parent, Action<int, int, IEnumerable<R>> action)
@@ -320,7 +332,7 @@ namespace Microsoft.Research.Naiad.Dataflow
         {
             this.Parent = parent;
             this.Action = action;
-            this.Input = new Frameworks.VertexInputBuffer<R, Epoch>(this);
+            this.Input = new VertexInputBuffer<R, Epoch>(this);
             this.NotifyAt(new Epoch(0));
         }
     }

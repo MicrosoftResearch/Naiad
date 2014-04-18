@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -24,180 +24,266 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
-using Microsoft.Research.Naiad.Dataflow.Channels;
+
+using Microsoft.Research.Naiad.Frameworks.Lindi;
+using Microsoft.Research.Naiad.Dataflow;
 using Microsoft.Research.Naiad;
+
 
 namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
 {
+    /// <summary>
+    /// Extension methods for Differential Dataflow <see cref="Collection{TRecord,TTime}"/> objects
+    /// and related types.
+    /// </summary>
     public static class ExtensionMethods
     {
         /// <summary>
-        /// Converts a record to a weighted record.
+        /// Converts a record to a weighted record with the given weight.
         /// </summary>
-        /// <typeparam name="T">Record</typeparam>
-        /// <param name="x">record</param>
-        /// <param name="w">weighted</param>
-        /// <returns>Weighted record</returns>
-        public static Weighted<T> ToWeighted<T>(this T x, Int64 w) where T : IEquatable<T> { return new Weighted<T>(x, w); }
+        /// <typeparam name="TRecord">The record type.</typeparam>
+        /// <param name="record">The record.</param>
+        /// <param name="weight">The weight.</param>
+        /// <returns>The weighted record.</returns>
+        public static Weighted<TRecord> ToWeighted<TRecord>(this TRecord record, Int64 weight) where TRecord : IEquatable<TRecord> { return new Weighted<TRecord>(record, weight); }
 
-        internal static NaiadRecord<S, T> ToNaiadRecord<S, T>(this S x, Int64 w, T t)
-            where S : IEquatable<S>
-            where T : Time<T> { return new NaiadRecord<S, T>(x, w, t); }
-        internal static NaiadRecord<S, T> ToNaiadRecord<S, T>(this Weighted<S> x, T t)
-            where S : IEquatable<S>
-            where T : Time<T> { return new NaiadRecord<S, T>(x.record, x.weight, t); }
-    }
-
-
-    public static class PartitioningExtensionMethods
-    {
         /// <summary>
-        /// Sets metadata associated with a Collection to indicate that data are partitioned by a specified function.
+        /// Instructs downstream operators to assume that the <paramref name="input"/> collection is
+        /// partitioned according to the given key selector.
         /// </summary>
-        /// <typeparam name="R">Record</typeparam>
-        /// <typeparam name="T">Lattice</typeparam>
-        /// <typeparam name="K">Key</typeparam>
-        /// <param name="input">Source collection</param>
-        /// <param name="func">Partitioning function</param>
-        /// <returns>Source collection, annotated with a partitioning function.</returns>
-        public static Collection<R, T> AssumePartitionedBy<R, T, K>(this Collection<R, T> input, Expression<Func<R, K>> func)
-            where R : IEquatable<R>
-            where T : Time<T>
-            where K : IEquatable<K>
+        /// <typeparam name="TKey">The key type.</typeparam>
+        /// <typeparam name="TTime">The type of timestamp on each record.</typeparam>
+        /// <typeparam name="TRecord">The type of the input records.</typeparam>
+        /// <param name="input">The input collection.</param>
+        /// <param name="keySelector">Function that extracts a key from each record.</param>
+        /// <returns>The input collection.</returns>
+        /// <remarks>This operator supplies metadata for the given collection that allows downstream operators
+        /// to optimize partitioning.
+        /// 
+        /// If the input collection is not partitioned according to the given key selector, the behavior of 
+        /// downstream operators is undefined.
+        /// </remarks>
+        public static Collection<TRecord, TTime> AssumePartitionedBy<TRecord, TTime, TKey>(this Collection<TRecord, TTime> input, Expression<Func<TRecord, TKey>> keySelector)
+            where TRecord : IEquatable<TRecord>
+            where TTime : Time<TTime>
+            where TKey : IEquatable<TKey>
         {
-            return Microsoft.Research.Naiad.Dataflow.PartitionBy.ExtensionMethods.AssumePartitionedBy(input.Output, func.ConvertToWeightedFuncAndHashCode())
-                                                               .ToCollection((input as TypedCollection<R,T>).Immutable);
+            return Microsoft.Research.Naiad.Dataflow.PartitionBy.ExtensionMethods.AssumePartitionedBy(input.Output, keySelector.ConvertToWeightedFuncAndHashCode())
+                                                               .ToCollection((input as TypedCollection<TRecord,TTime>).Immutable);
         }
-    }
 
-    public static class ImmutabilityExtensionMethods
-    {
         /// <summary>
-        /// Sets metadata associated with a Collection to indicate that the collection does not vary with a lattice.
+        /// Indicates that the <paramref name="input"/> collection is immutable.
         /// </summary>
-        /// <typeparam name="R">Record</typeparam>
-        /// <typeparam name="T">Lattice</typeparam>
-        /// <param name="input">Source collection</param>
-        /// <returns>Source collection, annotated with an immutable bit.</returns>
-        public static Collection<R, T> AssumeImmutable<R, T>(this Collection<R, T> input)
-            where R : IEquatable<R>
-            where T : Time<T>
+        /// <typeparam name="TTime">The type of timestamp on each record.</typeparam>
+        /// <typeparam name="TRecord">The type of the input records.</typeparam>
+        /// <param name="input">The input collection.</param>
+        /// <returns>The input collection.</returns>
+        /// <remarks>This operator supplies metadata for the given collection that allows downstream operators
+        /// to optimize the data representation.
+        /// 
+        /// If the input collection is not immutable, the behavior of downstream operators is undefined.
+        /// </remarks>
+        public static Collection<TRecord, TTime> AssumeImmutable<TRecord, TTime>(this Collection<TRecord, TTime> input)
+            where TRecord : IEquatable<TRecord>
+            where TTime : Time<TTime>
         {
-            var local = input as TypedCollection<R, T>;
+            var local = input as TypedCollection<TRecord, TTime>;
 
             local.immutable = true;
             return local;
         }
-    }
 
-    public static class SlidingWindowExtensionMethods
-    {
+        #region Time adjustment
         /// <summary>
-        /// Adjusts a Int-varying collection to only retain records for a fixed window.
+        /// EXPERIMENTAL: Adjusts the timestamp on each record, under the requirement that the timestamp may only advance.
         /// </summary>
-        /// <typeparam name="R">Record</typeparam>
-        /// <param name="input">Source collection</param>
-        /// <param name="windowSize">Number of epochs for each record</param>
-        /// <returns>Collection reflecting a sliding window over the source.</returns>
-        public static Collection<R, Epoch> SlidingWindow<R>(this Collection<R, Epoch> input, int windowSize)
-            where R : IEquatable<R>
+        /// <typeparam name="TTime">The type of timestamp on each record.</typeparam>
+        /// <typeparam name="TRecord">The type of the input records.</typeparam>
+        /// <param name="input">The input collection.</param>
+        /// <param name="timeSelector">Function that maps a record and time to a new time for that record.</param>
+        /// <returns>See remarks.</returns>
+        /// <remarks>
+        /// This operator can be used in the inner loops of differential dataflow programs to "delay" the processing of
+        /// individual records.
+        /// </remarks>
+        /// <seealso cref="Collection{TRecord,TTime}.EnterLoop(Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext{TTime},Func{TRecord,int})"/>
+        /// <seealso cref="Collection{TRecord,TTime}.GeneralFixedPoint{TKey}"/>
+        public static Collection<TRecord, TTime> AdjustTime<TRecord, TTime>(this Collection<TRecord, TTime> input, Func<TRecord, TTime, TTime> timeSelector)
+            where TRecord : IEquatable<TRecord>
+            where TTime : Time<TTime>
         {
-            var adjustedLattice = input.AdjustLattice((r, i) => new Epoch(i.t + windowSize));
+            var local = input as TypedCollection<TRecord, TTime>;
+
+            return local.AdjustTime(timeSelector);
+        }
+        #endregion
+
+        /// <summary>
+        /// Computes a sliding window over the given <paramref name="windowSize"/> number of <see cref="Epoch"/>s for the <paramref name="input"/> collection.
+        /// </summary>
+        /// <typeparam name="TRecord">The type of the input records.</typeparam>
+        /// <param name="input">The input collection</param>
+        /// <param name="windowSize">Number of epochs in which each record should appear.</param>
+        /// <returns>The collection that represents a sliding window over the input.</returns>
+        public static Collection<TRecord, Epoch> SlidingWindow<TRecord>(this Collection<TRecord, Epoch> input, int windowSize)
+            where TRecord : IEquatable<TRecord>
+        {
+            var adjustedLattice = input.AdjustTime((r, i) => new Epoch(i.epoch + windowSize));
 
             return input.Except(adjustedLattice);
         }
-    }
 
-    public static class EnumerationExtensionMethods
-    {
         /// <summary>
-        /// Introduces several records to an observer.
+        /// Computes a sliding window over the given <paramref name="windowSize"/> number of <see cref="Epoch"/>s for the <paramref name="input"/> collection.
         /// </summary>
-        /// <typeparam name="R">Record</typeparam>
-        /// <param name="observer">Recipient</param>
-        /// <param name="records">List of records</param>
-        public static void OnNext<R>(this IObserver<IEnumerable<Weighted<R>>> observer, IEnumerable<R> records)
-            where R : IEquatable<R>
+        /// <typeparam name="TRecord">The type of the input records.</typeparam>
+        /// <param name="input">The input collection</param>
+        /// <param name="windowSize">Number of epochs in which each record should appear.</param>
+        /// <returns>The collection that represents a sliding window over the input.</returns>
+        public static Collection<TRecord, Epoch> SlidingWindow<TRecord>(this Stream<TRecord, Epoch> input, int windowSize)
+            where TRecord : IEquatable<TRecord>
+        {
+            return input.Select(x => new Weighted<TRecord>(x, 1))
+                        .AsCollection(false)
+                        .SlidingWindow(windowSize);
+        }
+    
+
+        /// <summary>
+        /// Adds records to an <see cref="InputCollection{TRecord}"/>.
+        /// </summary>
+        /// <typeparam name="TRecord">The type of the records.</typeparam>
+        /// <param name="input">The input.</param>
+        /// <param name="records">The records.</param>
+        public static void OnNext<TRecord>(this InputCollection<TRecord> input, IEnumerable<TRecord> records)
+            where TRecord : IEquatable<TRecord>
         {
             if (records == null)
                 throw new ArgumentNullException("records");
 
-            observer.OnNext(records.Select(x => new Weighted<R>(x, 1)));
+            input.OnNext(records.Select(x => new Weighted<TRecord>(x, 1)));
         }
 
         /// <summary>
-        /// Introduces several records to an observer.
+        /// Introduces several records to an <see cref="InputCollection{TRecord}"/> with the same integer weight.
         /// </summary>
-        /// <typeparam name="R">Record</typeparam>
-        /// <param name="observer">Recipient</param>
-        /// <param name="records">List of records</param>
-        /// <param name="weight">Integer weight for each record</param>
-        public static void OnNext<R>(this IObserver<IEnumerable<Weighted<R>>> observer, IEnumerable<R> records, int weight)
-            where R : IEquatable<R>
+        /// <typeparam name="TRecord">The type of the records.</typeparam>
+        /// <param name="input">The input.</param>
+        /// <param name="records">The records.</param>
+        /// <param name="weight">Positive or negative weight for each record</param>
+        public static void OnNext<TRecord>(this InputCollection<TRecord> input, IEnumerable<TRecord> records, int weight)
+            where TRecord : IEquatable<TRecord>
         {
             if (records == null)
                 throw new ArgumentNullException("records");
 
-            observer.OnNext(records.Select(x => new Weighted<R>(x, weight)));
+            input.OnNext(records.Select(x => new Weighted<TRecord>(x, weight)));
         }
 
         /// <summary>
-        /// Introduces a record to an observer.
+        /// Adds a record to an <see cref="InputCollection{TRecord}"/>.
         /// </summary>
-        /// <typeparam name="R">Record</typeparam>
-        /// <param name="observer">Recipient</param>
-        /// <param name="record">The record</param>
-        public static void OnNext<R>(this IObserver<IEnumerable<Weighted<R>>> observer, R record)
-            where R : IEquatable<R>
+        /// <typeparam name="TRecord">The type of the record.</typeparam>
+        /// <param name="input">The input.</param>
+        /// <param name="record">The record.</param>
+        public static void OnNext<TRecord>(this InputCollection<TRecord> input, TRecord record)
+            where TRecord : IEquatable<TRecord>
         {
-            observer.OnNext(new Weighted<R>[] { new Weighted<R>(record, 1) });
+            input.OnNext(new Weighted<TRecord>[] { new Weighted<TRecord>(record, 1) });
         }
 
         /// <summary>
-        /// Introduces a record to an observer.
+        /// Introduces a record to an <see cref="InputCollection{TRecord}"/> with an integer weight.
         /// </summary>
-        /// <typeparam name="R">Record</typeparam>
-        /// <param name="observer">Recipient</param>
-        /// <param name="record">The record</param>
-        /// <param name="weight">Integer weight for the record</param>
-        public static void OnNext<R>(this IObserver<IEnumerable<Weighted<R>>> observer, R record, int weight)
-            where R : IEquatable<R>
+        /// <typeparam name="TRecord">The type of the record.</typeparam>
+        /// <param name="input">The input.</param>
+        /// <param name="record">The record.</param>
+        /// <param name="weight">Positive or negative weight for the record.</param>
+        public static void OnNext<TRecord>(this InputCollection<TRecord> input, TRecord record, int weight)
+            where TRecord : IEquatable<TRecord>
         {
-            observer.OnNext(new Weighted<R>[] { new Weighted<R>(record, weight) });
+            input.OnNext(new Weighted<TRecord>[] { new Weighted<TRecord>(record, weight) });
         }
 
         /// <summary>
-        /// Introduces no records to an observer.
+        /// Introduces no records to a <see cref="InputCollection{TRecord}"/>.
         /// </summary>
-        /// <typeparam name="R">Record</typeparam>
-        /// <param name="observer">Recipient</param>
-        public static void OnNext<R>(this IObserver<IEnumerable<Weighted<R>>> observer)
-            where R : IEquatable<R>
+        /// <remarks>
+        /// This extension method is typically used when a computation has multiple inputs, to "tick" the
+        /// inputs that have not changed in an epoch.
+        /// </remarks>
+        /// <typeparam name="TRecord">The type of records in the input.</typeparam>
+        /// <param name="input">The input.</param>
+        public static void OnNext<TRecord>(this InputCollection<TRecord> input)
+            where TRecord : IEquatable<TRecord>
         {
-            observer.OnNext(null);
+            input.OnNext((IEnumerable<Weighted<TRecord>>)null);
         }
 
         /// <summary>
-        /// Registers a callback that will be invoked each time the collection changes with a list of record,weight pairs.
+        /// Adds a single record with an integer weight and signals that the <see cref="InputCollection{TRecord}"/> is complete.
         /// </summary>
-        /// <typeparam name="R">Record</typeparam>
-        /// <param name="output">Source collection</param>
-        /// <param name="action">Callback action</param>
-        /// <returns>A subscription whose disposal should disconnect the action from the source, but doesn't.</returns>
-        public static Microsoft.Research.Naiad.Subscription Subscribe<R>(this Collection<R, Epoch> output, Action<Weighted<R>[]> action)
-            where R : IEquatable<R>
+        /// <param name="input">The input.</param>
+        /// <param name="value">The record.</param>
+        /// <typeparam name="TRecord">The type of the record.</typeparam>
+        public static void OnCompleted<TRecord>(this InputCollection<TRecord> input, Weighted<TRecord> value)
+            where TRecord : IEquatable<TRecord>
         {
-            return output.Output.Subscribe(x => action(x.ToArray()));
+            input.OnCompleted(new Weighted<TRecord>[] { value });
         }
-    }
 
-    public static class DataflowExtensionMethods
-    {
-        public static Collection<R, T> AsCollection<R, T>(this Microsoft.Research.Naiad.Dataflow.Stream<Weighted<R>, T> port, bool immutable)
-            where R : IEquatable<R>
-            where T : Time<T>
+        /// <summary>
+        /// Adds several records and signals that the <see cref="InputCollection{TRecord}"/> is complete.
+        /// </summary>
+        /// <param name="input">The input.</param>
+        /// <param name="values">The records.</param>
+        /// <typeparam name="TRecord">The type of the records.</typeparam>
+        public static void OnCompleted<TRecord>(this InputCollection<TRecord> input, IEnumerable<TRecord> values)
+            where TRecord : IEquatable<TRecord>
         {
-            var result = new DataflowCollection<R, T>(port);
+            input.OnCompleted(values.Select(x => new Weighted<TRecord>(x, 1)));
+        }
+
+        /// <summary>
+        /// Adds a single record and signals that the <see cref="InputCollection{TRecord}"/> is complete.
+        /// </summary>
+        /// <param name="input">The input.</param>
+        /// <param name="value">The record.</param>
+        /// <typeparam name="TRecord">The type of the records.</typeparam>
+        public static void OnCompleted<TRecord>(this InputCollection<TRecord> input, TRecord value)
+            where TRecord : IEquatable<TRecord>
+        {
+            input.OnCompleted(new Weighted<TRecord>[] { new Weighted<TRecord>(value, 1) });
+        }
+
+
+        /// <summary>
+        /// Registers a callback that will be invoked each time the collection changes with a list of weighted records.
+        /// </summary>
+        /// <typeparam name="TRecord">The type of the input records.</typeparam>
+        /// <param name="input">The input collection.</param>
+        /// <param name="action">An action that is called with the list of weighted records from each epoch.</param>
+        /// <returns>A <see cref="Subscription"/> object for synchronization.</returns>
+        public static Microsoft.Research.Naiad.Subscription Subscribe<TRecord>(this Collection<TRecord, Epoch> input, Action<Weighted<TRecord>[]> action)
+            where TRecord : IEquatable<TRecord>
+        {
+            return input.Output.Subscribe(x => action(x.ToArray()));
+        }
+
+        /// <summary>
+        /// Converts a stream of weighted records to a differential dataflow <see cref="Collection{TRecord,TTime}"/>.
+        /// </summary>
+        /// <typeparam name="TRecord">The type of the input records.</typeparam>
+        /// <typeparam name="TTime">The type of timestamp on each record.</typeparam>
+        /// <param name="stream">The input stream.</param>
+        /// <param name="immutable"><code>true</code> if and only if the stream is immutable.</param>
+        /// <returns>A <see cref="Collection{TRecord,TTime}"/> based on the given <paramref name="stream"/> of weighted records.</returns>
+        public static Collection<TRecord, TTime> AsCollection<TRecord, TTime>(this Stream<Weighted<TRecord>, TTime> stream, bool immutable)
+            where TRecord : IEquatable<TRecord>
+            where TTime : Time<TTime>
+        {
+            var result = new DataflowCollection<TRecord, TTime>(stream);
 
             result.immutable = immutable;
 

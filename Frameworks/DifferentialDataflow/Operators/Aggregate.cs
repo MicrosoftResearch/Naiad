@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -31,7 +31,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Operators
     internal class Aggregate<K, S, T, R, V> : OperatorImplementations.UnaryStatefulOperatorWithAggregation<K, V, S, T, R>
         where S : IEquatable<S>
         where R : IEquatable<R>
-        where T : Microsoft.Research.Naiad.Time<T>
+        where T : Time<T>
         where K : IEquatable<K>
         where V : IEquatable<V>
     {

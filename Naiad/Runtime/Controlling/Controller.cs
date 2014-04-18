@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -28,44 +28,76 @@ using System.Threading.Tasks;
 using System.Threading;
 using Microsoft.Research.Naiad.DataStructures;
 using Microsoft.Research.Naiad.Dataflow.Channels;
-using Microsoft.Research.Naiad.CodeGeneration;
+using Microsoft.Research.Naiad.Serialization;
 using Microsoft.Research.Naiad.Frameworks;
 using System.IO;
 using System.Collections.Concurrent;
 using System.Net.Sockets;
 using System.Net;
-using Microsoft.Research.Naiad.Util;
+using Microsoft.Research.Naiad.Utilities;
 using Microsoft.Research.Naiad.Scheduling;
 using Microsoft.Research.Naiad.Runtime.Controlling;
-using Microsoft.Research.Naiad.FaultTolerance;
 using Microsoft.Research.Naiad.Runtime.Networking;
 using Microsoft.Research.Naiad.Runtime.Progress;
 using Microsoft.Research.Naiad.Runtime;
 
 using System.Diagnostics;
 using Microsoft.Research.Naiad.Dataflow;
-using System.Net.NetworkInformation;
+//using System.Net.NetworkInformation;
+
+using Microsoft.Research.Naiad.Diagnostics;
 
 namespace Microsoft.Research.Naiad
 {
     /// <summary>
-    /// Manages the execution of a Naiad runtime
+    /// Manages the execution of Naiad programs in a single process.
     /// </summary>
-    public interface Controller : IDisposable //, GraphManager
+    /// <remarks>
+    /// A Naiad Controller manages the execution of one or more <see cref="Computation"/> 
+    /// instances (or "computations"). To construct an instance of this interface, use the
+    /// static methods of the <see cref="NewController"/> class.
+    /// </remarks>
+    /// <seealso cref="NewController"/>
+    public interface Controller : IDisposable
     {
         /// <summary>
-        /// The configuration used by the controller.
+        /// The configuration used by this controller.
         /// </summary>
         Configuration Configuration { get; }
 
         /// <summary>
-        /// Allocates a new inactive GraphManager.
+        /// Constructs a new computation in this controller.
         /// </summary>
-        /// <returns>The new GraphManager</returns>
-        GraphManager NewComputation();
-
-        string QueryStatistic(RuntimeStatistic stat);
-
+        /// <returns>The dataflow graph manager for the new computation.</returns>
+        /// <example>
+        /// A computation is typically created in a <see cref="Controller"/> as follows:
+        /// <code>
+        /// using Microsoft.Research.Naiad;
+        /// 
+        /// class Program
+        /// {
+        ///     public static void Main(string[] args)
+        ///     {
+        ///         using (Controller controller = NewController.FromArgs(ref args))
+        ///         {
+        ///             using (Computation computation = controller.NewComputation())
+        ///             {
+        ///                 /* Computation goes here. */
+        ///                 
+        ///                 computation.Join();
+        ///             }
+        /// 
+        ///             controller.Join();
+        ///         }
+        ///     }
+        /// }
+        /// </code>
+        /// </example>
+        /// <seealso cref="NewController.FromArgs"/>
+        /// <seealso cref="Computation.Join"/>
+        /// <see cref="Controller.Join"/>
+        Computation NewComputation();
+        
         #region Checkpoint / Restore
 
         //void Checkpoint(bool major);
@@ -80,7 +112,7 @@ namespace Microsoft.Research.Naiad
         #endregion
 
         /// <summary>
-        /// A WorkerGroup allowing worker event registration
+        /// The workers associated with this controller.
         /// </summary>
         WorkerGroup WorkerGroup { get; }
 
@@ -89,11 +121,38 @@ namespace Microsoft.Research.Naiad
         /// </summary>
         Placement DefaultPlacement { get; }
 
+        /// <summary>
+        /// Blocks the caller until all computation in this controller has terminated.
+        /// </summary>
+        /// <remarks>
+        /// This method must be called before calling Dispose(),
+        /// or an error will be raised.
+        /// </remarks>
+        /// <example>
+        /// The typical usage of Join is before the end of the <c>using</c> block for a
+        /// Controller:
+        /// <code>
+        /// using (Controller controller = NewController.FromArgs(ref args))
+        /// {
+        ///     /* Computations go here. */
+        ///     
+        ///     controller.Join();
+        /// }
+        /// </code>
+        /// </example>
+        /// <seealso cref="NewController.FromArgs"/>
         void Join();
 
+        /// <summary>
+        /// Returns a task that blocks until all computation in this controller has terminated.
+        /// </summary>
+        /// <returns>A task that blocks until all computation is complete</returns>
         Task JoinAsync();
 
-        SerializationCodeGenerator CodeGenerator { get; }
+        /// <summary>
+        /// The serialization format used for all communication in this controller.
+        /// </summary>
+        SerializationFormat SerializationFormat { get; }
     }
 
     internal interface InternalController
@@ -108,7 +167,7 @@ namespace Microsoft.Research.Naiad
 
         Object GlobalLock { get; }
 
-        SerializationCodeGenerator CodeGenerator { get; }
+        SerializationFormat SerializationFormat { get; }
 
         Stream GetLoggingOutputStream(Dataflow.Vertex vertex);
 
@@ -116,31 +175,99 @@ namespace Microsoft.Research.Naiad
 
         void DoStartupBarrier();
 
-        InternalGraphManager GetInternalGraph(int index);
+        InternalComputation GetInternalComputation(int index);
 
         Controller ExternalController { get; }
     }
 
     /// <summary>
-    /// Static class for allocating Controllers.
+    /// Provides static constructors for creating a <see cref="OneOffComputation"/>.
+    /// </summary>
+    public static class NewComputation
+    {
+        /// <summary>
+        /// Constructs a <see cref="OneOffComputation"/> with a configuration extracted from the given command-line arguments.
+        /// </summary>
+        /// <param name="args">The command-line arguments, which will have Naiad-specific arguments removed.</param>
+        /// <returns>A new <see cref="OneOffComputation"/> based on the given arguments.</returns>
+        /// <remarks>
+        /// This class provides a convenient mechanism for initializing a Naiad program that contains a single computation,
+        /// by combining the roles of a <see cref="Controller"/> and a <see cref="Computation"/>.
+        /// For more complicated cases, use <see cref="NewController.FromArgs"/> and <see cref="Controller.NewComputation"/>.
+        /// </remarks>
+        /// <example>
+        /// Many Naiad programs initialize the <see cref="OneOffComputation"/> as follows:
+        /// 
+        /// using Microsoft.Research.Naiad;
+        /// 
+        /// class Program
+        /// {
+        ///     public static void Main(string[] args)
+        ///     {
+        ///         using (OneOffComputation computation = NewComputation.FromArgs(ref args))
+        ///         {
+        ///             /* Computation goes here. */
+        ///                 
+        ///             computation.Join();
+        ///         }
+        ///     }
+        /// }
+        /// </example>
+        /// <seealso cref="Controller"/>
+        /// <seealso cref="Computation"/>
+        public static OneOffComputation FromArgs(ref string[] args)
+        {
+            return new InternalOneOffComputation(Configuration.FromArgs(ref args));
+        }
+    }
+
+    /// <summary>
+    /// Provides static constructors for creating a <see cref="Controller"/>.
     /// </summary>
     public static class NewController
     {
         /// <summary>
-        /// Extracts arguments from args and constructs a Controller from them.
+        /// Constructs a <see cref="Controller"/> with a configuration extracted from the given command-line arguments.
         /// </summary>
-        /// <param name="args">arguments</param>
-        /// <returns>A Controller derived from args.</returns>
+        /// <param name="args">The command-line arguments, which will have Naiad-specific arguments removed.</param>
+        /// <returns>A new <see cref="Controller"/> based on the given arguments.</returns>
+        /// <example>
+        /// Many Naiad programs initialize the <see cref="Controller"/> as follows:
+        /// <code>
+        /// using Microsoft.Research.Naiad;
+        /// 
+        /// class Program
+        /// {
+        ///     public static void Main(string[] args)
+        ///     {
+        ///         using (Controller controller = NewController.FromArgs(ref args))
+        ///         {
+        ///             using (Computation computation = controller.NewComputation())
+        ///             {
+        ///                 /* Computation goes here. */
+        ///                 
+        ///                 computation.Join();
+        ///             }
+        /// 
+        ///             controller.Join();
+        ///         }
+        ///     }
+        /// }
+        /// </code>
+        /// </example>
+        /// <seealso cref="Controller.Join"/>
+        /// <seealso cref="Controller.NewComputation"/>
+        /// <seealso cref="Computation.Join"/>
         public static Controller FromArgs(ref string[] args)
         {
             return FromConfig(Configuration.FromArgs(ref args));
         }
 
         /// <summary>
-        /// Returns a new Controller based on the supplied configuration.
+        /// Constructs a <see cref="Controller"/> with the given <see cref="Configuration"/>.
         /// </summary>
-        /// <param name="conf">configuration</param>
-        /// <returns>A Controller derived from conf.</returns>
+        /// <param name="conf">The configuration</param>
+        /// <returns>A new <see cref="Controller"/> with the given <see cref="Configuration"/>.</returns>
         public static Controller FromConfig(Configuration conf)
         {
             return new BaseController(conf);
@@ -152,16 +279,16 @@ namespace Microsoft.Research.Naiad
     /// </summary>
     internal class BaseController : IDisposable, InternalController, Controller
     {
-        private readonly List<BaseGraphManager> graphManagers;
+        private readonly List<BaseComputation> baseComputations;
 
         public Controller ExternalController { get { return this; } }
 
-        public InternalGraphManager GetInternalGraph(int index)
+        public InternalComputation GetInternalComputation(int index)
         {
-            return this.graphManagers[index];
+            return this.baseComputations[index];
         }
 
-        public string QueryStatistic(RuntimeStatistic stat)
+        internal string QueryStatistic(RuntimeStatistic stat)
         {
             var result = this.QueryStatisticAsLong(stat);
             if (result == null)
@@ -192,7 +319,7 @@ namespace Microsoft.Research.Naiad
         {
             int streamNumber = Interlocked.Increment(ref this.streamCounter);
 
-            return File.OpenWrite(string.Format("log_{0}_{1}-{2}.nad", streamNumber, vertex.Stage.StageId, vertex.VertexId));
+            return File.OpenWrite(string.Format("{0}_{1}-{2}.naiadlog", streamNumber, vertex.Stage.StageId, vertex.VertexId));
         }
 
         private readonly Configuration configuration;
@@ -207,24 +334,13 @@ namespace Microsoft.Research.Naiad
         private readonly Object globalLock = new object();
         public Object GlobalLock { get { return this.globalLock; } }
 
-        public SerializationCodeGenerator CodeGenerator { get; private set; }
+        public SerializationFormat SerializationFormat { get; private set; }
 
         #region Checkpoint / Restore
 
         public void Checkpoint(bool major)
         {
             throw new NotImplementedException();
-
-#if false
-            Stopwatch checkpointWatch = Stopwatch.StartNew();
-
-            foreach (var vertex in this.currentGraphManager.Stages.Values.SelectMany(x => x.Vertices.Where(s => s.Stateful)))
-            {
-                vertex.Checkpoint(major);
-            }
-
-            Console.Error.WriteLine("!! Total checkpoint took time = {0}", checkpointWatch.Elapsed);
-#endif
         }
 
         public void Checkpoint(string path, int epoch)
@@ -405,73 +521,74 @@ namespace Microsoft.Research.Naiad
             /// <summary>
             /// This event is fired by each worker when it initially starts.
             /// </summary>
-            public event EventHandler<SchedulerStartArgs> Starting;
-            public void NotifySchedulerStarting(Scheduler scheduler)
+            public event EventHandler<WorkerStartArgs> Starting;
+            public void NotifyWorkerStarting(Scheduler scheduler)
             {
                 if (this.Starting != null)
-                    this.Starting(this, new SchedulerStartArgs(scheduler.Index));
+                    this.Starting(this, new WorkerStartArgs(scheduler.Index));
             }
 
             /// <summary>
             /// This event is fired by each worker when it wakes from sleeping.
             /// </summary>
-            public event EventHandler<SchedulerWakeArgs> Waking;
-            public void NotifySchedulerWaking(Scheduler scheduler)
+            public event EventHandler<WorkerWakeArgs> Waking;
+            public void NotifyWorkerWaking(Scheduler scheduler)
             {
                 if (this.Waking != null)
-                    this.Waking(this, new SchedulerWakeArgs(scheduler.Index));
+                    this.Waking(this, new WorkerWakeArgs(scheduler.Index));
             }
 
             /// <summary>
             /// This event is fired by a worker immediately before executing a work item.
             /// </summary>
-            public event EventHandler<OperatorStartArgs> WorkItemStarting;
-            public void NotifyOperatorStarting(Scheduler scheduler, Scheduler.WorkItem work)
+            public event EventHandler<VertexStartArgs> WorkItemStarting;
+            public void NotifyVertexStarting(Scheduler scheduler, Scheduler.WorkItem work)
             {
                 if (this.WorkItemStarting != null)
-                    this.WorkItemStarting(this, new OperatorStartArgs(scheduler.Index, work.Vertex.Stage, work.Vertex.VertexId, work.Requirement));
+                    this.WorkItemStarting(this, new VertexStartArgs(scheduler.Index, work.Vertex.Stage, work.Vertex.VertexId, work.Requirement));
             }
 
             /// <summary>
             /// This event is fired by a worker immediately after executing a work item.
             /// </summary>
-            public event EventHandler<OperatorEndArgs> WorkItemEnding;
-            public void NotifyOperatorEnding(Scheduler scheduler, Scheduler.WorkItem work)
+            public event EventHandler<VertexEndArgs> WorkItemEnding;
+            public void NotifyVertexEnding(Scheduler scheduler, Scheduler.WorkItem work)
             {
                 if (this.WorkItemEnding != null)
-                    this.WorkItemEnding(this, new OperatorEndArgs(scheduler.Index, work.Vertex.Stage, work.Vertex.VertexId, work.Requirement));
+                    this.WorkItemEnding(this, new VertexEndArgs(scheduler.Index, work.Vertex.Stage, work.Vertex.VertexId, work.Requirement));
             }
 
             /// <summary>
             /// This event is fired by a worker immediately after enqueueing a work item.
             /// </summary>
-            public event EventHandler<OperatorEnqArgs> WorkItemEnqueued;
-            public void NotifyOperatorEnqueued(Scheduler scheduler, Scheduler.WorkItem work)
+            public event EventHandler<VertexEnqueuedArgs> WorkItemEnqueued;
+            public void NotifyVertexEnqueued(Scheduler scheduler, Scheduler.WorkItem work)
             {
                 if (this.WorkItemEnqueued != null)
-                    this.WorkItemEnqueued(this, new OperatorEnqArgs(scheduler.Index, work.Vertex.Stage, work.Vertex.VertexId, work.Requirement));
+                    this.WorkItemEnqueued(this, new VertexEnqueuedArgs(scheduler.Index, work.Vertex.Stage, work.Vertex.VertexId, work.Requirement));
             }
 
             /// <summary>
             /// This event is fired by a worker when it becomes idle, because it has no work to execute.
             /// </summary>
-            public event EventHandler<SchedulerSleepArgs> Sleeping;
+            public event EventHandler<WorkerSleepArgs> Sleeping;
             public void NotifySchedulerSleeping(Scheduler scheduler)
             {
                 if (this.Sleeping != null)
-                    this.Sleeping(this, new SchedulerSleepArgs(scheduler.Index));
+                    this.Sleeping(this, new WorkerSleepArgs(scheduler.Index));
             }
 
             /// <summary>
             /// This event is fired by a worker when it has finished all work, and the computation has terminated.
             /// </summary>
-            public event EventHandler<SchedulerTerminateArgs> Terminating;
+            public event EventHandler<WorkerTerminateArgs> Terminating;
             public void NotifySchedulerTerminating(Scheduler scheduler)
             {
                 if (this.Terminating != null)
-                    this.Terminating(this, new SchedulerTerminateArgs(scheduler.Index));
+                    this.Terminating(this, new WorkerTerminateArgs(scheduler.Index));
             }
 
+#if false
             /// <summary>
             /// This event is fired by a worker when a batch of records is delivered to an operator.
             /// </summary>
@@ -492,6 +609,7 @@ namespace Microsoft.Research.Naiad
                 if (this.SentRecords != null)
                     this.SentRecords(this, new OperatorSendArgs(op.Stage, op.VertexId, channelId, recordsSent));
             }
+#endif
             #endregion Scheduler events
 
             internal BaseWorkerGroup(InternalController controller, int numWorkers)
@@ -540,7 +658,7 @@ namespace Microsoft.Research.Naiad
         {
             List<Exception> graphExceptions = new List<Exception>();
 
-            foreach (var manager in this.graphManagers.Where(x => x.CurrentState != InternalGraphManagerState.Inactive))
+            foreach (var manager in this.baseComputations.Where(x => x.CurrentState != InternalComputationState.Inactive))
             {
                 try
                 {
@@ -571,7 +689,7 @@ namespace Microsoft.Research.Naiad
             return Task.Factory.StartNew(() => this.Join(), TaskCreationOptions.LongRunning);
         }
 
-        public long? QueryStatisticAsLong(RuntimeStatistic s)
+        internal long? QueryStatisticAsLong(RuntimeStatistic s)
         {
             long res = 0;
             switch (s)
@@ -613,10 +731,6 @@ namespace Microsoft.Research.Naiad
             return res;
         }
 
-        CancellationTokenSource cancelStatsToken;
-
-        
-
         public NetworkChannel NetworkChannel { get { return this.networkChannel; } }
 
         private readonly NetworkChannel networkChannel;
@@ -634,7 +748,7 @@ namespace Microsoft.Research.Naiad
         {
             this.configuration = config;
 
-            this.CodeGenerator = Serialization.GetCodeGeneratorForVersion(config.SerializerVersion.v1, config.SerializerVersion.v2);
+            this.SerializationFormat = SerializationFactory.GetCodeGeneratorForVersion(config.SerializerVersion.First, config.SerializerVersion.Second);
 
             // set up an initial endpoint to try starting the server listening on. If endpoint is null
             // when we call the server constructor, it will choose one by picking an available port to listen on
@@ -684,7 +798,7 @@ namespace Microsoft.Research.Naiad
                 }
             }
 
-            this.defaultPlacement = new RoundRobinPlacement(this.configuration.Processes, this.workerGroup.Count);
+            this.defaultPlacement = new Placement.RoundRobin(this.configuration.Processes, this.workerGroup.Count);
 
 #if DEBUG
             Logging.Progress("Warning: DEBUG build. Not for performance measurements.");
@@ -697,31 +811,19 @@ namespace Microsoft.Research.Naiad
             Logging.Progress("Server GC = {0}", System.Runtime.GCSettings.IsServerGC);
             Logging.Progress("GC settings latencymode={0}", System.Runtime.GCSettings.LatencyMode);
             Logging.Progress("Using CLR {0}", System.Environment.Version);
-
-            if (Configuration.CollectNetStats)
-            {
-                int sleepTime = 1000;
-                Logging.Progress("Monitoring network stats on interface {0} every {1}ms", Configuration.NetStatsInterfaceName, sleepTime);
-                StreamWriter sw = new StreamWriter(File.Create("stats.txt"));
-                var st = new StateForStats(this, sw, sleepTime, this.localEndpoint.Address);
-                //Thread statsThrd = new Thread(new ParameterizedThreadStart(st.MonitorMemFootprint));
-                Thread statsThrd = new Thread(new ParameterizedThreadStart(st.MonitorNetwork));
-                cancelStatsToken = new CancellationTokenSource();
-                statsThrd.Start(cancelStatsToken.Token);
-            }
-
+            
             if (this.NetworkChannel != null)
                 this.NetworkChannel.StartMessageDelivery();
 
             this.graphsManaged = 0;
-            this.graphManagers = new List<BaseGraphManager>();
+            this.baseComputations = new List<BaseComputation>();
         }
 
-        public GraphManager NewComputation()
+        public Computation NewComputation()
         {
-            var result = new BaseGraphManager(this, this.graphsManaged++);
+            var result = new BaseComputation(this, this.graphsManaged++);
 
-            this.graphManagers.Add(result);
+            this.baseComputations.Add(result);
 
             for (int i = 0; i < workerGroup.Count; i++)
                 workerGroup[i].RegisterGraph(result);
@@ -737,7 +839,7 @@ namespace Microsoft.Research.Naiad
         /// <param name="epoch">Epoch to wait for</param>
         public void Sync(int epoch)
         {
-            foreach (var manager in this.graphManagers)
+            foreach (var manager in this.baseComputations)
                 manager.Sync(epoch);
         }
 
@@ -755,9 +857,6 @@ namespace Microsoft.Research.Naiad
 
             if (this.networkChannel != null)
                 this.networkChannel.Dispose();
-
-            if (Configuration.CollectNetStats)
-                cancelStatsToken.Cancel();
 
             Logging.Stop();
         }

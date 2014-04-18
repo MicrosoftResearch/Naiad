@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2013/01/nuspec.xsd">
   <metadata minClientVersion="2.5">
     <id>Microsoft.Research.Naiad.Cluster.Local</id>
-    <version>0.3.1-beta</version>
+    <version>0.4.0-beta</version>
     <title>Naiad - pseudo-distributed test submission tool</title>
     <authors>naiadquestions@microsoft.com</authors>
     <owners>naiadquestions@microsoft.com,Microsoft</owners>
@@ -16,8 +16,8 @@
     <language>en-US</language>
     <dependencies>
       <group targetFramework=".NETFramework4.5">
-        <dependency id="Microsoft.Research.Peloponnese" version="0.7.1-beta" />
-        <dependency id="Microsoft.Research.Naiad.Cluster" version="0.3.1-beta" />
+        <dependency id="Microsoft.Research.Peloponnese" version="0.7.2-beta" />
+        <dependency id="Microsoft.Research.Naiad.Cluster" version="0.4.0-beta" />
       </group>
     </dependencies>
     <frameworkAssemblies>
@@ -36,7 +36,5 @@
     <file src="bin\x64\Release\LocalSubmission.exe" target="lib\net45\LocalSubmission.exe" />
     <file src="bin\x64\Release\LocalSubmission.pdb" target="lib\net45\LocalSubmission.pdb" />
     <file src="bin\x64\Release\LocalSubmission.exe.config" target="lib\net45\LocalSubmission.exe.config" />
-    <file src="..\ConfigFile.targets" target="build\Microsoft.Research.Naiad.Cluster.Local.targets" />
-    <file src="..\InstallConfigFile.ps1" target="tools\Install.ps1" />
   </files>
 </package>

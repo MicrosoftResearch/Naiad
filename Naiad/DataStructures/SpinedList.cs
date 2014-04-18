@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -24,82 +24,34 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.Research.Naiad.Dataflow.Channels;
-using Microsoft.Research.Naiad.CodeGeneration;
+using Microsoft.Research.Naiad.Serialization;
 
 namespace Microsoft.Research.Naiad.DataStructures
 {
-#if false
-    public class SpinedList<T>
+    /// <summary>
+    /// A list with a spine that grows.
+    /// </summary>
+    /// <typeparam name="T">record type</typeparam>
+    internal class SpinedList<T>
     {
-        T[][] Spine;
-
-        public int Count;
-
-        public T this[int index]
-        {
-            get
-            {
-                if (this.Spine[index / 65536] != null)
-                    return this.Spine[index / 65536][index % 65536];
-                else
-                    return default(T);
-            }
-        }
-
-        public void Add(T element)
-        {
-            if (Count % 65536 == 0)
-                //if (Spine[Count / 65536] == null)
-                Spine[Count / 65536] = new T[65536];
-
-            Spine[Count / 65536][Count % 65536] = element;
-            Count++;
-        }
-
-        public IEnumerable<T> AsEnumerable()
-        {
-            // empties the spine as it goes.
-            for (int i = 0; i < Count; i++)
-            {
-                yield return Spine[i / 65536][i % 65536];
-
-                if (i > 0 && i % 65536 == 0)
-                    Spine[(i / 65536) - 1] = null;
-            }
-        }
-
-        public void Checkpoint(NaiadWriter writer, NaiadSerialization<T> serializer)
-        {
-            writer.Write(this.Count, PrimitiveSerializers.Int32);
-            for (int i = 0; i < this.Count; ++i)
-                writer.Write(this.Spine[i / 65536][i % 65536], serializer);
-        }
-
-        public void Restore(NaiadReader reader, NaiadSerialization<T> serializer)
-        {
-            int readCount = reader.Read(PrimitiveSerializers.Int32);
-            this.Count = 0;
-            Array.Clear(this.Spine, 0, this.Spine.Length);
-            for (int i = 0; i < readCount; ++i)
-                this.Add(reader.Read(serializer));
-        }
-
-        public SpinedList() { this.Spine = new T[65536][]; this.Count = 0; }
-    }
-
-#else
-    public class SpinedList<T>
-    {
-        static long T0;
         T[][] Spine;
 
         T[] Small;
         const int SmallInit = 16;
         const int SmallLimit = 65536;
 
+        /// <summary>
+        /// Number of valid records.
+        /// </summary>
         public int Count;
+
         private long size;
 
+        /// <summary>
+        /// Indexer
+        /// </summary>
+        /// <param name="index">index</param>
+        /// <returns>element at position index</returns>
         public T this[int index]
         {
             get
@@ -131,6 +83,10 @@ namespace Microsoft.Research.Naiad.DataStructures
 
         int elementSize;
 
+        /// <summary>
+        /// Adds an element to the list
+        /// </summary>
+        /// <param name="element"></param>
         public void Add(T element)
         {
             if (Count < SmallLimit)
@@ -156,22 +112,8 @@ namespace Microsoft.Research.Naiad.DataStructures
                     this.Spine = new T[65536][];
                     extra += 8 * 65536;
 
-                    
-                    
-#if true
                     Spine[0] = Small;
-#else
-                    if (SmallLimit < 65536)
-                    {
-                        Spine[0] = new T[65536];
-                        Small.CopyTo(Spine[0], 0);
-                        extra += 65536 * elementSize;
-                    }
-                    else
-                    {
-                        Spine[0] = Small;
-                    }
-#endif
+
                     this.size += extra;
                 }
 
@@ -186,6 +128,11 @@ namespace Microsoft.Research.Naiad.DataStructures
             Count++;
         }
 
+        /// <summary>
+        /// Enumerates the contents of the list AND CONSUMES THE ELEMENTS.
+        /// XXX : Implementation should record that data are now invalid.
+        /// </summary>
+        /// <returns>Element enumeration</returns>
         public IEnumerable<T> AsEnumerable()
         {
             if (Count <= SmallLimit)
@@ -208,6 +155,12 @@ namespace Microsoft.Research.Naiad.DataStructures
             }
         }
 
+        /// <summary>
+        /// Checkpoints to NaiadWriter
+        /// </summary>
+        /// <param name="writer"></param>
+        /// <param name="serializer"></param>
+        /// <param name="intSerializer"></param>
         public void Checkpoint(NaiadWriter writer, NaiadSerialization<T> serializer, NaiadSerialization<Int32> intSerializer)
         {
             writer.Write(this.Count, intSerializer);
@@ -215,6 +168,12 @@ namespace Microsoft.Research.Naiad.DataStructures
                 writer.Write(this.Spine[i / 65536][i % 65536], serializer);
         }
 
+        /// <summary>
+        /// Restores from NaiadReader
+        /// </summary>
+        /// <param name="reader"></param>
+        /// <param name="serializer"></param>
+        /// <param name="intSerializer"></param>
         public void Restore(NaiadReader reader, NaiadSerialization<T> serializer, NaiadSerialization<Int32> intSerializer)
         {
             int readCount = reader.Read(intSerializer);
@@ -224,15 +183,15 @@ namespace Microsoft.Research.Naiad.DataStructures
                 this.Add(reader.Read(serializer));
         }
 
+        /// <summary>
+        /// Constructs a new SpinedList
+        /// </summary>
         public SpinedList()
         {
-            if (T0 == 0) T0 = DateTime.Now.Ticks;
             this.Count = 0;
             this.Small = new T[SmallInit];
             this.elementSize = 4;
             this.size = SmallInit * this.elementSize;
         }
     }
-
-#endif
 }

@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -19,6 +19,8 @@
  */
 
 using Microsoft.Research.Naiad.Dataflow;
+using Microsoft.Research.Naiad.Dataflow.StandardVertices;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,8 +28,8 @@ using System.Text;
 
 namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Operators
 {
-    internal class AdjustLattice<R, T> : UnaryVertex<Weighted<R>, Weighted<R>, T>
-        where T : Microsoft.Research.Naiad.Time<T>
+    internal class AdjustTime<R, T> : UnaryVertex<Weighted<R>, Weighted<R>, T>
+        where T : Time<T>
         where R : IEquatable<R>
     {
         public Func<R, T, T> adjustment;
@@ -43,7 +45,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Operators
             }
         }
 
-        public AdjustLattice(int index, Stage<T> collection, Func<R, T, T> transformation)
+        public AdjustTime(int index, Stage<T> collection, Func<R, T, T> transformation)
             : base(index, collection)
         {
             adjustment = transformation;

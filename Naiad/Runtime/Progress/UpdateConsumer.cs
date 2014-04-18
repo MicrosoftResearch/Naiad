@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -25,25 +25,45 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using Microsoft.Research.Naiad.Dataflow.Channels;
-using Microsoft.Research.Naiad.CodeGeneration;
+using Microsoft.Research.Naiad.Serialization;
 using Microsoft.Research.Naiad.DataStructures;
 using Microsoft.Research.Naiad.Scheduling;
-using Microsoft.Research.Naiad.FaultTolerance;
 using Microsoft.Research.Naiad.Dataflow;
 using Microsoft.Research.Naiad.Frameworks;
 
+using Microsoft.Research.Naiad.Diagnostics;
+using Microsoft.Research.Naiad.Runtime.Progress;
+
+namespace Microsoft.Research.Naiad.Diagnostics
+{
+    /// <summary>
+    /// Container for Frontier events
+    /// </summary>
+    public class FrontierChangedEventArgs : System.EventArgs
+    {
+        /// <summary>
+        /// The minimal antichain of <see cref="Pointstamp"/>s in the new frontier.
+        /// </summary>
+        public readonly Pointstamp[] NewFrontier;
+
+        /// <summary>
+        /// Constructs new event arguments with the given <paramref name="newFrontier"/>.
+        /// </summary>
+        /// <param name="newFrontier">The new frontier.</param>
+        public FrontierChangedEventArgs(Pointstamp[] newFrontier) { this.NewFrontier = newFrontier; }
+    }
+}
 
 namespace Microsoft.Research.Naiad.Runtime.Progress
 {
-    public class FrontierChangedEventArgs : System.EventArgs
+    /// <summary>
+    /// Supports adding FrontierChanged events
+    /// </summary>
+    internal interface Frontier
     {
-        public readonly Pointstamp[] NewFrontier;
-
-        public FrontierChangedEventArgs(Pointstamp[] newFrontier) { this.NewFrontier = newFrontier; }
-    }
-
-    public interface Frontier
-    {
+        /// <summary>
+        /// Collection of events for frontier changes
+        /// </summary>
         event EventHandler<FrontierChangedEventArgs> OnFrontierChanged;
     }
 
@@ -60,8 +80,8 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
             // none of these are implemented, or ever used.
             public void Flush() { throw new NotImplementedException(); }
             //public void RecordReceived(Pair<Int64, Pointstamp> record, RemotePostbox sender) { throw new NotImplementedException(); }
-            public void OnReceive(Message<Update, Empty> message, RemotePostbox sender) { throw new NotImplementedException(); }
-            public void SerializedMessageReceived(SerializedMessage message, RemotePostbox sender) { throw new NotImplementedException(); }
+            public void OnReceive(Message<Update, Empty> message, ReturnAddress sender) { throw new NotImplementedException(); }
+            public void SerializedMessageReceived(SerializedMessage message, ReturnAddress sender) { throw new NotImplementedException(); }
             public bool LoggingEnabled { get { return false; } set { throw new NotImplementedException("Logging for RecvFiberBank"); } }
             public int AvailableEntrancy { get { throw new NotImplementedException(); } set { throw new NotImplementedException(); } }
         }
@@ -107,7 +127,7 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
 
                 // fire any frontier changed events
                 if (this.OnFrontierChanged != null)
-                    this.OnFrontierChanged(this, new FrontierChangedEventArgs(newFrontier));
+                    this.OnFrontierChanged(this.Stage.Computation, new FrontierChangedEventArgs(newFrontier));
 
                 // no elements means done.
                 if (newFrontier.Length == 0)
@@ -121,7 +141,7 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
                 }
 
                 // Wake up schedulers to run shutdown actions for the graph.
-                this.Stage.InternalGraphManager.Controller.Workers.WakeUp();
+                this.Stage.InternalComputation.Controller.Workers.WakeUp();
             }
         }
 
@@ -149,7 +169,7 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
 
                 // fire any frontier changed events
                 if (this.OnFrontierChanged != null)
-                    this.OnFrontierChanged(this, new FrontierChangedEventArgs(newFrontier));
+                    this.OnFrontierChanged(this.Stage.Computation, new FrontierChangedEventArgs(newFrontier));
 
                 // no elements means done.
                 if (newFrontier.Length == 0)
@@ -163,7 +183,7 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
                 }
 
                 // Wake up schedulers to run shutdown actions for the graph.
-                this.Stage.InternalGraphManager.Controller.Workers.WakeUp();
+                this.Stage.InternalComputation.Controller.Workers.WakeUp();
             }
         }
 
@@ -177,14 +197,14 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
          * PointstampCountSet               PCS
          */
 
-        public override void Checkpoint(NaiadWriter writer)
+        protected override void Checkpoint(NaiadWriter writer)
         {
-            this.PCS.Checkpoint(writer, this.CodeGenerator.GetSerializer<long>(), this.CodeGenerator.GetSerializer<Pointstamp>(), this.CodeGenerator.GetSerializer<int>());
+            this.PCS.Checkpoint(writer, this.SerializationFormat.GetSerializer<long>(), this.SerializationFormat.GetSerializer<Pointstamp>(), this.SerializationFormat.GetSerializer<int>());
         }
 
-        public override void Restore(NaiadReader reader)
+        protected override void Restore(NaiadReader reader)
         {
-            this.PCS.Restore(reader, this.CodeGenerator.GetSerializer<long>(), this.CodeGenerator.GetSerializer<Pointstamp>(), this.CodeGenerator.GetSerializer<int>());
+            this.PCS.Restore(reader, this.SerializationFormat.GetSerializer<long>(), this.SerializationFormat.GetSerializer<Pointstamp>(), this.SerializationFormat.GetSerializer<int>());
         }
 
         #endregion 
@@ -194,7 +214,7 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
         {
             this.Aggregator = aggregator;
 
-            this.PCS = new PointstampCountSet(this.Stage.InternalGraphManager.Reachability);
+            this.PCS = new PointstampCountSet(this.Stage.InternalComputation.Reachability);
         }
 
         internal override void PerformAction(Scheduler.WorkItem workItem)
@@ -217,8 +237,8 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
 
             // none of these are implemented, or ever called.
             public void Flush() { throw new NotImplementedException(); }            
-            public void OnReceive(Message<Update, Empty> message, RemotePostbox sender) { throw new NotImplementedException(); }
-            public void SerializedMessageReceived(SerializedMessage message, RemotePostbox sender) { throw new NotImplementedException(); }
+            public void OnReceive(Message<Update, Empty> message, ReturnAddress sender) { throw new NotImplementedException(); }
+            public void SerializedMessageReceived(SerializedMessage message, ReturnAddress sender) { throw new NotImplementedException(); }
             public bool LoggingEnabled { get { return false; } set { throw new NotImplementedException("Logging for RecvFiberBank"); } }
             public int AvailableEntrancy { get { throw new NotImplementedException(); } set { throw new NotImplementedException(); } }
         }
@@ -289,8 +309,8 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
 
         public event EventHandler<FrontierChangedEventArgs> OnFrontierChanged;
 
-        public override void Checkpoint(NaiadWriter writer) { this.PCS.Checkpoint(writer, this.CodeGenerator.GetSerializer<long>(), this.CodeGenerator.GetSerializer<Pointstamp>(), this.CodeGenerator.GetSerializer<int>()); }
-        public override void Restore(NaiadReader reader) { this.PCS.Restore(reader, this.CodeGenerator.GetSerializer<long>(), this.CodeGenerator.GetSerializer<Pointstamp>(), this.CodeGenerator.GetSerializer<int>()); }
+        protected override void Checkpoint(NaiadWriter writer) { this.PCS.Checkpoint(writer, this.SerializationFormat.GetSerializer<long>(), this.SerializationFormat.GetSerializer<Pointstamp>(), this.SerializationFormat.GetSerializer<int>()); }
+        protected override void Restore(NaiadReader reader) { this.PCS.Restore(reader, this.SerializationFormat.GetSerializer<long>(), this.SerializationFormat.GetSerializer<Pointstamp>(), this.SerializationFormat.GetSerializer<int>()); }
 
         internal ProgressUpdateCentralizer(int index, Stage<Empty> stage, ProgressUpdateAggregator aggregator)
             : base(index, stage)
@@ -299,7 +319,7 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
 
             this.Output = new VertexOutputBuffer<Update, Empty>(this);
 
-            this.PCS = new PointstampCountSet(this.Stage.InternalGraphManager.Reachability);
+            this.PCS = new PointstampCountSet(this.Stage.InternalComputation.Reachability);
         }
 
         internal override void PerformAction(Scheduler.WorkItem workItem) { throw new NotImplementedException(); }

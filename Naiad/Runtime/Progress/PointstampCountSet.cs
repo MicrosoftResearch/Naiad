@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -23,9 +23,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Microsoft.Research.Naiad.Dataflow.Channels;
-using Microsoft.Research.Naiad.CodeGeneration;
+using Microsoft.Research.Naiad.Serialization;
 using Microsoft.Research.Naiad.DataStructures;
-using Microsoft.Research.Naiad.FaultTolerance;
 using Microsoft.Research.Naiad.Scheduling;
 
 namespace Microsoft.Research.Naiad.Runtime.Progress
@@ -40,7 +39,7 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
             actualFrontier = new PointstampFrontier(reachability);
         }
 
-        public Scheduling.Pointstamp[] Frontier = new Pointstamp[0];
+        public Pointstamp[] Frontier = new Pointstamp[0];
 
         internal bool UpdatePointstampCount(Pointstamp version, Int64 delta)
         {
@@ -85,7 +84,7 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
         {
             this.Counts.Restore(reader);
             this.actualFrontier.Restore(reader);
-            this.Frontier = FaultToleranceExtensionMethods.RestoreArray<Pointstamp>(reader, n => new Pointstamp[n]);
+            this.Frontier = CheckpointRestoreExtensionMethods.RestoreArray<Pointstamp>(reader, n => new Pointstamp[n]);
         }
 
         public bool Stateful { get { return true; } }

@@ -1,0 +1,39 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<topic id="c2a31aaa-d867-4d3b-9315-dbb7c7527659" revisionNumber="1">
+	<developerConceptualDocument xmlns="http://ddue.schemas.microsoft.com/authoring/2003/5" xmlns:xlink="http://www.w3.org/1999/xlink">
+		<introduction>
+			<para>This section describes the various changes made in each version of the Naiad project.</para>
+		</introduction>
+
+		<section>
+			<title>Version History</title>
+			<content>
+				<para>Select a version below to see a description of its changes.</para>
+
+				<list class="bullet">
+					<listItem>
+						<para><link xlink:href="576fa56a-c7d5-4dc9-81bb-6fbd7e312fec" /></para>
+          </listItem>
+
+          <listItem>
+            <para><link xlink:href="6163523e-3519-436b-a09a-0c71d98f6f25" /></para>
+          </listItem>
+
+          <listItem>
+            <para><link xlink:href="4306361f-4369-4b46-9c0d-464ccb176161" /></para>
+          </listItem>
+
+          <listItem>
+            <para><link xlink:href="9ab3eec5-5f40-421a-92aa-2e9d4cab33bf" /></para>
+          </listItem>
+				</list>
+
+			</content>
+		</section>
+
+		<relatedTopics>
+			<link xlink:href="2a378dc0-df87-470e-9d7c-450ef7248667" />
+		</relatedTopics>
+
+	</developerConceptualDocument>
+</topic>

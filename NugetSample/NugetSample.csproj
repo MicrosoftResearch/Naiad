@@ -73,7 +73,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-    <None Include="Microsoft.Research.Naiad.Sample" />
+    <None Include="Microsoft.Research.Naiad.Sample.nuspec" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>

@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -23,11 +23,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Microsoft.Research.Naiad.Dataflow.Channels;
-using Microsoft.Research.Naiad.CodeGeneration;
+using Microsoft.Research.Naiad.Serialization;
 using Microsoft.Research.Naiad.Scheduling;
-using Microsoft.Research.Naiad.FaultTolerance;
 using Microsoft.Research.Naiad.Frameworks;
 using Microsoft.Research.Naiad.Dataflow;
+
+using Microsoft.Research.Naiad.Diagnostics;
 
 namespace Microsoft.Research.Naiad.Runtime.Progress
 {
@@ -47,9 +48,9 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
             Tracing.Trace("(ProdLock");
             lock (this)
             {
-                //if (this.Stage.InternalGraphManager.Controller.Configuration.Impersonation && !this.Stage.InternalGraphManager.Reachability.NoImpersonation.Contains(time.Location) && this.Stage.InternalGraphManager.Reachability.Impersonations[time.Location] != null)
+                //if (this.Stage.InternalComputation.Controller.Configuration.Impersonation && !this.Stage.InternalComputation.Reachability.NoImpersonation.Contains(time.Location) && this.Stage.InternalComputation.Reachability.Impersonations[time.Location] != null)
                 //{
-                //    foreach (var newVersion in this.Stage.InternalGraphManager.Reachability.EnumerateImpersonations(time))
+                //    foreach (var newVersion in this.Stage.InternalComputation.Reachability.EnumerateImpersonations(time))
                 //        AddToOutstandingRecords(newVersion, delta);
                 //
                 //    this.LocalPCS.UpdatePointstampCount(time, delta);
@@ -102,7 +103,7 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
             this.outstandingRecords.Restore(reader);
         }
 
-        internal ProgressUpdateProducer(InternalGraphManager manager, ProgressUpdateAggregator aggregator)
+        internal ProgressUpdateProducer(InternalComputation manager, ProgressUpdateAggregator aggregator)
         {
             this.LocalPCS = new PointstampCountSet(manager.Reachability);
             this.Aggregator = aggregator;

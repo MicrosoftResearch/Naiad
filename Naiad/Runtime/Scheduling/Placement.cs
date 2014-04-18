@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -23,14 +23,34 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Microsoft.Research.Naiad.Scheduling
+namespace Microsoft.Research.Naiad.Dataflow
 {
+    /// <summary>
+    /// Describes the physical location of a dataflow <see cref="Vertex"/>.
+    /// </summary>
     public struct VertexLocation
     {
+        /// <summary>
+        /// The vertex identifier.
+        /// </summary>
         public readonly int VertexId;
+
+        /// <summary>
+        /// The process on which the vertex with <see cref="VertexId"/> resides.
+        /// </summary>
         public readonly int ProcessId;
+
+        /// <summary>
+        /// The worker thread on which the vertex with <see cref="VertexId"/> resides.
+        /// </summary>
         public readonly int ThreadId;
 
+        /// <summary>
+        /// Constructs a new vertex location.
+        /// </summary>
+        /// <param name="vertexId">The vertex ID.</param>
+        /// <param name="processId">The process ID.</param>
+        /// <param name="threadId">The worker thread ID.</param>
         public VertexLocation(int vertexId, int processId, int threadId)
         {
             this.VertexId = vertexId;
@@ -39,149 +59,273 @@ namespace Microsoft.Research.Naiad.Scheduling
         }
     }
 
-    public interface Placement : IEnumerable<VertexLocation>, IEquatable<Placement>
+    /// <summary>
+    /// Represents the placement of physical dataflow <see cref="Vertex"/> objects in a <see cref="Stage{TVertex}"/>.
+    /// </summary>
+    public abstract class Placement : IEnumerable<VertexLocation>, IEquatable<Placement>
     {
-        VertexLocation this[int vertexId] { get; }
-        int Count { get; }
-    }
-
-    public abstract class BasePlacement : Placement
-    {
+        /// <summary>
+        /// Returns location information about the vertex with the given ID.
+        /// </summary>
+        /// <param name="vertexId">The vertex ID.</param>
+        /// <returns>Location information about the vertex with the given ID.</returns>
         public abstract VertexLocation this[int vertexId] { get; }
+
+        /// <summary>
+        /// The number of vertices.
+        /// </summary>
         public abstract int Count { get; }
+
+        /// <summary>
+        /// Returns an object for enumerating location information about every vertex in this placement.
+        /// </summary>
+        /// <returns>An object for enumerating location information about every vertex in this placement.</returns>
         public abstract IEnumerator<VertexLocation> GetEnumerator();
-        public abstract bool Equals(Placement that);
+
+        /// <summary>
+        /// Returns <c>true</c> if and only if each vertex in this placement has the same location as the vertex
+        /// with the same ID in the <paramref name="other"/> placement, and vice versa.
+        /// </summary>
+        /// <param name="other">The other placement.</param>
+        /// <returns><c>true</c> if and only if each vertex in this placement has the same location as the vertex
+        /// with the same ID in the <paramref name="other"/> placement, and vice versa.</returns>
+        public abstract bool Equals(Placement other);
 
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
         {
             return this.GetEnumerator();
         }
-    }
 
-    public class RoundRobinPlacement : BasePlacement
-    {
-        private readonly int numProcs;
-        private readonly int numThreads;
 
-        public RoundRobinPlacement(int numProcs, int numThreads)
+        /// <summary>
+        /// Round robin placement
+        /// </summary>
+        internal class RoundRobin : Placement
         {
-            this.numProcs = numProcs;
-            this.numThreads = numThreads;
-        }
+            private readonly int numProcs;
+            private readonly int numThreads;
 
-        public override int Count { get { return this.numProcs * this.numThreads; } }
-        
-        public override VertexLocation this[int vertexId]
-        {
-            get
+            /// <summary>
+            /// Constructor
+            /// </summary>
+            /// <param name="numProcs">number of processes</param>
+            /// <param name="numThreads">number of threads per process</param>
+            public RoundRobin(int numProcs, int numThreads)
             {
-                return new VertexLocation(vertexId, (vertexId / this.numThreads) % this.numProcs, vertexId % this.numThreads);
+                this.numProcs = numProcs;
+                this.numThreads = numThreads;
+            }
+
+            /// <summary>
+            /// Number of workers
+            /// </summary>
+            public override int Count { get { return this.numProcs * this.numThreads; } }
+
+            /// <summary>
+            /// Indexer
+            /// </summary>
+            /// <param name="vertexId">vertex identifier</param>
+            /// <returns></returns>
+            public override VertexLocation this[int vertexId]
+            {
+                get
+                {
+                    return new VertexLocation(vertexId, (vertexId / this.numThreads) % this.numProcs, vertexId % this.numThreads);
+                }
+            }
+
+            /// <summary>
+            /// Enumerator
+            /// </summary>
+            /// <returns></returns>
+            public override IEnumerator<VertexLocation> GetEnumerator()
+            {
+                for (int i = 0; i < this.numProcs * this.numThreads; ++i)
+                    yield return this[i];
+            }
+
+            /// <summary>
+            /// Tests equality between placements
+            /// </summary>
+            /// <param name="that">other placement</param>
+            /// <returns></returns>
+            public override bool Equals(Placement that)
+            {
+                RoundRobin other = that as RoundRobin;
+                return this == other
+                    || (other != null && this.numProcs == other.numProcs && this.numThreads == other.numThreads);
             }
         }
 
-        public override IEnumerator<VertexLocation> GetEnumerator()
+
+        /// <summary>
+        /// Placement with one vertex
+        /// </summary>
+        internal class SingleVertex : Placement
         {
-            for (int i = 0; i < this.numProcs * this.numThreads; ++i)
-                yield return this[i];
+            private readonly VertexLocation location;
+
+            /// <summary>
+            /// Constructor
+            /// </summary>
+            /// <param name="processId">process identifier for the vertex</param>
+            /// <param name="threadId">thread identifier for the vertex</param>
+            public SingleVertex(int processId, int threadId)
+            {
+                this.location = new VertexLocation(0, processId, threadId);
+            }
+
+            /// <summary>
+            /// Indexer
+            /// </summary>
+            /// <param name="vertexId">ignored</param>
+            /// <returns></returns>
+            public override VertexLocation this[int vertexId] { get { return this.location; } }
+
+            /// <summary>
+            /// Returns one
+            /// </summary>
+            public override int Count { get { return 1; } }
+
+            /// <summary>
+            /// Enumerator
+            /// </summary>
+            /// <returns></returns>
+            public override IEnumerator<VertexLocation> GetEnumerator()
+            {
+                yield return this.location;
+            }
+
+            /// <summary>
+            /// Test equality with another SingleVertexPlacement
+            /// </summary>
+            /// <param name="that"></param>
+            /// <returns></returns>
+            public override bool Equals(Placement that)
+            {
+                SingleVertex other = that as SingleVertex;
+                return this == other
+                    || (other != null && this.location.Equals(other.location));
+            }
         }
 
-        public override bool Equals(Placement that)
+        /// <summary>
+        /// Represents a <see cref="Placement"/> based on an explicit <see cref="Vertex"/>-to-location mapping.
+        /// </summary>
+        public class Explicit : Placement
         {
-            RoundRobinPlacement other = that as RoundRobinPlacement;
-            return this == other
-                || (other != null && this.numProcs == other.numProcs && this.numThreads == other.numThreads);
+
+            private readonly VertexLocation[] locations;
+
+            /// <summary>
+            /// Returns location information about the vertex with the given ID.
+            /// </summary>
+            /// <param name="vertexId">The vertex ID.</param>
+            /// <returns>Location information about the vertex with the given ID.</returns>
+            public override VertexLocation this[int vertexId]
+            {
+                get { return this.locations[vertexId]; }
+            }
+
+            /// <summary>
+            /// The number of vertices.
+            /// </summary>
+            public override int Count
+            {
+                get { return this.locations.Length; }
+            }
+
+            /// <summary>
+            /// Returns an object for enumerating location information about every vertex in this placement.
+            /// </summary>
+            /// <returns>An object for enumerating location information about every vertex in this placement.</returns>
+            public override IEnumerator<VertexLocation> GetEnumerator()
+            {
+                return this.locations.AsEnumerable().GetEnumerator();
+            }
+
+            /// <summary>
+            /// Returns <c>true</c> if and only if each vertex in this placement has the same location as the vertex
+            /// with the same ID in the <paramref name="other"/> placement, and vice versa.
+            /// </summary>
+            /// <param name="other">The other placement.</param>
+            /// <returns><c>true</c> if and only if each vertex in this placement has the same location as the vertex
+            /// with the same ID in the <paramref name="other"/> placement, and vice versa.</returns>
+            public override bool Equals(Placement other)
+            {
+                return this.locations.SequenceEqual(other);
+            }
+
+            /// <summary>
+            /// Constructs explicit placement from a sequence of <see cref="VertexLocation"/> objects.
+            /// </summary>
+            /// <param name="locations">The explicit locations of each vertex in this placement.</param>
+            public Explicit(IEnumerable<VertexLocation> locations)
+            {
+                this.locations = locations.ToArray();
+            }
+        }
+
+        /// <summary>
+        /// Placement with one vertex per process
+        /// </summary>
+        internal class SingleVertexPerProcess : Placement
+        {
+            private readonly int numProcs;
+            private readonly int threadId;
+
+            /// <summary>
+            /// Constructor
+            /// </summary>
+            /// <param name="numProcs">number of processes</param>
+            /// <param name="threadId">thread index for the vertex</param>
+            public SingleVertexPerProcess(int numProcs, int threadId)
+            {
+                this.numProcs = numProcs;
+                this.threadId = threadId;
+            }
+
+            /// <summary>
+            /// Indexer
+            /// </summary>
+            /// <param name="vertexId"></param>
+            /// <returns></returns>
+            public override VertexLocation this[int vertexId]
+            {
+                get { return new VertexLocation(vertexId, vertexId, this.threadId); }
+            }
+
+            /// <summary>
+            /// Count
+            /// </summary>
+            public override int Count
+            {
+                get { return this.numProcs; }
+            }
+
+            /// <summary>
+            /// Equals
+            /// </summary>
+            /// <param name="that">other placement</param>
+            /// <returns></returns>
+            public override bool Equals(Placement that)
+            {
+                SingleVertexPerProcess other = that as SingleVertexPerProcess;
+                return this == other
+                    || (other != null && this.numProcs == other.numProcs && this.threadId == other.threadId);
+            }
+
+            /// <summary>
+            /// Enumerator
+            /// </summary>
+            /// <returns></returns>
+            public override IEnumerator<VertexLocation> GetEnumerator()
+            {
+                for (int i = 0; i < this.Count; ++i)
+                    yield return this[i];
+            }
+
         }
     }
 
-    public class SingleVertexPlacement : BasePlacement
-    {
-        private readonly VertexLocation location;
-
-        public SingleVertexPlacement(int processId, int threadId)
-        {
-            this.location = new VertexLocation(0, processId, threadId);
-        }
-
-        public override VertexLocation this[int vertexId] { get { return this.location; } }
-        public override int Count { get { return 1; } }
-
-        public override IEnumerator<VertexLocation> GetEnumerator()
-        {
-            yield return this.location;
-        }
-
-        public override bool Equals(Placement that)
-        {
-            SingleVertexPlacement other = that as SingleVertexPlacement;
-            return this == other
-                || (other != null && this.location.Equals(other.location));
-        }
-    }
-
-    public class ExplicitPlacement : BasePlacement
-    {
-
-        private readonly VertexLocation[] locations;
-
-        public override VertexLocation this[int vertexId]
-        {
-            get { return this.locations[vertexId]; }
-        }
-
-        public override int Count
-        {
-            get { return this.locations.Length; }
-        }
-
-        public override IEnumerator<VertexLocation> GetEnumerator()
-        {
-            return this.locations.AsEnumerable().GetEnumerator();
-        }
-
-        public override bool Equals(Placement that)
-        {
-            return this.locations.SequenceEqual(that);
-        }
-
-        public ExplicitPlacement(IEnumerable<VertexLocation> locations)
-        {
-            this.locations = locations.ToArray();
-        }
-    }
-
-    public class SingleVertexPerProcessPlacement : BasePlacement
-    {
-        private readonly int numProcs;
-        private readonly int threadId;
-
-        public SingleVertexPerProcessPlacement(int numProcs, int threadId)
-        {
-            this.numProcs = numProcs;
-            this.threadId = threadId;
-        }
-
-        public override VertexLocation this[int vertexId]
-        {
-            get { return new VertexLocation(vertexId, vertexId, this.threadId); }
-        }
-
-        public override int Count
-        {
-            get { return this.numProcs; }
-        }
-
-        public override bool Equals(Placement that)
-        {
-            SingleVertexPerProcessPlacement other = that as SingleVertexPerProcessPlacement;
-            return this == other
-                || (other != null && this.numProcs == other.numProcs && this.threadId == other.threadId);
-        }
-
-        public override IEnumerator<VertexLocation> GetEnumerator()
-        {
-            for (int i = 0; i < this.Count; ++i)
-                yield return this[i];
-        }
-
-    }
 }

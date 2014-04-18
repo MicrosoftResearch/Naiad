@@ -1,5 +1,5 @@
 ﻿/*
- * Naiad ver. 0.3
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -98,36 +98,6 @@ namespace Microsoft.Research.Naiad.Cluster
         }
 
         /// <summary>
-        /// Returns the non-framework assemblies on which a given assembly depends.
-        /// </summary>
-        /// <param name="source">The initial assembly</param>
-        /// <returns>A set of non-framework assemblies on which the given assembly depends</returns>
-        private HashSet<Assembly> GetDependenciesInternal(Assembly source)
-        {
-            HashSet<Assembly> visited = new HashSet<Assembly>();
-            Queue<Assembly> assemblyQueue = new Queue<Assembly>();
-            assemblyQueue.Enqueue(source);
-            visited.Add(source);
-
-            while (assemblyQueue.Count > 0)
-            {
-                Assembly currentAssembly = assemblyQueue.Dequeue();
-
-                foreach (AssemblyName name in currentAssembly.GetReferencedAssemblies())
-                {
-                    Assembly referencedAssembly = Assembly.Load(name);
-                    if (!visited.Contains(referencedAssembly) && !FrameworkAssemblyNames.Contains(name.Name) && !(name.Name.StartsWith("System")))
-                    {
-                        visited.Add(referencedAssembly);
-                        assemblyQueue.Enqueue(referencedAssembly);
-                    }
-                }
-            }
-
-            return visited;
-        }
-
-        /// <summary>
         /// Returns the locations of non-framework assemblies on which the assembly with the given filename depends.
         /// </summary>
         /// <param name="source">The filename of the assembly</param>
@@ -135,8 +105,24 @@ namespace Microsoft.Research.Naiad.Cluster
         private string[] Dependencies(string assemblyFilename)
         {
             Assembly assembly = Assembly.LoadFrom(assemblyFilename);
-            AppDomain.CurrentDomain.AssemblyResolve += new ResolveEventHandler(DependencyResolveEventHandler);
-            return GetDependenciesInternal(assembly).Select(x => x.Location).ToArray();
+            AppDomain.CurrentDomain. AssemblyResolve += new ResolveEventHandler(DependencyResolveEventHandler);
+            return GetDependenciesInternal(assembly).ToArray();
+        }
+
+        public static IEnumerable<string> GetDependenciesInternal(Assembly source)
+        {
+            AppDomainSetup setup = new AppDomainSetup();
+            setup.ApplicationBase = Path.GetDirectoryName(source.Location);
+
+            AppDomain dependencyDomain = AppDomain.CreateDomain("DependencyLister", null, setup);
+
+            DependencyLister.Lister lister = (DependencyLister.Lister) dependencyDomain.CreateInstanceFromAndUnwrap(typeof(Microsoft.Research.Naiad.Cluster.DependencyLister.Lister).Assembly.Location, "Microsoft.Research.Naiad.Cluster.DependencyLister.Lister");
+             
+            List<string> ret = lister.ListDependencies(source.Location).ToList();
+
+            AppDomain.Unload(dependencyDomain);
+            
+            return ret;
         }
 
         private void MakeJobResourceGroups(string exeName, string jobStaging, out XElement frameworkGroup, out XElement jobGroup)

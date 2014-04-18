@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -25,7 +25,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace Microsoft.Research.Naiad.Dataflow.Channels
+namespace Microsoft.Research.Naiad.Serialization
 {
     internal interface SerializedMessageSender
     {

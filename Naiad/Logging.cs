@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -24,44 +24,80 @@ using System.Linq;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Reflection.Emit;
-using Microsoft.Research.Naiad.Util;
+using Microsoft.Research.Naiad.Utilities;
 
-namespace Microsoft.Research.Naiad
+namespace Microsoft.Research.Naiad.Diagnostics
 {
+    /// <summary>
+    /// Indicates the level of logging reported
+    /// </summary>
     public enum LoggingLevel
     {
+        /// <summary>
+        /// Anything at all.
+        /// </summary>
         Debug,
+
+        /// <summary>
+        /// Any information deemed interesting.
+        /// </summary>
         Info,
-        Progress,   // Just enough to see that things are making progress
+
+        /// <summary>
+        /// Any indication of progress.
+        /// </summary>
+        Progress,
+
+        /// <summary>
+        /// Only error messages.
+        /// </summary>
         Error,
+
+        /// <summary>
+        /// Only fatal messages.
+        /// </summary>
         Fatal,
+
+        /// <summary>
+        /// No logging reported.
+        /// </summary>
         Off
     }
 
+    /// <summary>
+    /// Where the log data is recorded
+    /// </summary>
     public enum LoggingStyle
     {
+        /// <summary>
+        /// To a file.
+        /// </summary>
         File,
-        //InMemory,
+
+        /// <summary>
+        /// To the console.
+        /// </summary>
         Console
     }
 
-    // Raised in response to NaiadLog.Fatal.
-    // Should not be caught.
-    public class FatalException : Exception { }
-
+    /// <summary>
+    /// Methods and properties related to logging
+    /// </summary>
     public static class Logging
     {
-        public static System.Diagnostics.Stopwatch Stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        internal static System.Diagnostics.Stopwatch Stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
         // Strings when field is unknown or not applicable
-        public const string NotApplicable = "*";
-        public const string NotKnown = "?";
+        internal const string NotApplicable = "*";
+        internal const string NotKnown = "?";
 
-        // Needs to be public so can log with RemoteOutput clients
+        /// <summary>
+        /// Intended logging target
+        /// </summary>
         public static LoggingStyle LogStyle = LoggingStyle.Console;
 
         // Information for a single log statement.
-        public struct LogInfo
+        internal struct LogInfo
         {
             public int ThreadId;
             public string OperatorName;
@@ -100,9 +136,9 @@ namespace Microsoft.Research.Naiad
 
         #region File logging internals
 
-        public static String LogFileName;
-        public static FileStream LogFileStream;
-        public static StreamWriter LogWriter;
+        internal static String LogFileName;
+        internal static FileStream LogFileStream;
+        internal static StreamWriter LogWriter;
         private static CircularLogBuffer<string> buf;
         private static String CR = Environment.NewLine;
 
@@ -312,27 +348,52 @@ namespace Microsoft.Research.Naiad
             }
         }
 
+        /// <summary>
+        /// Logs a format string and arguments at Debug level
+        /// </summary>
+        /// <param name="msg">format string</param>
+        /// <param name="args">argument list</param>
         [Conditional("DEBUG")]
         public static void Debug(string msg, params object[] args)
         {
             Log(LoggingLevel.Debug, msg, args);
         }
 
+        /// <summary>
+        /// Logs a format string and arguments at Info level
+        /// </summary>
+        /// <param name="msg">format string</param>
+        /// <param name="args">argument list</param>
         public static void Info(string msg, params object[] args)
         {
             Log(LoggingLevel.Info, msg, args);
         }
 
+        /// <summary>
+        /// Logs a format string and arguments at Progress level
+        /// </summary>
+        /// <param name="msg">format string</param>
+        /// <param name="args">argument list</param>
         public static void Progress(string msg, params object[] args)
         {
             Log(LoggingLevel.Progress, msg, args);
         }
 
+        /// <summary>
+        /// Logs a format string and arguments at Error level
+        /// </summary>
+        /// <param name="msg">format string</param>
+        /// <param name="args">argument list</param>
         public static void Error(string msg, params object[] args)
         {
             Log(LoggingLevel.Error, msg, args);
         }
 
+        /// <summary>
+        /// Logs a format string and arguments at Fatal level
+        /// </summary>
+        /// <param name="msg">format string</param>
+        /// <param name="args">argument list</param>
         public static void Fatal(string msg, params object[] args)
         {
             Log(LoggingLevel.Fatal, msg, args);
@@ -345,7 +406,7 @@ namespace Microsoft.Research.Naiad
         /// <param name="level">The log level for this message.  Messages below LogLevel are ignored.</param>
         /// <param name="msg">The format string to be logged, as in String.Format</param>
         /// <param name="args">Arguments to be formatted.</param>
-        public static void Log(LoggingLevel level, string msg, params object[] args)
+        private static void Log(LoggingLevel level, string msg, params object[] args)
         {
             if (level < LogLevel)
             {
@@ -389,16 +450,26 @@ namespace Microsoft.Research.Naiad
             return System.DateTime.Now.ToString("yy/MM/dd/HH:mm:ss:fff");
         }
 
+        /// <summary>
+        /// Logs an Error level message if condition is not true.
+        /// </summary>
+        /// <param name="condition">condition</param>
         public static void Assert(bool condition)
         {
             Assert(condition, "Assertion failed.");
         }
 
+        /// <summary>
+        /// Logs an Error level message if condition is not true.
+        /// </summary>
+        /// <param name="condition">condition</param>
+        /// <param name="format">format string</param>
+        /// <param name="args">arguments</param>
         public static void Assert(bool condition, string format, params object[] args)
         {
             if (!condition)
             {
-                Fatal(format, args);
+                Logging.Error(format, args);
             }
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -25,11 +25,11 @@ using System.Text;
 using Microsoft.Research.Naiad.Runtime.Controlling;
 using Microsoft.Research.Naiad.DataStructures;
 
-namespace Microsoft.Research.Naiad.Scheduling
+namespace Microsoft.Research.Naiad.Runtime.Progress
 {
     internal class Reachability
     {
-        public NaiadList<NaiadList<int>> ComparisonDepth;
+        public List<List<int>> ComparisonDepth;
 
         public int CompareTo(Pointstamp a, Pointstamp b)
         {
@@ -54,7 +54,7 @@ namespace Microsoft.Research.Naiad.Scheduling
             if (a.Timestamp[0] > b.Timestamp[0])
                 return false;
 
-            var depth = ComparisonDepth.Array[a.Location].Array[b.Location];
+            var depth = ComparisonDepth[a.Location][b.Location];
             if (depth == 0)
                 return false;
             else
@@ -141,7 +141,7 @@ namespace Microsoft.Research.Naiad.Scheduling
 
         public GraphNode[] Graph;
 
-        internal void RegenerateGraph(InternalGraphManager manager)
+        internal void RegenerateGraph(InternalComputation manager)
         {
             var maxIdentifier = 0;
 
@@ -192,7 +192,7 @@ namespace Microsoft.Research.Naiad.Scheduling
             {
                 for (int i = 0; i < limits.Length; i++)
                 {
-                    var depths = this.ComparisonDepth.Array[time.Location][limits[i]];
+                    var depths = this.ComparisonDepth[time.Location][limits[i]];
                     var coords = this.Graph[limits[i]].Depth;
 
                     var newVersion = new Pointstamp();
@@ -216,18 +216,18 @@ namespace Microsoft.Research.Naiad.Scheduling
         }
 
         // populates this.ComparisonDepth, indexed by collection and channel identifiers.
-        public void UpdateReachabilityPartialOrder(InternalGraphManager graphManager)
+        public void UpdateReachabilityPartialOrder(InternalComputation internalComputation)
         {
-            RegenerateGraph(graphManager);
+            RegenerateGraph(internalComputation);
 
-            var reachableDepths = new NaiadList<NaiadList<int>>(this.Graph.Length);
+            var reachableDepths = new List<List<int>>(this.Graph.Length);
 
             var magicNumber = 37;
 
             //Console.Error.WriteLine("Updating reachability with {0} objects", Reachability.Graph.Length);
             for (int i = 0; i < this.Graph.Length; i++)
             {
-                var reachable = new NaiadList<int>(this.Graph.Length);
+                var reachable = new List<int>(this.Graph.Length);
 
                 var versionList = new Pointstamp[] { new Pointstamp(i, Enumerable.Repeat(magicNumber, this.Graph[i].Depth).ToArray()) };
 
@@ -244,21 +244,21 @@ namespace Microsoft.Research.Naiad.Scheduling
                     {
                         for (int k = 0; k < reachabilityResults[j].Count; k++)
                         {
-                            for (int l = 0; l < reachabilityResults[j].Array[k].Timestamp.Length && reachabilityResults[j].Array[k].Timestamp[l] >= magicNumber; l++)
+                            for (int l = 0; l < reachabilityResults[j][k].Timestamp.Length && reachabilityResults[j][k].Timestamp[l] >= magicNumber; l++)
                             {
                                 if (l + 1 > depth || l + 1 == depth && increment)
                                 {
                                     depth = l + 1;
-                                    increment = (reachabilityResults[j].Array[k].Timestamp[l] > magicNumber);
+                                    increment = (reachabilityResults[j][k].Timestamp[l] > magicNumber);
                                 }
                             }
                         }
                     }
 
-                    reachable.Array[j] = increment ? -depth : depth;
+                    reachable.Add(increment ? -depth : depth);
                 }
 
-                reachableDepths.Array[i] = reachable;                
+                reachableDepths.Add(reachable);
             }
 
             this.ComparisonDepth = reachableDepths;
@@ -324,7 +324,7 @@ namespace Microsoft.Research.Naiad.Scheduling
 
         // For each operator, compute the minimal antichain of times that are reachable from the given list of versions, and 
         // update their state accordingly.
-        public void UpdateReachability(InternalController controller, Pointstamp[] versions, List<Dataflow.Vertex> operators)
+        public void UpdateReachability(InternalController controller, Pointstamp[] versions, List<Dataflow.Vertex> vertices)
         {
             //Console.Error.WriteLine("Updating reachability with versions");
             //foreach (var version in versions)
@@ -332,8 +332,8 @@ namespace Microsoft.Research.Naiad.Scheduling
 
             var result = DetermineReachabilityList(versions);
 
-            foreach (var op in operators)
-                op.UpdateReachability(result[op.Stage.StageId]);
+            foreach (var vertex in vertices)
+                vertex.UpdateReachability(result[vertex.Stage.StageId]);
         }
 
         // Returns a list (indexed by graph identifier) of lists of Pointstamps that can be reached at each collection, for the 
@@ -341,10 +341,10 @@ namespace Microsoft.Research.Naiad.Scheduling
         //
         // If the sublist for a collection is null, that collection is not reachable from the given array of times.
 
-        public NaiadList<Pointstamp>[] DetermineReachabilityList(Pointstamp[] times)
+        public List<Pointstamp>[] DetermineReachabilityList(Pointstamp[] times)
         {
             // Initially, the result for each collection is null, which corresponds to it not being reachable from the given times.
-            var result = new NaiadList<Pointstamp>[this.Graph.Length];
+            var result = new List<Pointstamp>[this.Graph.Length];
 
             // For each time, perform breadth-first search from that time to each reachable collection.
             for (int time = 0; time < times.Length; time++)
@@ -356,7 +356,7 @@ namespace Microsoft.Research.Naiad.Scheduling
                 var index = times[time].Location;
 
                 if (result[index] == null)
-                    result[index] = new NaiadList<Pointstamp>(0);
+                    result[index] = new List<Pointstamp>(0);
 
                 // Attempt to add the current time to the antichain for its own collection.
                 if (AddToAntiChain(result[index], times[time]))
@@ -377,13 +377,13 @@ namespace Microsoft.Research.Naiad.Scheduling
                             var updated = false;
 
                             if (result[target] == null)
-                                result[target] = new NaiadList<Pointstamp>(0);
+                                result[target] = new List<Pointstamp>(0);
 
                             // For each element of the current collection's antichain, evaluate the minimal caused version at the downstream collection.
                             for (int j = 0; j < result[collectionId].Count; j++)
                             {
                                 // make a new copy so that we can tamper with the contents
-                                var localtime = new Pointstamp(result[collectionId].Array[j]);
+                                var localtime = new Pointstamp(result[collectionId][j]);
                                 localtime.Location = target;
 
                                 // If the target is a feedback stage, we must increment the last coordinate.
@@ -423,16 +423,16 @@ namespace Microsoft.Research.Naiad.Scheduling
             return result;
         }
 
-        public bool AddToAntiChain(NaiadList<Pointstamp> list, Pointstamp time)
+        public bool AddToAntiChain(List<Pointstamp> list, Pointstamp time)
         {
             // bail if time can be reached by any element of list
             for (int i = 0; i < list.Count; i++)
-                if (ProductOrderLessThan(list.Array[i], time))
+                if (ProductOrderLessThan(list[i], time))
                     return false;
 
             // belongs in; clean out reachable times.
             for (int i = 0; i < list.Count; i++)
-                if (ProductOrderLessThan(time, list.Array[i]))
+                if (ProductOrderLessThan(time, list[i]))
                 {
                     list.RemoveAt(i);
                     i--;

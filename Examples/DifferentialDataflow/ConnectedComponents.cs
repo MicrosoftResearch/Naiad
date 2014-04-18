@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -27,7 +27,7 @@ using System.Diagnostics;
 using Microsoft.Research.Naiad;
 using Microsoft.Research.Naiad.Frameworks.DifferentialDataflow;
 
-namespace Examples.DifferentialDataflow
+namespace Microsoft.Research.Naiad.Examples.DifferentialDataflow
 {
     public static class ConnectedComponentsExtensionMethods
     {
@@ -72,7 +72,7 @@ namespace Examples.DifferentialDataflow
 
         public void Execute(string[] args)
         {
-            using (var controller = NewController.FromArgs(ref args))
+            using (var computation = NewComputation.FromArgs(ref args))
             {
                 // establish numbers of nodes and edges from input or from defaults.
                 if (args.Length == 3)
@@ -89,66 +89,61 @@ namespace Examples.DifferentialDataflow
 
                 var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
-                using (var manager = controller.NewComputation())
+                // set up the CC computation
+                var edges = computation.NewInputCollection<IntPair>();
+
+                //Func<IntPair, int> priorityFunction = node => 0;
+                //Func<IntPair, int> priorityFunction = node => Math.Min(node.t, 100);
+                Func<IntPair, int> priorityFunction = node => 65536 * (node.t < 10 ? node.t : 10 + Convert.ToInt32(Math.Log(1 + node.t) / Math.Log(2.0)));
+
+                var output = edges.ConnectedComponents(priorityFunction)
+                                  .Count(n => n.t, (l, c) => c)  // counts results with each label
+                                  .Consolidate()
+                                  .Subscribe(l =>
+                                             {
+                                                 Console.Error.WriteLine("Time to process: {0}", stopwatch.Elapsed);
+                                                 foreach (var result in l.OrderBy(x => x.record))
+                                                     Console.Error.WriteLine(result);
+                                             });
+
+                Console.Error.WriteLine("Running connected components on a random graph ({0} nodes, {1} edges)", nodeCount, edgeCount);
+                Console.Error.WriteLine("For each size, the number of components of that size (may take a moment):");
+
+                computation.Activate();
+
+                edges.OnNext(computation.Configuration.ProcessID == 0 ? graph : Enumerable.Empty<IntPair>());
+
+                // if we are up for interactive access ...
+                if (computation.Configuration.Processes == 1)
                 {
-                    // set up the CC computation
-                    var edges = new IncrementalCollection<IntPair>(manager);
+                    output.Sync(0);
 
-                    //manager.Frontier.OnFrontierChanged += Frontier_OnFrontierChanged;
+                    Console.WriteLine();
+                    Console.WriteLine("Next: sequentially rewiring random edges (press [enter] each time):");
 
-                    //Func<IntPair, int> priorityFunction = node => 0;
-                    //Func<IntPair, int> priorityFunction = node => Math.Min(node.t, 100);
-                    Func<IntPair, int> priorityFunction = node => 65536 * (node.t < 10 ? node.t : 10 + Convert.ToInt32(Math.Log(1 + node.t) / Math.Log(2.0)));
-
-                    var output = edges.ConnectedComponents(priorityFunction)
-                                      .Count(n => n.t, (l, c) => c)  // counts results with each label
-                                      .Consolidate()
-                                      .Subscribe(l =>
-                                                 {
-                                                     Console.Error.WriteLine("Time to process: {0}", stopwatch.Elapsed);
-                                                     foreach (var result in l.OrderBy(x => x.record))
-                                                         Console.Error.WriteLine(result);
-                                                 });
-
-                    Console.Error.WriteLine("Running connected components on a random graph ({0} nodes, {1} edges)", nodeCount, edgeCount);
-                    Console.Error.WriteLine("For each size, the number of components of that size (may take a moment):");
-
-                    manager.Activate();
-
-                    edges.OnNext(controller.Configuration.ProcessID == 0 ? graph : Enumerable.Empty<IntPair>());
-
-                    // if we are up for interactive access ...
-                    if (controller.Configuration.Processes == 1)
+                    for (int i = 0; true; i++)
                     {
-                        output.Sync(new Epoch(0));
-
-                        Console.WriteLine();
-                        Console.WriteLine("Next: sequentially rewiring random edges (press [enter] each time):");
-
-                        for (int i = 0; true; i++)
-                        {
-                            Console.ReadLine();
-                            stopwatch.Restart();
-                            var newEdge = new IntPair(random.Next(nodeCount), random.Next(nodeCount));
-                            Console.WriteLine("Rewiring edge: {0} -> {1}", graph[i], newEdge);
-                            edges.OnNext(new[] { new Weighted<IntPair>(graph[i], -1), new Weighted<IntPair>(newEdge, 1) });
-                            output.Sync(new Epoch(i + 1));
-                        }
+                        Console.ReadLine();
+                        stopwatch.Restart();
+                        var newEdge = new IntPair(random.Next(nodeCount), random.Next(nodeCount));
+                        Console.WriteLine("Rewiring edge: {0} -> {1}", graph[i], newEdge);
+                        edges.OnNext(new[] { new Weighted<IntPair>(graph[i], -1), new Weighted<IntPair>(newEdge, 1) });
+                        output.Sync(i + 1);
                     }
-
-                    edges.OnCompleted();
-                    manager.Join();
                 }
 
-                controller.Join();
+                edges.OnCompleted();
+                computation.Join();
             }
-        }
 
-        void Frontier_OnFrontierChanged(object sender, Microsoft.Research.Naiad.Scheduling.Pointstamp[] e)
-        {
-            Console.Error.WriteLine("Frontier: {0}", string.Join(", ", e));
         }
 
         public string Usage { get { return "[nodecount edgecount]"; } }
+
+
+        public string Help
+        {
+            get { return "Demonstrates an iterative differential dataflow computation using GeneralizedFixedPoint, which supports introducing records in iterations other than the first. This is used, with several choices of initial iteration function, to circulate smaller labels first, resulting is less redundant work at the expense of more sequential dependencies."; }
+        }
     }
 }

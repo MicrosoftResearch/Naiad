@@ -1,5 +1,5 @@
 ﻿/*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -32,11 +32,6 @@ using Microsoft.WindowsAzure;
 
 namespace Microsoft.Research.Naiad.Examples
 {
-    public static class ConnectedComponentsExtensionMethods
-    {
-
-    }
-
     public static class Program
     {
         public static void Main(string[] args)
@@ -80,16 +75,14 @@ namespace Microsoft.Research.Naiad.Examples
                 using (var computation = controller.NewComputation())
                 {
                     // set up the CC computation
-                    var edges = new IncrementalCollection<IntPair>(computation);
+                    var edges = computation.NewInputCollection<IntPair>();
 
-#if false
-                    // 
-                    Func<IntPair, int> priorityFunction = node => 0;
-#else
+                    // no prioritization; uncomment this and comment the next for slowness!
+                    // Func<IntPair, int> priorityFunction = node => 0;
+
                     // Introduce labels in priority order. Labels 0 through 9 inclusive are introduced sequentially,
                     // following by exponentially-growing sets of labels.
                     Func<IntPair, int> priorityFunction = node => 65536 * (node.t < 10 ? node.t : 10 + Convert.ToInt32(Math.Log(1 + node.t) / Math.Log(2.0)));
-#endif
 
                     // Perform the connected components algorithm on the collection of edges.
                     var labeledVertices = edges.ConnectedComponents(priorityFunction);
@@ -98,8 +91,7 @@ namespace Microsoft.Research.Naiad.Examples
                     var componentSizes = labeledVertices.Count(n => n.t, (l, c) => new Pair<int, long>(l, c)); // counts results with each label
 
                     // Ignore the labels and consolidate to find the number of components having each size.
-                    var sizeDistribution = componentSizes.Select(x => x.v2).Consolidate();
-
+                    var sizeDistribution = componentSizes.Select(x => x.Second).Consolidate();
 
                     if (connectionString != null)
                     {

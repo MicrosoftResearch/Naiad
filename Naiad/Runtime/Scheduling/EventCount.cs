@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -30,10 +30,12 @@ using System.Threading.Tasks;
 using System.Runtime.CompilerServices;
 using System.Collections.Concurrent;
 
+using Microsoft.Research.Naiad.Diagnostics;
+
 namespace Microsoft.Research.Naiad.Scheduling
 {
 
-    public class EventCount
+    internal class EventCount
     {
         internal class WaitBlock
         {

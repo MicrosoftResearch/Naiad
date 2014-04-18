@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -28,6 +28,8 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+
+using Microsoft.Research.Naiad.Diagnostics;
 
 namespace Microsoft.Research.Naiad.Runtime.Progress
 {
@@ -77,29 +79,29 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
             this.consumer.FrontierEmpty.WaitOne();
         }
 
-        public DistributedProgressTracker(InternalGraphManager graphManager) 
+        public DistributedProgressTracker(InternalComputation internalComputation) 
         {
-            var processes = graphManager.Controller.Configuration.Processes;
-            var processid = graphManager.Controller.Configuration.ProcessID;
+            var processes = internalComputation.Controller.Configuration.Processes;
+            var processid = internalComputation.Controller.Configuration.ProcessID;
 
-            var context = new OpaqueTimeContext<Empty>(graphManager.ContextManager.MakeRawContextForScope<Empty>("progress context"));
+            var context = new TimeContext<Empty>(internalComputation.ContextManager.MakeRawContextForScope<Empty>("progress context"));
 
             // construct aggregator stage with unconnected output
-            var aggregatorPlacement = new SingleVertexPerProcessPlacement(processes, 0);
+            var aggregatorPlacement = new Placement.SingleVertexPerProcess(processes, 0);
             var aggregator = new Stage<ProgressUpdateAggregator, Empty>(aggregatorPlacement, context, Stage.OperatorType.Default, (i, v) => new ProgressUpdateAggregator(i, v), "Aggregator");
             var stream = aggregator.NewOutput(vertex => vertex.Output);
             aggregator.Materialize();
             this.aggregator = aggregator.GetVertex(processid);
 
             // construct consumer stage with unconnected input
-            var consumerPlacement = new SingleVertexPerProcessPlacement(processes, 0);
+            var consumerPlacement = new Placement.SingleVertexPerProcess(processes, 0);
             var consumer = new Stage<ProgressUpdateConsumer, Empty>(consumerPlacement, context, Stage.OperatorType.Default, (i, v) => new ProgressUpdateConsumer(i, v, this.aggregator), "Consumer");
             var recvPort = consumer.NewUnconnectedInput(vertex => vertex.Input, null);
             consumer.Materialize();
             this.consumer = consumer.GetVertex(processid);
 
             // connect aggregators to consumers with special progress channel
-            this.progressChannel = new ProgressChannel(aggregatorPlacement.Count, this.consumer, stream.StageOutput, recvPort, graphManager.Controller, graphManager.AllocateNewGraphIdentifier());
+            this.progressChannel = new ProgressChannel(aggregatorPlacement.Count, this.consumer, stream.StageOutput, recvPort, internalComputation.Controller, internalComputation.AllocateNewGraphIdentifier());
             stream.StageOutput.AttachBundleToSender(this.progressChannel);
 
             Logging.Progress("Distributed progress tracker enabled");
@@ -146,27 +148,27 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
         }
 
 
-        public CentralizedProgressTracker(InternalGraphManager graphManager) 
+        public CentralizedProgressTracker(InternalComputation internalComputation) 
         {
-            var centralizerProcessId = graphManager.Controller.Configuration.CentralizerProcessId;
-            var centralizerThreadId = graphManager.Controller.Configuration.CentralizerThreadId;
+            var centralizerProcessId = internalComputation.Controller.Configuration.CentralizerProcessId;
+            var centralizerThreadId = internalComputation.Controller.Configuration.CentralizerThreadId;
 
-            var processes = graphManager.Controller.Configuration.Processes;
-            var processid = graphManager.Controller.Configuration.ProcessID;
+            var processes = internalComputation.Controller.Configuration.Processes;
+            var processid = internalComputation.Controller.Configuration.ProcessID;
 
             Logging.Progress("Centralized progress tracker enabled, running on process {0} thread {1}", centralizerProcessId, centralizerThreadId);
 
-            var context = new OpaqueTimeContext<Empty>(graphManager.ContextManager.MakeRawContextForScope<Empty>("progress context"));
+            var context = new TimeContext<Empty>(internalComputation.ContextManager.MakeRawContextForScope<Empty>("progress context"));
 
             // construct aggregator stage and unconnected output
-            var aggregatorPlacement = new SingleVertexPerProcessPlacement(processes, 0);
+            var aggregatorPlacement = new Placement.SingleVertexPerProcess(processes, 0);
             var aggregatorStage = new Stage<ProgressUpdateAggregator, Empty>(aggregatorPlacement, context, Stage.OperatorType.Default, (i, v) => new ProgressUpdateAggregator(i, v), "Aggregator");
             var stream = aggregatorStage.NewOutput(vertex => vertex.Output);
             aggregatorStage.Materialize();
             this.aggregator = aggregatorStage.GetVertex(processid);
 
             // construct centralizer stage and unconnected input and output
-            var centralizerPlacement = new SingleVertexPlacement(centralizerProcessId, centralizerThreadId);
+            var centralizerPlacement = new Placement.SingleVertex(centralizerProcessId, centralizerThreadId);
             var centralizer = new Stage<ProgressUpdateCentralizer, Empty>(centralizerPlacement, context, Stage.OperatorType.Default, (i, v) => new ProgressUpdateCentralizer(i, v, null), "Centralizer");
             var centralizerRecvPort = centralizer.NewUnconnectedInput<Update>(vertex => vertex.Input, null);
             var centralizerSendPort = centralizer.NewOutput(vertex => vertex.Output, null);
@@ -174,18 +176,18 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
             this.centralizer = (processid == centralizerProcessId) ? centralizer.GetVertex(0) : null;
 
             // construct consumer stage and unconnected input
-            var consumerPlacement = new SingleVertexPerProcessPlacement(processes, 0); 
+            var consumerPlacement = new Placement.SingleVertexPerProcess(processes, 0); 
             var consumer = new Stage<ProgressUpdateConsumer, Empty>(consumerPlacement, context, Stage.OperatorType.Default, (i, v) => new Runtime.Progress.ProgressUpdateConsumer(i, v, this.aggregator), "Consumer");
             var consumerRecvPort = consumer.NewUnconnectedInput(vertex => vertex.Input, null);
             consumer.Materialize();
             this.consumer = consumer.GetVertex(processid);
 
             // connect centralizer to consumers with special progress channel
-            var progressChannel = new ProgressChannel(centralizer.Placement.Count, this.consumer, centralizerSendPort.StageOutput, consumerRecvPort, graphManager.Controller, graphManager.AllocateNewGraphIdentifier());
+            var progressChannel = new ProgressChannel(centralizer.Placement.Count, this.consumer, centralizerSendPort.StageOutput, consumerRecvPort, internalComputation.Controller, internalComputation.AllocateNewGraphIdentifier());
             centralizerSendPort.StageOutput.AttachBundleToSender(progressChannel);
 
             // connect aggregators to centralizer with special centralized progress channel
-            var centralizerChannel = new CentralizedProgressChannel(centralizer, stream.StageOutput, centralizerRecvPort, graphManager.Controller, graphManager.AllocateNewGraphIdentifier());
+            var centralizerChannel = new CentralizedProgressChannel(centralizer, stream.StageOutput, centralizerRecvPort, internalComputation.Controller, internalComputation.AllocateNewGraphIdentifier());
             stream.StageOutput.AttachBundleToSender(centralizerChannel);
 
             Logging.Progress("Centralized progress tracker initialization completed");

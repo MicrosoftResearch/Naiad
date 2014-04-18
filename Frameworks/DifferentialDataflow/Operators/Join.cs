@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -26,12 +26,13 @@ using System.Text;
 using System.Collections.Concurrent;
 using System.Linq.Expressions;
 using Microsoft.Research.Naiad.DataStructures;
-using Microsoft.Research.Naiad.FaultTolerance;
+using Microsoft.Research.Naiad.Serialization;
 using Microsoft.Research.Naiad.Dataflow.Channels;
-using Microsoft.Research.Naiad.CodeGeneration;
 using Microsoft.Research.Naiad;
 using Microsoft.Research.Naiad.Dataflow;
 using Microsoft.Research.Naiad.Frameworks;
+
+using Microsoft.Research.Naiad.Diagnostics;
 
 namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Operators
 {
@@ -187,7 +188,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Operators
          *     Dictionary<K,JoinKeyIndices> JoinKeys
          */
 
-        public override void Checkpoint(NaiadWriter writer)
+        protected override void Checkpoint(NaiadWriter writer)
         {
             base.Checkpoint(writer);
             if (!this.isShutdown)
@@ -196,7 +197,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Operators
             }
         }
 
-        public override void Restore(NaiadReader reader)
+        protected override void Restore(NaiadReader reader)
         {
             base.Restore(reader);
             if (!this.isShutdown)
@@ -396,7 +397,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Operators
          *     (int n,n*BinaryKeyIndices|-1)*keyIndicesLength   keyIndices
          */
 
-        public override void Checkpoint(NaiadWriter writer)
+        protected override void Checkpoint(NaiadWriter writer)
         {
             base.Checkpoint(writer);
             if (!this.isShutdown)
@@ -415,7 +416,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Operators
             }
         }
 
-        public override void Restore(NaiadReader reader)
+        protected override void Restore(NaiadReader reader)
         {
             base.Restore(reader);
             if (!this.isShutdown)

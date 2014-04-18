@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -26,32 +26,34 @@ using System.Text;
 
 using Microsoft.Research.Naiad;
 using Microsoft.Research.Naiad.Dataflow.Channels;
-using Microsoft.Research.Naiad.CodeGeneration;
+using Microsoft.Research.Naiad.Serialization;
 using Microsoft.Research.Naiad.Runtime.Controlling;
 using Microsoft.Research.Naiad.DataStructures;
-using Microsoft.Research.Naiad.FaultTolerance;
+using Microsoft.Research.Naiad.Dataflow.StandardVertices;
 
 using Microsoft.Research.Naiad.Dataflow;
 
 namespace Microsoft.Research.Naiad.Frameworks.Reduction
 {
-    public static class ExtensionMethods
+    internal static class ExtensionMethods
     {
-        public static Stream<TState, TTime> LocalReduce<TReducer, TState, TInput, TOutput, TTime>(this Stream<TInput, TTime> stream, Func<TReducer> factory, string name)
+        
+
+        internal static Stream<TState, TTime> LocalReduce<TReducer, TState, TInput, TOutput, TTime>(this Stream<TInput, TTime> stream, Func<TReducer> factory, string name)
             where TReducer : IReducer<TState, TInput, TOutput>
             where TTime : Time<TTime>
         {
             return Foundry.NewUnaryStage(stream, (i, v) => new LocalReduceVertex<TReducer, TState, TInput, TOutput, TTime>(i, v, factory), null, null, name);
         }
 
-        public static Stream<TOutput, TTime> LocalCombine<TReducer, TState, TInput, TOutput, TTime>(this Stream<TState, TTime> stream, Func<TReducer> factory, string name)
+        internal static Stream<TOutput, TTime> LocalCombine<TReducer, TState, TInput, TOutput, TTime>(this Stream<TState, TTime> stream, Func<TReducer> factory, string name)
             where TReducer : IReducer<TState, TInput, TOutput>
             where TTime : Time<TTime>
         {
             return Foundry.NewUnaryStage(stream, (i, v) => new LocalCombineVertex<TReducer, TState, TInput, TOutput, TTime>(i, v, factory), null, null, name);
         }
 
-        public static Stream<Pair<TKey, TState>, TTime> LocalReduce<TReducer, TState, TValue, TOutput, TKey, TInput, TTime>(
+        internal static Stream<Pair<TKey, TState>, TTime> LocalReduce<TReducer, TState, TValue, TOutput, TKey, TInput, TTime>(
             this Stream<TInput, TTime> stream, Func<TInput, TKey> key, Func<TInput, TValue> val, Func<TReducer> factory, string name,
             Expression<Func<TInput, int>> inPlacement, Expression<Func<Pair<TKey, TState>, int>> outPlacement)
             where TReducer : IReducer<TState, TValue, TOutput>
@@ -60,7 +62,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Reduction
             return Foundry.NewUnaryStage(stream, (i, v) => new LocalKeyedReduceVertex<TReducer, TState, TValue, TOutput, TKey, TInput, TTime>(i, v, key, val, factory), inPlacement, outPlacement, name);
         }
 
-        public static Stream<Pair<K, X>, T> LocalTimeReduce<A, X, R, S, K, I, T>(
+        internal static Stream<Pair<K, X>, T> LocalTimeReduce<A, X, R, S, K, I, T>(
             this Stream<I, T> stream, Func<I, K> key, Func<I, R> val, Func<A> factory, string name,
             Expression<Func<I, int>> inPlacement, Expression<Func<Pair<K, X>, int>> outPlacement)
             where A : IReducer<X, R, S>
@@ -69,7 +71,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Reduction
             return Foundry.NewUnaryStage(stream, (i, v) => new LocalTimeKeyedReduceVertex<A, X, R, S, K, I, T>(i, v, key, val, factory), inPlacement, outPlacement, name);
         }
 
-        public static Stream<Pair<K, X>, T> LocalReduce<A, X, R, S, K, I, T>(
+        internal static Stream<Pair<K, X>, T> LocalReduce<A, X, R, S, K, I, T>(
             this Stream<I, T> stream, Func<I, K> key, Func<I, R> val, Func<A> factory, string name)
             where A : IReducer<X, R, S>
             where T : Time<T>
@@ -77,7 +79,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Reduction
             return LocalReduce<A, X, R, S, K, I, T>(stream, key, val, factory, name, null, null);
         }
 
-        public static Stream<Pair<K, S>, T> LocalCombine<A, X, R, S, K, T>(
+        internal static Stream<Pair<K, S>, T> LocalCombine<A, X, R, S, K, T>(
             this Stream<Pair<K, X>, T> stream, Func<A> factory, string name,
             Expression<Func<Pair<K, S>, int>> outPlacement)
             where A : IReducer<X, R, S>
@@ -87,13 +89,13 @@ namespace Microsoft.Research.Naiad.Frameworks.Reduction
             Expression<Func<Pair<K, X>, int>> inPlacement = null;
             if (outPlacement != null)
             {
-                inPlacement = x => x.v1.GetHashCode();
+                inPlacement = x => x.First.GetHashCode();
             }
 
             return Foundry.NewUnaryStage(stream, (i, v) => new LocalKeyedCombineVertex<A, X, R, S, K, T>(i, v, factory), inPlacement, outPlacement, name);
         }
 
-        public static Stream<Pair<K, S>, T> LocalTimeCombine<A, X, R, S, K, T>(
+        internal static Stream<Pair<K, S>, T> LocalTimeCombine<A, X, R, S, K, T>(
             this Stream<Pair<K, X>, T> stream, Func<A> factory, string name,
             Expression<Func<Pair<K, S>, int>> outPlacement)
             where A : IReducer<X, R, S>
@@ -102,13 +104,13 @@ namespace Microsoft.Research.Naiad.Frameworks.Reduction
             Expression<Func<Pair<K, X>, int>> inPlacement = null;
             if (outPlacement != null)
             {
-                inPlacement = x => x.v1.GetHashCode();
+                inPlacement = x => x.First.GetHashCode();
             }
 
             return Foundry.NewUnaryStage(stream, (i, v) => new LocalTimeKeyedCombineVertex<A, X, R, S, K, T>(i, v, factory), inPlacement, outPlacement, name);
         }
 
-        public static Stream<Pair<K, S>, T> LocalCombine<A, X, R, S, K, T>(
+        internal static Stream<Pair<K, S>, T> LocalCombine<A, X, R, S, K, T>(
             this Stream<Pair<K, X>, T> stream, Func<A> factory, string name)
             where A : IReducer<X, R, S>
             where T : Time<T>
@@ -116,48 +118,48 @@ namespace Microsoft.Research.Naiad.Frameworks.Reduction
             return stream.LocalCombine<A, X, R, S, K, T>(factory, name, null);
         }
 
-        public static Stream<Pair<K, S>, T> Reduce<A, X, R, S, K, I, T>(
+        internal static Stream<Pair<K, S>, T> Reduce<A, X, R, S, K, I, T>(
             this Stream<I, T> stream, Func<I, K> key, Func<I, R> val, Func<A> factory, string name)
             where A : IReducer<X, R, S>
             where T : Time<T>
         {
             return stream.
                 LocalReduce<A, X, R, S, K, I, T>(key, val, factory, name + "Reduce", null, null).
-                LocalCombine<A, X, R, S, K, T>(factory, name + "Combine", x => x.v1.GetHashCode());
+                LocalCombine<A, X, R, S, K, T>(factory, name + "Combine", x => x.First.GetHashCode());
         }
 
-        public static Stream<R, T> Broadcast<R, T>(this Stream<R, T> stream)
+        internal static Stream<R, T> Broadcast<R, T>(this Stream<R, T> stream)
             where R : Cloneable<R>
             where T : Time<T>
         {
-            var controller = stream.ForStage.InternalGraphManager.Controller;
+            var controller = stream.ForStage.InternalComputation.Controller;
 
-            int threadCount = stream.ForStage.InternalGraphManager.DefaultPlacement.Count / controller.Configuration.Processes;
-            if (threadCount * controller.Configuration.Processes != stream.ForStage.InternalGraphManager.DefaultPlacement.Count)
+            int threadCount = stream.ForStage.InternalComputation.DefaultPlacement.Count / controller.Configuration.Processes;
+            if (threadCount * controller.Configuration.Processes != stream.ForStage.InternalComputation.DefaultPlacement.Count)
             {
                 throw new Exception("Uneven thread count?");
             }
 
-            var processDests = stream.ForStage.InternalGraphManager.DefaultPlacement.Where(x => x.ThreadId == 0).Select(x => x.VertexId).ToArray();
+            var processDests = stream.ForStage.InternalComputation.DefaultPlacement.Where(x => x.ThreadId == 0).Select(x => x.VertexId).ToArray();
 
             var boutput = Foundry.NewUnaryStage(stream, (i, v) => new BroadcastSendVertex<R, T>(i, v, processDests), null, null, "BroadcastProcessSend");
 
             var collectable = boutput;
-            if (stream.ForStage.InternalGraphManager.DefaultPlacement.Where(x => x.ProcessId == controller.Configuration.ProcessID).Count() > 1)
+            if (stream.ForStage.InternalComputation.DefaultPlacement.Where(x => x.ProcessId == controller.Configuration.ProcessID).Count() > 1)
             {
-                var threadDests = stream.ForStage.InternalGraphManager.DefaultPlacement
+                var threadDests = stream.ForStage.InternalComputation.DefaultPlacement
                                             .Where(x => x.ProcessId == controller.Configuration.ProcessID)
                                             .Select(x => x.VertexId)
                                             .ToArray();
 
-                collectable = Foundry.NewUnaryStage(boutput, (i, v) => new BroadcastForwardVertex<R, T>(i, v, threadDests), x => x.v1, null, "BroadcastVertexSend");
+                collectable = Foundry.NewUnaryStage(boutput, (i, v) => new BroadcastForwardVertex<R, T>(i, v, threadDests), x => x.First, null, "BroadcastVertexSend");
             }
 
             // TODO : fix this to use a streaming expression
-            return collectable.UnaryExpression(null, xs => xs.Select(x => x.v2), "Select");
+            return collectable.UnaryExpression(null, xs => xs.Select(x => x.Second), "Select");
         }
 
-        public static Stream<S, T> BroadcastReduce<A, X, R, S, T>(this Stream<R, T> stream, Func<A> factory, string name)
+        internal static Stream<S, T> BroadcastReduce<A, X, R, S, T>(this Stream<R, T> stream, Func<A> factory, string name)
             where A : IReducer<X, R, S>
             where X : Cloneable<X>
             where T : Time<T>
@@ -165,7 +167,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Reduction
             return stream.LocalReduce<A, X, R, S, T>(factory, name + "Reduce").Broadcast().LocalCombine<A, X, R, S, T>(factory, name + "Combine");
         }
 
-        public static Stream<X, T> BroadcastReduce<A, X, T>(this Stream<X, T> stream, Func<A> factory, string name)
+        internal static Stream<X, T> BroadcastReduce<A, X, T>(this Stream<X, T> stream, Func<A> factory, string name)
             where A : IReducer<X, X, X>
             where X : Cloneable<X>
             where T : Time<T>
@@ -175,10 +177,9 @@ namespace Microsoft.Research.Naiad.Frameworks.Reduction
     }
 }
 
-
 namespace Microsoft.Research.Naiad.Frameworks.Reduction
 {
-    public interface IReducer<TState, TInput, TOutput>
+    internal interface IReducer<TState, TInput, TOutput>
     {
         // Accumulate an object of type R
         void Add(TInput r);
@@ -201,7 +202,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Reduction
 
     // Placeholder type for generics that support reduction, used when
     // reduction is not needed
-    public struct DummyReducer<X> : IReducer<X, X, X>
+    internal struct DummyReducer<X> : IReducer<X, X, X>
     {
         public void Add(X x)
         {
@@ -234,7 +235,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Reduction
         }
     }
 
-    public class Aggregation<X, R, S> : IReducer<X, R, S>
+    internal class Aggregation<X, R, S> : IReducer<X, R, S>
     {
         public void InitialAdd(R other)
         {
@@ -288,7 +289,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Reduction
         X value;
     }
 
-    public class Aggregation<T> : Aggregation<T, T, T>
+    internal class Aggregation<T> : Aggregation<T, T, T>
     {
         public Aggregation(Func<T, T, T> c)
             : base(c, x => x, c, x => x)
@@ -296,7 +297,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Reduction
         }
     }
 
-    public struct CountReducer<S> : IReducer<Int64, S, Int64>
+    internal struct CountReducer<S> : IReducer<Int64, S, Int64>
     {
         public void InitialAdd(S s) { value = 1; }
         public void Add(S t) { ++value; }
@@ -307,7 +308,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Reduction
         private Int64 value;
     }
 
-    public struct IntSumReducer : IReducer<Int64, Int64, Int64>
+    internal struct IntSumReducer : IReducer<Int64, Int64, Int64>
     {
         public void InitialAdd(Int64 r) { value = r; }
         public void Add(Int64 r) { value += r; }
@@ -318,7 +319,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Reduction
         private Int64 value;
     }
 
-    public struct FloatSumReducer : IReducer<float, float, float>
+    internal struct FloatSumReducer : IReducer<float, float, float>
     {
         public void InitialAdd(float r) { value = r; }
         public void Add(float r) { value += r; }
@@ -329,7 +330,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Reduction
         private float value;
     }
 
-    public struct DoubleSumReducer : IReducer<double, double, double>
+    internal struct DoubleSumReducer : IReducer<double, double, double>
     {
         public void InitialAdd(double r) { value = r; }
         public void Add(double r) { value += r; }
@@ -340,7 +341,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Reduction
         private double value;
     }
 
-    public struct MinReducer<T> : IReducer<T, T, T> where T : IComparable<T>
+    internal struct MinReducer<T> : IReducer<T, T, T> where T : IComparable<T>
     {
         public void InitialAdd(T r) { value = r; }
         public void Add(T r) { value = r.CompareTo(value) < 0 ? r : value; }
@@ -351,7 +352,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Reduction
         private T value;
     }
 
-    public struct MaxReducer<T> : IReducer<T, T, T> where T : IComparable<T>
+    internal struct MaxReducer<T> : IReducer<T, T, T> where T : IComparable<T>
     {
         public void InitialAdd(T r) { value = r; }
         public void Add(T r) { value = r.CompareTo(value) > 0 ? r : value; }
@@ -362,7 +363,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Reduction
         private T value;
     }
 
-    public class LocalReduceVertex<A, X, R, S, T> : Microsoft.Research.Naiad.Frameworks.UnaryVertex<R, X, T>
+    internal class LocalReduceVertex<A, X, R, S, T> : UnaryVertex<R, X, T>
         where A : IReducer<X, R, S>
         where T : Time<T>
     {
@@ -370,30 +371,30 @@ namespace Microsoft.Research.Naiad.Frameworks.Reduction
         T lastTime;
         bool valid;
 
-        private void OnRecv(Pair<R, T> record)
-        {
-            if (!valid)
-            {
-                reducer.InitialAdd(record.v1);
-                lastTime = record.v2;
-                valid = true;
-                NotifyAt(record.v2);
-            }
-            else
-            {
-                if (!record.v2.Equals(lastTime))
-                {
-                    throw new Exception("One time at a time please!");
-                }
-
-                reducer.Add(record.v1);
-            }
-        }
-
         public override void OnReceive(Message<R, T> message)
         {
             for (int i = 0; i < message.length; i++)
-                this.OnRecv(message.payload[i].PairWith(message.time));
+            {
+                //this.OnRecv(message.payload[i].PairWith(message.time));
+                var record = message.payload[i];
+
+                if (!valid)
+                {
+                    reducer.InitialAdd(record);
+                    lastTime = message.time;
+                    valid = true;
+                    NotifyAt(message.time);
+                }
+                else
+                {
+                    if (!message.time.Equals(lastTime))
+                    {
+                        throw new Exception("One time at a time please!");
+                    }
+
+                    reducer.Add(record);
+                }
+            }
         }
 
         public override void OnNotify(T time)
@@ -412,7 +413,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Reduction
         }
     }
 
-    public class LocalCombineVertex<A, X, R, S, T> : Microsoft.Research.Naiad.Frameworks.UnaryVertex<X, S, T>
+    internal class LocalCombineVertex<A, X, R, S, T> : UnaryVertex<X, S, T>
         where A : IReducer<X, R, S>
         where T : Time<T>
     {
@@ -420,30 +421,32 @@ namespace Microsoft.Research.Naiad.Frameworks.Reduction
         T lastTime;
         bool valid;
 
-        private void OnRecv(Pair<X, T> record)
-        {
-            if (!valid)
-            {
-                reducer.InitialCombine(record.v1);
-                lastTime = record.v2;
-                valid = true;
-                NotifyAt(record.v2);
-            }
-            else
-            {
-                if (!record.v2.Equals(lastTime))
-                {
-                    throw new Exception("One time at a time please!");
-                }
-
-                reducer.Combine(record.v1);
-            }
-        }
-
         public override void OnReceive(Message<X, T> message)
         {
             for (int i = 0; i < message.length; i++)
-                this.OnRecv(message.payload[i].PairWith(message.time));
+            {
+                //this.OnRecv(message.payload[i].PairWith(message.time));
+
+                var record = message.payload[i];
+
+                if (!valid)
+                {
+                    reducer.InitialCombine(record);
+                    lastTime = message.time;
+                    valid = true;
+                    NotifyAt(message.time);
+                }
+                else
+                {
+                    if (!message.time.Equals(lastTime))
+                    {
+                        throw new Exception("One time at a time please!");
+                    }
+
+                    reducer.Combine(record);
+                }
+
+            }
         }
 
         public override void OnNotify(T time)
@@ -460,7 +463,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Reduction
         }
     }
 
-    public class LocalKeyedReduceVertex<A, X, R, S, K, I, T> : Microsoft.Research.Naiad.Frameworks.UnaryVertex<I, Pair<K, X>, T>
+    internal class LocalKeyedReduceVertex<A, X, R, S, K, I, T> : UnaryVertex<I, Pair<K, X>, T>
         where A : IReducer<X, R, S>
         where T : Time<T>
     {
@@ -474,7 +477,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Reduction
         private Dictionary<K, int> index;
         private T lastTime;
 
-        private void OnRecv(Pair<I, T> record)
+        public override void OnReceive(Message<I, T> message)
         {
             if (reducers == null)
             {
@@ -483,47 +486,38 @@ namespace Microsoft.Research.Naiad.Frameworks.Reduction
                 reducers = new SpinedList<A>();
                 nextReducer = 0;
                 index = new Dictionary<K, int>(2000000);
-                lastTime = record.v2;
+                lastTime = message.time;
                 recordsIn = 0;
-                NotifyAt(record.v2);
+                NotifyAt(message.time);
             }
-            else if (!record.v2.Equals(lastTime))
+            else if (!message.time.Equals(lastTime))
             {
                 throw new Exception("One time at a time please!");
             }
 
-            K k = key(record.v1);
-            int i;
-            if (index.TryGetValue(k, out i))
+            for (int ii = 0; ii < message.length; ii++)
             {
-                A reducer = reducers[i];
-                reducer.Add(val(record.v1));
-                reducers[i] = reducer;
-            }
-            else
-            {
-#if false
-                if (nextReducer == reducers.Length)
+                var record = message.payload[ii];
+
+                K k = key(record);
+                int i;
+                if (index.TryGetValue(k, out i))
                 {
-                    A[] n = new A[nextReducer * 2];
-                    Array.Copy(reducers, n, nextReducer);
-                    reducers = n;
+                    A reducer = reducers[i];
+                    reducer.Add(val(record));
+                    reducers[i] = reducer;
                 }
-#endif
-                var reducer = factory();
-                reducer.InitialAdd(val(record.v1));
-                index.Add(k, reducers.Count);
-                reducers.Add(reducer);
-                ++nextReducer;
+                else
+                {
+                    var reducer = factory();
+                    reducer.InitialAdd(val(record));
+                    index.Add(k, reducers.Count);
+                    reducers.Add(reducer);
+                    ++nextReducer;
+                }
+
+                ++recordsIn;
             }
-
-            ++recordsIn;
-        }
-
-        public override void OnReceive(Message<I, T> message)
-        {
-            for (int i = 0; i < message.length; i++)
-                this.OnRecv(message.payload[i].PairWith(message.time));
         }
 
         public override void OnNotify(T time)
@@ -564,7 +558,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Reduction
         }
     }
 
-    public class LocalTimeKeyedReduceVertex<A, X, R, S, K, I, T> : Microsoft.Research.Naiad.Frameworks.UnaryVertex<I, Pair<K, X>, T>
+    internal class LocalTimeKeyedReduceVertex<A, X, R, S, K, I, T> : UnaryVertex<I, Pair<K, X>, T>
         where A : IReducer<X, R, S>
         where T : Time<T>
     {
@@ -587,41 +581,43 @@ namespace Microsoft.Research.Naiad.Frameworks.Reduction
             }
         }
 
-        private void OnRecv(Pair<I, T> record)
-        {
-            Time t;
-            if (!reducers.TryGetValue(record.v2, out t))
-            {
-                t = new Time(4);
-                reducers.Add(record.v2, t);
-                NotifyAt(record.v2);
-            }
-
-            K k = key(record.v1);
-            int i;
-            if (t.index.TryGetValue(k, out i))
-            {
-                t.reducers[i].Add(val(record.v1));
-            }
-            else
-            {
-                if (t.nextReducer == t.reducers.Length)
-                {
-                    A[] n = new A[t.nextReducer * 2];
-                    Array.Copy(t.reducers, n, t.nextReducer);
-                    t.reducers = n;
-                }
-                t.reducers[t.nextReducer] = factory();
-                t.reducers[t.nextReducer].InitialAdd(val(record.v1));
-                t.index.Add(k, t.nextReducer);
-                ++t.nextReducer;
-            }
-        }
-
         public override void OnReceive(Message<I, T> message)
         {
-            for (int i = 0; i < message.length; i++)
-                this.OnRecv(message.payload[i].PairWith(message.time));
+            Time t;
+            if (!reducers.TryGetValue(message.time, out t))
+            {
+                t = new Time(4);
+                reducers.Add(message.time, t);
+                NotifyAt(message.time);
+            }
+
+
+            for (int ii = 0; ii < message.length; ii++)
+            {
+                //this.OnRecv(message.payload[i].PairWith(message.time));
+
+                var record = message.payload[ii];
+
+                K k = key(record);
+                int i;
+                if (t.index.TryGetValue(k, out i))
+                {
+                    t.reducers[i].Add(val(record));
+                }
+                else
+                {
+                    if (t.nextReducer == t.reducers.Length)
+                    {
+                        A[] n = new A[t.nextReducer * 2];
+                        Array.Copy(t.reducers, n, t.nextReducer);
+                        t.reducers = n;
+                    }
+                    t.reducers[t.nextReducer] = factory();
+                    t.reducers[t.nextReducer].InitialAdd(val(record));
+                    t.index.Add(k, t.nextReducer);
+                    ++t.nextReducer;
+                }
+            }
         }
 
         public override void OnNotify(T time)
@@ -647,7 +643,8 @@ namespace Microsoft.Research.Naiad.Frameworks.Reduction
         }
     }
 
-    public class LocalKeyedCombineVertex<A, X, R, S, K, T> : Microsoft.Research.Naiad.Frameworks.UnaryVertex<Pair<K, X>, Pair<K, S>, T>
+
+    internal class LocalKeyedCombineVertex<A, X, R, S, K, T> : UnaryVertex<Pair<K, X>, Pair<K, S>, T>
         where A : IReducer<X, R, S>
         where T : Time<T>
     {
@@ -658,49 +655,52 @@ namespace Microsoft.Research.Naiad.Frameworks.Reduction
         private T lastTime;
         private Int64 recordsIn;
 
-        private void OnRecv(Pair<Pair<K, X>, T> record)
+        public override void OnReceive(Message<Pair<K, X>, T> message)
         {
+
             if (reducers == null)
             {
                 reducers = new A[4];
                 nextReducer = 0;
                 index = new Dictionary<K, int>();
-                lastTime = record.v2;
+                lastTime = message.time;
                 recordsIn = 0;
-                NotifyAt(record.v2);
+                NotifyAt(message.time);
             }
-            else if (!record.v2.Equals(lastTime))
+            else if (!message.time.Equals(lastTime))
             {
                 throw new Exception("One time at a time please!");
             }
 
-            K k = record.v1.v1;
-            int i;
-            if (index.TryGetValue(k, out i))
+            for (int ii = 0; ii < message.length; ii++)
             {
-                reducers[i].Combine(record.v1.v2);
-            }
-            else
-            {
-                if (nextReducer == reducers.Length)
+                //this.OnRecv(message.payload[i].PairWith(message.time));
+
+                var record = message.payload[ii];
+
+                K k = record.First;
+                int i;
+                if (index.TryGetValue(k, out i))
                 {
-                    A[] n = new A[nextReducer * 2];
-                    Array.Copy(reducers, n, nextReducer);
-                    reducers = n;
+                    reducers[i].Combine(record.Second);
                 }
-                reducers[nextReducer] = factory();
-                reducers[nextReducer].InitialCombine(record.v1.v2);
-                index.Add(k, nextReducer);
-                ++nextReducer;
+                else
+                {
+                    if (nextReducer == reducers.Length)
+                    {
+                        A[] n = new A[nextReducer * 2];
+                        Array.Copy(reducers, n, nextReducer);
+                        reducers = n;
+                    }
+                    reducers[nextReducer] = factory();
+                    reducers[nextReducer].InitialCombine(record.Second);
+                    index.Add(k, nextReducer);
+                    ++nextReducer;
+                }
+
+                ++recordsIn;
+
             }
-
-            ++recordsIn;
-        }
-
-        public override void OnReceive(Message<Pair<K, X>, T> message)
-        {
-            for (int i = 0; i < message.length; i++)
-                this.OnRecv(message.payload[i].PairWith(message.time));
         }
 
 
@@ -739,7 +739,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Reduction
         }
     }
 
-    public class LocalTimeKeyedCombineVertex<A, X, R, S, K, T> : Microsoft.Research.Naiad.Frameworks.UnaryVertex<Pair<K, X>, Pair<K, S>, T>
+    internal class LocalTimeKeyedCombineVertex<A, X, R, S, K, T> : UnaryVertex<Pair<K, X>, Pair<K, S>, T>
         where A : IReducer<X, R, S>
         where T : Time<T>
     {
@@ -760,41 +760,43 @@ namespace Microsoft.Research.Naiad.Frameworks.Reduction
             }
         }
 
-        private void OnRecv(Pair<Pair<K, X>, T> record)
-        {
-            Time r;
-            if (!reducers.TryGetValue(record.v2, out r))
-            {
-                r = new Time(4);
-                reducers.Add(record.v2, r);
-                NotifyAt(record.v2);
-            }
-
-            K k = record.v1.v1;
-            int i;
-            if (r.index.TryGetValue(k, out i))
-            {
-                r.reducers[i].Combine(record.v1.v2);
-            }
-            else
-            {
-                if (r.nextReducer == r.reducers.Length)
-                {
-                    A[] n = new A[r.nextReducer * 2];
-                    Array.Copy(r.reducers, n, r.nextReducer);
-                    r.reducers = n;
-                }
-                r.reducers[r.nextReducer] = factory();
-                r.reducers[r.nextReducer].InitialCombine(record.v1.v2);
-                r.index.Add(k, r.nextReducer);
-                ++r.nextReducer;
-            }
-        }
-
         public override void OnReceive(Message<Pair<K, X>, T> message)
         {
-            for (int i = 0; i < message.length; i++)
-                this.OnRecv(message.payload[i].PairWith(message.time));
+            Time r;
+            if (!reducers.TryGetValue(message.time, out r))
+            {
+                r = new Time(4);
+                reducers.Add(message.time, r);
+                NotifyAt(message.time);
+            }
+
+
+            for (int ii = 0; ii < message.length; ii++)
+            {
+                //this.OnRecv(message.payload[i].PairWith(message.time));
+                var record = message.payload[ii];
+
+                K k = record.First;
+                int i;
+                if (r.index.TryGetValue(k, out i))
+                {
+                    r.reducers[i].Combine(record.Second);
+                }
+                else
+                {
+                    if (r.nextReducer == r.reducers.Length)
+                    {
+                        A[] n = new A[r.nextReducer * 2];
+                        Array.Copy(r.reducers, n, r.nextReducer);
+                        r.reducers = n;
+                    }
+                    r.reducers[r.nextReducer] = factory();
+                    r.reducers[r.nextReducer].InitialCombine(record.Second);
+                    r.index.Add(k, r.nextReducer);
+                    ++r.nextReducer;
+                }
+
+            }
         }
 
         public override void OnNotify(T time)
@@ -813,11 +815,11 @@ namespace Microsoft.Research.Naiad.Frameworks.Reduction
             : base(i, stage)
         {
             factory = f;
-            reducers = new Dictionary<T,Time>();
+            reducers = new Dictionary<T, Time>();
         }
     }
 
-    public interface Cloneable<T>
+    internal interface Cloneable<T>
     {
         // Return a copy suitable for broadcasting. Can be a shallow copy if the object
         // is known to be immutable
@@ -861,7 +863,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Reduction
         }
     }
 
-    public class BroadcastForwardVertex<R, T> : UnaryVertex<Pair<int, R>, Pair<int, R>, T>
+    internal class BroadcastForwardVertex<R, T> : UnaryVertex<Pair<int, R>, Pair<int, R>, T>
         where R : Cloneable<R>
         where T : Time<T>
     {
@@ -877,11 +879,11 @@ namespace Microsoft.Research.Naiad.Frameworks.Reduction
                 {
                     if (j < destinations.Length - 1)
                     {
-                        output.Send(new Pair<int, R>(destinations[j], record.v2.MakeCopy()));
+                        output.Send(new Pair<int, R>(destinations[j], record.Second.MakeCopy()));
                     }
                     else
                     {
-                        output.Send(new Pair<int, R>(destinations[j], record.v2));
+                        output.Send(new Pair<int, R>(destinations[j], record.Second));
                     }
                 }
 

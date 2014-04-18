@@ -1,0 +1,216 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<topic id="450c8ec2-65e4-4396-93e8-634e6a2144f4" revisionNumber="1">
+  <developerWalkthroughDocument
+    xmlns="http://ddue.schemas.microsoft.com/authoring/2003/5"
+    xmlns:xlink="http://www.w3.org/1999/xlink">
+
+    <introduction>      
+      <para>
+        Here we will dive into writing a first Naiad program: one that simply accepts strings read from the console and writes them back to the console.
+      </para>
+    </introduction>
+
+    <!-- <prerequisites><content>Optional prerequisites info</content></prerequisites> -->
+    <prerequisites>
+      <content>
+        <para>
+          For concreteness, this tutorial will assume that you are using Visual Studio 2013, but similar steps apply
+          for other development environments.
+        </para>
+      </content>
+    </prerequisites>
+    
+    <!-- One or more procedure or section with procedure -->
+    <procedure>
+      <title>Create a new C# project with a Naiad reference</title>
+      <steps class="ordered">
+        <step>
+          <content>
+            <para>
+              In Visual Studio, create a new project of type "Console Application", and provide a descriptive name (perhaps "MyFirstNaiadProgram").
+            </para>
+          </content>
+        </step>
+        <step>
+          <content>
+            <para>
+              Add a reference to your project (for example, using the Solution Explorer pane) to Microsoft.Research.Naiad.dll.
+            </para>
+            <para>To use NuGet, select "Manage NuGet Packages...", and install the "Naiad - Core" package.</para>
+            <para>If you are using a locally-built copy of the Naiad sources, add a reference by browsing to the locally-built copy of Microsoft.Research.Naiad.dll</para>
+          </content>
+        </step>
+        <step>
+          <content>
+            <para>
+              Add the following statements at the top of <codeInline>Program.cs</codeInline>.
+            </para>
+            <code>
+              using Microsoft.Research.Naiad;
+              using Microsoft.Research.Naiad.Input;
+            </code>
+            <para>
+              These namespaces contain important classes and methods for initialing and using Naiad, as well as providing input to Naiad computations.
+            </para>
+          </content>          
+        </step>
+      </steps>
+      <conclusion>
+        <content>
+          <para>
+            At this point we have an empty program and are ready to start using Naiad. We'll next walk through the steps needed for a program to start using Naiad.
+          </para>
+        </content>
+      </conclusion>
+    </procedure>
+
+    <procedure>
+      <title>
+        Writing a Naiad program to receive and display lines of text
+      </title>
+      <steps class ="ordered">
+        <step>
+          <content>
+            <para>
+              The first step in any Naiad program is to create a <codeEntityReference>T:Microsoft.Research.Naiad.Computation</codeEntityReference>.
+              This can be done several ways, but the simplest is to use the <codeInline>NewComputation.FromArgs()</codeInline> method, 
+              which extracts Naiad-specific arguments from the command-line and returns a computation.
+              The computation implements <codeInline>IDisposable</codeInline>, and should be used inside a <codeInline>using</codeInline> block.
+            </para>
+          </content>
+        </step>
+        <step>
+          <content>
+            <para>
+              We next create a data source, an object to which our program can supply input, and from which a Naiad computation can accept input.
+              A <codeInline>BatchedDataSource</codeInline> is one that accepts batches of inputs at a time.
+              There is a <codeInline>DataSource</codeInline> interface allowing the programmer to define their own data sources, as required.
+            </para>
+          </content>
+        </step>
+        <step>
+          <content>
+            <para>
+              The next step is to inform the computation of our data source, and get a handle to a Naiad dataflow stream representing the input.
+            </para>
+          </content>
+        </step>
+        <step>
+          <content>
+            <para>
+              As this is a simple example, we will do nothing complicated with the stream, and only apply Naiad's mechanism for producing output. 
+              The <codeInline>Subscribe</codeInline> method on streams takes a callback on an enumeration of records, and applies the callback once for each batch of records it receives.
+            </para>
+          </content>
+        </step>
+        <step>
+          <content>
+            <para>
+              Having fully defined our dataflow computation, we now activate the computation.
+              Activation freezes dataflow construction and registers the computation with Naiad's workers, who are now able to start working.
+            </para>
+          </content>
+        </step>
+        <step>
+          <content>
+            <para>
+              We now start reading lines of input from the console, spliting each line into a collection of words and handing them to our data source.
+              Naiad introduces the strings into our dataflow computation, and they make their way to the subscribe callback.
+            </para>
+          </content>
+        </step>
+        <step>
+          <content>
+            <para>
+              Once we have finished producing input for the computation we close the data source.
+              This indicates to Naiad that no more data is expected, and it can start to cleanly shut down the parts of the computation with no further work.
+            </para>
+          </content>
+        </step>
+        <step>
+          <content>
+            <para>
+              Before exiting the <codeInline>using</codeInline> block we call <codeEntityReference>M:Microsoft.Research.Naiad.Computation.Join</codeEntityReference> on the computation to block until all work has completed.
+              It is an error to exit a using block (or otherwise dispose of a computation) without first calling <codeInline>Join</codeInline>.
+            </para>
+          </content>
+        </step>
+      </steps>
+      <conclusion>
+        <content>
+          <para>
+            The full program we have assembled reads as follows:
+          </para>
+          <code>
+            static void Main(string[] args)
+            {
+              // 1. allocate a new dataflow computation.
+              using (var computation = NewComputation.FromArgs(ref args))
+              {
+                // 2. define an object which accepts input strings.
+                var source = new BatchedDataSource&lt;string&gt;();
+
+                // 3. convert the data source into a Naiad stream of strings.
+                var input = computation.NewInput(source);
+
+                // 4.request a notification for each batch of strings received.
+                var output = input.Subscribe(x =>
+                             {
+                               foreach (var line in x)
+                                 Console.WriteLine(line);
+                             });
+
+                // 5. start the computation, fixing the structure of the dataflow graph.
+                computation.Activate();
+
+                // 6. read inputs from the console as long as the user supplies them.
+                for (var l = Console.ReadLine(); l.Length > 0; l = Console.ReadLine())
+                  source.OnNext(l.Split());
+
+                // 7. signal that the source is now complete.
+                source.OnCompleted();
+
+                // 8. block until all work is finished.
+                computation.Join();
+              }
+            }
+          </code>
+        </content>
+      </conclusion>
+    </procedure>
+
+    <relatedTopics>
+      <!-- One or more of the following:
+           - A local link
+           - An external link
+           - A code entity reference
+
+      <link xlink:href="Other Topic's ID">Link text</link>
+      <externalLink>
+          <linkText>Link text</linkText>
+          <linkAlternateText>Optional alternate link text</linkAlternateText>
+          <linkUri>URI</linkUri>
+      </externalLink>
+      <codeEntityReference>API member ID</codeEntityReference>
+
+      Examples:
+
+      <link xlink:href="00e97994-e9e6-46e0-b420-5be86b2f8278">Some other topic</link>
+
+      <externalLink>
+          <linkText>SHFB on CodePlex</linkText>
+          <linkAlternateText>Go to CodePlex</linkAlternateText>
+          <linkUri>http://shfb.codeplex.com</linkUri>
+      </externalLink>
+
+      <codeEntityReference>T:TestDoc.TestClass</codeEntityReference>
+      <codeEntityReference>P:TestDoc.TestClass.SomeProperty</codeEntityReference>
+      <codeEntityReference>M:TestDoc.TestClass.#ctor</codeEntityReference>
+      <codeEntityReference>M:TestDoc.TestClass.#ctor(System.String,System.Int32)</codeEntityReference>
+      <codeEntityReference>M:TestDoc.TestClass.ToString</codeEntityReference>
+      <codeEntityReference>M:TestDoc.TestClass.FirstMethod</codeEntityReference>
+      <codeEntityReference>M:TestDoc.TestClass.SecondMethod(System.Int32,System.String)</codeEntityReference>
+      -->
+    </relatedTopics>
+  </developerWalkthroughDocument>
+</topic>

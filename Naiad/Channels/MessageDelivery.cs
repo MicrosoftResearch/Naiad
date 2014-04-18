@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -25,7 +25,7 @@ using System.Text;
 using Microsoft.Research.Naiad.DataStructures;
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using Microsoft.Research.Naiad.CodeGeneration;
+using Microsoft.Research.Naiad.Serialization;
 using System.Threading;
 using System.Net.Sockets;
 using Microsoft.Research.Naiad.Scheduling;
@@ -33,6 +33,59 @@ using System.Net;
 using System.IO;
 using Microsoft.Research.Naiad.Runtime.Controlling;
 using Microsoft.Research.Naiad.Runtime.Networking;
+
+namespace Microsoft.Research.Naiad.Dataflow
+{
+
+    /// <summary>
+    /// Describes the origin of a message
+    /// </summary>
+    public struct ReturnAddress
+    {
+        /// <summary>
+        /// Process-local thread identifier of the sender
+        /// </summary>
+        public readonly int ThreadIndex;
+
+        /// <summary>
+        /// Vertex identifier of the sender
+        /// </summary>
+        public readonly int VertexID;
+
+        /// <summary>
+        /// Process identifier of the sender
+        /// </summary>
+        public readonly int ProcessID;
+
+
+        /// <summary>
+        /// Constructs a return address from process and vertex identifiers
+        /// </summary>
+        /// <param name="processId">process identifier</param>
+        /// <param name="vertexId">vertex identifier</param>
+        public ReturnAddress(int processId, int vertexId)
+        {
+            this.VertexID = vertexId;
+            this.ProcessID = processId;
+            this.ThreadIndex = 0;
+        }
+
+        /// <summary>
+        /// Constructs a return address from process, vertex, thread identifiers
+        /// </summary>
+        /// <param name="processId">process identifier</param>
+        /// <param name="vertexId">vertex identifier</param>
+        /// <param name="threadIndex">thread identifier</param>
+        public ReturnAddress(int processId, int vertexId, int threadIndex)
+        {
+            this.VertexID = vertexId;
+            this.ProcessID = processId;
+            this.ThreadIndex = threadIndex;
+        }
+    }
+
+
+}
 
 namespace Microsoft.Research.Naiad.Dataflow.Channels
 {
@@ -58,16 +111,16 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
 
             this.channelID = channelId;
 
-            var graphManager = sendBundle.ForStage.InternalGraphManager;
+            var computation = sendBundle.ForStage.InternalComputation;
 
             foreach (VertexLocation loc in recvBundle.ForStage.Placement)
             {
-                if (loc.ProcessId == graphManager.Controller.Configuration.ProcessID)
+                if (loc.ProcessId == computation.Controller.Configuration.ProcessID)
                 {
-                    var postOffice = this.recvBundle.GetPin(loc.VertexId).Vertex.Scheduler.State(graphManager).PostOffice;
+                    var postOffice = this.recvBundle.GetPin(loc.VertexId).Vertex.Scheduler.State(computation).PostOffice;
                     LocalMailbox<S, T> localMailbox;
 
-                    var progressBuffer = new Runtime.Progress.ProgressUpdateBuffer<T>(this.ChannelId, this.recvBundle.GetPin(loc.VertexId).Vertex.Scheduler.State(graphManager).Producer); 
+                    var progressBuffer = new Runtime.Progress.ProgressUpdateBuffer<T>(this.ChannelId, this.recvBundle.GetPin(loc.VertexId).Vertex.Scheduler.State(computation).Producer); 
 
                     if ((flags & Channel.Flags.SpillOnRecv) == Channel.Flags.SpillOnRecv)
                     {
@@ -85,13 +138,13 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
                         networkChannel.RegisterMailbox(localMailbox);
                 }
                 else
-                    this.mailboxes[loc.VertexId] = new RemoteMailbox<S, T>(this.channelID, loc.ProcessId, loc.VertexId, sendBundle.ForStage.InternalGraphManager);
+                    this.mailboxes[loc.VertexId] = new RemoteMailbox<S, T>(this.channelID, loc.ProcessId, loc.VertexId, sendBundle.ForStage.InternalComputation);
             }
 
             foreach (VertexLocation loc in sendBundle.ForStage.Placement)
-                if (loc.ProcessId == sendBundle.ForStage.InternalGraphManager.Controller.Configuration.ProcessID)
+                if (loc.ProcessId == sendBundle.ForStage.InternalComputation.Controller.Configuration.ProcessID)
                 {
-                    var progressBuffer = new Runtime.Progress.ProgressUpdateBuffer<T>(this.ChannelId, this.sendBundle.GetFiber(loc.VertexId).Vertex.Scheduler.State(graphManager).Producer);
+                    var progressBuffer = new Runtime.Progress.ProgressUpdateBuffer<T>(this.ChannelId, this.sendBundle.GetFiber(loc.VertexId).Vertex.Scheduler.State(computation).Producer);
 
                     this.postboxes[loc.VertexId] = new Postbox<S, T>(this.channelID, this.sendBundle.GetFiber(loc.VertexId), this.recvBundle, this.mailboxes, routingHashcodeFunction, networkChannel, progressBuffer);
                 }
@@ -106,83 +159,15 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
         public Dataflow.Stage SourceStage { get { return this.sendBundle.ForStage; } }
         public Dataflow.Stage DestinationStage { get { return this.recvBundle.ForStage; } }
 
-        public SendWire<S, T> GetSendFiber(int i)
+        public SendChannel<S, T> GetSendChannel(int i)
         {
             return this.postboxes[i];
         }
-
-        public RecvWire<S, T> GetRecvFiber(int i)
-        {
-            return (LocalMailbox<S, T>)this.mailboxes[i];
-        }
     }
 
-    public interface UntypedPostbox
-    {
-        int ThreadIndex { get; }
-        int VertexID { get; }
-        int ProcessID { get; }
-    }
-
-    internal class DummyPostbox : UntypedPostbox
-    {
-        public int ThreadIndex
-        {
-            get { return 0; }
-        }
-
-        public int VertexID
-        {
-            get { return 0; }
-        }
-
-        public int ProcessID
-        {
-            get { return 0; }
-        }
-
-        public static DummyPostbox Instance = new DummyPostbox();
-    }
-
-    public struct RemotePostbox : UntypedPostbox
-    {
-        private readonly int threadIndex;
-        public int ThreadIndex { get { return this.threadIndex; } }
-        private readonly int vertexId;
-        public int VertexID { get { return this.vertexId; } }
-        private readonly int processId;
-        public int ProcessID { get { return this.processId; } }
-
-        public RemotePostbox(int processId, int vertexId)
-        {
-            this.vertexId = vertexId;
-            this.processId = processId;
-            this.threadIndex = 0;
-        }
-
-        public RemotePostbox(int processId, int vertexId, int threadIndex)
-        {
-            this.vertexId = vertexId;
-            this.processId = processId;
-            this.threadIndex = threadIndex;
-        }
-    }
-
-    internal class Postbox<S, T> : SendWire<S, T>, UntypedPostbox
+    internal class Postbox<S, T> : SendChannel<S, T>
         where T : Time<T>
     {
-        public int RecordSizeHint
-        {
-            get
-            {
-                RemoteMailbox<S, T> remote = this.mailboxes.FirstOrDefault(x => x is RemoteMailbox<S, T>) as RemoteMailbox<S, T>;
-                if (remote == null)
-                    return int.MaxValue;
-                else
-                    return remote.RecordSizeHint;
-            }
-        }
-
         private readonly int threadindex;
         public int ThreadIndex { get { return this.threadindex; } }
 
@@ -191,7 +176,7 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
         private readonly int vertexid;
         public int VertexID { get { return this.vertexid; } }
 
-        public int ProcessID { get { return this.sender.Vertex.Stage.InternalGraphManager.Controller.Configuration.ProcessID; } }
+        public int ProcessID { get { return this.sender.Vertex.Stage.InternalComputation.Controller.Configuration.ProcessID; } }
         
         private readonly StageInput<S, T> receiverBundle;
 
@@ -200,7 +185,7 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
 
         //private readonly int[,] sendSequenceNumbers;
 
-        private readonly RemotePostbox remotePostbox;
+        private readonly ReturnAddress returnAddress;
 
         private readonly Mailbox<S, T>[] mailboxes;
 
@@ -225,7 +210,7 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
             this.routingHashcodeFunction = routingHashcodeFunction;
             this.networkChannel = networkChannel;
             this.mailboxes = mailboxes;
-            this.remotePostbox = new RemotePostbox(this.ProcessID, this.vertexid, this.threadindex);
+            this.returnAddress = new ReturnAddress(this.ProcessID, this.vertexid, this.threadindex);
 
             this.localTempBuffer = new Message<S, T>();
 
@@ -293,7 +278,7 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
 
                 if (tempBuffer.length > 0 && lastDestID != destVertexID)
                 {
-                    this.mailboxes[lastDestID].Send(tempBuffer, this.remotePostbox);
+                    this.mailboxes[lastDestID].Send(tempBuffer, this.returnAddress);
                     tempBuffer.length = 0;
                 }
 
@@ -304,7 +289,7 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
             }
 
             if (tempBuffer.length > 0)
-                this.mailboxes[lastDestID].Send(tempBuffer, this.remotePostbox);
+                this.mailboxes[lastDestID].Send(tempBuffer, this.returnAddress);
 
             tempBuffer.length = 0;
             if (this.localTempBuffer.HasValue)
@@ -323,7 +308,7 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
             {
                 if (this.mailboxes[i].ThreadIndex != this.threadindex)
                 {
-                    this.mailboxes[i].Flush(new RemotePostbox(this.ProcessID, this.VertexID, this.ThreadIndex));
+                    this.mailboxes[i].Flush(new ReturnAddress(this.ProcessID, this.VertexID, this.ThreadIndex));
                 }
             }
 
@@ -332,7 +317,7 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
             {
                 if (this.mailboxes[i].ThreadIndex == this.threadindex)
                 {
-                    this.mailboxes[i].Flush(new RemotePostbox(this.ProcessID, this.VertexID, this.ThreadIndex));
+                    this.mailboxes[i].Flush(new ReturnAddress(this.ProcessID, this.VertexID, this.ThreadIndex));
                 }
             }
 
@@ -340,8 +325,6 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
             if (progressBuffer != null)
                 progressBuffer.Flush();
         }
-    
-
     }
 
     internal class PostOffice
@@ -377,16 +360,16 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
         }
     }
 
-    public interface UntypedMailbox
+    internal interface UntypedMailbox
     {
-        void DeliverSerializedMessage(SerializedMessage message, RemotePostbox sender);
+        void DeliverSerializedMessage(SerializedMessage message, ReturnAddress from);
 
         int GraphId { get; }
         int Id { get; }
         int VertexId { get; }
     }
 
-    public interface UntypedLocalMailbox : UntypedMailbox
+    internal interface UntypedLocalMailbox : UntypedMailbox
     {
         void Drain();
         void Flush();
@@ -397,15 +380,15 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
     {
         // void Send(Pair<S, T> record, RemotePostbox from);
 
-        void Send(Message<S, T> message, RemotePostbox from);
+        void Send(Message<S, T> message, ReturnAddress from);
 
-        void Flush(RemotePostbox from);
+        void Flush(ReturnAddress from);
         // returns the ThreadId for mailboxes on the same computer, and -1 for remote ones
         int ThreadIndex { get; }
     }
 
 
-    internal abstract class LocalMailbox<S, T> : RecvWire<S, T>, UntypedLocalMailbox, Mailbox<S, T>
+    internal abstract class LocalMailbox<S, T> : UntypedLocalMailbox, Mailbox<S, T>
         where T : Time<T>
     {
         protected readonly PostOffice postOffice;
@@ -439,14 +422,14 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
             this.endpoint = endpoint;
             this.id = id;
             this.vertexId = vertexId;
-            this.graphId = endpoint.Vertex.Stage.InternalGraphManager.Index;
+            this.graphId = endpoint.Vertex.Stage.InternalComputation.Index;
         }
 
-        public abstract void DeliverSerializedMessage(SerializedMessage message, RemotePostbox from);
-        public abstract void Flush(RemotePostbox from);
+        public abstract void DeliverSerializedMessage(SerializedMessage message, ReturnAddress from);
+        public abstract void Flush(ReturnAddress from);
         public abstract void Flush();
 
-        public abstract void Send(Message<S, T> message, RemotePostbox from);
+        public abstract void Send(Message<S, T> message, ReturnAddress from);
         public abstract void Drain();
     }
 
@@ -475,11 +458,11 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
                 SerializedMessage superChannelMessage;
                 while (this.sharedSerializedQueue.TryDequeue(out superChannelMessage))
                 {
-                    this.endpoint.SerializedMessageReceived(superChannelMessage, new RemotePostbox());
+                    this.endpoint.SerializedMessageReceived(superChannelMessage, new ReturnAddress());
                     if (progressBuffer != null)
                     {
                         Pair<T, int> delta = this.decoder.Time(superChannelMessage);
-                        progressBuffer.Update(delta.v1, -delta.v2);
+                        progressBuffer.Update(delta.First, -delta.Second);
                     }
 
                     // superChannelMessage.Dispose();
@@ -489,7 +472,7 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
                 var message = new Message<S, T>();
                 while (this.sharedQueue.TryDequeue(out message))
                 {
-                    this.endpoint.OnReceive(message, new RemotePostbox());
+                    this.endpoint.OnReceive(message, new ReturnAddress());
 
                     if (progressBuffer != null)
                         progressBuffer.Update(message.time, -message.length);
@@ -553,7 +536,7 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
             for (int i = 0; i < this.postOffice.Controller.Workers.Count; ++i)
                 this.messagesFromLocalVertices[i] = new Message<S, T>();
 
-            this.decoder = new AutoSerializedMessageDecoder<S, T>(endpoint.Vertex.CodeGenerator);
+            this.decoder = new AutoSerializedMessageDecoder<S, T>(endpoint.Vertex.SerializationFormat);
         }
 
         int SerializedQueueHighWatermark = 10;
@@ -561,8 +544,9 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
         /// <summary>
         /// Enqueues the incoming network message on the shared queue, called by the network channel.
         /// </summary>
-        /// <param name="message"></param>
-        public override void DeliverSerializedMessage(SerializedMessage message, RemotePostbox from)
+        /// <param name="message">message</param>
+        /// <param name="from">sender</param>
+        public override void DeliverSerializedMessage(SerializedMessage message, ReturnAddress from)
         {
             this.sharedSerializedQueue.Enqueue(message);
 
@@ -580,11 +564,12 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
         /// Called by the postbox.
         /// </summary>
         /// <param name="from">Postbox of the upstream operator</param>
-        public override void Flush(RemotePostbox from)
+        public override void Flush(ReturnAddress from)
         {
             if (this.messagesFromLocalVertices[from.ThreadIndex].length > 0)
                 this.PostBufferAndPossiblyCutThrough(from);
 
+            // XXX : Assumes placement is the same, which is brittle
             if (this.VertexId == from.VertexID)
             {
                 if (this.endpoint.AvailableEntrancy >= 0)
@@ -598,8 +583,7 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
             }
         }
 
-        //public override void Send(Pair<S, T> record, RemotePostbox from)
-        public override void Send(Message<S, T> records, RemotePostbox from)
+        public override void Send(Message<S, T> records, ReturnAddress from)
         {
             for (int i = 0; i < records.length; i++)
             {
@@ -635,7 +619,7 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
             }
         }
 
-        private void PostBufferAndPossiblyCutThrough(RemotePostbox from)
+        private void PostBufferAndPossiblyCutThrough(ReturnAddress from)
         {
             // no matter what, post the buffer and refresh local storage.
             this.Post(this.messagesFromLocalVertices[from.ThreadIndex]);
@@ -1106,18 +1090,10 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
 
         private readonly NetworkChannel networkChannel;
         private readonly AutoSerializedMessageEncoder<S, T>[] encodersFromLocalVertices;
-
-        public int RecordSizeHint
-        {
-            get
-            {
-                return this.encodersFromLocalVertices[0].RecordSizeHint;
-            }
-        }
-
+        
         public int ThreadIndex { get { return -1; } }
 
-        public RemoteMailbox(int channelID, int processID, int vertexID, InternalGraphManager manager)
+        public RemoteMailbox(int channelID, int processID, int vertexID, InternalComputation manager)
         {
             this.channelID = channelID;
             this.processID = processID;
@@ -1131,23 +1107,23 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
 
             for (int i = 0; i < controller.Workers.Count; ++i )
             {
-                this.encodersFromLocalVertices[i] = new AutoSerializedMessageEncoder<S, T>(this.vertexID, this.graphID << 16 | this.channelID, this.networkChannel.GetBufferPool(this.processID, i), this.networkChannel.SendPageSize, manager.CodeGenerator, SerializedMessageType.Data, () => this.networkChannel.GetSequenceNumber(this.processID));
+                this.encodersFromLocalVertices[i] = new AutoSerializedMessageEncoder<S, T>(this.vertexID, this.graphID << 16 | this.channelID, this.networkChannel.GetBufferPool(this.processID, i), this.networkChannel.SendPageSize, manager.SerializationFormat, SerializedMessageType.Data, () => this.networkChannel.GetSequenceNumber(this.processID));
                 this.encodersFromLocalVertices[i].CompletedMessage += (o, a) => { this.networkChannel.SendBufferSegment(a.Hdr, this.processID, a.Segment); };
             }
         }
 
-        public void Flush(RemotePostbox from)
+        public void Flush(ReturnAddress from)
         {
 
             this.encodersFromLocalVertices[from.ThreadIndex].Flush();
         }
 
-        public void Send(Pair<S, T> record, RemotePostbox from)
+        public void Send(Pair<S, T> record, ReturnAddress from)
         {
             this.encodersFromLocalVertices[from.ThreadIndex].Write(record, from.VertexID);
         }
 
-        public void Send(Message<S, T> message, RemotePostbox from)
+        public void Send(Message<S, T> message, ReturnAddress from)
         {
             this.encodersFromLocalVertices[from.ThreadIndex].SetCurrentTime(message.time);
             this.encodersFromLocalVertices[from.ThreadIndex].Write(new ArraySegment<S>(message.payload, 0, message.length), from.VertexID);
@@ -1155,7 +1131,7 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
             //    this.encodersFromLocalVertices[from.ThreadIndex].Write(message.payload[i], from.VertexID);
         }
 
-        public void DeliverSerializedMessage(SerializedMessage message, RemotePostbox from)
+        public void DeliverSerializedMessage(SerializedMessage message, ReturnAddress from)
         {
             throw new NotImplementedException("Attempted to deliver message from a remote sender to a remote recipient, which is not currently supported.");
         }

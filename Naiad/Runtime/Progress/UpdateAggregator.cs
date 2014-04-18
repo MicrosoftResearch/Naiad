@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -27,6 +27,8 @@ using Microsoft.Research.Naiad.Dataflow.Channels;
 using Microsoft.Research.Naiad.Dataflow;
 using Microsoft.Research.Naiad.Frameworks;
 using Microsoft.Research.Naiad.Scheduling;
+
+using Microsoft.Research.Naiad.Diagnostics;
 
 namespace Microsoft.Research.Naiad.Runtime.Progress
 {
@@ -86,7 +88,7 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
             {
                 if (this.BufferedUpdates.Count > 0)
                 {
-                    var frontier = this.Stage.InternalGraphManager.ProgressTracker.GetInfoForWorker(0).PointstampCountSet.Frontier;
+                    var frontier = this.Stage.InternalComputation.ProgressTracker.GetInfoForWorker(0).PointstampCountSet.Frontier;
 
                     for (int i = 0; i < frontier.Length && !mustFlushBuffer; i++)
                     {
@@ -94,7 +96,7 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
                         // TODO ContainsKey test is overly conservative; absent key and positive update is no reason to flush.
                         if (this.BufferedUpdates.ContainsKey(frontier[i]))
                         {
-                            if (!this.Stage.InternalGraphManager.Reachability.Graph[frontier[i].Location].IsStage
+                            if (!this.Stage.InternalComputation.Reachability.Graph[frontier[i].Location].IsStage
                                 || !this.Notifications.ContainsKey(frontier[i])
                                 || this.Notifications[frontier[i]] + this.BufferedUpdates[frontier[i]] <= 0)
                                 mustFlushBuffer = true;
@@ -125,7 +127,7 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
                     // update Notifications count to include shipped values.
                     foreach (var pair in PrivateBufferedUpdates)
                     {
-                        if (this.Stage.InternalGraphManager.Reachability.Graph[pair.Key.Location].IsStage)
+                        if (this.Stage.InternalComputation.Reachability.Graph[pair.Key.Location].IsStage)
                         {
                             long prev = 0;
                             this.Notifications.TryGetValue(pair.Key, out prev);

@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -24,9 +24,9 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 
-using Microsoft.Research.Naiad.Dataflow.Channels;
+using Microsoft.Research.Naiad.Dataflow;
 
-namespace Microsoft.Research.Naiad.Dataflow
+namespace Microsoft.Research.Naiad
 {
     /// <summary>
     /// Represents a stream of records each tagged with a time.
@@ -50,7 +50,7 @@ namespace Microsoft.Research.Naiad.Dataflow
         /// <summary>
         /// Time context for the stream.
         /// </summary>
-        public Dataflow.OpaqueTimeContext<TTime> Context { get { return this.StageOutput.Context; } }
+        public Dataflow.TimeContext<TTime> Context { get { return this.StageOutput.Context; } }
 
         internal Stream(StageOutput<TRecord, TTime> stageOutput)
         {

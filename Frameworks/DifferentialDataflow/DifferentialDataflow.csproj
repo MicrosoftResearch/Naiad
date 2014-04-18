@@ -44,7 +44,8 @@
     <SignAssembly>true</SignAssembly>
   </PropertyGroup>
   <PropertyGroup>
-    <AssemblyOriginatorKeyFile>NaiadLINQ.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>
+    </AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -71,6 +72,7 @@
     <Compile Include="InputCollection.cs" />
     <Compile Include="KeyIndices.cs" />
     <Compile Include="LatticeInternTable.cs" />
+    <Compile Include="NaiadList.cs" />
     <Compile Include="OperatorImplementations\BinaryStateful.cs" />
     <Compile Include="OperatorImplementations\BinaryStatefulIntKeyed.cs" />
     <Compile Include="OperatorImplementations\UnaryStateful.cs" />
@@ -87,7 +89,6 @@
     <Compile Include="Operators\Except.cs" />
     <Compile Include="Operators\FixedPoint.cs" />
     <Compile Include="Operators\GroupBy.cs" />
-    <Compile Include="Operators\Integrator.cs" />
     <Compile Include="Operators\Intersect.cs" />
     <Compile Include="Operators\Join.cs" />
     <Compile Include="Operators\Max.cs" />
@@ -108,11 +109,14 @@
       <Project>{a6221415-1283-4c04-8d2c-e25a857e1fe9}</Project>
       <Name>Naiad</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Lindi\Lindi.csproj">
+      <Project>{bdc6546c-7ba0-472b-b260-0d596b6152e4}</Project>
+      <Name>Lindi</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
     <None Include="Microsoft.Research.Naiad.DifferentialDataflow.nuspec" />
-    <None Include="NaiadLINQ.snk" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

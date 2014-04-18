@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -29,11 +29,15 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
+
+using Microsoft.Research.Naiad.Dataflow;
 using Microsoft.Research.Naiad;
+
+using Microsoft.Research.Naiad.Diagnostics;
 
 namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
 {
-    public static class NaiadDataStreamProtocolExtensionMethods
+    internal static class NaiadDataStreamProtocolExtensionMethods
     {
         public static void ToReceiver<R>(this Collection<R, Epoch> collection, NaiadDataStreamProtocol<Weighted<R>> receiver)
             where R : IEquatable<R>
@@ -51,7 +55,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
     /// ((StartEpoch (Send*) EndEpoch)* Close)* (StartEpoch (Send*) EndEpoch)? Shutdown
     /// </summary>
     /// <typeparam name="T">The type of records in this data stream.</typeparam>
-    public interface NaiadDataStreamProtocol<T>
+    internal interface NaiadDataStreamProtocol<T>
     {
         /// <summary>
         /// Called before sending a batch of records in the same epoch.
@@ -84,7 +88,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
     /// A data stream protocol handler that will broadcast data of a particular type to a group of zero or more Sockets or other protocol handlers,
     /// and aggregate the entire multiset of records seen so that they may be sent to new participants.
     /// </summary>
-    /// <typeparam name="T">The type of records in this data stream.</typeparam>
+    /// <typeparam name="R">The type of records in this data stream.</typeparam>
     internal class BufferingDataStreamBroadcaster<R> : NaiadDataStreamProtocol<Weighted<R>>
         where R : IEquatable<R>
     {
@@ -209,7 +213,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
     /// <typeparam name="R">The type of records in the data stream.</typeparam>
     /// <typeparam name="K">The key type for the dictionary.</typeparam>
     /// <typeparam name="V">The value type for the dictionary.</typeparam>
-    public class RemoteDictionary<R, K, V> : INotifyCollectionChanged, NaiadDataStreamProtocol<Weighted<R>>, IEnumerable<KeyValuePair<K, V>>
+    internal class RemoteDictionary<R, K, V> : INotifyCollectionChanged, NaiadDataStreamProtocol<Weighted<R>>, IEnumerable<KeyValuePair<K, V>>
         where R : IEquatable<R>
     {
         private readonly Action<Action> dispatcher;
@@ -352,8 +356,8 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
     /// as a collection of records.
     /// </summary>
     /// <typeparam name="R">The type of records in the data stream.</typeparam>
-    public class RemoteEnumerable<R> : INotifyCollectionChanged, INotifyPropertyChanged, NaiadDataStreamProtocol<Weighted<R>>, IEnumerable<R>
-    where R : IEquatable<R>
+    internal class RemoteEnumerable<R> : INotifyCollectionChanged, INotifyPropertyChanged, NaiadDataStreamProtocol<Weighted<R>>, IEnumerable<R>
+        where R : IEquatable<R>
     {
         private readonly Action<Action> dispatcher;
         private readonly List<R> collection;
@@ -474,6 +478,4 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
         public event PropertyChangedEventHandler PropertyChanged;
 
     }
-
-
 }

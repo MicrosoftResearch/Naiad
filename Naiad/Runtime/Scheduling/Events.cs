@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -23,49 +23,100 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Microsoft.Research.Naiad.Scheduling
+using Microsoft.Research.Naiad.Runtime.Progress;
+
+namespace Microsoft.Research.Naiad.Diagnostics
 {
-    public class SchedulerStartArgs : EventArgs
+    /// <summary>
+    /// Arguments of the event that is raised when a worker starts.
+    /// </summary>
+    public class WorkerStartArgs : EventArgs
     {
+        /// <summary>
+        /// The worker thread that is starting.
+        /// </summary>
         public readonly int ThreadId;
-        public SchedulerStartArgs(int threadId)
+
+        internal WorkerStartArgs(int threadId)
         {
             this.ThreadId = threadId;
         }
     }
 
-    public class SchedulerWakeArgs : EventArgs
+    /// <summary>
+    /// Arguments of the event that is raised when a worker is woken from sleep.
+    /// </summary>
+    public class WorkerWakeArgs : EventArgs
     {
+        /// <summary>
+        /// The worker thread that is waking.
+        /// </summary>
         public readonly int ThreadId;
-        public SchedulerWakeArgs(int threadId)
+
+        internal WorkerWakeArgs(int threadId)
         {
             this.ThreadId = threadId;
         }
     }
-    public class SchedulerSleepArgs : EventArgs
+
+    /// <summary>
+    /// Arguments of the event that is raised when a worker goes to sleep.
+    /// </summary>
+    public class WorkerSleepArgs : EventArgs
     {    
+        /// <summary>
+        /// The worker thread that is sleeping.
+        /// </summary>
         public readonly int ThreadId;
-        public SchedulerSleepArgs(int threadId)
+
+        internal WorkerSleepArgs(int threadId)
         {
             this.ThreadId = threadId;
         }
     }
-    public class SchedulerTerminateArgs : EventArgs
+
+    /// <summary>
+    /// Arguments of the event that is raised when a worker terminates.
+    /// </summary>
+    public class WorkerTerminateArgs : EventArgs
     {
+        /// <summary>
+        /// The worker thread that is terminating.
+        /// </summary>
         public readonly int ThreadId;
-        public SchedulerTerminateArgs(int threadId)
+
+        internal WorkerTerminateArgs(int threadId)
         {
             this.ThreadId = threadId;
         }
     }
-    public class OperatorStartArgs : EventArgs
+
+    /// <summary>
+    /// Arguments of the event that is raised when a vertex notification starts.
+    /// </summary>
+    public class VertexStartArgs : EventArgs
     {
+        /// <summary>
+        /// The worker thread on which the vertex is starting.
+        /// </summary>
         public readonly int ThreadId;
+
+        /// <summary>
+        /// The stage of which the vertex is a member.
+        /// </summary>
         public readonly Dataflow.Stage Stage;
+
+        /// <summary>
+        /// The ID of the vertex within its stage.
+        /// </summary>
         public readonly int VertexId;
+
+        /// <summary>
+        /// The pointstamp of the notification that is being delivered.
+        /// </summary>
         public readonly Pointstamp Pointstamp;
 
-        public OperatorStartArgs(int threadId, Dataflow.Stage stage, int vertexId, Pointstamp pointstamp)
+        internal VertexStartArgs(int threadId, Dataflow.Stage stage, int vertexId, Pointstamp pointstamp)
         {
             this.ThreadId = threadId;
             this.Stage = stage;
@@ -73,14 +124,34 @@ namespace Microsoft.Research.Naiad.Scheduling
             this.Pointstamp = pointstamp;
         }
     }
-    public class OperatorEndArgs : EventArgs
+
+    /// <summary>
+    /// Arguments of the event that is raised when a vertex notification ends.
+    /// </summary>
+    public class VertexEndArgs : EventArgs
     {
+
+        /// <summary>
+        /// The worker thread on which the vertex is ending.
+        /// </summary>
         public readonly int ThreadId;
+
+        /// <summary>
+        /// The stage of which the vertex is a member.
+        /// </summary>
         public readonly Dataflow.Stage Stage;
+
+        /// <summary>
+        /// The ID of the vertex within its stage.
+        /// </summary>
         public readonly int VertexId;
+
+        /// <summary>
+        /// The pointstamp of the notification that was delivered.
+        /// </summary>
         public readonly Pointstamp Pointstamp;
 
-        public OperatorEndArgs(int threadId, Dataflow.Stage stage, int vertexId, Pointstamp pointstamp)
+        internal VertexEndArgs(int threadId, Dataflow.Stage stage, int vertexId, Pointstamp pointstamp)
         {
             this.ThreadId = threadId;
             this.Stage = stage;
@@ -88,14 +159,33 @@ namespace Microsoft.Research.Naiad.Scheduling
             this.Pointstamp = pointstamp;
         }
     }
-    public class OperatorEnqArgs : EventArgs
+
+    /// <summary>
+    /// Arguments of the event that is raised when a vertex notification is enqueued.
+    /// </summary>
+    public class VertexEnqueuedArgs : EventArgs
     {
+        /// <summary>
+        /// The worker thread on which the notification is being enqueued.
+        /// </summary>
         public readonly int ThreadId;
+
+        /// <summary>
+        /// The stage of which the vertex is a member.
+        /// </summary>
         public readonly Dataflow.Stage Stage;
+
+        /// <summary>
+        /// The ID of the vertex within its stage.
+        /// </summary>
         public readonly int VertexId;
+
+        /// <summary>
+        /// The pointstamp of the notification that was enqueued.
+        /// </summary>
         public readonly Pointstamp Pointstamp;
 
-        public OperatorEnqArgs(int threadId, Dataflow.Stage stage, int vertexId, Pointstamp pointstamp)
+        internal VertexEnqueuedArgs(int threadId, Dataflow.Stage stage, int vertexId, Pointstamp pointstamp)
         {
             this.ThreadId = threadId;
             this.Stage = stage;
@@ -104,6 +194,7 @@ namespace Microsoft.Research.Naiad.Scheduling
         }
     }
 
+#if false
     public class OperatorReceiveArgs : EventArgs
     {
         public readonly Dataflow.Stage Stage;
@@ -132,4 +223,5 @@ namespace Microsoft.Research.Naiad.Scheduling
             this.Count = count;
         }
     }
+#endif
 }

@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -18,7 +18,7 @@
  * permissions and limitations under the License.
  */
 
-using Microsoft.Research.Naiad.CodeGeneration;
+using Microsoft.Research.Naiad.Serialization;
 using Microsoft.Research.Naiad.Dataflow;
 using Microsoft.Research.Naiad.Dataflow.Channels;
 using Microsoft.Research.Naiad.Runtime.Progress;
@@ -30,63 +30,240 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Microsoft.Research.Naiad.Diagnostics;
+using Microsoft.Research.Naiad.Input;
+
 namespace Microsoft.Research.Naiad
 {
     /// <summary>
-    /// Manages the construction and execution of individual dataflow graphs.
+    /// A Computation with an internal Controller which cannot be re-used for other Computations.
     /// </summary>
-    public interface GraphManager : IDisposable
+    public interface OneOffComputation : Computation
     {
         /// <summary>
-        /// Creates a new input stage from a typed DataSource.
+        /// The configuration used by this controller.
+        /// </summary>
+        Configuration Configuration { get; }
+
+        /// <summary>
+        /// The workers associated with this controller.
+        /// </summary>
+        WorkerGroup WorkerGroup { get; }
+
+        /// <summary>
+        /// The default placement of new stages.
+        /// </summary>
+        Placement DefaultPlacement { get; }
+    }
+
+    internal class InternalOneOffComputation : OneOffComputation
+    {
+        private readonly Controller controller;
+
+        private readonly Computation computation;
+
+        public InternalOneOffComputation(Configuration configuration)
+        {
+            this.controller = NewController.FromConfig(configuration);
+            this.computation = controller.NewComputation();
+        }
+
+        public void Join()
+        {
+            this.computation.Join();
+            this.controller.Join();
+        }
+
+        public void Dispose()
+        {
+            this.computation.Dispose();
+            this.controller.Dispose();
+        }
+
+        public Configuration Configuration
+        {
+            get { return this.controller.Configuration; }
+        }
+
+        public WorkerGroup WorkerGroup
+        {
+            get { return this.controller.WorkerGroup; }
+        }
+
+        public Placement DefaultPlacement
+        {
+            get { return this.controller.DefaultPlacement; }
+        }
+
+        public Stream<TRecord, Epoch> NewInput<TRecord>(DataSource<TRecord> source)
+        {
+            return this.computation.NewInput<TRecord>(source);
+        }
+
+        public Stream<TRecord, Epoch> NewInput<TRecord>(DataSource<TRecord> source, string name)
+        {
+            return this.computation.NewInput<TRecord>(source, name);
+        }
+
+        public event EventHandler<FrontierChangedEventArgs> OnFrontierChange { add { this.computation.OnFrontierChange += value; } remove { this.computation.OnFrontierChange -= value; } }
+
+        public event EventHandler OnStartup { add { this.computation.OnStartup += value; } remove { this.computation.OnStartup -= value; } }
+
+        public event EventHandler OnShutdown { add { this.computation.OnShutdown += value; } remove { this.computation.OnShutdown -= value; } }
+
+        public void Sync(int epoch)
+        {
+            this.computation.Sync(epoch);
+        }
+
+        public void Activate()
+        {
+            this.computation.Activate();
+        }
+
+        public Controller Controller
+        {
+            get { return this.controller; }
+        }
+    }
+
+    /// <summary>
+    /// Manages the construction and execution of an individual dataflow computation.
+    /// </summary>
+    /// <remarks>
+    /// A Computation manages the execution of a single Naiad computation.
+    /// To construct an instance of this interface, use the
+    /// <see cref="Microsoft.Research.Naiad.Controller.NewComputation"/> method.
+    /// </remarks>
+    public interface Computation : IDisposable
+    {
+        /// <summary>
+        /// Creates a new input stage from the given <see cref="DataSource"/>.
         /// </summary>
         /// <typeparam name="TRecord">record type</typeparam>
         /// <param name="source">data source</param>
         /// <returns>A new input stage</returns>
-        Dataflow.Stream<TRecord, Epoch> NewInput<TRecord>(DataSource<TRecord> source);
+        Stream<TRecord, Epoch> NewInput<TRecord>(DataSource<TRecord> source);
 
         /// <summary>
-        /// Creates a new input stage from a typed DataSource.
+        /// Creates a new input stage from the given <see cref="DataSource"/>.
         /// </summary>
         /// <typeparam name="TRecord">record type</typeparam>
         /// <param name="source">data source</param>
         /// <param name="name">name for the input</param>
         /// <returns>A new input stage</returns>
-        Dataflow.Stream<TRecord, Epoch> NewInput<TRecord>(DataSource<TRecord> source, string name);
+        Stream<TRecord, Epoch> NewInput<TRecord>(DataSource<TRecord> source, string name);
 
         /// <summary>
-        /// Returns a frontier with which one can register frontier change events.
+        /// An event that is raised each time the frontier changes.
         /// </summary>
-        Microsoft.Research.Naiad.Runtime.Progress.Frontier Frontier { get; }
+        /// <remarks>
+        /// This event provides a hook for debugging statements that track the progress of
+        /// a computation.
+        /// </remarks>
+        /// <example>
+        /// computation.OnFrontierChange += (c, f) =>
+        ///     {
+        ///         Console.WriteLine("New frontier: {0}", string.Join(", ", f.NewFrontier));
+        ///     };
+        /// </example>
+        event EventHandler<FrontierChangedEventArgs> OnFrontierChange;
 
         /// <summary>
-        /// An event that is called once the graph is started.
+        /// An event that is raised once the graph is started.
         /// </summary>
         event EventHandler OnStartup;
 
         /// <summary>
-        /// An event that is called once the graph is shut down.
+        /// An event that is raised once the graph is shut down.
         /// </summary>
         event EventHandler OnShutdown;
 
         /// <summary>
         /// Blocks until all subscriptions have processed all inputs up to the supplied epoch.
         /// </summary>
-        /// <param name="epoch"></param>
+        /// <param name="epoch">The epoch.</param>
+        /// <remarks>
+        /// This method is commonly used along with <see cref="Input.BatchedDataSource{TRecord}"/> to
+        /// process epochs of input data in batches, or with a bounded number of outstanding
+        /// epochs.
+        /// 
+        /// If the computation contains many inputs and outputs that are stimulated asynchronously,
+        /// the <see cref="Subscription.Sync"/> method provides a mechanism to synchronize on an individual 
+        /// subscription.
+        /// </remarks>
+        /// <example>
+        /// var source = new BatchedDataSource&lt;int&gt;();
+        /// var subscription = computation.NewInput(source)
+        ///                               /* ... */
+        ///                               .Subscribe();
+        /// 
+        /// for (int i = 0; i &lt; numEpochs; ++i)
+        /// {
+        ///     source.OnNext(i);
+        ///     computation.Sync(i); // Alternatively subscription.Sync(i);
+        /// }
+        /// </example>
+        /// <seealso cref="Input.BatchedDataSource{TRecord}"/>
+        /// <seealso cref="Subscription.Sync"/>
         void Sync(int epoch);
 
         /// <summary>
-        /// Blocks until all computation complete for the graph.
-        /// </summary>
+        /// Blocks until all computation in this graph has termintaed.
+        /// </summary>        
+        /// <remarks>
+        /// This method must be called after calling <see cref="Activate"/> and before calling Dispose()
+        /// or an error will be raised.
+        /// </remarks>
+        /// <example>
+        /// The typical usage of Join is before the end of the <c>using</c> block for a
+        /// Computation:
+        /// <code>
+        /// using (Computation computation = controller.NewComputation())
+        /// {
+        ///     /* Dataflow graph defined here. */
+        ///     
+        ///     computation.Activate();
+        /// 
+        ///     /* Inputs supplied here. */
+        /// 
+        ///     computation.Join();
+        /// }
+        /// </code>
+        /// </example>
+        /// <seealso cref="Microsoft.Research.Naiad.Controller.NewComputation"/>
+        /// <seealso cref="Join"/>
         void Join();
 
         /// <summary>
-        /// Enables the graph for execution, and disables further stage construction.
+        /// Starts computation in this graph.
         /// </summary>
+        /// <remarks>
+        /// This method must be called after the entire dataflow graph has been constructed, and before calling <see cref="Join"/>,
+        /// or an error will be raised.
+        /// </remarks>
+        /// <example>
+        /// The typical usage of Activate is between the definition of the dataflow graph and
+        /// before inputs are supplied to the graph:
+        /// <code>
+        /// using (Computation computation = controller.NewComputation())
+        /// {
+        ///     /* Dataflow graph defined here. */
+        ///     
+        ///     computation.Activate();
+        /// 
+        ///     /* Inputs supplied here. */
+        /// 
+        ///     computation.Join();
+        /// }
+        /// </code>
+        /// </example>
+        /// <see cref="Microsoft.Research.Naiad.Controller.NewComputation"/>
+        /// <seealso cref="Activate"/>
         void Activate();
 
         /// <summary>
-        /// Returns the controller that hosts this graph.
+        /// The <see cref="Controller"/> that hosts this graph.
         /// </summary>
         Controller Controller { get; }
     }
@@ -96,13 +273,13 @@ namespace Microsoft.Research.Naiad
     /// Much of this functionality used to exist in the controller, but we extract out
     /// the 
     /// </summary>
-    internal enum InternalGraphManagerState { Inactive, Active, Complete, Failed }
+    internal enum InternalComputationState { Inactive, Active, Complete, Failed }
 
-    internal interface InternalGraphManager
+    internal interface InternalComputation
     {
         int Index { get; }
 
-        InternalGraphManagerState CurrentState { get; }
+        InternalComputationState CurrentState { get; }
 
         void Cancel(Exception dueTo);
 
@@ -110,11 +287,11 @@ namespace Microsoft.Research.Naiad
 
         InternalController Controller { get; }
 
-        SerializationCodeGenerator CodeGenerator { get; }
+        SerializationFormat SerializationFormat { get; }
 
         Runtime.Progress.ProgressTracker ProgressTracker { get; }
 
-        Scheduling.Reachability Reachability { get; }
+        Runtime.Progress.Reachability Reachability { get; }
 
         // TODO these are only used for reporting; could swap over to new DataSource-based approach.
         Dataflow.InputStage<R> NewInput<R>();
@@ -129,7 +306,7 @@ namespace Microsoft.Research.Naiad
         int Register(Dataflow.Stage stage);
         int Register(Dataflow.Edge edge);
 
-        Scheduling.Placement DefaultPlacement { get; }
+        Placement DefaultPlacement { get; }
 
         Dataflow.ITimeContextManager ContextManager { get; }
 
@@ -144,17 +321,17 @@ namespace Microsoft.Research.Naiad
         void Connect<S, T>(Dataflow.StageOutput<S, T> stream, Dataflow.StageInput<S, T> recvPort, Expression<Func<S, int>> key) where T : Time<T>;
         void Connect<S, T>(Dataflow.StageOutput<S, T> stream, Dataflow.StageInput<S, T> recvPort) where T : Time<T>;
 
-        GraphManager ExternalGraphManager { get; }
+        Computation ExternalComputation { get; }
     }
 
-    internal class BaseGraphManager : GraphManager, InternalGraphManager, IDisposable
+    internal class BaseComputation : Computation, InternalComputation, IDisposable
     {
         private readonly int index;
         public int Index { get { return this.index; } }
 
-        public SerializationCodeGenerator CodeGenerator { get { return this.Controller.CodeGenerator; } }
+        public SerializationFormat SerializationFormat { get { return this.Controller.SerializationFormat; } }
 
-        public GraphManager ExternalGraphManager { get { return this; } }
+        public Computation ExternalComputation { get { return this; } }
 
         public void Cancel(Exception e)
         {
@@ -162,17 +339,17 @@ namespace Microsoft.Research.Naiad
 
             lock (this)
             {
-                if (this.currentState == InternalGraphManagerState.Failed)
+                if (this.currentState == InternalComputationState.Failed)
                     return;
 
-                this.currentState = InternalGraphManagerState.Failed;
+                this.currentState = InternalComputationState.Failed;
                 this.Exception = e;
 
 
                 if (this.Controller.NetworkChannel != null)
                 {
                     MessageHeader header = MessageHeader.GraphFailure(this.index);
-                    SendBufferPage page = SendBufferPage.CreateSpecialPage(header, 0, this.CodeGenerator.GetSerializer<MessageHeader>());
+                    SendBufferPage page = SendBufferPage.CreateSpecialPage(header, 0, this.SerializationFormat.GetSerializer<MessageHeader>());
                     BufferSegment segment = page.Consume();
 
                     Logging.Error("Broadcasting graph failure message");
@@ -184,8 +361,8 @@ namespace Microsoft.Research.Naiad
             }
         }
 
-        private InternalGraphManagerState currentState = InternalGraphManagerState.Inactive;
-        public InternalGraphManagerState CurrentState { get { return this.currentState; } }
+        private InternalComputationState currentState = InternalComputationState.Inactive;
+        public InternalComputationState CurrentState { get { return this.currentState; } }
 
         private Exception exception = null;
         public Exception Exception
@@ -215,18 +392,21 @@ namespace Microsoft.Research.Naiad
         private readonly InternalController controller;
         public InternalController Controller { get { return this.controller; } }
 
-        Controller GraphManager.Controller { get { return this.controller.ExternalController; } }
+        Controller Computation.Controller { get { return this.controller.ExternalController; } }
 
         private readonly ProgressTracker progressTracker;
 
-        public Microsoft.Research.Naiad.Runtime.Progress.ProgressTracker ProgressTracker { get { return this.progressTracker; } }
+        public ProgressTracker ProgressTracker { get { return this.progressTracker; } }
 
-        public Microsoft.Research.Naiad.Runtime.Progress.Frontier Frontier { get { return this.progressTracker; } }
+        private readonly Reachability reachability = new Reachability();
+        public Reachability Reachability { get { return this.reachability; } }
 
-        private readonly Scheduling.Reachability reachability = new Scheduling.Reachability();
-        public Scheduling.Reachability
-            Reachability { get { return this.reachability; } }
 
+        public event EventHandler<FrontierChangedEventArgs> OnFrontierChange 
+        { 
+            add { this.progressTracker.OnFrontierChanged += value; } 
+            remove { this.progressTracker.OnFrontierChanged -= value; } 
+        }
 
         public event EventHandler OnStartup;
 
@@ -291,14 +471,14 @@ namespace Microsoft.Research.Naiad
 
         private readonly List<DataSource> streamingInputs = new List<DataSource>();
 
-        public Dataflow.Stream<R, Epoch> NewInput<R>(DataSource<R> source)
+        public Stream<R, Epoch> NewInput<R>(DataSource<R> source)
         {
             string generatedName = string.Format("__Input{0}", this.inputs.Count);
 
             return this.NewInput(source, generatedName);
         }
 
-        public Dataflow.Stream<R, Epoch> NewInput<R>(DataSource<R> source, string name)
+        public Stream<R, Epoch> NewInput<R>(DataSource<R> source, string name)
         {
             Dataflow.StreamingInputStage<R> ret = new Dataflow.StreamingInputStage<R>(source, this.DefaultPlacement, this, name);
             this.inputs.Add(ret);
@@ -370,7 +550,7 @@ namespace Microsoft.Research.Naiad
         /// </summary>
         public void Join()
         {
-            if (this.CurrentState == InternalGraphManagerState.Inactive)
+            if (this.CurrentState == InternalComputationState.Inactive)
             {
                 throw new Exception("Joining graph manager before calling Activate()");
             }
@@ -414,14 +594,14 @@ namespace Microsoft.Research.Naiad
                 NotifyOnShutdown();
 
                 this.isJoined = true;
-                this.currentState = InternalGraphManagerState.Complete;
+                this.currentState = InternalComputationState.Complete;
             }
         }
 
-        private Scheduling.Placement defaultPlacement;
-        public Scheduling.Placement DefaultPlacement { get { return this.defaultPlacement; } }
+        private Placement defaultPlacement;
+        public Placement DefaultPlacement { get { return this.defaultPlacement; } }
 
-        public BaseGraphManager(InternalController controller, int index)
+        public BaseComputation(InternalController controller, int index)
         {
             this.controller = controller;
             this.defaultPlacement = this.controller.DefaultPlacement;
@@ -454,7 +634,7 @@ namespace Microsoft.Research.Naiad
             }
 
             foreach (var subscription in this.Outputs)
-                subscription.Sync(new Epoch(epoch));
+                subscription.Sync(epoch);
         }
 
         bool activated = false;
@@ -464,7 +644,7 @@ namespace Microsoft.Research.Naiad
             if (activated)
                 return;
 
-            Logging.Progress("Activating GraphManager");
+            Logging.Progress("Activating Computation");
 
             activated = true;
 
@@ -474,7 +654,7 @@ namespace Microsoft.Research.Naiad
 
             this.Controller.DoStartupBarrier();
 
-            this.currentState = InternalGraphManagerState.Active;
+            this.currentState = InternalComputationState.Active;
 
             this.Controller.Workers.WakeUp();
 
@@ -514,8 +694,8 @@ namespace Microsoft.Research.Naiad
         {
             if (!this.isJoined)
             {
-                Logging.Error("Attempted to dispose GraphManager before joining.");
-                Logging.Error("You must call manager.Join() before disposing/exiting the using block.");
+                Logging.Error("Attempted to dispose Computation before joining.");
+                Logging.Error("You must call Computation.Join() before disposing/exiting the using block.");
                 //System.Environment.Exit(-1);
             }
 

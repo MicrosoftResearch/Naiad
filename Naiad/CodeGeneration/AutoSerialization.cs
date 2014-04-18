@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -33,42 +33,67 @@ using Microsoft.CSharp;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization.Formatters.Binary;
 
-namespace Microsoft.Research.Naiad.CodeGeneration
+using Microsoft.Research.Naiad.Diagnostics;
+
+namespace Microsoft.Research.Naiad.Serialization
 {
-    public enum IntSerialization
+
+    /// <summary>
+    /// Represents a serializer and deserializer for a particular element type.
+    /// </summary>
+    /// <typeparam name="TElement">The type of elements handled by this object.</typeparam>
+    public interface NaiadSerialization<TElement>
     {
-        FixedLength,
-        VariableLength
+        /// <summary>
+        /// Attempts to serialize the given element into the given destination buffer.
+        /// </summary>
+        /// <param name="destination">The destination buffer.</param>
+        /// <param name="value">The element to serialize.</param>
+        /// <returns>True if the serialization was successful, otherwise false.</returns>
+        bool Serialize(ref SubArray<byte> destination, TElement value);
+
+        /// <summary>
+        /// Attempts to serialize the given contiguous array segment of elements into the given destination buffer.
+        /// </summary>
+        /// <param name="destination">The destination buffer.</param>
+        /// <param name="values">The elements to serialize.</param>
+        /// <returns>The count of elements successfully serialized.</returns>
+        int TrySerializeMany(ref SubArray<byte> destination, ArraySegment<TElement> values);
+
+        /// <summary>
+        /// Attempts to deserialize an element from the given source buffer.
+        /// </summary>
+        /// <param name="source">The source buffer.</param>
+        /// <param name="value">The deserialized element, if the method returns true.</param>
+        /// <returns>True if deserialization was successful, otherwise false.</returns>
+        bool TryDeserialize(ref RecvBuffer source, out TElement value);
     }
 
-    [System.AttributeUsage(AttributeTargets.Field)]
-    public class IntSerializationAttribute : Attribute
+    /// <summary>
+    /// Represents a particular format for serialization and deserialization.
+    /// </summary>
+    public interface SerializationFormat
     {
-        public readonly IntSerialization Mode;
+        /// <summary>
+        /// Returns a serializer and deserializer for a particular element type.
+        /// </summary>
+        /// <typeparam name="TElement">The type of elements to be serialized and/or deserialized.</typeparam>
+        /// <returns>A serializer and deserializer.</returns>
+        NaiadSerialization<TElement> GetSerializer<TElement>();
 
-        public IntSerializationAttribute(IntSerialization mode)
-        {
-            this.Mode = mode;
-        }
-    }
-
-    public interface NaiadSerialization<T>// : IEqualityComparer<T>
-    {
-        bool Serialize(ref SubArray<byte> destination, T value);
-
-        int TrySerializeMany(ref SubArray<byte> destination, ArraySegment<T> values);
-
-        bool TryDeserialize(ref RecvBuffer source, out T value);
-    }
-
-    public interface SerializationCodeGenerator
-    {
-        NaiadSerialization<T> GetSerializer<T>();
+        /// <summary>
+        /// The major version of the serialization format. Different major versions may not be compatible with each other.
+        /// </summary>
         int MajorVersion { get; }
+
+        /// <summary>
+        /// The minor version of the serialization format. An implementation of a particular major and minor version must support
+        /// backwards compatibility with all serializers of the same major version and earlier minor versions.
+        /// </summary>
         int MinorVersion { get; }
     }
 
-    internal abstract class BaseSerializationCodeGenerator : SerializationCodeGenerator
+    internal abstract class BaseSerializationCodeGenerator : SerializationFormat
     {
         public abstract int MajorVersion { get; }
         public abstract int MinorVersion { get; }
@@ -101,9 +126,9 @@ namespace Microsoft.Research.Naiad.CodeGeneration
         protected abstract AutoSerialization.SerializationCodeGeneratorForType GetCodeGeneratorForType(Type t);
     }
 
-    internal static class Serialization
+    internal static class SerializationFactory
     {
-        public static SerializationCodeGenerator GetCodeGeneratorForVersion(int majorVersion, int minorVersion)
+        public static SerializationFormat GetCodeGeneratorForVersion(int majorVersion, int minorVersion)
         {
             if (minorVersion != 0)
                 throw new InvalidOperationException(string.Format("No code generator available for version {0}.{1}", majorVersion, minorVersion));
@@ -268,6 +293,9 @@ namespace Microsoft.Research.Naiad.CodeGeneration
         }
     }
 
+    /// <summary>
+    /// Factory class for serialization code generators.
+    /// </summary>
     public static class AutoSerialization
     {
         private static readonly Regex BadClassChars = new Regex("[^A-Za-z0-9_]");
@@ -277,7 +305,7 @@ namespace Microsoft.Research.Naiad.CodeGeneration
         private static CompileCache _compileCache = new CompileCache(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()));
         private static Dictionary<Type, object> _codeGenCache = new Dictionary<Type, object>();
 
-        public static string FileNameForType(Type t)
+        private static string FileNameForType(Type t)
         {
             var className = t.Name;
             foreach (var gt in t.GetGenericArguments())
@@ -285,7 +313,7 @@ namespace Microsoft.Research.Naiad.CodeGeneration
             return className;
         }
 
-        public static string ClassNameForCompile(Type t)
+        private static string ClassNameForCompile(Type t)
         {
             using (var codeProvider = new CSharpCodeProvider())
             {
@@ -298,33 +326,7 @@ namespace Microsoft.Research.Naiad.CodeGeneration
             }
         }
 
-#if false
-        public static NaiadSerialization<T> GetSerializer<T>()
-        {
-            lock (_codegenLock)
-            {
-                Type t = typeof(T);
-
-                if (!_codeGenCache.ContainsKey(t))
-                {
-                    SerializationCodeGeneratorForType gen;
-                    if (Configuration.StaticConfiguration.UseInlineSerialization)
-                    {
-                        gen = new InlineNaiadSerializationCodeGenerator(t);
-                    }
-                    else
-                    {
-                        gen = new NaiadSerializationCodeGenerator(t);
-                    }
-                    _codeGenCache[t] = gen.GenerateSerializer<T>();
-                }
-
-                return (NaiadSerialization<T>)_codeGenCache[t];
-            }
-        }
-#endif
-
-        public abstract class SerializationCodeGeneratorForType
+        internal abstract class SerializationCodeGeneratorForType
         {
             protected readonly Type Type;
             protected readonly string GeneratedClassName;
@@ -414,7 +416,7 @@ namespace Microsoft.Research.Naiad.CodeGeneration
                         //_compileCache.Unlock();
                         Tracing.Trace("]Compile");
 
-                        return (NaiadSerialization<T>)res.CompiledAssembly.CreateInstance(String.Format("Microsoft.Research.Naiad.AutoGenerated.{0}", this.GeneratedClassName));
+                        return (NaiadSerialization<T>)res.CompiledAssembly.CreateInstance(String.Format("Microsoft.Research.Naiad.Serialization.AutoGenerated.{0}", this.GeneratedClassName));
                     }
                 }
 
@@ -586,45 +588,40 @@ namespace Microsoft.Research.Naiad.CodeGeneration
                        : new CodeVariableDeclarationStatement(type, name);
         }
 
-        public static bool IsNaiadable(Type t)
+        private static bool IsNaiadable(Type t)
         {
             Type naiadableT = typeof(IEquatable<>).MakeGenericType(t);
             return naiadableT.IsAssignableFrom(t);
         }
 
-        public static bool IsPrimitive(Type t)
+        private static bool IsPrimitive(Type t)
         {
             if (t.IsArray)
                 return false;
             return (t.IsPrimitive || t.Name.StartsWith("Dictionary"));
         }
 
-        public static bool HasBuiltinSerializer(Type t)
+        private static bool HasBuiltinSerializer(Type t)
         {
             return typeof(Serializers).GetMethod("Serialize", new Type[] { typeof(SubArray<byte>), t }) != null;
         }
 
-        public static bool HasBuiltinDeserializer(Type t)
+        private static bool HasBuiltinDeserializer(Type t)
         {
             return typeof(Deserializers).GetMethod("TryDeserialize", new Type[] { typeof(RecvBuffer).MakeByRefType(), t.MakeByRefType() }) != null;
         }
 
-        public static bool HasCustomSerialization(Type t)
+        private static bool HasCustomSerialization(Type t)
         {
-            return typeof(CustomNaiadableSerialization).IsAssignableFrom(t);
+            return false;
         }
-
-        public static bool UsesVariableLengthSerialization(FieldInfo field)
-        {
-            return System.Attribute.GetCustomAttributes(field).Any(x => x is IntSerializationAttribute && ((IntSerializationAttribute)x).Mode == IntSerialization.VariableLength);
-        }
-
-        public static bool IsNullable(Type t)
+        
+        private static bool IsNullable(Type t)
         {
             return t.IsClass || t.IsInterface || t.IsArray;
         }
 
-        public static List<FieldInfo> FieldMetadata(Type t)
+        private static List<FieldInfo> FieldMetadata(Type t)
         {
             var fields = new List<FieldInfo>();
 
@@ -720,7 +717,7 @@ namespace Microsoft.Research.Naiad.CodeGeneration
 
         #region Nested type: NaiadSerializationCodeGenerator
 
-        public class InlineNaiadSerializationCodeGenerator : SerializationCodeGeneratorForType
+        internal class InlineNaiadSerializationCodeGenerator : SerializationCodeGeneratorForType
         {
             private readonly CodeTypeDeclaration classDecl;
 
@@ -734,7 +731,7 @@ namespace Microsoft.Research.Naiad.CodeGeneration
             public override CodeCompileUnit GenerateCompileUnit()
             {
                 var ret = new CodeCompileUnit();
-                var cn = new CodeNamespace("Microsoft.Research.Naiad.AutoGenerated");
+                var cn = new CodeNamespace("Microsoft.Research.Naiad.Serialization.AutoGenerated");
                 ret.Namespaces.Add(cn);
                 cn.Types.Add(this.classDecl);
                 return ret;
@@ -909,7 +906,8 @@ namespace Microsoft.Research.Naiad.CodeGeneration
             /// <summary>
             /// Recursively enumerates the parameters of a generic type, and adds their assemblies
             /// as dependencies for the generated code.
-            /// <param name="t"></param>
+            /// </summary>
+            /// <param name="t">The type whose generic parameters are to be evaluated.</param>
             private void AddAssembliesForGenericParameters(Type t)
             {
                 this.AddReferencedAssembly(t.Assembly);
@@ -1106,7 +1104,7 @@ namespace Microsoft.Research.Naiad.CodeGeneration
         /// <summary>
         /// Code generation logic for the serialization of a single type.
         /// </summary>
-        public class NaiadSerializationCodeGenerator : SerializationCodeGeneratorForType
+        internal class NaiadSerializationCodeGenerator : SerializationCodeGeneratorForType
         {
             
             public readonly HashSet<Type> AllTypes;
@@ -1136,7 +1134,7 @@ namespace Microsoft.Research.Naiad.CodeGeneration
             public override CodeCompileUnit GenerateCompileUnit()
             {
                 var ret = new CodeCompileUnit();
-                var cn = new CodeNamespace("Microsoft.Research.Naiad.AutoGenerated");
+                var cn = new CodeNamespace("Microsoft.Research.Naiad.Serialization.AutoGenerated");
                 ret.Namespaces.Add(cn);
                 cn.Types.Add(classDecl);
                 return ret;
@@ -1189,15 +1187,7 @@ namespace Microsoft.Research.Naiad.CodeGeneration
 
                 return l.ToArray();
             }
-
-            private CodeStatement CallVarLengthSerialize(CodeExpression dest, CodeExpression value)
-            {
-                return IfElse(
-                    Invoke("Microsoft.Research.Naiad.Serializers", "SerializeVarLength", Ref(dest), value),
-                    new CodeStatement[] { },
-                    new CodeStatement[] { Return("false") });
-            }
-
+            
             private CodeStatement CallSerialize(CodeExpression dest, CodeExpression value)
             {
                 return IfElse(
@@ -1205,15 +1195,7 @@ namespace Microsoft.Research.Naiad.CodeGeneration
                     new CodeStatement[] { },
                     new CodeStatement[] { Return("false") });
             }
-
-            private CodeStatement CallVarLengthDeserialize(CodeExpression source, CodeExpression value)
-            {
-                return IfElse(
-                    Invoke("Microsoft.Research.Naiad.Deserializers", "TryDeserializeVarLength", Ref(source), Out(value)),
-                    new CodeStatement[] { },
-                    Bail());
-            }
-
+            
             private CodeStatement CallDeserialize(CodeExpression source, CodeExpression @var)
             {
                 return IfElse(
@@ -1364,15 +1346,8 @@ namespace Microsoft.Research.Naiad.CodeGeneration
                 {
                     foreach (FieldInfo field in FieldMetadata(t))
                     {
-                        if (Configuration.StaticConfiguration.VariableLengthSerialization && UsesVariableLengthSerialization(field))
-                        {
-                            yield return CallVarLengthSerialize(dest, Field(value, field.Name));
-                        }
-                        else
-                        {
-                            AddType(field.FieldType);
-                            yield return CallSerialize(dest, Field(value, field.Name));
-                        }
+                        AddType(field.FieldType);
+                        yield return CallSerialize(dest, Field(value, field.Name));                     
                     }
                 }
             }
@@ -1470,15 +1445,8 @@ namespace Microsoft.Research.Naiad.CodeGeneration
                         if (field.IsInitOnly)
                             throw new Exception("Can't deserialize readonly field " + t.FullName + "." + field.Name);
 
-                        if (Configuration.StaticConfiguration.VariableLengthSerialization && UsesVariableLengthSerialization(field))
-                        {
-                            yield return CallVarLengthDeserialize(source, Field(value, field.Name));
-                        }
-                        else
-                        {
-                            AddType(field.FieldType);
-                            yield return CallDeserialize(source, Field(value, field.Name));
-                        }
+                        AddType(field.FieldType);
+                        yield return CallDeserialize(source, Field(value, field.Name));
                     }
                 }
             }

@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Topics>
+  <Topic id="2a378dc0-df87-470e-9d7c-450ef7248667" visible="True" isDefault="true" title="Welcome to Naiad">
+    <HelpKeywords>
+      <HelpKeyword index="K" term="Welcome" />
+    </HelpKeywords>
+  </Topic>
+  <Topic id="450c8ec2-65e4-4396-93e8-634e6a2144f4" visible="True" isSelected="true" title="Writing your first Naiad program" />
+  <Topic id="b3ff7ae9-7d4a-49b5-89c4-4e8832660d8d" visible="True" title="Running Naiad programs on Microsoft Azure" />
+  <Topic id="c2a31aaa-d867-4d3b-9315-dbb7c7527659" visible="True" isExpanded="true" title="Version History">
+    <HelpKeywords>
+      <HelpKeyword index="K" term="version, history" />
+    </HelpKeywords>
+    <Topic id="576fa56a-c7d5-4dc9-81bb-6fbd7e312fec" visible="True" title="Version 0.4">
+      <HelpKeywords>
+        <HelpKeyword index="K" term="version, 0.4" />
+      </HelpKeywords>
+    </Topic>
+    <Topic id="4306361f-4369-4b46-9c0d-464ccb176161" visible="True" title="Version 0.2">
+      <HelpKeywords>
+        <HelpKeyword index="K" term="version, 0.2" />
+      </HelpKeywords>
+    </Topic>
+    <Topic id="6163523e-3519-436b-a09a-0c71d98f6f25" visible="True" title="Version 0.3">
+      <HelpKeywords>
+        <HelpKeyword index="K" term="version, 0.3" />
+      </HelpKeywords>
+    </Topic>
+    <Topic id="9ab3eec5-5f40-421a-92aa-2e9d4cab33bf" visible="True" title="Version 0.1">
+      <HelpKeywords>
+        <HelpKeyword index="K" term="version, 0.1" />
+      </HelpKeywords>
+    </Topic>
+  </Topic>
+</Topics>

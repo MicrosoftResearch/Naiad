@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -24,14 +24,14 @@ using System.Linq;
 using System.Text;
 using System.IO;
 using Microsoft.Research.Naiad.Dataflow.Channels;
-using Microsoft.Research.Naiad.CodeGeneration;
+using Microsoft.Research.Naiad.Serialization;
 using Microsoft.Research.Naiad.Runtime.Controlling;
 using Microsoft.Research.Naiad.DataStructures;
-using Microsoft.Research.Naiad.FaultTolerance;
 using Microsoft.Research.Naiad.Scheduling;
-//using Naiad.Frameworks.Lindi;
 using Microsoft.Research.Naiad.Frameworks.Reduction;
 using Microsoft.Research.Naiad.Frameworks;
+
+using Microsoft.Research.Naiad.Diagnostics;
 
 namespace Microsoft.Research.Naiad.Dataflow
 {
@@ -40,7 +40,7 @@ namespace Microsoft.Research.Naiad.Dataflow
         /// <summary>
         /// The type of aggregation that is performed on a set of integers or doubles during reporting
         /// </summary>
-        public enum AggregateType
+        internal enum AggregateType
         {
             Sum, Min, Max, Average
         }
@@ -49,7 +49,7 @@ namespace Microsoft.Research.Naiad.Dataflow
         /// Interface used by vertex code to log messages and counters that are aggregated 
         /// and written out by centralized logging code when reporting is enabled.
         /// </summary>
-        public interface IReporting<T> where T : Time<T>
+        internal interface IReporting<T> where T : Time<T>
         {
             /// <summary>
             /// Sends a log message to be written immediately to the 'out-of-band' logging subsystem. If
@@ -63,7 +63,7 @@ namespace Microsoft.Research.Naiad.Dataflow
             /// Sends a log message to be written immediately to the inline logging subsystem that uses the graph's
             /// time domain. If Configuration.InlineReporting is true, this will be written to a file called rtinline.txt
             /// at the root vertex's computer, otherwise it will be written to the console at the vertex's
-            /// local computer. The log message is written out in the form "<time>.entry"
+            /// local computer. The log message is written out in the form "time.entry"
             /// </summary>
             void Log(string entry, T time);
 
@@ -250,9 +250,9 @@ namespace Microsoft.Research.Naiad.Dataflow
         {
             private readonly VertexContext<T> context;
             private readonly InputVertex<string> rootVertex;
-            private readonly Microsoft.Research.Naiad.Frameworks.VertexOutputBuffer<string, T> inlineStatistics;
-            private readonly Microsoft.Research.Naiad.Frameworks.VertexOutputBuffer<Pair<string, ReportingRecord<double>>, T> aggregateDouble;
-            private readonly Microsoft.Research.Naiad.Frameworks.VertexOutputBuffer<Pair<string, ReportingRecord<Int64>>, T> aggregateInt;
+            private readonly VertexOutputBuffer<string, T> inlineStatistics;
+            private readonly VertexOutputBuffer<Pair<string, ReportingRecord<double>>, T> aggregateDouble;
+            private readonly VertexOutputBuffer<Pair<string, ReportingRecord<Int64>>, T> aggregateInt;
 
             public void Log(string s)
             {
@@ -282,7 +282,7 @@ namespace Microsoft.Research.Naiad.Dataflow
             public void ForwardLog(Pair<string, T>[] message)
             {
                 for (int i = 0; i < message.Length; i++)
-                    this.inlineStatistics.GetBufferForTime(message[i].v2).Send(message[i].v1);
+                    this.inlineStatistics.GetBufferForTime(message[i].Second).Send(message[i].First);
 
                 this.inlineStatistics.Flush();
             }
@@ -334,7 +334,7 @@ namespace Microsoft.Research.Naiad.Dataflow
                 }
                 else
                 {
-                    inlineStatistics = new Frameworks.VertexOutputBuffer<string, T>(c.Vertex);
+                    inlineStatistics = new VertexOutputBuffer<string, T>(c.Vertex);
                     inlineStats.StageOutput.Register(inlineStatistics);
                 }
 
@@ -345,9 +345,9 @@ namespace Microsoft.Research.Naiad.Dataflow
                 }
                 else
                 {
-                    aggregateInt = new Frameworks.VertexOutputBuffer<Pair<string, ReportingRecord<long>>, T>(c.Vertex);
+                    aggregateInt = new VertexOutputBuffer<Pair<string, ReportingRecord<long>>, T>(c.Vertex);
                     aggInt.StageOutput.Register(aggregateInt);
-                    aggregateDouble = new Frameworks.VertexOutputBuffer<Pair<string, ReportingRecord<double>>, T>(c.Vertex);
+                    aggregateDouble = new VertexOutputBuffer<Pair<string, ReportingRecord<double>>, T>(c.Vertex);
                     aggDouble.StageOutput.Register(aggregateDouble);
                 }
             }
@@ -416,7 +416,7 @@ namespace Microsoft.Research.Naiad.Dataflow
             {
                 if (makeDomain)
                 {
-                    domainReportingIngress = manager.GraphManager.NewInput<string>();
+                    domainReportingIngress = manager.InternalComputation.NewInput<string>();
                     domainReporter = new RootStatisticsStage(
                         manager.MakeRawContextForScope<Epoch>("Domain Root"), "Domain Root Statistics", "rtdomain.txt");
                     domainReporter.ConnectInline(domainReportingIngress.Stream);
@@ -479,7 +479,7 @@ namespace Microsoft.Research.Naiad.Dataflow
         {
             private Stage<RootStatisticsVertex, Epoch> stage;
 
-            private readonly NaiadList<StageInput<string, Epoch>> receivers;
+            private readonly List<StageInput<string, Epoch>> receivers;
             public IEnumerable<StageInput<string, Epoch>> Receivers
             {
                 get { return receivers; }
@@ -509,23 +509,23 @@ namespace Microsoft.Research.Naiad.Dataflow
 
             internal RootStatisticsStage(ITimeContext<Epoch> context, string name, string outputFile)
             {
-                this.stage = new Stage<RootStatisticsVertex, Epoch>(new SingleVertexPlacement(0, 0), new OpaqueTimeContext<Epoch>(context), Stage.OperatorType.Default, (i, v) => new RootStatisticsVertex(i, v, outputFile), name);
+                this.stage = new Stage<RootStatisticsVertex, Epoch>(new Placement.SingleVertex(0, 0), new TimeContext<Epoch>(context), Stage.OperatorType.Default, (i, v) => new RootStatisticsVertex(i, v, outputFile), name);
 
-                receivers = new NaiadList<StageInput<string, Epoch>>();
+                receivers = new List<StageInput<string, Epoch>>();
             }
         }
 
         internal class AggregateStatisticsVertex<R, T> : Microsoft.Research.Naiad.Dataflow.Vertex<T>
             where T : Time<T>
         {
-            internal readonly Microsoft.Research.Naiad.Frameworks.VertexOutputBuffer<Pair<string, ReportingRecord<R>>, T> output;
+            internal readonly VertexOutputBuffer<Pair<string, ReportingRecord<R>>, T> output;
 
             public void OnRecv(Message<Pair<string, ReportingRecord<R>>, T> message)
             {
                 for (int i = 0; i < message.length; i++)
                 {
-                    string name = message.payload[i].v1;
-                    ReportingRecord<R> r = message.payload[i].v2;
+                    string name = message.payload[i].First;
+                    ReportingRecord<R> r = message.payload[i].Second;
                     if (r.type == Microsoft.Research.Naiad.Dataflow.Reporting.AggregateType.Average)
                     {
                         Context.Reporting.Log(name + ": " + r.payload + "," + r.count, message.time);
@@ -547,7 +547,7 @@ namespace Microsoft.Research.Naiad.Dataflow
             public AggregateStatisticsVertex(int index, Stage<T> parent)
                 : base(index, parent)
             {
-                output = new Frameworks.VertexOutputBuffer<Pair<string, ReportingRecord<R>>, T>(this);
+                output = new VertexOutputBuffer<Pair<string, ReportingRecord<R>>, T>(this);
             }
         }
 
@@ -556,7 +556,7 @@ namespace Microsoft.Research.Naiad.Dataflow
         {
             private readonly Stage<AggregateStatisticsVertex<R, T>, T> stage;
 
-            private readonly NaiadList<StageInput<Pair<string, ReportingRecord<R>>, T>> inputs;
+            private readonly List<StageInput<Pair<string, ReportingRecord<R>>, T>> inputs;
             public IEnumerable<StageInput<Pair<string, ReportingRecord<R>>, T>> Inputs
             {
                 get { return inputs; }
@@ -572,11 +572,11 @@ namespace Microsoft.Research.Naiad.Dataflow
 
             internal AggregateStatisticsStage(ITimeContext<T> context, string name)
             {
-                this.stage = new Stage<AggregateStatisticsVertex<R, T>, T>(new OpaqueTimeContext<T>(context), (i, v) => new AggregateStatisticsVertex<R, T>(i, v), name);
+                this.stage = new Stage<AggregateStatisticsVertex<R, T>, T>(new TimeContext<T>(context), (i, v) => new AggregateStatisticsVertex<R, T>(i, v), name);
 
                 Output = this.stage.NewOutputWithoutSealing(vertex => vertex.output, null);
 
-                inputs = new NaiadList<StageInput<Pair<string, ReportingRecord<R>>, T>>();
+                inputs = new List<StageInput<Pair<string, ReportingRecord<R>>, T>>();
             }
         }
 
@@ -584,7 +584,7 @@ namespace Microsoft.Research.Naiad.Dataflow
 
     internal interface ITimeContextManager
     {
-        InternalGraphManager GraphManager { get; }
+        InternalComputation InternalComputation { get; }
         ITimeContext<T> MakeContextForScope<T>(string name, Reporting.IReportingConnector<T> downstreamConnector) where T : Time<T>;
         ITimeContext<T> MakeRawContextForScope<T>(string name) where T : Time<T>;
         ITimeContext<Epoch> RootContext { get; }
@@ -605,11 +605,15 @@ namespace Microsoft.Research.Naiad.Dataflow
         ITimeContextManager Manager { get; }
     }
 
-    public struct OpaqueTimeContext<T> where T : Time<T>
+    /// <summary>
+    /// Represents a potentially nested scope in a dataflow computation, in which all messages have the same time type.
+    /// </summary>
+    /// <typeparam name="TTime">time type</typeparam>
+    public struct TimeContext<TTime> where TTime : Time<TTime>
     {
-        internal ITimeContext<T> Context;
+        internal ITimeContext<TTime> Context;
 
-        internal OpaqueTimeContext(ITimeContext<T> context) { this.Context = context; }
+        internal TimeContext(ITimeContext<TTime> context) { this.Context = context; }
     }
 
     internal interface IStageContext<T> where T : Time<T>
@@ -626,8 +630,8 @@ namespace Microsoft.Research.Naiad.Dataflow
 
     internal class TimeContextManager : ITimeContextManager
     {
-        private readonly InternalGraphManager graphManager;
-        public InternalGraphManager GraphManager { get { return this.graphManager; } }
+        private readonly InternalComputation internalComputation;
+        public InternalComputation InternalComputation { get { return this.internalComputation; } }
 
         private ITimeContext<Epoch> rootContext;
         public ITimeContext<Epoch> RootContext { get { return rootContext; } }
@@ -652,24 +656,24 @@ namespace Microsoft.Research.Naiad.Dataflow
 
         public ITimeContext<T> MakeRawContextForScope<T>(string name) where T : Time<T>
         {
-            return new TimeContext<T>(this, name, null, false);
+            return new InternalTimeContext<T>(this, name, null, false);
         }
 
         public ITimeContext<T> MakeContextForScope<T>(string name, Reporting.IReportingConnector<T> downstreamConnector) where T : Time<T>
         {
             bool hasAggregate = this.reporting != null && this.reporting.HasAggregate;
-            return new TimeContext<T>(this, name, downstreamConnector, hasAggregate);
+            return new InternalTimeContext<T>(this, name, downstreamConnector, hasAggregate);
         }
 
-        internal TimeContextManager(InternalGraphManager g)
+        internal TimeContextManager(InternalComputation g)
         {
-            this.graphManager = g;
+            this.internalComputation = g;
             this.rootContext = null;
             this.reporting = null;
         }
     }
 
-    internal class TimeContext<T> : ITimeContext<T>
+    internal class InternalTimeContext<T> : ITimeContext<T>
         where T : Time<T>
     {
         private Reporting.IReportingConnector<T> downstreamConnector;
@@ -714,9 +718,9 @@ namespace Microsoft.Research.Naiad.Dataflow
             return new StageContext<T>(name, this, inlineStats, aggInt, aggDouble);
         }
 
-        public TimeContext<T> CloneWithoutAggregate()
+        public InternalTimeContext<T> CloneWithoutAggregate()
         {
-            return new TimeContext<T>(this.manager, this.scope, this.downstreamConnector, false);
+            return new InternalTimeContext<T>(this.manager, this.scope, this.downstreamConnector, false);
         }
 
         void MakeAggregates()
@@ -732,7 +736,7 @@ namespace Microsoft.Research.Naiad.Dataflow
             downstreamConnector.ConnectDoubleAggregator(doubleAggregator.Output);
         }
 
-        public TimeContext(TimeContextManager m, string s, Reporting.IReportingConnector<T> downstreamConn, bool hasAgg)
+        public InternalTimeContext(TimeContextManager m, string s, Reporting.IReportingConnector<T> downstreamConn, bool hasAgg)
         {
             scope = s;
             manager = m;
@@ -751,7 +755,7 @@ namespace Microsoft.Research.Naiad.Dataflow
 
     internal class StageContext<T> : IStageContext<T> where T : Time<T>
     {
-        internal readonly TimeContext<T> parent;
+        internal readonly InternalTimeContext<T> parent;
         internal readonly Stream<string, T> inlineStatistics;
         internal readonly Stream<Pair<string, Reporting.ReportingRecord<Int64>>, T> aggregateInt;
         internal readonly Stream<Pair<string, Reporting.ReportingRecord<double>>, T> aggregateDouble;
@@ -773,11 +777,11 @@ namespace Microsoft.Research.Naiad.Dataflow
             var intReduced = aggregateInt
                 .LocalTimeReduce<
                 Reporting.IntReportingReducer, Reporting.ReportingRecord<Int64>, Reporting.ReportingRecord<Int64>, Reporting.ReportingRecord<Int64>,
-                string, Pair<string, Reporting.ReportingRecord<Int64>>, T>(x => x.v1, x => x.v2, () => new Reporting.IntReportingReducer(),
+                string, Pair<string, Reporting.ReportingRecord<Int64>>, T>(x => x.First, x => x.Second, () => new Reporting.IntReportingReducer(),
                 name + ".IRILR", null, null)
                 .LocalTimeCombine<
                 Reporting.IntReportingReducer, Reporting.ReportingRecord<Int64>, Reporting.ReportingRecord<Int64>, Reporting.ReportingRecord<Int64>,
-                string, T>(() => new Reporting.IntReportingReducer(), name + ".IRILC", x => x.v1.GetHashCode());
+                string, T>(() => new Reporting.IntReportingReducer(), name + ".IRILC", x => x.First.GetHashCode());
 
             var intReporter = new Reporting.AggregateStatisticsStage<Int64, T>(safeContext, name + ".IRI");
             //intReporter.Factory = (i => new Reporting.AggregateStatisticsVertex<Int64, T>(i, intReporter));
@@ -787,11 +791,11 @@ namespace Microsoft.Research.Naiad.Dataflow
             var doubleReduced = aggregateDouble
                 .LocalTimeReduce<
                 Reporting.DoubleReportingReducer, Reporting.ReportingRecord<double>, Reporting.ReportingRecord<double>, Reporting.ReportingRecord<double>,
-                string, Pair<string, Reporting.ReportingRecord<double>>, T>(x => x.v1, x => x.v2, () => new Reporting.DoubleReportingReducer(),
+                string, Pair<string, Reporting.ReportingRecord<double>>, T>(x => x.First, x => x.Second, () => new Reporting.DoubleReportingReducer(),
                 name + ".IRDLR", null, null)
                 .LocalTimeCombine<
                 Reporting.DoubleReportingReducer, Reporting.ReportingRecord<double>, Reporting.ReportingRecord<double>, Reporting.ReportingRecord<double>,
-                string, T>(() => new Reporting.DoubleReportingReducer(), name + ".IRDLC", x => x.v1.GetHashCode());
+                string, T>(() => new Reporting.DoubleReportingReducer(), name + ".IRDLC", x => x.First.GetHashCode());
 
             var doubleReporter = new Reporting.AggregateStatisticsStage<double, T>(safeContext, name + ".IRD");
             //doubleReporter.Factory = (i => new Reporting.AggregateStatisticsVertex<double, T>(i, doubleReporter));
@@ -800,7 +804,7 @@ namespace Microsoft.Research.Naiad.Dataflow
         }
 
         public StageContext(
-            string name, TimeContext<T> p, Stream<string, T> inlineStats,
+            string name, InternalTimeContext<T> p, Stream<string, T> inlineStats,
             Stream<Pair<string, Reporting.ReportingRecord<Int64>>, T> aggInt, Stream<Pair<string, Reporting.ReportingRecord<double>>, T> aggDouble)
         {
             parent = p;

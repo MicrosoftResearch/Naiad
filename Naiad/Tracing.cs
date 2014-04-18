@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -30,7 +30,7 @@ using System.Threading;
 using Microsoft.Research.Naiad.Dataflow.Channels;
 using Microsoft.Research.Naiad.Scheduling;
 
-namespace Microsoft.Research.Naiad
+namespace Microsoft.Research.Naiad.Diagnostics
 {
     /// <summary>
     /// ETW provider for Naiad 
@@ -233,14 +233,14 @@ namespace Microsoft.Research.Naiad
         private static bool _inited = false;
 
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
-        public struct ETW_SET_MARK_INFORMATION
+        private struct ETW_SET_MARK_INFORMATION
         {
             public Int32 Flag;
             [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)] public String Mark;
         };
 
         [StructLayout(LayoutKind.Sequential, Pack = 1, CharSet = CharSet.Ansi)]
-        public struct ETW_SET_BINARY_MARK_INFORMATION
+        private struct ETW_SET_BINARY_MARK_INFORMATION
         {
             public Int32 Flag;
             public char Op;
@@ -421,19 +421,15 @@ namespace Microsoft.Research.Naiad
             tb.Trace(msg, args);
         }
 
+        /// <summary>
+        /// Records a tracing message.
+        /// </summary>
+        /// <param name="msg">message</param>
         [Conditional("TRACING_ON")]
         public static void Trace(string msg)
         {
             var tb = tracingBuffer.Value;
             tb.Trace(msg);
         }
-
-        [Conditional("TRACING_ON")]
-        public static void TracePreformatted(string msg)
-        {
-            var tb = tracingBuffer.Value;
-            tb.Trace(msg);
-        }
-
     }
 }

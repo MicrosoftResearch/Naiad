@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -34,524 +34,709 @@ using Microsoft.Research.Naiad.Dataflow;
 namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
 {
     /// <summary>
-    /// The methods on a Collection that are exposed to the user program
+    /// The Differential Dataflow framework contains extension methods that support LINQ-style incremental and iterative operators.
     /// </summary>
-    public interface Collection<R, T>
-        where R : IEquatable<R>
-        where T : Time<T>
+    /// <remarks>
+    /// The Differential Dataflow operators are defined in terms of <see cref="Collection{TRecord,TTime}"/> objects, each of which wraps
+    /// a Naiad stream and allows it to be interpreted with multiset semantics.
+    /// 
+    /// The <see cref="IncrementalCollection{TRecord}"/> class is the Differential Dataflow&#x2013;specific wrapper for the Naiad
+    /// <see cref="Microsoft.Research.Naiad.Input.BatchedDataSource{TRecord}"/> class.
+    /// </remarks>
+    /// <example>
+    /// A simple Differential Dataflow program can be written as follows:
+    /// 
+    /// <code>
+    /// using Microsoft.Research.Naiad;
+    /// using Microsoft.Research.Naiad.Frameworks.DifferentialDataflow;
+    /// 
+    /// class Program
+    /// {
+    ///     public static void Main(string[] args)
+    ///     {
+    ///         using (Controller controller = NewController.FromArgs(ref args)
+    ///         {
+    ///             using (Computation computation = controller.NewComputation())
+    ///             {
+    ///                 // Define a computation in terms of collections.
+    ///                 InputCollection&lt;int&gt; input = computation.NewInputCollection();
+    ///                 
+    ///                 var histogram = input.Count(x => x);
+    ///                 
+    ///                 // A subscription collects the result of the computation, and applies
+    ///                 // an action to the array of weighted updates.
+    ///                 Subscription subscription = histogram.Subscribe(changes => { /* ... */ });
+    /// 
+    ///                 computation.Activate();
+    /// 
+    ///                 // The OnNext() method takes an IEnumerable&lt;int&gt; that specifies records to add.
+    ///                 input.OnNext(new int[] { 1, 1, 2, 3, 5, 8 });
+    ///                 input.Sync(0); 
+    ///                 
+    ///                 input.OnNext(new int[] { 13 });
+    ///                 input.Sync(1);
+    ///                 
+    ///                 // This OnNext() overload allows elements to be added with integer weights.
+    ///                 // The weights may be positive (adding records) or negative (removing records).
+    ///                 input.OnNext(new Weighted&lt;int&gt;[] { new Weighted&lt;int&gt;(1, -2) });
+    ///                 input.Sync(2);
+    /// 
+    ///                 computation.Join();
+    ///             }
+    /// 
+    ///             controller.Join();
+    ///         }
+    ///         
+    ///     }
+    /// }
+    /// </code>
+    /// </example>
+    /// <seealso cref="Microsoft.Research.Naiad.Controller"/>
+    /// <seealso cref="Microsoft.Research.Naiad.NewController"/>
+    /// <seealso cref="Microsoft.Research.Naiad.Computation"/>
+    /// <seealso cref="InputCollection{TRecord}"/>
+    /// <seealso cref="ExtensionMethods.OnNext{TRecord}(InputCollection{TRecord},IEnumerable{TRecord})"/>
+    /// <seealso cref="InputCollection{TRecord}.OnNext(IEnumerable{Weighted{TRecord}})"/>
+    /// <seealso cref="ExtensionMethods.Subscribe{TRecord}"/>
+    /// <seealso cref="Weighted{TRecord}"/>
+    class NamespaceDoc
+    {
+
+    }
+
+    /// <summary>
+    /// A collection is a multiset of records that varies according to a logical timestamp.
+    /// </summary>
+    /// <typeparam name="TRecord">The type of records in the collection.</typeparam>
+    /// <typeparam name="TTime">The type of timestamp on each record.</typeparam>
+    /// <remarks>
+    /// The <typeparamref name="TTime"/> type parameter is used to ensure that collections are
+    /// combined in compatible ways, and need not be manipulated directly by the programmer. Initially,
+    /// <see cref="InputCollection{TRecord}"/> collections have an integer-valued <see cref="Epoch"/> timestamp,
+    /// which indicates that they vary according to a stream of input epochs. The <see cref="EnterLoop(Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext{TTime})"/> method
+    /// is used to refer to a collection within a loop, by augmenting its timestamp to have an <see cref="IterationIn{TTime}"/> value
+    /// with an additional loop counter.
+    /// </remarks>
+    public interface Collection<TRecord, TTime>
+        where TRecord : IEquatable<TRecord>
+        where TTime : Time<TTime>
     {
         #region Naiad operators
 
-        Stream<Weighted<R>, T> Output { get; }
+        /// <summary>
+        /// The underlying Naiad <see cref="Microsoft.Research.Naiad.Stream{TWeightedRecord,TTime}"/> of
+        /// <see cref="Weighted{TRecord}"/> elements.
+        /// </summary>
+        Stream<Weighted<TRecord>, TTime> Output { get; }
 
-        Collection<R, T> PartitionBy<K>(Expression<Func<R, K>> partitionFunction);
+        /// <summary>
+        /// Partitions a collection by the given key selector.
+        /// </summary>
+        /// <typeparam name="TKey">The key type.</typeparam>
+        /// <param name="keySelector">Function that extracts a key from each record.</param>
+        /// <returns>A collection with the same elements, but in which all records with the same key will be
+        /// processed by the same worker.</returns>
+        Collection<TRecord, TTime> PartitionBy<TKey>(Expression<Func<TRecord, TKey>> keySelector);
 
         #region Consolidation
 
         /// <summary>
-        /// Consolidates representation so that each record occurs with at most one weight.
+        /// Consolidates a collection so that each record occurs with at most one weight.
         /// </summary>
-        /// <returns>Identical collection as input, but consolidated.</returns>
-        Collection<R, T> Consolidate();
+        /// <returns>A collection with the same elements, but in which all identical records are stored once with a canonical weight.</returns>
+        Collection<TRecord, TTime> Consolidate();
 
         /// <summary>
         /// Consolidates representation so that each record occurs with at most one weight.
         /// </summary>
-        /// <param name="partitionFunction">Function by which the data should be partitioned</param>
-        /// <returns>Identical collection as input, but consolidated.</returns>
-        Collection<R, T> Consolidate<K>(Expression<Func<R, K>> partitionFunction);
+        /// <typeparam name="TKey">The key type.</typeparam>
+        /// <param name="keySelector">Function that extracts a key from each record.</param>
+        /// <returns>A collection with the same elements, but in which all identical records are stored once with a canonical weight,
+        /// and all records with the same key will be processed by the same worker.</returns>
+        Collection<TRecord, TTime> Consolidate<TKey>(Expression<Func<TRecord, TKey>> keySelector);
 
         #endregion
-
-        #region Lattice adjustment
-        /// <summary>
-        /// EXPERIMENTAL: Applies an arbitrary function to the lattice coordinate, under the requirement that the element only advance.
-        /// </summary>
-        /// <param name="transformation">lattice transformation</param>
-        /// <returns>It is a mystery.</returns>
-        Collection<R, T> AdjustLattice(Func<R, T, T> transformation);
-        #endregion Lattice adjustment
 
         #region Select/Where/SelectMany
 
         /// <summary>
-        /// Applies input function selector to each record.
+        /// Transforms each record in the collection using the given <paramref name="selector"/> function.
         /// </summary>
-        /// <typeparam name="R2">Result</typeparam>
-        /// <param name="selector">Function from input records to output records.</param>
-        /// <returns>Collection of transformed records.</returns>
-        Collection<R2, T> Select<R2>(Expression<Func<R, R2>> selector)
-            where R2 : IEquatable<R2>;
+        /// <typeparam name="TOutput">The type of the transformed records.</typeparam>
+        /// <param name="selector">A transform function to apply to each record.</param>
+        /// <returns>The collection of transformed records.</returns>
+        Collection<TOutput, TTime> Select<TOutput>(Expression<Func<TRecord, TOutput>> selector)
+            where TOutput : IEquatable<TOutput>;
 
         /// <summary>
-        /// Filters collection by the supplied predicate.
+        /// Filters the collection to contain only records that match the given <paramref name="predicate"/>.
         /// </summary>
-        /// <param name="predicate">Indicates whether a record will be kept.</param>
-        /// <returns>Collection of the subset of records satisfying predicate.</returns>
-        Collection<R, T> Where(Expression<Func<R, bool>> predicate);
+        /// <param name="predicate">A function that returns <c>true</c> if and only if the record will be kept in the output.</param>
+        /// <returns>The collection of records that satisfy the predicate.</returns>
+        Collection<TRecord, TTime> Where(Expression<Func<TRecord, bool>> predicate);
 
         /// <summary>
-        /// Applies input function selector to each record and flattens the result.
+        /// Transforms each record in the collection using the given <paramref name="selector"/> function and flattens the result. 
         /// </summary>
-        /// <typeparam name="R2">Result</typeparam>
-        /// <param name="selector">Function from input records to lists of output records.</param>
-        /// <returns>Concatenation of application of selector to each input record.</returns>
-        Collection<R2, T> SelectMany<R2>(Expression<Func<R, IEnumerable<R2>>> selector)
-            where R2 : IEquatable<R2>;
+        /// <typeparam name="TOutput">The type of elements of the sequence returned by <paramref name="selector"/>.</typeparam>
+        /// <param name="selector">A transform function to apply to each record.</param>
+        /// <returns>The flattened collection of transformed records.</returns>
+        Collection<TOutput, TTime> SelectMany<TOutput>(Expression<Func<TRecord, IEnumerable<TOutput>>> selector)
+            where TOutput : IEquatable<TOutput>;
 
-        Collection<R2, T> SelectMany<R2>(Expression<Func<R, IEnumerable<ArraySegment<R2>>>> selector)
-            where R2 : IEquatable<R2>;
+        /// <summary>
+        /// Transforms each record in the collection using the given <paramref name="selector"/> function and flattens the result.
+        /// </summary>
+        /// <typeparam name="TOutput">The type of elements of the array segments in the sequence returned by <paramref name="selector"/>.</typeparam>
+        /// <param name="selector">A transform function to apply to each record.</param>
+        /// <returns>The flattened collection of transformed records.</returns>
+        /// <remarks>
+        /// This overload supports optimizing the performance of <see cref="SelectMany{TOutput}(Expression{Func{TRecord,IEnumerable{TOutput}}})"/> by using
+        /// <see cref="ArraySegment{TOutput}"/> objects to batch the elements returned by <paramref name="selector"/>.
+        /// </remarks>
+        Collection<TOutput, TTime> SelectMany<TOutput>(Expression<Func<TRecord, IEnumerable<ArraySegment<TOutput>>>> selector)
+            where TOutput : IEquatable<TOutput>;
 
         #endregion Select/Where/SelectMany
 
         #region GroupBy/CoGroupBy
         /// <summary>
-        /// Groups records by supplied key, and applies reduction function.
+        /// Groups records using the supplied key selector, and applies the given reduction function.
         /// </summary>
-        /// <typeparam name="K">Key</typeparam>
-        /// <typeparam name="V">Intermediate</typeparam>
-        /// <typeparam name="R2">Result</typeparam>
-        /// <param name="key">Indicates group of input record</param>
-        /// <param name="selector">Transforms record to intermediate value</param>
-        /// <param name="reducer">Transforms collection of intermediate values to collection of results</param>
-        /// <returns>Collection containing concatenation of reducer applied to the collation of each group in input collection.</returns>
-        Collection<R2, T> GroupBy<K, V, R2>(Expression<Func<R, K>> key, Expression<Func<R, V>> selector, Func<K, IEnumerable<V>, IEnumerable<R2>> reducer)
-            where K : IEquatable<K>
-            where V : IEquatable<V>
-            where R2 : IEquatable<R2>;
+        /// <typeparam name="TKey">The key type.</typeparam>
+        /// <typeparam name="TValue">The intermediate value type.</typeparam>
+        /// <typeparam name="TOutput">The result type.</typeparam>
+        /// <param name="keySelector">Function that extracts a key from each record.</param>
+        /// <param name="valueSelector">Function that transforms a record to the intermediate value that is stored for each record.</param>
+        /// <param name="reducer">Function that transforms a sequence of intermediate values to a sequence of output records.</param>
+        /// <returns>The collection of output records for each group in the input collection.</returns>
+        /// <remarks>This overload can reduce the amount of storage required compared to <see cref="GroupBy{TKey,TOutput}"/> in cases
+        /// where the intermediate value is small relative to each original record.
+        /// 
+        /// If the reducer is a commutative and associative aggregation function, consider using the <see cref="Aggregate{TKey,TValue,TOutput}"/> (or a related aggregation)
+        /// operator, which stores a single value for each key, rather than a sequence of values.</remarks>
+        /// <seealso cref="Count{TKey}"/>
+        /// <seealso cref="Count{TKey,TOutput}"/>
+        /// <seealso cref="Max{TKey,TComparable}"/>
+        /// <seealso cref="Max{TKey,TComparable,TValue}"/>
+        /// <seealso cref="Min{TKey,TComparable}(Expression{Func{TRecord,TKey}},Expression{Func{TRecord,TComparable}})"/>
+        /// <seealso cref="Min{TKey,TComparable,TValue}"/>
+        /// <seealso cref="Sum{TKey,TOutput}(Expression{Func{TRecord,TKey}},Expression{Func{TRecord,int}},Expression{Func{TKey,int,TOutput}})"/>
+        Collection<TOutput, TTime> GroupBy<TKey, TValue, TOutput>(Expression<Func<TRecord, TKey>> keySelector, Expression<Func<TRecord, TValue>> valueSelector, Func<TKey, IEnumerable<TValue>, IEnumerable<TOutput>> reducer)
+            where TKey : IEquatable<TKey>
+            where TValue : IEquatable<TValue>
+            where TOutput : IEquatable<TOutput>;
 
         /// <summary>
-        /// Groups records by supplied key, and applies reduction function.
+        /// Groups records using the supplied key selector, and applies the given reduction function.
         /// </summary>
-        /// <typeparam name="K">Key</typeparam>
-        /// <typeparam name="R2">Result</typeparam>
-        /// <param name="key">Indicates group of input record</param>
-        /// <param name="reducer">Transforms collection of intermediate values to collection of results</param>
-        /// <returns>Collection containing concatenation of reducer applied to the collation of each group in input collection.</returns>
-        Collection<R2, T> GroupBy<K, R2>(Expression<Func<R, K>> key, Func<K, IEnumerable<R>, IEnumerable<R2>> reducer)
-            where K : IEquatable<K>
-            where R2 : IEquatable<R2>;
+        /// <typeparam name="TKey">The key type.</typeparam>
+        /// <typeparam name="TOutput">The result type.</typeparam>
+        /// <param name="keySelector">Function that extracts a key from each record.</param>
+        /// <param name="reducer">Function that transforms a sequence of input records to a sequence of output records.</param>
+        /// <returns>The collection of output records for each group in the input collection.</returns>
+        /// <remarks>The <see cref="GroupBy{TKey,TValue,TOutput}"/> overload can reduce the amount of storage required compared to this overload in cases
+        /// where the intermediate value is small relative to each original record.
+        /// 
+        /// If the <paramref name="reducer"/> is a commutative and associative aggregation function, consider using the <see cref="Aggregate{TKey,TValue,TOutput}"/> (or a related aggregation)
+        /// operator, which stores a single value for each key, rather than a sequence of values.</remarks>
+        /// <seealso cref="Count{TKey}"/>
+        /// <seealso cref="Count{TKey,TOutput}"/>
+        /// <seealso cref="Max{TKey,TComparable}"/>
+        /// <seealso cref="Max{TKey,TComparable,TValue}"/>
+        /// <seealso cref="Min{TKey,TComparable}(Expression{Func{TRecord,TKey}},Expression{Func{TRecord,TComparable}})"/>
+        /// <seealso cref="Min{TKey,TComparable,TValue}"/>
+        /// <seealso cref="Sum{TKey,TOutput}(Expression{Func{TRecord,TKey}},Expression{Func{TRecord,int}},Expression{Func{TKey,int,TOutput}})"/>
+
+        Collection<TOutput, TTime> GroupBy<TKey, TOutput>(Expression<Func<TRecord, TKey>> keySelector, Func<TKey, IEnumerable<TRecord>, IEnumerable<TOutput>> reducer)
+            where TKey : IEquatable<TKey>
+            where TOutput : IEquatable<TOutput>;
 
         /// <summary>
-        /// Groups records by supplied key, and applies reduction function to corresponding pairs of groups if either is non-empty.
+        /// Groups records from both input collections using the respective key selector, and applies the given reduction function.
         /// </summary>
-        /// <typeparam name="K">Key</typeparam>
-        /// <typeparam name="V1">Value1</typeparam>
-        /// <typeparam name="V2">Value2</typeparam>
-        /// <typeparam name="R2">Input</typeparam>
-        /// <typeparam name="R3">Result</typeparam>
-        /// <param name="other">Other collection</param>
-        /// <param name="key1">First key function</param>
-        /// <param name="key2">Second key function</param>
-        /// <param name="selector1">First value selector</param>
-        /// <param name="selector2">Second value selector</param>
-        /// <param name="reducer">Result selector</param>
-        /// <returns>Collection of the concatenation of the reducer applied to each pair of non-empty groups.</returns>
-        Collection<R3, T> CoGroupBy<K, V1, V2, R2, R3>(Collection<R2, T> other, Expression<Func<R, K>> key1, Expression<Func<R2, K>> key2, Expression<Func<R, V1>> selector1, Expression<Func<R2, V2>> selector2, Expression<Func<K, IEnumerable<V1>, IEnumerable<V2>, IEnumerable<R3>>> reducer)
-            where K : IEquatable<K>
-            where V1 : IEquatable<V1>
-            where V2 : IEquatable<V2>
-            where R2 : IEquatable<R2>
-            where R3 : IEquatable<R3>;
+        /// <typeparam name="TKey">The key type.</typeparam>
+        /// <typeparam name="TValue1">The type of intermediate values stored for this collection.</typeparam>
+        /// <typeparam name="TValue2">The type of intermediate values stored from the <paramref name="other"/> collection.</typeparam>
+        /// <typeparam name="TRecord2">The type of records in the <paramref name="other"/> collection.</typeparam>
+        /// <typeparam name="TOutput">The result type.</typeparam>
+        /// <param name="other">The other collection.</param>
+        /// <param name="keySelector1">The key selector applied to records in this collection.</param>
+        /// <param name="keySelector2">The key selector applied to records in the <paramref name="other"/> collection.</param>
+        /// <param name="valueSelector1">Function that transforms a record in this collection to the intermediate value that is stored for each record.</param>
+        /// <param name="valueSelector2">Function that transforms a record in the <paramref name="other"/> collection to the intermediate value that is stored for each record.</param>
+        /// <param name="reducer">Function that transforms two sequences of intermediate values from each input collection to a sequence of output records.</param>
+        /// <returns>The collection of output records for each group in either input collection.</returns>
+        /// <remarks>This overload can reduce the amount of storage required compared to <see cref="CoGroupBy{TKey,TRecord2,TOutput}(Collection{TRecord2,TTime},Expression{Func{TRecord,TKey}},Expression{Func{TRecord2,TKey}},Expression{Func{TKey,IEnumerable{TRecord},IEnumerable{TRecord2},IEnumerable{TOutput}}})"/> in cases
+        /// where the intermediate values are small relative to each original record.
+        /// 
+        /// The <see cref="CoGroupBy{TKey,TValue1,TValue2,TRecord2,TOutput}(Collection{TRecord2,TTime},Expression{Func{TRecord,TKey}},Expression{Func{TRecord2,TKey}},Expression{Func{TRecord,TValue1}},Expression{Func{TRecord2,TValue2}},Expression{Func{TKey,IEnumerable{Weighted{TValue1}},IEnumerable{Weighted{TValue2}},IEnumerable{Weighted{TOutput}}}})"/>
+        /// overload can reduce the amount of computation required compared to this overload, by compressing multiple instances of the
+        /// same value into a single <see cref="Weighted{TValue1}"/> value.
+        /// </remarks>
+        Collection<TOutput, TTime> CoGroupBy<TKey, TValue1, TValue2, TRecord2, TOutput>(Collection<TRecord2, TTime> other, Expression<Func<TRecord, TKey>> keySelector1, Expression<Func<TRecord2, TKey>> keySelector2, Expression<Func<TRecord, TValue1>> valueSelector1, Expression<Func<TRecord2, TValue2>> valueSelector2, Expression<Func<TKey, IEnumerable<TValue1>, IEnumerable<TValue2>, IEnumerable<TOutput>>> reducer)
+            where TKey : IEquatable<TKey>
+            where TValue1 : IEquatable<TValue1>
+            where TValue2 : IEquatable<TValue2>
+            where TRecord2 : IEquatable<TRecord2>
+            where TOutput : IEquatable<TOutput>;
 
         /// <summary>
-        /// Groups records by supplied key, and applies reduction function to corresponding pairs of groups if either is non-empty.
+        /// Groups records from both input collections using the respective key selector, and applies the given reduction function.
         /// </summary>
-        /// <typeparam name="K">Key</typeparam>
-        /// <typeparam name="R2">Input</typeparam>
-        /// <typeparam name="R3">Result</typeparam>
-        /// <param name="other">Other collection</param>
-        /// <param name="key1">First key function</param>
-        /// <param name="key2">Second key function</param>
-        /// <param name="reducer">Result selector</param>
-        /// <returns>Collection of the concatenation of the reducer applied to each pair of non-empty groups.</returns>
-        Collection<R3, T> CoGroupBy<K, R2, R3>(Collection<R2, T> other, Expression<Func<R, K>> key1, Expression<Func<R2, K>> key2, Expression<Func<K, IEnumerable<R>, IEnumerable<R2>, IEnumerable<R3>>> reducer)
-            where K : IEquatable<K>
-            where R2 : IEquatable<R2>
-            where R3 : IEquatable<R3>;
+        /// <typeparam name="TKey">The key type.</typeparam>
+        /// <typeparam name="TRecord2">The type of records in the <paramref name="other"/> collection.</typeparam>
+        /// <typeparam name="TOutput">The result type.</typeparam>
+        /// <param name="other">The other collection.</param>
+        /// <param name="keySelector1">The key selector applied to records in this collection.</param>
+        /// <param name="keySelector2">The key selector applied to records in the <paramref name="other"/> collection.</param>
+        /// <param name="reducer">Function that transforms two sequences of records from each input collection to a sequence of output records.</param>
+        /// <returns>The collection of output records for each group in either input collection.</returns>
+        /// <remarks>The <see cref="CoGroupBy{TKey,TValue1,TValue2,TRecord2,TOutput}(Collection{TRecord2,TTime},Expression{Func{TRecord,TKey}},Expression{Func{TRecord2,TKey}},Expression{Func{TRecord,TValue1}},Expression{Func{TRecord2,TValue2}},Expression{Func{TKey,IEnumerable{TValue1},IEnumerable{TValue2},IEnumerable{TOutput}}})"/>
+        /// overload can reduce the amount of storage required compared to this overload in cases
+        /// where the intermediate values are small relative to each original record.
+        /// 
+        /// The <see cref="CoGroupBy{TKey,TRecord2,TOutput}(Collection{TRecord2,TTime},Expression{Func{TRecord,TKey}},Expression{Func{TRecord2,TKey}},Expression{Func{TKey,IEnumerable{Weighted{TRecord}},IEnumerable{Weighted{TRecord2}},IEnumerable{Weighted{TOutput}}}})"/>
+        /// overload can reduce the amount of computation required compared to this overload, by compressing multiple instances of the
+        /// same value into a single <see cref="Weighted{TRecord}"/> value.</remarks>
+        Collection<TOutput, TTime> CoGroupBy<TKey, TRecord2, TOutput>(Collection<TRecord2, TTime> other, Expression<Func<TRecord, TKey>> keySelector1, Expression<Func<TRecord2, TKey>> keySelector2, Expression<Func<TKey, IEnumerable<TRecord>, IEnumerable<TRecord2>, IEnumerable<TOutput>>> reducer)
+            where TKey : IEquatable<TKey>
+            where TRecord2 : IEquatable<TRecord2>
+            where TOutput : IEquatable<TOutput>;
 
         /// <summary>
-        /// Groups records by supplied key, and applies reduction function to corresponding pairs of groups if either is non-empty.
+        /// Groups records from both input collections using the respective key selector, and applies the given reduction function.
         /// </summary>
-        /// <typeparam name="K">Key</typeparam>
-        /// <typeparam name="V1">Value1</typeparam>
-        /// <typeparam name="V2">Value2</typeparam>
-        /// <typeparam name="R2">Input</typeparam>
-        /// <typeparam name="R3">Result</typeparam>
-        /// <param name="other">Other collection</param>
-        /// <param name="key1">First key function</param>
-        /// <param name="key2">Second key function</param>
-        /// <param name="selector1">First value selector</param>
-        /// <param name="selector2">Second value selector</param>
-        /// <param name="reducer">Result selector</param>
-        /// <returns>Collection of the concatenation of the reducer applied to each pair of non-empty groups.</returns>
-        Collection<R3, T> CoGroupBy<K, V1, V2, R2, R3>(Collection<R2, T> other, Expression<Func<R, K>> key1, Expression<Func<R2, K>> key2, Expression<Func<R, V1>> selector1, Expression<Func<R2, V2>> selector2, Expression<Func<K, IEnumerable<Weighted<V1>>, IEnumerable<Weighted<V2>>, IEnumerable<Weighted<R3>>>> reducer)
-            where K : IEquatable<K>
-            where V1 : IEquatable<V1>
-            where V2 : IEquatable<V2>
-            where R2 : IEquatable<R2>
-            where R3 : IEquatable<R3>;
+        /// <typeparam name="TKey">The key type.</typeparam>
+        /// <typeparam name="TValue1">The type of intermediate values stored for this collection.</typeparam>
+        /// <typeparam name="TValue2">The type of intermediate values stored from the <paramref name="other"/> collection.</typeparam>
+        /// <typeparam name="TRecord2">The type of records in the <paramref name="other"/> collection.</typeparam>
+        /// <typeparam name="TOutput">The result type.</typeparam>
+        /// <param name="other">The other collection.</param>
+        /// <param name="keySelector1">The key selector applied to records in this collection.</param>
+        /// <param name="keySelector2">The key selector applied to records in the <paramref name="other"/> collection.</param>
+        /// <param name="valueSelector1">Function that transforms a record in this collection to the intermediate value that is stored for each record.</param>
+        /// <param name="valueSelector2">Function that transforms a record in the <paramref name="other"/> collection to the intermediate value that is stored for each record.</param>
+        /// <param name="reducer">Function that transforms two sequences of weighted intermediate values from each input collection to a sequence of weighted output records.</param>
+        /// <returns>The collection of output records for each group in either input collection.</returns>
+        /// <remarks>This overload can reduce the amount of storage required compared to <see cref="CoGroupBy{TKey,TRecord2,TOutput}(Collection{TRecord2,TTime},Expression{Func{TRecord,TKey}},Expression{Func{TRecord2,TKey}},Expression{Func{TKey,IEnumerable{Weighted{TRecord}},IEnumerable{Weighted{TRecord2}},IEnumerable{Weighted{TOutput}}}})"/> in cases
+        /// where the intermediate values are small relative to each original record.
+        /// 
+        /// This overload can reduce the amount of computation required compared to the <see cref="CoGroupBy{TKey,TValue1,TValue2,TRecord2,TOutput}(Collection{TRecord2,TTime},Expression{Func{TRecord,TKey}},Expression{Func{TRecord2,TKey}},Expression{Func{TRecord,TValue1}},Expression{Func{TRecord2,TValue2}},Expression{Func{TKey,IEnumerable{TValue1},IEnumerable{TValue2},IEnumerable{TOutput}}})"/> overload, by compressing multiple instances of the
+        /// same value into a single <see cref="Weighted{TValue1}"/> value.
+        /// </remarks>
+        Collection<TOutput, TTime> CoGroupBy<TKey, TValue1, TValue2, TRecord2, TOutput>(Collection<TRecord2, TTime> other, Expression<Func<TRecord, TKey>> keySelector1, Expression<Func<TRecord2, TKey>> keySelector2, Expression<Func<TRecord, TValue1>> valueSelector1, Expression<Func<TRecord2, TValue2>> valueSelector2, Expression<Func<TKey, IEnumerable<Weighted<TValue1>>, IEnumerable<Weighted<TValue2>>, IEnumerable<Weighted<TOutput>>>> reducer)
+            where TKey : IEquatable<TKey>
+            where TValue1 : IEquatable<TValue1>
+            where TValue2 : IEquatable<TValue2>
+            where TRecord2 : IEquatable<TRecord2>
+            where TOutput : IEquatable<TOutput>;
 
         /// <summary>
-        /// Groups records by supplied key, and applies reduction function to corresponding pairs of groups if either is non-empty.
+        /// Groups records from both input collections using the respective key selector, and applies the given reduction function.
         /// </summary>
-        /// <typeparam name="K">Key</typeparam>
-        /// <typeparam name="R2">Input</typeparam>
-        /// <typeparam name="R3">Result</typeparam>
-        /// <param name="other">Other collection</param>
-        /// <param name="key1">First key function</param>
-        /// <param name="key2">Second key function</param>
-        /// <param name="reducer">Result selector</param>
-        /// <returns>Collection of the concatenation of the reducer applied to each pair of non-empty groups.</returns>
-        Collection<R3, T> CoGroupBy<K, R2, R3>(Collection<R2, T> other, Expression<Func<R, K>> key1, Expression<Func<R2, K>> key2, Expression<Func<K, IEnumerable<Weighted<R>>, IEnumerable<Weighted<R2>>, IEnumerable<Weighted<R3>>>> reducer)
-            where K : IEquatable<K>
-            where R2 : IEquatable<R2>
-            where R3 : IEquatable<R3>;
+        /// <typeparam name="TKey">The key type.</typeparam>
+        /// <typeparam name="TRecord2">The type of records in the <paramref name="other"/> collection.</typeparam>
+        /// <typeparam name="TOutput">The result type.</typeparam>
+        /// <param name="other">The other collection.</param>
+        /// <param name="keySelector1">The key selector applied to records in this collection.</param>
+        /// <param name="keySelector2">The key selector applied to records in the <paramref name="other"/> collection.</param>
+        /// <param name="reducer">Function that transforms two sequences of weighted records from each input collection to a sequence of weighted output records.</param>
+        /// <returns>The collection of output records for each group in either input collection.</returns>
+        /// <remarks>The <see cref="CoGroupBy{TKey,TValue1,TValue2,TRecord2,TOutput}(Collection{TRecord2,TTime},Expression{Func{TRecord,TKey}},Expression{Func{TRecord2,TKey}},Expression{Func{TRecord,TValue1}},Expression{Func{TRecord2,TValue2}},Expression{Func{TKey,IEnumerable{Weighted{TValue1}},IEnumerable{Weighted{TValue2}},IEnumerable{Weighted{TOutput}}}})"/>
+        /// overload can reduce the amount of storage required compared to this overload in cases
+        /// where the intermediate values are small relative to each original record.
+        /// 
+        /// This overload can reduce the amount of computation required compared to the <see cref="CoGroupBy{TKey,TRecord2,TOutput}(Collection{TRecord2,TTime},Expression{Func{TRecord,TKey}},Expression{Func{TRecord2,TKey}},Expression{Func{TKey,IEnumerable{TRecord},IEnumerable{TRecord2},IEnumerable{TOutput}}})"/> overload, by compressing multiple instances of the
+        /// same value into a single <see cref="Weighted{TRecord}"/> value.
+        /// </remarks>
+        Collection<TOutput, TTime> CoGroupBy<TKey, TRecord2, TOutput>(Collection<TRecord2, TTime> other, Expression<Func<TRecord, TKey>> keySelector1, Expression<Func<TRecord2, TKey>> keySelector2, Expression<Func<TKey, IEnumerable<Weighted<TRecord>>, IEnumerable<Weighted<TRecord2>>, IEnumerable<Weighted<TOutput>>>> reducer)
+            where TKey : IEquatable<TKey>
+            where TRecord2 : IEquatable<TRecord2>
+            where TOutput : IEquatable<TOutput>;
         #endregion GroupBy/CoGroupBy
 
         #region Join
         /// <summary>
-        /// Joins two input collections.
+        /// Joins this collection with the <paramref name="other"/> collection, using the respective key selectors.
         /// </summary>
-        /// <typeparam name="K">Key</typeparam>
-        /// <typeparam name="R2">Other</typeparam>
-        /// <typeparam name="R3">Result</typeparam>
-        /// <param name="other">Other collection</param>
-        /// <param name="key1">first key function</param>
-        /// <param name="key2">second key function</param>
-        /// <param name="reducer">reduces each matching pair of records</param>
-        /// <returns>Collection of reducer applied to all matching pairs from inputs.</returns>
-        Collection<R3, T> Join<K, R2, R3>(Collection<R2, T> other, Expression<Func<R, K>> key1, Expression<Func<R2, K>> key2, Expression<Func<R, R2, R3>> reducer)
-            where K : IEquatable<K>
-            where R2 : IEquatable<R2>
-            where R3 : IEquatable<R3>;
+        /// <typeparam name="TKey">The key type.</typeparam>
+        /// <typeparam name="TRecord2">The type of records in the <paramref name="other"/> collection.</typeparam>
+        /// <typeparam name="TOutput">The result type.</typeparam>
+        /// <param name="other">The other collection.</param>
+        /// <param name="keySelector1">The key selector applied to records in this collection.</param>
+        /// <param name="keySelector2">The key selector applied to records in the <paramref name="other"/> collection.</param>
+        /// <param name="resultSelector">Function that transforms records with matching keys to an output record.</param>
+        /// <returns>The collection of output records.</returns>
+        Collection<TOutput, TTime> Join<TKey, TRecord2, TOutput>(Collection<TRecord2, TTime> other, Expression<Func<TRecord, TKey>> keySelector1, Expression<Func<TRecord2, TKey>> keySelector2, Expression<Func<TRecord, TRecord2, TOutput>> resultSelector)
+            where TKey : IEquatable<TKey>
+            where TRecord2 : IEquatable<TRecord2>
+            where TOutput : IEquatable<TOutput>;
 
         /// <summary>
-        /// Joins two input collections. Optional intermediate value selectors.
+        /// Joins this collection with the <paramref name="other"/> collection, using the respective key selectors.
         /// </summary>
-        /// <typeparam name="K">Key</typeparam>
-        /// <typeparam name="V1">First intermediate</typeparam>
-        /// <typeparam name="V2">Second intermediate</typeparam>
-        /// <typeparam name="R2">Other</typeparam>
-        /// <typeparam name="R3">Result</typeparam>
-        /// <param name="other">Other collection</param>
-        /// <param name="key1">first key function</param>
-        /// <param name="key2">second key function</param>
-        /// <param name="val1">first value selector</param>
-        /// <param name="val2">second value selector</param>
-        /// <param name="reducer">reduces each matching pair of intermediate values</param>
-        /// <returns>Collection of reducer applied to all matching pairs from inputs.</returns>
-        Collection<R3, T> Join<K, V1, V2, R2, R3>(Collection<R2, T> other, Expression<Func<R, K>> key1, Expression<Func<R2, K>> key2, Expression<Func<R, V1>> val1, Expression<Func<R2, V2>> val2, Expression<Func<K, V1, V2, R3>> reducer)
-            where K : IEquatable<K>
-            where V1 : IEquatable<V1>
-            where V2 : IEquatable<V2>
-            where R2 : IEquatable<R2>
-            where R3 : IEquatable<R3>;
+        /// <typeparam name="TKey">The key type.</typeparam>
+        /// <typeparam name="TValue1">The type of intermediate values stored for this collection.</typeparam>
+        /// <typeparam name="TValue2">The type of intermediate values stored from the <paramref name="other"/> collection.</typeparam>
+        /// <typeparam name="TRecord2">The type of records in the <paramref name="other"/> collection.</typeparam>
+        /// <typeparam name="TOutput">The result type.</typeparam>
+        /// <param name="other">The other collection.</param>
+        /// <param name="keySelector1">The key selector applied to records in this collection.</param>
+        /// <param name="keySelector2">The key selector applied to records in the <paramref name="other"/> collection.</param>
+        /// <param name="valueSelector1">Function that transforms a record in this collection to the intermediate value that is stored for each record.</param>
+        /// <param name="valueSelector2">Function that transforms a record in the <paramref name="other"/> collection to the intermediate value that is stored for each record.</param>
+        /// <param name="resultSelector">Function that transforms intermediate values from records with matching keys to an output record.</param>
+        /// <returns>The collection of output records.</returns>
+        Collection<TOutput, TTime> Join<TKey, TValue1, TValue2, TRecord2, TOutput>(Collection<TRecord2, TTime> other, Expression<Func<TRecord, TKey>> keySelector1, Expression<Func<TRecord2, TKey>> keySelector2, Expression<Func<TRecord, TValue1>> valueSelector1, Expression<Func<TRecord2, TValue2>> valueSelector2, Expression<Func<TKey, TValue1, TValue2, TOutput>> resultSelector)
+            where TKey : IEquatable<TKey>
+            where TValue1 : IEquatable<TValue1>
+            where TValue2 : IEquatable<TValue2>
+            where TRecord2 : IEquatable<TRecord2>
+            where TOutput : IEquatable<TOutput>;
 
         /// <summary>
-        /// Joins two input collections. Optional intermediate value selectors.
+        /// Joins this collection with the <paramref name="other"/> collection, using the respective integer-valued key selectors.
         /// </summary>
-        /// <typeparam name="K">Key</typeparam>
-        /// <typeparam name="V1">First intermediate</typeparam>
-        /// <typeparam name="V2">Second intermediate</typeparam>
-        /// <typeparam name="R2">Other</typeparam>
-        /// <typeparam name="R3">Result</typeparam>
-        /// <param name="other">Other collection</param>
-        /// <param name="key1">first key function</param>
-        /// <param name="key2">second key function</param>
-        /// <param name="val1">first value selector</param>
-        /// <param name="val2">second value selector</param>
-        /// <param name="reducer">reduces each matching pair of intermediate values</param>
-        /// <param name="useDenseIntKeys">set to enable arrays in place of dictionaries</param>
-        /// <returns>Collection of reducer applied to all matching pairs from inputs.</returns>
-        Collection<R3, T> Join<V1, V2, R2, R3>(Collection<R2, T> other, Expression<Func<R, Int32>> key1, Expression<Func<R2, Int32>> key2, Expression<Func<R, V1>> val1, Expression<Func<R2, V2>> val2, Expression<Func<Int32, V1, V2, R3>> reducer, bool useDenseIntKeys)
-            where V1 : IEquatable<V1>
-            where V2 : IEquatable<V2>
-            where R2 : IEquatable<R2>
-            where R3 : IEquatable<R3>;
+        /// <typeparam name="TValue1">The type of intermediate values stored for this collection.</typeparam>
+        /// <typeparam name="TValue2">The type of intermediate values stored from the <paramref name="other"/> collection.</typeparam>
+        /// <typeparam name="TRecord2">The type of records in the <paramref name="other"/> collection.</typeparam>
+        /// <typeparam name="TOutput">The result type.</typeparam>
+        /// <param name="other">The other collection.</param>
+        /// <param name="keySelector1">The key selector applied to records in this collection.</param>
+        /// <param name="keySelector2">The key selector applied to records in the <paramref name="other"/> collection.</param>
+        /// <param name="valueSelector1">Function that transforms a record in this collection to the intermediate value that is stored for each record.</param>
+        /// <param name="valueSelector2">Function that transforms a record in the <paramref name="other"/> collection to the intermediate value that is stored for each record.</param>
+        /// <param name="resultSelector">Function that transforms intermediate values from records with matching keys to an output record.</param>
+        /// <param name="useDenseIntKeys">If <c>true</c>, use optimizations for dense-valued keys, otherwise treat keys as sparse.</param>
+        /// <returns>The collection of output records.</returns>
+        /// <remarks>
+        /// This overload is specialized for collections with integer keys. If <paramref name="useDenseIntKeys"/> is <c>true</c>,
+        /// the implementation uses a further specialization that exploits the dense nature of the keys.
+        /// </remarks>
+        Collection<TOutput, TTime> Join<TValue1, TValue2, TRecord2, TOutput>(Collection<TRecord2, TTime> other, Expression<Func<TRecord, Int32>> keySelector1, Expression<Func<TRecord2, Int32>> keySelector2, Expression<Func<TRecord, TValue1>> valueSelector1, Expression<Func<TRecord2, TValue2>> valueSelector2, Expression<Func<Int32, TValue1, TValue2, TOutput>> resultSelector, bool useDenseIntKeys)
+            where TValue1 : IEquatable<TValue1>
+            where TValue2 : IEquatable<TValue2>
+            where TRecord2 : IEquatable<TRecord2>
+            where TOutput : IEquatable<TOutput>;
 
         #endregion Join
 
         #region Data-parallel aggregations
 
         /// <summary>
-        /// Key-wise aggregation using supplied combiner.
+        /// Groups records using the supplied key selector, and applies the given aggregation function.
         /// </summary>
-        /// <typeparam name="K">Key</typeparam>
-        /// <typeparam name="V">Value</typeparam>
-        /// <typeparam name="R2">Result</typeparam>
-        /// <param name="key">key selector</param>
-        /// <param name="value">value selector</param>
-        /// <param name="axpy">"a * x + y" function</param>
-        /// <param name="isZero">predicate indicating zero values of V</param>
-        /// <param name="reducer">reduction function</param>
-        /// <returns></returns>
-        Collection<R2, T> Aggregate<K, V, R2>(Expression<Func<R, K>> key, Expression<Func<R, V>> value, Expression<Func<Int64, V, V, V>> axpy, Expression<Func<V, bool>> isZero, Expression<Func<K, V, R2>> reducer)
-            where K : IEquatable<K>
-            where R2 : IEquatable<R2>
-            where V : IEquatable<V>;
+        /// <typeparam name="TKey">The key type.</typeparam>
+        /// <typeparam name="TValue">The intermediate value type.</typeparam>
+        /// <typeparam name="TOutput">The result type.</typeparam>
+        /// <param name="keySelector">Function that extracts a key from each record.</param>
+        /// <param name="valueSelector">Function that transforms a record to the intermediate value that is stored for each record.</param>
+        /// <param name="resultSelector">Function that transforms a key and aggregate value to an output record.</param>
+        /// <param name="axpy">A function that multiplies the first argument by the second and adds the third (cf. SAXPY).</param>
+        /// <param name="isZeroPredicate">A predicate that returns <c>true</c> if and only if the given value is zero.</param>
+        /// <returns>The collection of output records.</returns>
+        Collection<TOutput, TTime> Aggregate<TKey, TValue, TOutput>(Expression<Func<TRecord, TKey>> keySelector, Expression<Func<TRecord, TValue>> valueSelector, Expression<Func<Int64, TValue, TValue, TValue>> axpy, Expression<Func<TValue, bool>> isZeroPredicate, Expression<Func<TKey, TValue, TOutput>> resultSelector)
+            where TKey : IEquatable<TKey>
+            where TOutput : IEquatable<TOutput>
+            where TValue : IEquatable<TValue>;
 
         /// <summary>
-        /// Counts the number of records, by group.
+        /// Groups records using the supplied key selector, and counts the number of records in each group.
         /// </summary>
-        /// <typeparam name="K">Key</typeparam>
-        /// <typeparam name="R2">Result</typeparam>
-        /// <param name="key">key function</param>
-        /// <param name="reducer">reduction function</param>
-        /// <returns>Collection of results of applying reduction funtion to each group of non-zero elements.</returns>
-        Collection<Pair<K, Int64>, T> Count<K>(Expression<Func<R, K>> key)
-            where K : IEquatable<K>;
+        /// <typeparam name="TKey">The key type.</typeparam>
+        /// <param name="keySelector">Function that extracts a key from each record.</param>
+        /// <returns>The collection of pairs of keys and the respective counts for each group.</returns>
+        Collection<Pair<TKey, Int64>, TTime> Count<TKey>(Expression<Func<TRecord, TKey>> keySelector)
+            where TKey : IEquatable<TKey>;
 
         /// <summary>
-        /// Counts the number of records, by group.
+        /// Groups records using the supplied key selector, and counts the number of records in each group.
         /// </summary>
-        /// <typeparam name="K">Key</typeparam>
-        /// <typeparam name="R2">Result</typeparam>
-        /// <param name="key">key function</param>
-        /// <param name="reducer">reduction function</param>
-        /// <returns>Collection of results of applying reduction funtion to each group of non-zero elements.</returns>
-        Collection<R2, T> Count<K, R2>(Expression<Func<R, K>> key, Expression<Func<K, Int64, R2>> reducer)
-            where K : IEquatable<K>
-            where R2 : IEquatable<R2>;
+        /// <typeparam name="TKey">The key type.</typeparam>
+        /// <typeparam name="TOutput">The output type.</typeparam>
+        /// <param name="keySelector">Function that extracts a key from each record.</param>
+        /// <param name="resultSelector">Function that transforms a key and count to an output record.</param>
+        /// <returns>The collection of output records.</returns>
+        Collection<TOutput, TTime> Count<TKey, TOutput>(Expression<Func<TRecord, TKey>> keySelector, Expression<Func<TKey, Int64, TOutput>> resultSelector)
+            where TKey : IEquatable<TKey>
+            where TOutput : IEquatable<TOutput>;
 
         /// <summary>
-        /// Key-wise summation, using Int32 values.
+        /// Groups records using the supplied key selector, and computes the sum of the records in each group.
         /// </summary>
-        /// <typeparam name="K">Key</typeparam>
-        /// <typeparam name="R2">Result</typeparam>
-        /// <param name="key">key selector</param>
-        /// <param name="valueSelector">value selector</param>
-        /// <param name="reducer">reducer</param>
-        /// <returns>Collection of reducer applied to the sum for each key</returns>
-        Collection<R2, T> Sum<K, R2>(Expression<Func<R, K>> key, Expression<Func<R, int>> valueSelector, Expression<Func<K, int, R2>> reducer)
-            where K : IEquatable<K>
-            where R2 : IEquatable<R2>;
+        /// <typeparam name="TKey">The key type.</typeparam>
+        /// <typeparam name="TOutput">The output type.</typeparam>
+        /// <param name="keySelector">Function that extracts a key from each record.</param>
+        /// <param name="valueSelector">Function that extracts the integer value to be summed each record.</param>
+        /// <param name="resultSelector">Function that transforms a key and count to an output record.</param>
+        /// <returns>The collection of output records.</returns>
+        Collection<TOutput, TTime> Sum<TKey, TOutput>(Expression<Func<TRecord, TKey>> keySelector, Expression<Func<TRecord, int>> valueSelector, Expression<Func<TKey, int, TOutput>> resultSelector)
+            where TKey : IEquatable<TKey>
+            where TOutput : IEquatable<TOutput>;
 
         /// <summary>
-        /// Key-wise summation, using Int64 values.
+        /// Groups records using the supplied key selector, and computes the sum of the records in each group.
         /// </summary>
-        /// <typeparam name="K">Key</typeparam>
-        /// <typeparam name="R2">Result</typeparam>
-        /// <param name="key">key selector</param>
-        /// <param name="valueSelector">value selector</param>
-        /// <param name="reducer">reducer</param>
-        /// <returns>Collection of reducer applied to the sum for each key</returns>
-        Collection<R2, T> Sum<K, R2>(Expression<Func<R, K>> key, Expression<Func<R, Int64>> valueSelector, Expression<Func<K, Int64, R2>> reducer)
-            where K : IEquatable<K>
-            where R2 : IEquatable<R2>;
+        /// <typeparam name="TKey">The key type.</typeparam>
+        /// <typeparam name="TOutput">The output type.</typeparam>
+        /// <param name="keySelector">Function that extracts a key from each record.</param>
+        /// <param name="valueSelector">Function that extracts the long value to be summed each record.</param>
+        /// <param name="resultSelector">Function that transforms a key and count to an output record.</param>
+        /// <returns>The collection of output records.</returns>
+        Collection<TOutput, TTime> Sum<TKey, TOutput>(Expression<Func<TRecord, TKey>> keySelector, Expression<Func<TRecord, Int64>> valueSelector, Expression<Func<TKey, Int64, TOutput>> resultSelector)
+            where TKey : IEquatable<TKey>
+            where TOutput : IEquatable<TOutput>;
 
         /// <summary>
-        /// Key-wise summation, using float values.
+        /// Groups records using the supplied key selector, and computes the sum of the records in each group.
         /// </summary>
-        /// <typeparam name="K">Key</typeparam>
-        /// <typeparam name="R2">Result</typeparam>
-        /// <param name="key">key selector</param>
-        /// <param name="valueSelector">value selector</param>
-        /// <param name="reducer">reducer</param>
-        /// <returns>Collection of reducer applied to the sum for each key</returns>
-        Collection<R2, T> Sum<K, R2>(Expression<Func<R, K>> key, Expression<Func<R, float>> valueSelector, Expression<Func<K, float, R2>> reducer)
-            where K : IEquatable<K>
-            where R2 : IEquatable<R2>;
+        /// <typeparam name="TKey">The key type.</typeparam>
+        /// <typeparam name="TOutput">The output type.</typeparam>
+        /// <param name="keySelector">Function that extracts a key from each record.</param>
+        /// <param name="valueSelector">Function that extracts the floating-point value to be summed each record.</param>
+        /// <param name="resultSelector">Function that transforms a key and count to an output record.</param>
+        /// <returns>The collection of output records.</returns>
+        Collection<TOutput, TTime> Sum<TKey, TOutput>(Expression<Func<TRecord, TKey>> keySelector, Expression<Func<TRecord, float>> valueSelector, Expression<Func<TKey, float, TOutput>> resultSelector)
+            where TKey : IEquatable<TKey>
+            where TOutput : IEquatable<TOutput>;
 
         /// <summary>
-        /// Key-wise summation, using double values.
+        /// Groups records using the supplied key selector, and computes the sum of the records in each group.
         /// </summary>
-        /// <typeparam name="K">Key</typeparam>
-        /// <typeparam name="R2">Result</typeparam>
-        /// <param name="key">key selector</param>
-        /// <param name="valueSelector">value selector</param>
-        /// <param name="reducer">reducer</param>
-        /// <returns>Collection of reducer applied to the sum for each key</returns>
-        Collection<R2, T> Sum<K, R2>(Expression<Func<R, K>> key, Expression<Func<R, double>> valueSelector, Expression<Func<K, double, R2>> reducer)
-            where K : IEquatable<K>
-            where R2 : IEquatable<R2>;
-
-        Collection<R, T> Min<K,M>(Expression<Func<R, K>> key, Expression<Func<R, M>> minBy)
-            where K : IEquatable<K>
-            where M : IEquatable<M>, IComparable<M>;
+        /// <typeparam name="TKey">The key type.</typeparam>
+        /// <typeparam name="TOutput">The output type.</typeparam>
+        /// <param name="keySelector">Function that extracts a key from each record.</param>
+        /// <param name="valueSelector">Function that extracts the 64-bit floating-point value to be summed each record.</param>
+        /// <param name="resultSelector">Function that transforms a key and count to an output record.</param>
+        /// <returns>The collection of output records.</returns>
+        Collection<TOutput, TTime> Sum<TKey, TOutput>(Expression<Func<TRecord, TKey>> keySelector, Expression<Func<TRecord, double>> valueSelector, Expression<Func<TKey, double, TOutput>> resultSelector)
+            where TKey : IEquatable<TKey>
+            where TOutput : IEquatable<TOutput>;
 
         /// <summary>
-        /// Key-wise minimum using intermediate value selectors.
+        /// Groups records using the supplied key selector, and computes the minimum value in each group.
         /// </summary>
-        /// <typeparam name="K">Key</typeparam>
-        /// <typeparam name="S">State</typeparam>
-        /// <param name="key">key selector</param>
-        /// <param name="selector">state selector</param>
-        /// <param name="value">value selector</param>
-        /// <param name="reducer">reducer</param>
-        /// <returns>Collection containing for each key the minimum record under value</returns>
-        Collection<R, T> Min<K, V, M>(Expression<Func<R, K>> key, Expression<Func<R, V>> value, Expression<Func<K,V,M>> minBy, Expression<Func<K, V, R>> reducer)
-            where K : IEquatable<K>
-            where V : IEquatable<V>
-            where M : IEquatable<M>, IComparable<M>;
+        /// <typeparam name="TKey">The key type.</typeparam>
+        /// <typeparam name="TComparable">The type of values to be used for comparison.</typeparam>
+        /// <param name="keySelector">Function that extracts a key from each record.</param>
+        /// <param name="comparableSelector">Function that extracts the portion of a record to be used in the comparison.</param>
+        /// <returns>The collection of minimum-valued records in each group.</returns>
+        Collection<TRecord, TTime> Min<TKey,TComparable>(Expression<Func<TRecord, TKey>> keySelector, Expression<Func<TRecord, TComparable>> comparableSelector)
+            where TKey : IEquatable<TKey>
+            where TComparable : IEquatable<TComparable>, IComparable<TComparable>;
 
         /// <summary>
-        /// Key-wise minimum using intermediate value selectors.
+        /// Groups records using the supplied key selector, and computes the minimum value in each group.
         /// </summary>
-        /// <typeparam name="S">State</typeparam>
-        /// <param name="key">key selector</param>
-        /// <param name="selector">state selector</param>
-        /// <param name="value">value selector</param>
-        /// <param name="reducer">reducer</param>
-        /// <param name="useDenseIntKeys">set to use arrays in place of dictionaries</param>
-        /// <returns>Collection containing for each key the minimum record under value</returns>
-        Collection<R, T> Min<V,M>(Expression<Func<R, int>> key, Expression<Func<R, V>> value, Expression<Func<int, V, M>> minBy, Expression<Func<int, V, R>> reducer, bool useDenseIntKeys)
-            where V : IEquatable<V>
-            where M : IEquatable<M>, IComparable<M>;
+        /// <typeparam name="TKey">The key type.</typeparam>
+        /// <typeparam name="TValue">The intermediate value type.</typeparam>
+        /// <typeparam name="TComparable">The type of values to be used for comparison.</typeparam>
+        /// <param name="keySelector">Function that extracts a key from each record.</param>
+        /// <param name="valueSelector">Function that transforms a record to the intermediate value that is stored for each record.</param>
+        /// <param name="comparableSelector">Function that extracts the portion of a key-value pair to be used in the comparison.</param>
+        /// <param name="resultSelector">Function that transforms a key and the minimum value to an output record.</param>
+        /// <returns>The collection of output records.</returns>
+        Collection<TRecord, TTime> Min<TKey, TComparable, TValue>(Expression<Func<TRecord, TKey>> keySelector, Expression<Func<TRecord, TValue>> valueSelector, Expression<Func<TKey,TValue,TComparable>> comparableSelector, Expression<Func<TKey, TValue, TRecord>> resultSelector)
+            where TKey : IEquatable<TKey>
+            where TValue : IEquatable<TValue>
+            where TComparable : IEquatable<TComparable>, IComparable<TComparable>;
+
 
         /// <summary>
-        /// Key-wise maximum.
+        /// Groups records using the supplied integer-valued key selector, and computes the minimum value in each group.
         /// </summary>
-        /// <typeparam name="K">Key</typeparam>
-        /// <param name="key">key selector</param>
-        /// <param name="value">value selector</param>
-        /// <returns>Collection containing for each key the maximum record under value</returns>
-        Collection<R, T> Max<K, M>(Expression<Func<R, K>> key, Expression<Func<R, M>> value)
-            where K : IEquatable<K>
-            where M : IComparable<M>;
+        /// <typeparam name="TValue">The intermediate value type.</typeparam>
+        /// <typeparam name="TComparable">The type of values to be used for comparison.</typeparam>
+        /// <param name="keySelector">Function that extracts an integer-valued key from each record.</param>
+        /// <param name="valueSelector">Function that transforms a record to the intermediate value that is stored for each record.</param>
+        /// <param name="comparableSelector">Function that extracts the portion of a key-value pair to be used in the comparison.</param>
+        /// <param name="resultSelector">Function that transforms a key and the minimum value to an output record.</param>
+        /// <param name="useDenseIntKeys">If <c>true</c>, use optimizations for dense-valued keys, otherwise treat keys as sparse.</param>
+        /// <returns>The collection of output records.</returns>
+        Collection<TRecord, TTime> Min<TValue, TComparable>(Expression<Func<TRecord, int>> keySelector, Expression<Func<TRecord, TValue>> valueSelector, Expression<Func<int, TValue, TComparable>> comparableSelector, Expression<Func<int, TValue, TRecord>> resultSelector, bool useDenseIntKeys)
+            where TValue : IEquatable<TValue>
+            where TComparable : IEquatable<TComparable>, IComparable<TComparable>;
 
         /// <summary>
-        /// Key-wise minimum using intermediate value selectors.
+        /// Groups records using the supplied key selector, and computes the maximum value in each group.
         /// </summary>
-        /// <typeparam name="K">Key</typeparam>
-        /// <typeparam name="S">State</typeparam>
-        /// <param name="key">key selector</param>
-        /// <param name="selector">state selector</param>
-        /// <param name="value">value selector</param>
-        /// <param name="reducer">reducer</param>
-        /// <returns>Collection containing for each key the minimum record under value</returns>
-        Collection<R, T> Max<K, M, S>(Expression<Func<R, K>> key, Expression<Func<R, S>> selector, Expression<Func<K, S, M>> value, Expression<Func<K, S, R>> reducer)
-            where K : IEquatable<K>
-            where M : IComparable<M>
-            where S : IEquatable<S>;
+        /// <typeparam name="TKey">The key type.</typeparam>
+        /// <typeparam name="TComparable">The type of values to be used for comparison.</typeparam>
+        /// <param name="keySelector">Function that extracts a key from each record.</param>
+        /// <param name="comparableSelector">Function that extracts the portion of a record to be used in the comparison.</param>
+        /// <returns>The collection of maximum-valued records in each group.</returns>
+        Collection<TRecord, TTime> Max<TKey, TComparable>(Expression<Func<TRecord, TKey>> keySelector, Expression<Func<TRecord, TComparable>> comparableSelector)
+            where TKey : IEquatable<TKey>
+            where TComparable : IComparable<TComparable>;
+
+        /// <summary>
+        /// Groups records using the supplied key selector, and computes the maximum value in each group.
+        /// </summary>
+        /// <typeparam name="TKey">The key type.</typeparam>
+        /// <typeparam name="TValue">The intermediate value type.</typeparam>
+        /// <typeparam name="TComparable">The type of values to be used for comparison.</typeparam>
+        /// <param name="keySelector">Function that extracts a key from each record.</param>
+        /// <param name="valueSelector">Function that transforms a record to the intermediate value that is stored for each record.</param>
+        /// <param name="comparableSelector">Function that extracts the portion of a key-value pair to be used in the comparison.</param>
+        /// <param name="resultSelector">Function that transforms a key and the maximum value to an output record.</param>
+        /// <returns>The collection of output records.</returns>
+        Collection<TRecord, TTime> Max<TKey, TComparable, TValue>(Expression<Func<TRecord, TKey>> keySelector, Expression<Func<TRecord, TValue>> valueSelector, Expression<Func<TKey, TValue, TComparable>> comparableSelector, Expression<Func<TKey, TValue, TRecord>> resultSelector)
+            where TKey : IEquatable<TKey>
+            where TComparable : IComparable<TComparable>
+            where TValue : IEquatable<TValue>;
 
         #endregion Data-parallel aggregations
 
         #region MultiSet operations
         
         /// <summary>
-        /// Converts a multiset to a set, by removing duplicates.
+        /// Computes the set of distinct records in this collection.
         /// </summary>
-        /// <param name="threshold">optinal parameter indicating count above which a record is produced</param>
-        /// <returns>Collection with exactly one occurence of each input record</returns>
-        Collection<R, T> Distinct();
+        /// <returns>The collection of distinct records.</returns>
+        Collection<TRecord, TTime> Distinct();
 
         /// <summary>
-        /// Unions two multisets.
+        /// Computes the multiset union of this collection and the <paramref name="other"/> collection.
         /// </summary>
-        /// <param name="other">Other collection</param>
-        /// <returns>Collection where counts of each record are the maximum of the two input collections.</returns>
-        Collection<R, T> Union(Collection<R, T> other);
+        /// <param name="other">The other collection.</param>
+        /// <returns>The collection containing the multiset union of the two input collections.</returns>
+        /// <remarks>The multiset union contains each record in either this collection or the <paramref name="other"/> collection.
+        /// For each record in either collection, the multiplicity of that record in the multiset union will be the greater of its
+        /// multiplicities in either collection.
+        /// 
+        /// The union operator is stateful. If precise multiplicities are not important (e.g. because the output feeds into a <see cref="Distinct"/>,
+        /// <see cref="Aggregate"/>, or similarly idempotent operator), the <see cref="Concat"/> operator is a more efficient substitute.
+        /// </remarks>
+        Collection<TRecord, TTime> Union(Collection<TRecord, TTime> other);
 
         /// <summary>
-        /// Intersects two multisets.
+        /// Computes the multiset intersection of this collection and the <paramref name="other"/> collection.
         /// </summary>
-        /// <param name="other">Other collection</param>
-        /// <returns>Collection where the counts of each record are the minimum of the two input collections.</returns>
-        Collection<R, T> Intersect(Collection<R, T> other);
+        /// <param name="other">The other collection.</param>
+        /// <returns>The collection containing the multiset intersection of the two input collections.</returns>
+        /// <remarks>The multiset union contains each record in both this collection and the <paramref name="other"/> collection.
+        /// For each record in both collections, the multiplicity of that record in the multiset intersection will be the lesser of its
+        /// multiplicities in either collection.
+        /// </remarks>
+        Collection<TRecord, TTime> Intersect(Collection<TRecord, TTime> other);
 
         /// <summary>
-        /// The symmetric difference of two multisets.
+        /// Computes the multiset symmetric difference of this collection and the <paramref name="other"/> collection.
         /// </summary>
-        /// <param name="other">Other collection</param>
-        /// <returns>Collection where the counts of each record are the absolute value of the difference of those in each of the input collections.</returns>
-        Collection<R, T> SymmetricDifference(Collection<R, T> other);
+        /// <param name="other">The other collection.</param>
+        /// <returns>The collection containing the multiset symmetric difference of the two input collections.</returns>
+        /// <remarks>The multiset symmetric difference contains each record that is in the <see cref="Union"/>, but not in the <see cref="Intersect"/>
+        /// of this collection and the <paramref name="other"/> collection. For each record in either collection, the multiplicity of that record in the
+        /// multiset symmetric difference is the absolute value of the difference between its multiplicities in either collection.</remarks>
+        Collection<TRecord, TTime> SymmetricDifference(Collection<TRecord, TTime> other);
 
         /// <summary>
-        /// Concatenates two multisets.
+        /// Computes the concatenation of this collection and the <paramref name="other"/> collection.
         /// </summary>
-        /// <param name="other">Other collection</param>
-        /// <returns>Collection containing all input records.</returns>
-        Collection<R, T> Concat(Collection<R, T> other);
+        /// <param name="other">The other collection.</param>
+        /// <returns>The collection containing all records in the two input collections.</returns>
+        /// <remarks>This operator is stateless. As such, it can be a more efficient alternative to the <see cref="Union"/> operator, when
+        /// precise multiplicities are not important (e.g. because the output feeds into a <see cref="Distinct"/>,
+        /// <see cref="Aggregate"/>, or similarly idempotent operator).
+        /// </remarks>
+        Collection<TRecord, TTime> Concat(Collection<TRecord, TTime> other);
 
         /// <summary>
-        /// Subtracts one multiset from another. Records may go negative.
+        /// Computes the multiset difference of this collection minus the <paramref name="other"/> collection.
         /// </summary>
-        /// <param name="other">Other collection</param>
-        /// <returns>Collection where the weight of each record is the difference between the first and second.</returns>
-        Collection<R, T> Except(Collection<R, T> other);
+        /// <param name="other">The other collection.</param>
+        /// <returns>The collection containing all records in this collection that are not in the <paramref name="other"/> collection.</returns>
+        /// <remarks>The behavior of this operator is undefined when the <paramref name="other"/> collection contains records that are not 
+        /// in this collection.</remarks>
+        Collection<TRecord, TTime> Except(Collection<TRecord, TTime> other);
 
         #endregion MultiSet operations
 
         #region Fixed Point
 
         /// <summary>
-        /// Extends the lattice associated with a collection to nest in a loop.
+        /// Enables this collection to be used as a constant in the given loop context.
         /// </summary>
-        /// <returns>The same collection, varying with an additional index</returns>
-        Collection<R, IterationIn<T>> EnterLoop(Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext<T> context);
+        /// <param name="context">The loop context.</param>
+        /// <returns>This collection, where each timestamp has an additional loop counter.</returns>
+        Collection<TRecord, IterationIn<TTime>> EnterLoop(Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext<TTime> context);
 
         /// <summary>
-        /// Extends the lattice associated with a collection to nest in a loop.
+        /// Enables this collection to be used in the given loop context, where each record
+        /// may be introduced at a different iteration.
         /// </summary>
-        /// <returns>The same collection, varying with an additional index</returns>
-        Collection<R, IterationIn<T>> EnterLoop(Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext<T> context, Func<R, int> initialIteration);
+        /// <param name="context">The loop context.</param>
+        /// <param name="iterationSelector">Function that maps an input record to the iteration at which that record should be introduced.</param>
+        /// <returns>This collection, where each timestamp has an addition loop counter.</returns>
+        Collection<TRecord, IterationIn<TTime>> EnterLoop(Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext<TTime> context, Func<TRecord, int> iterationSelector);
 
         /// <summary>
-        /// Fixed point computation where each iterate can be changed arbitrarily by the input.
+        /// Computes the fixed point of the subquery <paramref name="f"/> applied to this collection.
         /// </summary>
-        /// <typeparam name="K">key type</typeparam>
-        /// <param name="f">loop body</param>
-        /// <param name="introductionIteration">iteration in which to introduce a record</param>
-        /// <param name="partitionedBy">partitioning function</param>
-        /// <param name="maxIterations">maximum number of iterations</param>
-        /// <returns>g^maxIterations, where g^{i+1} = f(g^i + initialIteration(input)^i)</returns>
-        Collection<R, T> GeneralFixedPoint<K>(
-            Func<Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext<T>, Collection<R, IterationIn<T>>, Collection<R, IterationIn<T>>> f, // (lc, initial, x) => f(x)
-            Func<R, int> introductionIteration,
-            Expression<Func<R, K>> partitionedBy,
+        /// <typeparam name="TKey">The key type.</typeparam>
+        /// <param name="f">The subquery to apply iteratively.</param>
+        /// <param name="iterationSelector">Function that maps an input record to the iteration at which that record should be introduced.</param>
+        /// <param name="keySelector">Function that extracts a key from each record, to be used for partitioning the input collection.</param>
+        /// <param name="maxIterations">The maximum number of iterations to compute.</param>
+        /// <returns>The result of applying a subquery g to this collection <paramref name="maxIterations"/> times,
+        /// where g^{i+1} = f(g^i + input.EnterLoop(iterationSelector)^i).</returns>
+        Collection<TRecord, TTime> GeneralFixedPoint<TKey>(
+            Func<Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext<TTime>, Collection<TRecord, IterationIn<TTime>>, Collection<TRecord, IterationIn<TTime>>> f, // (lc, initial, x) => f(x)
+            Func<TRecord, int> iterationSelector,
+            Expression<Func<TRecord, TKey>> keySelector,
             int maxIterations);
 
         /// <summary>
-        /// Fixed-point computation.
+        /// Computes the fixed point of the subquery <paramref name="f"/> applied to this collection.
         /// </summary>
-        /// <param name="f">fixed-point body</param>
-        /// <returns>f^maxIterations(input)</returns>
-        Collection<R, T> FixedPoint(
-            Func<Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext<T>,
-            Collection<R, IterationIn<T>>, Collection<R, IterationIn<T>>> f);
+        /// <param name="f">The subquery to apply iteratively.</param>
+        /// <returns>The result of applying <paramref name="f"/> to this collection until reaching fixed point.</returns>
+        Collection<TRecord, TTime> FixedPoint(
+            Func<Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext<TTime>,
+            Collection<TRecord, IterationIn<TTime>>, Collection<TRecord, IterationIn<TTime>>> f);
 
         /// <summary>
-        /// Fixed-point computation.
+        /// Computes the fixed point of the subquery <paramref name="f"/> applied to this collection.
         /// </summary>
-        /// <param name="f">fixed-point body</param>
-        /// <param name="maxIterations">maximum number of iterations</param>
-        /// <returns>f^maxIterations(input)</returns>
-        Collection<R, T> FixedPoint(
-            Func<Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext<T>,
-            Collection<R, IterationIn<T>>, Collection<R, IterationIn<T>>> f, int iterations);
+        /// <param name="f">The subquery to apply iteratively.</param>
+        /// <param name="maxIterations">The maximum number of iterations to compute.</param>
+        /// <returns>The result of applying <paramref name="f"/> to this collection <paramref name="maxIterations"/> times, or until fixed point is reached, whichever is earlier.</returns>
+        Collection<TRecord, TTime> FixedPoint(
+            Func<Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext<TTime>,
+            Collection<TRecord, IterationIn<TTime>>, Collection<TRecord, IterationIn<TTime>>> f, int maxIterations);
 
         /// <summary>
-        /// Fixed-point computation with partitioning operator.
+        /// Computes the fixed point of the subquery <paramref name="f"/> applied to this collection.
         /// </summary>
-        /// <typeparam name="K">Key</typeparam>
-        /// <param name="f">fixed-point body</param>
-        /// <param name="consolidateFunction">partitioning function</param>
-        /// <returns>f^infinity(input)</returns>
-        Collection<R, T> FixedPoint<K>(
-            Func<Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext<T>,
-            Collection<R, IterationIn<T>>, Collection<R, IterationIn<T>>> f, Expression<Func<R, K>> consolidateFunction);
+        /// <typeparam name="TKey">The key type.</typeparam>
+        /// <param name="f">The subquery to apply iteratively.</param>
+        /// <param name="keySelector">Function that extracts a key from each record, to be used for partitioning the input collection.</param>
+        /// <returns>The result of applying <paramref name="f"/> to this collection until fixed point is reached.</returns>
+        Collection<TRecord, TTime> FixedPoint<TKey>(
+            Func<Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext<TTime>,
+            Collection<TRecord, IterationIn<TTime>>, Collection<TRecord, IterationIn<TTime>>> f, Expression<Func<TRecord, TKey>> keySelector);
 
         /// <summary>
-        /// Fixed-point computation with partitioning operator.
+        /// Computes the fixed point of the subquery <paramref name="f"/> applied to this collection.
         /// </summary>
-        /// <typeparam name="K">Key</typeparam>
-        /// <param name="f">fixed-point body</param>
-        /// <param name="consolidateFunction">partitioning function</param>
-        /// <param name="maxIterations">maximum number of iterations</param>
-        /// <returns>f^maxIterations(input)</returns>
-        Collection<R, T> FixedPoint<K>(
-            Func<Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext<T>,
-            Collection<R, IterationIn<T>>, Collection<R, IterationIn<T>>> f, Expression<Func<R, K>> consolidateFunction, int iterations);
+        /// <typeparam name="TKey">The key type.</typeparam>
+        /// <param name="f">The subquery to apply iteratively.</param>
+        /// <param name="keySelector">Function that extracts a key from each record, to be used for partitioning the input collection.</param>
+        /// <param name="maxIterations">The maximum number of iterations to compute.</param>
+        /// <returns>The result of applying <paramref name="f"/> to this collection <paramref name="maxIterations"/> times, or until fixed point is reached, whichever is earlier.</returns>
+        Collection<TRecord, TTime> FixedPoint<TKey>(
+            Func<Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext<TTime>,
+            Collection<TRecord, IterationIn<TTime>>, Collection<TRecord, IterationIn<TTime>>> f, Expression<Func<TRecord, TKey>> keySelector, int maxIterations);
         #endregion Fixed Point
 
         #region Monitoring
         /// <summary>
-        /// Monitory records passing through, applies action to each group.
+        /// Applies the given action to the records in this collection once for each timestamp on each worker, for monitoring.
         /// </summary>
-        /// <param name="action">Action applied to groups of records and worker index.</param>
-        /// <returns>Same collection as input.</returns>
-        Collection<R, T> Monitor(Action<int, List<NaiadRecord<R, T>>> action);
+        /// <param name="action">The action to apply to each group of records, and the respective worker index.</param>
+        /// <returns>The input collection.</returns>
+        Collection<TRecord, TTime> Monitor(Action<int, List<Pair<Weighted<TRecord>, TTime>>> action);
         #endregion Monitoring
 
         #endregion Naiad operators
@@ -569,7 +754,32 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
 
     }
 
-    public interface InputCollection<R> : Collection<R, Epoch>, IObserver<IEnumerable<Weighted<R>>>
-        where R : IEquatable<R>
-    { }
+    /// <summary>
+    /// A <see cref="Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Collection{TRecord,Epoch}"/> that can be modified by adding or removing records.
+    /// </summary>
+    /// <typeparam name="TRecord">The type of records in this collection.</typeparam>
+    public interface InputCollection<TRecord> : Collection<TRecord, Epoch>, IObserver<IEnumerable<Weighted<TRecord>>>
+        where TRecord : IEquatable<TRecord>
+    {
+        /// <summary>
+        /// Introduces a batch of <paramref name="values"/> to this collection in a new <see cref="Epoch"/>, and signals that no more records will be added to or removed from this collection.
+        /// </summary>
+        /// <param name="values">The records to be added or removed.</param>
+        void OnCompleted(IEnumerable<Weighted<TRecord>> values);
+
+        /// <summary>
+        /// Introduces a batch of <paramref name="values"/> to this collection in a new <see cref="Epoch"/>.
+        /// </summary>
+        /// <param name="values">The records to be added or removed.</param>
+        new void OnNext(IEnumerable<Weighted<TRecord>> values);
+
+        /// <summary>
+        /// Signals that no more records will be added to or removed from this collection.
+        /// </summary>
+        new void OnCompleted();
+
+        //void OnNext(IEnumerable<Weighted<R>> value);        
+        //void OnCompleted();
+        //void OnError(Exception error);
+    }
 }

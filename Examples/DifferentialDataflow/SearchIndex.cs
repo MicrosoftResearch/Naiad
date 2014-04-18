@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -26,7 +26,7 @@ using System.Text;
 using Microsoft.Research.Naiad;
 using Microsoft.Research.Naiad.Frameworks.DifferentialDataflow;
 
-namespace Examples.DifferentialDataflow
+namespace Microsoft.Research.Naiad.Examples.DifferentialDataflow
 {
     /// <summary>
     /// Demonstrates a more complicated interactive Naiad program.
@@ -101,10 +101,10 @@ namespace Examples.DifferentialDataflow
             int batchSize = 10000;
             int iterations = 10;
 
-            using (var controller = NewController.FromArgs(ref args))
+            using (var computation = NewComputation.FromArgs(ref args))
             {
                 #region building up input data
-                
+
                 if (args.Length == 5)
                 {
                     documentCount = Convert.ToInt32(args[1]);
@@ -130,80 +130,80 @@ namespace Examples.DifferentialDataflow
 
                 #endregion
 
-                using (var manager = controller.NewComputation())
+                // declare inputs for documents and queries.
+                var documents = computation.NewInputCollection<Document>();
+                var queries = computation.NewInputCollection<Query>();
+
+                // each document is broken down into a collection of terms, each with associated identifier.
+                var dTerms = documents.SelectMany(doc => doc.text.Split(' ').Select(term => new Document(term, doc.id)))
+                                      .Distinct();
+
+                // each query is broken down into a collection of terms, each with associated identifier and threshold.
+                var qTerms = queries.SelectMany(query => query.text.Split(' ').Select(term => new Query(term, query.id, query.threshold)))
+                                    .Distinct();
+
+                // doc terms and query terms are joined, matching pairs are counted and returned if the count exceeds the threshold.
+                var results = dTerms.Join(qTerms, d => d.text, q => q.text, (d, q) => new Match(d.id, q.id, q.threshold))
+                                    .Count(match => match)
+                                    .Select(pair => new Match(pair.First.document, pair.First.query, pair.First.threshold - (int)pair.Second))
+                                    .Where(match => match.threshold <= 0)
+                                    .Select(match => new Pair<int, int>(match.document, match.query));
+
+                // subscribe to the output in case we are interested in the results
+                var subscription = results.Subscribe(list => Console.WriteLine("matches found: {0}", list.Length));
+
+                computation.Activate();
+
+                #region Prepare some fake documents to put in the collection
+
+                // creates many documents each containing 10 words from [0, ... vocabulary-1].
+                int share_size = docs.Count / computation.Configuration.Processes;
+
+                documents.OnNext(docs.GetRange(computation.Configuration.ProcessID * share_size, share_size));
+                queries.OnNext();
+
+                //Console.WriteLine("Example SearchIndex in Naiad. Step 1: indexing documents, step 2: issuing queries.");
+                Console.WriteLine("Indexing {0} random documents, {1} terms (please wait)", documentCount, 10 * documentCount);
+                subscription.Sync(0);
+
+                #endregion
+
+                #region Issue batches of queries and assess performance
+
+                if (computation.Configuration.ProcessID == 0)
                 {
-                    // declare inputs for documents and queries.
-                    var documents = new IncrementalCollection<Document>(manager);
-                    var queries = new IncrementalCollection<Query>(manager);
-
-                    // each document is broken down into a collection of terms, each with associated identifier.
-                    var dTerms = documents.SelectMany(doc => doc.text.Split(' ').Select(term => new Document(term, doc.id)))
-                                          .Distinct();
-
-                    // each query is broken down into a collection of terms, each with associated identifier and threshold.
-                    var qTerms = queries.SelectMany(query => query.text.Split(' ').Select(term => new Query(term, query.id, query.threshold)))
-                                        .Distinct();
-
-                    // doc terms and query terms are joined, matching pairs are counted and returned if the count exceeds the threshold.
-                    var results = dTerms.Join(qTerms, d => d.text, q => q.text, (d, q) => new Match(d.id, q.id, q.threshold))
-                                        .Count(match => match)
-                                        .Select(pair => new Match(pair.v1.document, pair.v1.query, pair.v1.threshold - (int)pair.v2))
-                                        .Where(match => match.threshold <= 0)
-                                        .Select(match => new Pair<int, int>(match.document, match.query));
-
-                    // subscribe to the output in case we are interested in the results
-                    var subscription = results.Subscribe(list => Console.WriteLine("matches found: {0}", list.Length));
-
-                    manager.Activate();
-
-                    #region Prepare some fake documents to put in the collection
-
-                    // creates many documents each containing 10 words from [0, ... vocabulary-1].
-                    int share_size = docs.Count / controller.Configuration.Processes;
-
-                    documents.OnNext(docs.GetRange(controller.Configuration.ProcessID * share_size, share_size));
-                    queries.OnNext();
-
-                    //Console.WriteLine("Example SearchIndex in Naiad. Step 1: indexing documents, step 2: issuing queries.");
-                    Console.WriteLine("Indexing {0} random documents, {1} terms (please wait)", documentCount, 10 * documentCount);
-                    subscription.Sync(new Epoch(0));
-
-                    #endregion
-
-                    #region Issue batches of queries and assess performance
-
-                    if (controller.Configuration.ProcessID == 0)
-                    {
-                        Console.WriteLine("Issuing {0} rounds of batches of {1} queries (press [enter] to start)", iterations, batchSize);
-                        Console.ReadLine();
-                    }
-                    
-                    for (int i = 0; i < iterations; i++)
-                    {
-                        // we round-robin through query terms. more advanced queries are possible.
-                        if (controller.Configuration.ProcessID == 0)
-                            queries.OnNext(queryBatches[i]); // introduce new queries.
-                        else
-                            queries.OnNext();
-
-                        documents.OnNext();                     // indicate no new docs.
-                        subscription.Sync(new Epoch(i + 1));    // block until round is done.
-                    }
-
-                    documents.OnCompleted();
-                    queries.OnCompleted();
-
-                    controller.Join();
-
-                    #endregion
-
-                    manager.Join();
+                    Console.WriteLine("Issuing {0} rounds of batches of {1} queries (press [enter] to start)", iterations, batchSize);
+                    Console.ReadLine();
                 }
 
-                controller.Join();
+                for (int i = 0; i < iterations; i++)
+                {
+                    // we round-robin through query terms. more advanced queries are possible.
+                    if (computation.Configuration.ProcessID == 0)
+                        queries.OnNext(queryBatches[i]); // introduce new queries.
+                    else
+                        queries.OnNext();
+
+                    documents.OnNext();                     // indicate no new docs.
+                    subscription.Sync(i + 1);    // block until round is done.
+                }
+
+                documents.OnCompleted();
+                queries.OnCompleted();
+
+                #endregion
+
+                computation.Join();
             }
+
         }
 
         public string Usage { get { return ""; } }
+
+
+        public string Help
+        {
+            get { return "Demonstrates a dataflow implementation of a searchable text index. Documents are loaded as bags of words, and issued queries are joined against posting sets (rather than lists) to determine how many of teh query words exist in each document. Documents matching all query terms are returned."; }
+        }
     }
 }

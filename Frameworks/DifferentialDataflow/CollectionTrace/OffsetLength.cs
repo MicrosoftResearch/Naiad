@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -25,17 +25,16 @@ using System.Text;
 
 namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.CollectionTrace
 {
-#if true
     /// <summary>
     /// Munge together an index into the heaps array (length) and an offset
     /// in that array (offset) into a single integer.
     /// 
     /// The top bit is reserved for flagging merged state offsets.
     /// </summary>
-    public struct OffsetLength : IEquatable<OffsetLength>
+    internal struct OffsetLength : IEquatable<OffsetLength>
     {
         public int offsetLength;
-
+        
         public void GetOffsetLength(out int offset, out int length)
         {
             length = 0;
@@ -90,6 +89,4 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.CollectionTra
             offsetLength = (o << (l + 1)) + (1 << l);
         }
     }
-
-#endif
 }

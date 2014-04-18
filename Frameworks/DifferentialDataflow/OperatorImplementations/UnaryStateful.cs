@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -30,10 +30,11 @@ using Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.CollectionTrace;
 
 using System.Linq.Expressions;
 using System.Diagnostics;
-using Microsoft.Research.Naiad.FaultTolerance;
-using Microsoft.Research.Naiad.CodeGeneration;
+using Microsoft.Research.Naiad.Serialization;
+using Microsoft.Research.Naiad.Runtime.Progress;
 using Microsoft.Research.Naiad;
 using Microsoft.Research.Naiad.Dataflow;
+using Microsoft.Research.Naiad.Dataflow.StandardVertices;
 
 namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.OperatorImplementations
 {
@@ -67,7 +68,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.OperatorImple
         protected virtual CollectionTraceCheckpointable<V> createInputTrace()
         {
 
-            if (Microsoft.Research.Naiad.CodeGeneration.ExpressionComparer.Instance.Equals(keyExpression, valueExpression))
+            if (Microsoft.Research.Naiad.Utilities.ExpressionComparer.Instance.Equals(keyExpression, valueExpression))
             {
                 if (this.inputImmutable)
                     return new CollectionTraceImmutableNoHeap<V>();
@@ -102,7 +103,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.OperatorImple
             keysToProcess = null;
         }
 
-        public override void UpdateReachability(NaiadList<Pointstamp> causalTimes)
+        protected override void UpdateReachability(List<Pointstamp> causalTimes)
         {
             base.UpdateReachability(causalTimes);
 
@@ -279,7 +280,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.OperatorImple
          *     (T,NaiadList<Weighted<S>>)*recordsToProcessCount recordsToProcess
          */
 
-        public override void Checkpoint(NaiadWriter writer)
+        protected override void Checkpoint(NaiadWriter writer)
         {
             base.Checkpoint(writer);
             writer.Write(this.isShutdown);
@@ -305,7 +306,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.OperatorImple
             }
         }
 
-        public override void Restore(NaiadReader reader)
+        protected override void Restore(NaiadReader reader)
         {
             base.Restore(reader);
             this.isShutdown = reader.Read<bool>();
@@ -380,7 +381,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.OperatorImple
 
         protected virtual CollectionTraceCheckpointable<V> createInputTrace()
         {
-            if (Microsoft.Research.Naiad.CodeGeneration.ExpressionComparer.Instance.Equals(keyExpression, valueExpression))
+            if (Microsoft.Research.Naiad.Utilities.ExpressionComparer.Instance.Equals(keyExpression, valueExpression))
             {
                 if (this.inputImmutable)
                     return new CollectionTraceImmutableNoHeap<V>();
@@ -414,7 +415,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.OperatorImple
             keyIndices = null;
         }
 
-        public override void UpdateReachability(NaiadList<Pointstamp> causalTimes)
+        protected override void UpdateReachability(List<Pointstamp> causalTimes)
         {
             base.UpdateReachability(causalTimes);
 
@@ -578,7 +579,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.OperatorImple
          *     (T,NaiadList<Weighted<S>>)*recordsToProcessCount recordsToProcess
          */
 
-        public override void Checkpoint(NaiadWriter writer)
+        protected override void Checkpoint(NaiadWriter writer)
         {
             base.Checkpoint(writer);
             writer.Write(this.isShutdown);
@@ -604,7 +605,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.OperatorImple
             }
         }
 
-        public override void Restore(NaiadReader reader)
+        protected override void Restore(NaiadReader reader)
         {
             base.Restore(reader);
             this.isShutdown = reader.Read<bool>();

@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -30,6 +30,8 @@ using System.IO;
 using System.Threading.Tasks;
 using Microsoft.Research.Naiad.Scheduling;
 using Microsoft.Research.Naiad.Runtime.Networking;
+
+using Microsoft.Research.Naiad.Diagnostics;
 
 namespace Microsoft.Research.Naiad.Runtime.Networking
 {
@@ -90,9 +92,8 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
             this.networkChannels = new Dictionary<int, TcpNetworkChannel>();
             this.serverActions[NaiadProtocolOpcode.PeerConnect] = new GuardedAction(s => { int channelId = ReceiveInt(s); this.networkChannels[channelId].PeerConnect(s); }, true);
 
-            Socket socket;
-            endpoint = BindSocket(endpoint, out socket);
-
+            Socket socket = BindSocket(ref endpoint);
+            
             this.endpoint = endpoint;
             this.listeningSocket = socket;
         }
@@ -112,7 +113,8 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
         /// This method must be called before a call to Start();
         /// </summary>
         /// <param name="opcode">The opcode to handle.</param>
-        /// <param name="serverAction"></param>
+        /// <param name="serverAction">The action to execute when this opcode is received.</param>
+        /// <param name="mustGuard">If true, the execution will be guarded.</param>
         public void RegisterServerAction(NaiadProtocolOpcode opcode, Action<Socket> serverAction, bool mustGuard)
         {
             this.serverActions[opcode] = new GuardedAction(serverAction, mustGuard);
@@ -147,13 +149,13 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
         }
 
         /// <summary>
-        /// Bind the server socket to an available port
+        /// Binds the server socket to an available port.
         /// </summary>
-        /// <param name="knownEndpoint">if non-null, try to listen on this endpoint, otherwise pick one</param>
-        /// <returns>the endpoint the server is listening on</returns>
-        private IPEndPoint BindSocket(IPEndPoint endpoint, out Socket socket)
+        /// <param name="endpoint">If this parameter is not null, try to listen on this endpoint, otherwise one will be picked arbitrarily.</param>
+        /// <returns>The bound socket.</returns>
+        private Socket BindSocket(ref IPEndPoint endpoint)
         {
-            socket = null;
+            Socket socket = null;
 
             if (endpoint == null)
             {
@@ -176,7 +178,7 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
 
             Logging.Progress("Starting Naiad server at {0}", endpoint);
 
-            return endpoint;
+            return socket;
         }
 
         public void Start()

@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -29,7 +29,7 @@ using Microsoft.Research.Naiad.Runtime.Controlling;
 using Microsoft.Research.Naiad.Dataflow;
 using Microsoft.Research.Naiad.DataStructures;
 using Microsoft.Research.Naiad.Dataflow.Reporting;
-using Microsoft.Research.Naiad.Frameworks;
+using Microsoft.Research.Naiad.Dataflow.StandardVertices;
 
 namespace Microsoft.Research.Naiad.Dataflow.Iteration
 {
@@ -68,7 +68,7 @@ namespace Microsoft.Research.Naiad.Dataflow.Iteration
 
         internal static Stream<R, IterationIn<T>> NewStage(Stream<R, T> input, ITimeContext<IterationIn<T>> internalContext, Func<R, int> initialIteration)
         {
-            var stage = new Stage<IngressVertex<R, T>, IterationIn<T>>(new OpaqueTimeContext<IterationIn<T>>(internalContext), Stage.OperatorType.IterationIngress, (i, v) => new IngressVertex<R, T>(i, v, initialIteration), "FixedPoint.Ingress");
+            var stage = new Stage<IngressVertex<R, T>, IterationIn<T>>(new TimeContext<IterationIn<T>>(internalContext), Stage.OperatorType.IterationIngress, (i, v) => new IngressVertex<R, T>(i, v, initialIteration), "FixedPoint.Ingress");
 
             stage.NewSurprisingTimeTypeInput(input, vertex => new ActionReceiver<R, T>(vertex, m => vertex.MessageReceived(m)), input.PartitionedBy);
 
@@ -83,29 +83,41 @@ namespace Microsoft.Research.Naiad.Dataflow.Iteration
         }
     }
 
-    public class Feedback<R, T>
-        where T : Time<T>
+    /// <summary>
+    /// Represents a feedback edge in a Naiad computation
+    /// </summary>
+    /// <typeparam name="TRecord">record type</typeparam>
+    /// <typeparam name="TTime">time type</typeparam>
+    public class Feedback<TRecord, TTime>
+        where TTime : Time<TTime>
     {
-        public Stream<R, IterationIn<T>> Output { get { return this.output; } }
-        public Stream<R, IterationIn<T>> Input { set { this.AttachInput(value); } }
+        /// <summary>
+        /// Output of the feedback edge
+        /// </summary>
+        public Stream<TRecord, IterationIn<TTime>> Output { get { return this.output; } }
 
-        private StageInput<R, IterationIn<T>> input;
-        private Stream<R, IterationIn<T>> output;
+        /// <summary>
+        /// Input to the feedback edge
+        /// </summary>
+        public Stream<TRecord, IterationIn<TTime>> Input { set { this.AttachInput(value); } }
 
-        private readonly Expression<Func<R, int>> PartitionedBy;
+        private StageInput<TRecord, IterationIn<TTime>> input;
+        private Stream<TRecord, IterationIn<TTime>> output;
+
+        private readonly Expression<Func<TRecord, int>> PartitionedBy;
         private readonly int MaxIterations;
 
-        private readonly Stage<AdvanceVertex<R, T>, IterationIn<T>> stage;
+        private readonly Stage<AdvanceVertex<TRecord, TTime>, IterationIn<TTime>> stage;
 
-        private void AttachInput(Stream<R, IterationIn<T>> stream)
+        private void AttachInput(Stream<TRecord, IterationIn<TTime>> stream)
         {
-            stage.InternalGraphManager.Connect(stream.StageOutput, this.input, this.PartitionedBy, Channel.Flags.None);
+            stage.InternalComputation.Connect(stream.StageOutput, this.input, this.PartitionedBy, Channel.Flags.None);
         }
 
-        internal Feedback(ITimeContext<IterationIn<T>> context,
-            Expression<Func<R, int>> partitionedBy, int maxIterations)
+        internal Feedback(ITimeContext<IterationIn<TTime>> context,
+            Expression<Func<TRecord, int>> partitionedBy, int maxIterations)
         {
-            this.stage = new Stage<AdvanceVertex<R, T>, IterationIn<T>>(new OpaqueTimeContext<IterationIn<T>>(context), Stage.OperatorType.IterationAdvance, (i, v) => new AdvanceVertex<R, T>(i, v, maxIterations),  "Iterate.Advance");
+            this.stage = new Stage<AdvanceVertex<TRecord, TTime>, IterationIn<TTime>>(new TimeContext<IterationIn<TTime>>(context), Stage.OperatorType.IterationAdvance, (i, v) => new AdvanceVertex<TRecord, TTime>(i, v, maxIterations),  "Iterate.Advance");
 
             this.input = this.stage.NewUnconnectedInput((message, vertex) => vertex.OnReceive(message), partitionedBy);
             this.output = this.stage.NewOutput(vertex => vertex.VertexOutput, partitionedBy);
@@ -124,9 +136,9 @@ namespace Microsoft.Research.Naiad.Dataflow.Iteration
 
         public override void OnReceive(Message<R, IterationIn<T>> message)
         {
-            if (message.time.t < this.MaxIterations)
+            if (message.time.iteration < this.MaxIterations)
             {
-                var output = this.Output.GetBufferForTime(new IterationIn<T>(message.time.s, message.time.t + 1));
+                var output = this.Output.GetBufferForTime(new IterationIn<T>(message.time.outerTime, message.time.iteration + 1));
                 for (int i = 0; i < message.length; i++)
                     output.Send(message.payload[i]);
             }
@@ -155,11 +167,11 @@ namespace Microsoft.Research.Naiad.Dataflow.Iteration
         private readonly VertexOutputBuffer<R, T> outputs;
         private readonly int releaseAfter;
 
-        public void MessageReceived(Message<R, IterationIn<T>> message)
+        public void OnReceive(Message<R, IterationIn<T>> message)
         {
-            if (message.time.t >= releaseAfter)
+            if (message.time.iteration >= releaseAfter)
             {
-                var output = this.outputs.GetBufferForTime(message.time.s);
+                var output = this.outputs.GetBufferForTime(message.time.outerTime);
                 for (int i = 0; i < message.length; i++)
                     output.Send(message.payload[i]);
             }
@@ -172,9 +184,9 @@ namespace Microsoft.Research.Naiad.Dataflow.Iteration
 
         internal static Stream<R, T> NewStage(Stream<R, IterationIn<T>> input, ITimeContext<T> externalContext, int iterationNumber)
         {
-            var stage = new Stage<EgressVertex<R, T>, T>(new OpaqueTimeContext<T>(externalContext), Stage.OperatorType.IterationEgress, (i, v) => new EgressVertex<R, T>(i, v, iterationNumber), "FixedPoint.Egress");
+            var stage = new Stage<EgressVertex<R, T>, T>(new TimeContext<T>(externalContext), Stage.OperatorType.IterationEgress, (i, v) => new EgressVertex<R, T>(i, v, iterationNumber), "FixedPoint.Egress");
 
-            stage.NewSurprisingTimeTypeInput(input, vertex => new ActionReceiver<R, IterationIn<T>>(vertex, m => vertex.MessageReceived(m)), input.PartitionedBy);
+            stage.NewSurprisingTimeTypeInput(input, vertex => new ActionReceiver<R, IterationIn<T>>(vertex, m => vertex.OnReceive(m)), input.PartitionedBy);
 
             return stage.NewOutput<R>(vertex => vertex.outputs, input.PartitionedBy);
         }
@@ -191,39 +203,34 @@ namespace Microsoft.Research.Naiad.Dataflow.Iteration
     internal class ReportingEgressVertex<T> : Vertex<T>
         where T : Time<T>
     {
-        public void RecordReceived(Pair<string, IterationIn<T>> record)
-        {
-            Context.Reporting.ForwardLog(new [] { new Pair<string, T>(record.v1, record.v2.s) });
-        }
-
-        public void MessageReceived(Message<string, IterationIn<T>> message, RemotePostbox sender)
+        public void OnReceive(Message<string, IterationIn<T>> message, ReturnAddress sender)
         {
             var stripped = new Pair<string, T>[message.length];
 
             for (int i = 0; i < message.length; i++)
             {
-                stripped[i].v1 = message.payload[i];
-                stripped[i].v2 = message.time.s;
+                stripped[i].First = message.payload[i];
+                stripped[i].Second = message.time.outerTime;
             }
 
             Context.Reporting.ForwardLog(stripped);
         }
 
-        public void ForwardIntAggregate(Message<Pair<string, ReportingRecord<Int64>>, IterationIn<T>> message, RemotePostbox sender)
+        public void ForwardIntAggregate(Message<Pair<string, ReportingRecord<Int64>>, IterationIn<T>> message, ReturnAddress sender)
         {
             for (int i = 0; i < message.length; ++i)
             {
-                ReportingRecord<Int64> r = message.payload[i].v2;
-                Context.Reporting.LogAggregate(message.payload[i].v1, r.type, r.payload, r.count, message.time.s);
+                ReportingRecord<Int64> r = message.payload[i].Second;
+                Context.Reporting.LogAggregate(message.payload[i].First, r.type, r.payload, r.count, message.time.outerTime);
             }
         }
 
-        public void ForwardDoubleAggregate(Message<Pair<string, ReportingRecord<double>>, IterationIn<T>> message, RemotePostbox sender)
+        public void ForwardDoubleAggregate(Message<Pair<string, ReportingRecord<double>>, IterationIn<T>> message, ReturnAddress sender)
         {
             for (int i = 0; i < message.length; ++i)
             {
-                ReportingRecord<double> r = message.payload[i].v2;
-                Context.Reporting.LogAggregate(message.payload[i].v1, r.type, r.payload, r.count, message.time.s);
+                ReportingRecord<double> r = message.payload[i].Second;
+                Context.Reporting.LogAggregate(message.payload[i].First, r.type, r.payload, r.count, message.time.outerTime);
             }
         }
 
@@ -243,7 +250,7 @@ namespace Microsoft.Research.Naiad.Dataflow.Iteration
     {
         private readonly Stage<ReportingEgressVertex<T>, T> stage;
 
-        public readonly NaiadList<StageInput<string, IterationIn<T>>> receivers;
+        public readonly List<StageInput<string, IterationIn<T>>> receivers;
         internal IEnumerable<StageInput<string, IterationIn<T>>> Receivers
         {
             get { return receivers; }
@@ -263,7 +270,7 @@ namespace Microsoft.Research.Naiad.Dataflow.Iteration
 
         public void ConnectInline(Stream<string, IterationIn<T>> sender)
         {
-            receivers.Add(stage.NewSurprisingTimeTypeInput(sender, vertex => new ActionReceiver<string, IterationIn<T>>(vertex, (m,p) => vertex.MessageReceived(m, p)), null));
+            receivers.Add(stage.NewSurprisingTimeTypeInput(sender, vertex => new ActionReceiver<string, IterationIn<T>>(vertex, (m,p) => vertex.OnReceive(m, p)), null));
         }
 
         public void ConnectIntAggregator(Stream<Pair<string, ReportingRecord<Int64>>, IterationIn<T>> sender)
@@ -280,71 +287,130 @@ namespace Microsoft.Research.Naiad.Dataflow.Iteration
 
         internal ReportingEgressStage(ITimeContext<T> externalContext)
         {
-            receivers = new NaiadList<StageInput<string, IterationIn<T>>>();
+            receivers = new List<StageInput<string, IterationIn<T>>>();
             intAggregator = null;
             doubleAggregator = null;
 
-            this.stage = new Stage<ReportingEgressVertex<T>, T>(new OpaqueTimeContext<T>(externalContext), Stage.OperatorType.IterationEgress, (i, v) => new ReportingEgressVertex<T>(i, v), "FixedPoint.ReportingEgress");
+            this.stage = new Stage<ReportingEgressVertex<T>, T>(new TimeContext<T>(externalContext), Stage.OperatorType.IterationEgress, (i, v) => new ReportingEgressVertex<T>(i, v), "FixedPoint.ReportingEgress");
         }
     }
 
-    public class LoopContext<T>
-        where T : Time<T>
+    /// <summary>
+    /// Represents a Naiad loop context
+    /// </summary>
+    /// <typeparam name="TTime">time type</typeparam>
+    public class LoopContext<TTime>
+        where TTime : Time<TTime>
     {
-        private readonly ITimeContext<T> externalContext;
-        private readonly ITimeContext<IterationIn<T>> internalContext;
+        private readonly ITimeContext<TTime> externalContext;
+        private readonly ITimeContext<IterationIn<TTime>> internalContext;
 
-        public Stream<R, IterationIn<T>> EnterLoop<R>(Stream<R, T> stream)
+        /// <summary>
+        /// Introduces a stream into the loop context from outside
+        /// </summary>
+        /// <typeparam name="TRecord">record type</typeparam>
+        /// <param name="stream">stream</param>
+        /// <returns>the same stream with an addition time coordinate</returns>
+        public Stream<TRecord, IterationIn<TTime>> EnterLoop<TRecord>(Stream<TRecord, TTime> stream)
         {
-            return IngressVertex<R, T>.NewStage(stream, internalContext);
+            return IngressVertex<TRecord, TTime>.NewStage(stream, internalContext);
         }
 
-        public Stream<R, IterationIn<T>> EnterLoop<R>(Stream<R, T> stream, Func<R, int> initialIteration)
+        /// <summary>
+        /// Introduces a stream into the loop context from outside
+        /// </summary>
+        /// <typeparam name="TRecord">record type</typeparam>
+        /// <param name="stream">stream</param>
+        /// <param name="initialIteration">initial iteration selector</param>
+        /// <returns>the same stream with an addition time coordinate</returns>
+        public Stream<TRecord, IterationIn<TTime>> EnterLoop<TRecord>(Stream<TRecord, TTime> stream, Func<TRecord, int> initialIteration)
         {
-            return IngressVertex<R, T>.NewStage(stream, internalContext, initialIteration);
+            return IngressVertex<TRecord, TTime>.NewStage(stream, internalContext, initialIteration);
         }
 
-        public Stream<R, T> ExitLoop<R>(Stream<R, IterationIn<T>> stream, int iterationNumber)
+        /// <summary>
+        /// Extracts a stream from a loop context
+        /// </summary>
+        /// <typeparam name="TRecord">record type</typeparam>
+        /// <param name="stream">the stream</param>
+        /// <param name="iterationNumber">the iteration to extract</param>
+        /// <returns>A stream containing records in the corresponding iteration</returns>
+        public Stream<TRecord, TTime> ExitLoop<TRecord>(Stream<TRecord, IterationIn<TTime>> stream, int iterationNumber)
         {
-            return EgressVertex<R, T>.NewStage(stream, externalContext, iterationNumber);
+            return EgressVertex<TRecord, TTime>.NewStage(stream, externalContext, iterationNumber);
         }
 
-        public Stream<R, T> ExitLoop<R>(Stream<R, IterationIn<T>> stream)
+        /// <summary>
+        /// Extracts a stream from a loop context
+        /// </summary>
+        /// <typeparam name="TRecord">record type</typeparam>
+        /// <param name="stream">the stream</param>
+        /// <returns>A stream containing all records</returns>
+        public Stream<TRecord, TTime> ExitLoop<TRecord>(Stream<TRecord, IterationIn<TTime>> stream)
         {
             return this.ExitLoop(stream, 0);
         }
 
-        public Feedback<R, T> Delay<R>()
+        /// <summary>
+        /// Constructs a new feedback edge
+        /// </summary>
+        /// <typeparam name="TRecord">record type</typeparam>
+        /// <returns>A new feedback edge</returns>
+        public Feedback<TRecord, TTime> Delay<TRecord>()
         {
-            return Delay<R>(null, Int32.MaxValue);
+            return Delay<TRecord>(null, Int32.MaxValue);
         }
 
-        public Feedback<R, T> Delay<R>(int maxIters)
+        /// <summary>
+        /// Constructs a new feedback edge with a maximum number of iterations
+        /// </summary>
+        /// <typeparam name="TRecord">record type</typeparam>
+        /// <param name="maxIters">maximum number of iterations</param>
+        /// <returns>A new feedback edge</returns>
+        public Feedback<TRecord, TTime> Delay<TRecord>(int maxIters)
         {
-            return Delay<R>(null, maxIters);
+            return Delay<TRecord>(null, maxIters);
         }
 
-        public Feedback<R, T> Delay<R>(Expression<Func<R, int>> partitionedBy)
+        /// <summary>
+        /// Constructs a new feedback edge with an enforced partitioning
+        /// </summary>
+        /// <typeparam name="TRecord">record type</typeparam>
+        /// <param name="partitionedBy">partitioning function</param>
+        /// <returns>A new feedback edge</returns>
+        public Feedback<TRecord, TTime> Delay<TRecord>(Expression<Func<TRecord, int>> partitionedBy)
         {
-            return new Feedback<R, T>(internalContext, partitionedBy, Int32.MaxValue);
+            return new Feedback<TRecord, TTime>(internalContext, partitionedBy, Int32.MaxValue);
         }
 
-        public Feedback<R, T> Delay<R>(Expression<Func<R, int>> partitionedBy, int maxIters)
+        /// <summary>
+        /// Constructs a new feedback edge with an enforced partitioning and a maximum number of iterations
+        /// </summary>
+        /// <typeparam name="TRecord">record type</typeparam>
+        /// <param name="partitionedBy">partitioning function</param>
+        /// <param name="maxIters">maximum number of iterations</param>
+        /// <returns>A new feedback edge</returns>
+        public Feedback<TRecord, TTime> Delay<TRecord>(Expression<Func<TRecord, int>> partitionedBy, int maxIters)
         {
-            return new Feedback<R, T>(internalContext, partitionedBy, maxIters);
+            return new Feedback<TRecord, TTime>(internalContext, partitionedBy, maxIters);
         }
 
-        public LoopContext(OpaqueTimeContext<T> s, string name)
+        /// <summary>
+        /// Constructs a new LoopContext from a containing TimeContext
+        /// </summary>
+        /// <param name="outerContext">outer time context</param>
+        /// <param name="name">a descriptive name</param>
+        public LoopContext(TimeContext<TTime> outerContext, string name)
         {
-            externalContext = s.Context;
+            externalContext = outerContext.Context;
             if (this.externalContext.HasReporting && this.externalContext.Manager.RootStatistics.HasInline)
             {
-                internalContext = externalContext.Manager.MakeContextForScope<IterationIn<T>>(
-                    externalContext.Scope + "." + name, new ReportingEgressStage<T>(externalContext));
+                internalContext = externalContext.Manager.MakeContextForScope<IterationIn<TTime>>(
+                    externalContext.Scope + "." + name, new ReportingEgressStage<TTime>(externalContext));
             }
             else
             {
-                internalContext = externalContext.Manager.MakeContextForScope<IterationIn<T>>(
+                internalContext = externalContext.Manager.MakeContextForScope<IterationIn<TTime>>(
                     externalContext.Scope + "." + name, null);
             }
         }

@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -23,9 +23,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Microsoft.Research.Naiad.Dataflow.Channels;
-using Microsoft.Research.Naiad.CodeGeneration;
+using Microsoft.Research.Naiad.Serialization;
 using Microsoft.Research.Naiad.DataStructures;
-using Microsoft.Research.Naiad.FaultTolerance;
 
 namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.CollectionTrace
 {
@@ -87,7 +86,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.CollectionTra
         }
     }
 
-    internal struct FixedLengthHeap<T> : ICheckpointable
+    internal struct FixedLengthHeap<T>
         where T : IEquatable<T>
     {
         public NaiadList<T[]> Spine;          //  
@@ -187,7 +186,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.CollectionTra
         }
     }
 
-    internal struct VariableLengthHeap<T> : ICheckpointable
+    internal struct VariableLengthHeap<T>
         where T : IEquatable<T>
     {
         public readonly FixedLengthHeap<T>[] heaps;

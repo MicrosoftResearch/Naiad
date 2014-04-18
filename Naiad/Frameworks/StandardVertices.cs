@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -25,38 +25,41 @@ using System.Linq.Expressions;
 using System.Text;
 using Microsoft.Research.Naiad;
 using Microsoft.Research.Naiad.Dataflow.Channels;
-using Microsoft.Research.Naiad.CodeGeneration;
-using Microsoft.Research.Naiad.Runtime.Controlling;
+using Microsoft.Research.Naiad.Serialization;
 using Microsoft.Research.Naiad.DataStructures;
-using Microsoft.Research.Naiad.FaultTolerance;
 
 using Microsoft.Research.Naiad.Dataflow;
 using Microsoft.Research.Naiad.Scheduling;
 
-namespace Microsoft.Research.Naiad.Frameworks
+namespace Microsoft.Research.Naiad.Dataflow
 {
     /// <summary>
     /// A repository for input records, stored indexed by time. Calls NotifyAt on record receipt.
     /// </summary>
-    /// <typeparam name="TRecord">Record type</typeparam>
-    /// <typeparam name="TTime">Time type</typeparam>
-    public class VertexInputBuffer<TRecord, TTime> : VertexInput<TRecord, TTime>, ICheckpointable
+    /// <typeparam name="TRecord">The type of records in this buffer.</typeparam>
+    /// <typeparam name="TTime">The type of timestamp by which this buffer is indexed.</typeparam>
+    public class VertexInputBuffer<TRecord, TTime> : VertexInput<TRecord, TTime>
         where TTime : Time<TTime>
     {
+        /// <summary>
+        /// Controls whether logging occurs (presently disabled)
+        /// </summary>
         public bool LoggingEnabled { get { return false; } set { throw new NotImplementedException("Logging for RecvFiberBank"); } }
 
-        // permissive re-entrancy because we only ever queue up records.
+        /// <summary>
+        /// Indicates available entrancy; always 1 as this class buffers everything.
+        /// </summary>
         public int AvailableEntrancy { get { return 1; } set { } }
 
-        protected Dictionary<TTime, SpinedList<TRecord>> recordsToProcess = new Dictionary<TTime, SpinedList<TRecord>>();
+        private readonly Dictionary<TTime, SpinedList<TRecord>> recordsToProcess = new Dictionary<TTime, SpinedList<TRecord>>();
 
         private readonly Vertex<TTime> vertex;
 
         /// <summary>
-        /// Enumerates (and destroys) input records associated with a specified time.
+        /// Enumerates (and destroys) input records associated with the given <paramref name="time"/>.
         /// </summary>
         /// <param name="time">time</param>
-        /// <returns></returns>
+        /// <returns>The sequence of input records associated with the given <paramref name="time"/>.</returns>
         public IEnumerable<TRecord> GetRecordsAt(TTime time)
         {
             var result = default(SpinedList<TRecord>);
@@ -69,16 +72,32 @@ namespace Microsoft.Research.Naiad.Frameworks
             return result.AsEnumerable();
         }
 
+        /// <summary>
+        /// Constructs new input buffer for the given <paramref name="vertex"/>.
+        /// </summary>
+        /// <param name="vertex">The vertex to which this buffer will belong.</param>
         public VertexInputBuffer(Vertex<TTime> vertex)
         {
             this.vertex = vertex;
         }
 
-        public Microsoft.Research.Naiad.Dataflow.Vertex Vertex { get { return this.vertex; } }
+        /// <summary>
+        /// The vertex to which this buffer belongs.
+        /// </summary>
+        public Vertex Vertex { get { return this.vertex; } }
 
+        /// <summary>
+        /// Flushes the associated vertex.
+        /// </summary>
         public void Flush() { this.vertex.Flush(); }
 
-        public void OnReceive(Message<TRecord, TTime> message, RemotePostbox sender)
+        /// <summary>
+        /// Buffers the content of the given <paramref name="message"/>, and schedules
+        /// a corresponding notification on the owning <see cref="Vertex"/>.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        /// <param name="sender">The sender of the message.</param>
+        public void OnReceive(Message<TRecord, TTime> message, ReturnAddress sender)
         {
             if (!this.recordsToProcess.ContainsKey(message.time))
             {
@@ -93,28 +112,42 @@ namespace Microsoft.Research.Naiad.Frameworks
 
         private AutoSerializedMessageDecoder<TRecord, TTime> decoder = null;
 
-        public void SerializedMessageReceived(SerializedMessage serializedMessage, RemotePostbox from)
+        /// <summary>
+        /// Buffers the content of the given <paramref name="serializedMessage"/>, and
+        /// schedules a corresponding notification on the owning <see cref="Vertex"/>.
+        /// </summary>
+        /// <param name="serializedMessage">The serialized message.</param>
+        /// <param name="sender">The sender of the message.</param>
+        public void SerializedMessageReceived(SerializedMessage serializedMessage, ReturnAddress sender)
         {
             System.Diagnostics.Debug.Assert(this.AvailableEntrancy >= -1);
-            if (this.decoder == null) this.decoder = new AutoSerializedMessageDecoder<TRecord, TTime>(this.Vertex.CodeGenerator);
+            if (this.decoder == null) this.decoder = new AutoSerializedMessageDecoder<TRecord, TTime>(this.Vertex.SerializationFormat);
 
             foreach (Message<TRecord, TTime> message in this.decoder.AsTypedMessages(serializedMessage))
             {
-                this.OnReceive(message, from);
+                this.OnReceive(message, sender);
                 message.Release();
             }
         }
 
+        /// <summary>
+        /// Returns a string representation of this buffer.
+        /// </summary>
+        /// <returns>A string representation of this buffer.</returns>
         public override string ToString()
         {
-            return string.Format("<{0}L>", this.vertex.Stage.StageId);
+            return string.Format("<{0}B>", this.vertex.Stage.StageId);
         }
 
+        /// <summary>
+        /// Restores this buffer from the given <see cref="NaiadReader"/>.
+        /// </summary>
+        /// <param name="reader">The reader.</param>
         public void Restore(NaiadReader reader)
         {
-            var timeSerializer = this.Vertex.CodeGenerator.GetSerializer<TTime>();
-            var valueSerializer = this.Vertex.CodeGenerator.GetSerializer<TRecord>();
-            var intSerializer = this.Vertex.CodeGenerator.GetSerializer<Int32>();
+            var timeSerializer = this.Vertex.SerializationFormat.GetSerializer<TTime>();
+            var valueSerializer = this.Vertex.SerializationFormat.GetSerializer<TRecord>();
+            var intSerializer = this.Vertex.SerializationFormat.GetSerializer<Int32>();
 
             int readCount = reader.Read(intSerializer);
             for (int i = 0; i < readCount; ++i)
@@ -126,11 +159,15 @@ namespace Microsoft.Research.Naiad.Frameworks
             }
         }
 
+        /// <summary>
+        /// Checkpoints the contents of this buffer to the given <see cref="NaiadWriter"/>.
+        /// </summary>
+        /// <param name="writer">The writer.</param>
         public void Checkpoint(NaiadWriter writer)
         {
-            var timeSerializer = this.Vertex.CodeGenerator.GetSerializer<TTime>();
-            var valueSerializer = this.Vertex.CodeGenerator.GetSerializer<TRecord>();
-            var intSerializer = this.Vertex.CodeGenerator.GetSerializer<Int32>();
+            var timeSerializer = this.Vertex.SerializationFormat.GetSerializer<TTime>();
+            var valueSerializer = this.Vertex.SerializationFormat.GetSerializer<TRecord>();
+            var intSerializer = this.Vertex.SerializationFormat.GetSerializer<Int32>();
 
             writer.Write(this.recordsToProcess.Count, intSerializer);
             foreach (KeyValuePair<TTime, SpinedList<TRecord>> kvp in this.recordsToProcess)
@@ -141,26 +178,33 @@ namespace Microsoft.Research.Naiad.Frameworks
 
         }
 
-        public bool Stateful { get { throw new NotImplementedException(); } }
     }
 
-    public class VertexOutputBuffer<TRecord, TTime> : Microsoft.Research.Naiad.Dataflow.VertexOutput<TRecord, TTime>
+    /// <summary>
+    /// An intermediate buffer for records sent by a <see cref="Vertex"/>.
+    /// </summary>
+    /// <typeparam name="TRecord">The type of records to be sent.</typeparam>
+    /// <typeparam name="TTime">The type of timestamp on the records to be sent.</typeparam>
+    public class VertexOutputBuffer<TRecord, TTime> : VertexOutput<TRecord, TTime>
         where TTime : Time<TTime>
     {
-        private Dataflow.Channels.SendWire<TRecord, TTime>[] sendChannels;
+        private Dataflow.SendChannel<TRecord, TTime>[] sendChannels;
 
         private readonly Dictionary<TTime, VertexOutputBufferPerTime<TRecord, TTime>> Buffers;
 
         private bool MustFlushChannels;
 
+#if false
         #region logging
-
-        private bool loggingEnabled = false;
+        /// <summary>
+        /// Indicates logging enabled
+        /// </summary>
         public bool LoggingEnabled { get { return this.loggingEnabled; } set { this.loggingEnabled = value; } }
+        private bool loggingEnabled = false;
 
         private void LogMessage(Message<TRecord, TTime> message)
         {
-            var encoder = new AutoSerializedMessageEncoder<TRecord, TTime>(this.Vertex.VertexId, 0, DummyBufferPool<byte>.Pool, this.Vertex.Stage.InternalGraphManager.Controller.Configuration.SendPageSize, this.Vertex.CodeGenerator);
+            var encoder = new AutoSerializedMessageEncoder<TRecord, TTime>(this.Vertex.VertexId, 0, DummyBufferPool<byte>.Pool, this.Vertex.Stage.InternalComputation.Controller.Configuration.SendPageSize, this.Vertex.SerializationFormat);
             encoder.CompletedMessage += (o, a) =>
             {
                 ArraySegment<byte> messageSegment = a.Segment.ToArraySegment();
@@ -172,18 +216,22 @@ namespace Microsoft.Research.Naiad.Frameworks
 
             encoder.Flush();
         }
-
         #endregion
+#endif
 
-        public void AddReceiver(Dataflow.Channels.SendWire<TRecord, TTime> sendFiber)
+        /// <summary>
+        /// Adds a recipient for records handled by this buffer.
+        /// </summary>
+        /// <param name="recipient">The recipient.</param>
+        public void AddReceiver(Dataflow.SendChannel<TRecord, TTime> recipient)
         {
-            this.sendChannels = this.sendChannels.Concat(new[] { sendFiber }).ToArray();
+            this.sendChannels = this.sendChannels.Concat(new[] { recipient }).ToArray();
         }
 
         /// <summary>
-        /// Sends a fully formed message
+        /// Sends a full message.
         /// </summary>
-        /// <param name="message">message</param>
+        /// <param name="message">The message.</param>
         public void Send(Message<TRecord, TTime> message)
         {
             this.MustFlushChannels = true;
@@ -192,11 +240,10 @@ namespace Microsoft.Research.Naiad.Frameworks
         }
 
         /// <summary>
-        /// Flushes the associated buffers
+        /// Flushes all internal buffers associated with this buffer.
         /// </summary>
         public void Flush()
         {
-            // the existence of buffers is the "mustFlushChannels == true" test.
             if (this.Buffers.Count > 0)
             {
                 while (this.Buffers.Count > 0)
@@ -219,10 +266,10 @@ namespace Microsoft.Research.Naiad.Frameworks
         }
 
         /// <summary>
-        /// Returns a buffer with a fixed time, with which records may be sent
+        /// Returns a per-time buffer with for records with a single time, using which records may be sent.
         /// </summary>
-        /// <param name="time">time</param>
-        /// <returns>new output buffer</returns>
+        /// <param name="time">The constant time.</param>
+        /// <returns>A new per-time buffer.</returns>
         public VertexOutputBufferPerTime<TRecord, TTime> GetBufferForTime(TTime time)
         {
             if (!this.Buffers.ContainsKey(time))
@@ -231,21 +278,33 @@ namespace Microsoft.Research.Naiad.Frameworks
             return this.Buffers[time];
         }
 
+        /// <summary>
+        /// The vertex to which this buffer belongs.
+        /// </summary>
         public Vertex Vertex { get { return this.vertex; } }
 
         private readonly Vertex vertex;
 
+        /// <summary>
+        /// Constructs a VertexOutputBuffer for the given vertex.
+        /// </summary>
+        /// <param name="vertex">The vertex to which this buffer will belong.</param>
         public VertexOutputBuffer(Vertex vertex)
         {
             this.vertex = vertex;
 
-            this.sendChannels = new Dataflow.Channels.SendWire<TRecord, TTime>[] { };
+            this.sendChannels = new Dataflow.SendChannel<TRecord, TTime>[] { };
             this.Buffers = new Dictionary<TTime, VertexOutputBufferPerTime<TRecord, TTime>>();
 
             vertex.AddOnFlushAction(() => this.Flush());
         }
     }
 
+    /// <summary>
+    /// Represents a per-time buffer for sending records with a single time.
+    /// </summary>
+    /// <typeparam name="TRecord">The type of records to be sent.</typeparam>
+    /// <typeparam name="TTime">The type of timestamp on the records to be sent.</typeparam>
     public class VertexOutputBufferPerTime<TRecord, TTime>
         where TTime : Time<TTime>
     {
@@ -254,16 +313,16 @@ namespace Microsoft.Research.Naiad.Frameworks
 
         private Message<TRecord, TTime> Buffer;
 
-        //[System.Runtime.CompilerServices.MethodImplAttribute(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         /// <summary>
-        /// Sends a record with the bound time.
+        /// Sends the given record.
         /// </summary>
-        /// <param name="record">record to send</param>
+        /// <param name="record">The record.</param>
+        // [System.Runtime.CompilerServices.MethodImplAttribute(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         public void Send(TRecord record)
         {
-            Buffer.payload[Buffer.length++] = record;
-            if (Buffer.length == Buffer.payload.Length)
-                SendBuffer();
+            this.Buffer.payload[Buffer.length++] = record;
+            if (this.Buffer.length == this.Buffer.payload.Length)
+                this.SendBuffer();
         }
 
         internal void SendBuffer()
@@ -283,22 +342,23 @@ namespace Microsoft.Research.Naiad.Frameworks
         }
 
         /// <summary>
-        /// Constructions a new VertexOutputBufferPerTime from its parent and a fixed time
+        /// Constructions a new buffer from its parent <see cref="VertexOutputBuffer{TRecord,TTime}"/> and a constant logical time.
         /// </summary>
-        /// <param name="parent">parent</param>
-        /// <param name="time">time</param>
-        public VertexOutputBufferPerTime(VertexOutputBuffer<TRecord, TTime> parent, TTime time)
+        /// <param name="parent">The parent buffer.</param>
+        /// <param name="time">The constant time.</param>
+        internal VertexOutputBufferPerTime(VertexOutputBuffer<TRecord, TTime> parent, TTime time)
         {
             this.parent = parent;
             this.Time = time;
 
-            this.Buffer = new Message<TRecord, TTime>();
+            this.Buffer = new Message<TRecord, TTime>(time);
             this.Buffer.Allocate();
-            this.Buffer.time = time;
         }
     }
+}
 
-
+namespace Microsoft.Research.Naiad.Dataflow.StandardVertices
+{
     #region Streaming Vertices and Stages
 
     /// <summary>
@@ -309,8 +369,19 @@ namespace Microsoft.Research.Naiad.Frameworks
     public abstract class SinkVertex<TOutput, TTime> : Vertex<TTime>
         where TTime : Time<TTime>
     {
-        public abstract void OnReceive(Message<TOutput, TTime> record);
+        /// <summary>
+        /// Called when a message is received.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        public abstract void OnReceive(Message<TOutput, TTime> message);
 
+        /// <summary>
+        /// Constructs a new Sink stage
+        /// </summary>
+        /// <param name="stream">source stream</param>
+        /// <param name="factory">vertex factory</param>
+        /// <param name="partitionedBy">partitioning requirement</param>
+        /// <param name="name">stage name</param>
         public static void MakeStage(Stream<TOutput, TTime> stream, Func<int, Stage<TTime>, SinkVertex<TOutput, TTime>> factory, Expression<Func<TOutput, int>> partitionedBy, string name)
         {
             var stage = Foundry.NewStage(stream.Context, factory, name);
@@ -318,6 +389,11 @@ namespace Microsoft.Research.Naiad.Frameworks
             stage.NewInput(stream, (message, vertex) => vertex.OnReceive(message), partitionedBy);
         }
 
+        /// <summary>
+        /// Constructs a SinkVertex from an index and stage
+        /// </summary>
+        /// <param name="index">index</param>
+        /// <param name="stage">stage</param>
         public SinkVertex(int index, Stage<TTime> stage)
             : base(index, stage)
         {
@@ -385,9 +461,21 @@ namespace Microsoft.Research.Naiad.Frameworks
     public abstract class BinaryVertex<TInput1, TInput2, TOutput, TTime> : Vertex<TTime>
         where TTime : Time<TTime>
     {
+        /// <summary>
+        /// The buffer for output records.
+        /// </summary>
         protected VertexOutputBuffer<TOutput, TTime> Output;
 
+        /// <summary>
+        /// Called when a message is received on the first input.
+        /// </summary>
+        /// <param name="message">The message.</param>
         public abstract void OnReceive1(Message<TInput1, TTime> message);
+
+        /// <summary>
+        /// Called when a message is received on the second input.
+        /// </summary>
+        /// <param name="message">The message.</param>
         public abstract void OnReceive2(Message<TInput2, TTime> message);
 
         /// <summary>
@@ -437,15 +525,26 @@ namespace Microsoft.Research.Naiad.Frameworks
     public class SinkBufferingVertex<TOutput, TTime> : SinkVertex<TOutput, TTime>
         where TTime : Time<TTime>
     {
+        /// <summary>
+        /// Input buffer
+        /// </summary>
         protected VertexInputBuffer<TOutput, TTime> Input;
 
         readonly Action<IEnumerable<TOutput>> Action;
 
-        public override void OnReceive(Message<TOutput, TTime> record)
+        /// <summary>
+        /// Called when a message is received.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        public override void OnReceive(Message<TOutput, TTime> message)
         {
-            this.Input.OnReceive(record, new RemotePostbox());
+            this.Input.OnReceive(message, new ReturnAddress());
         }
 
+        /// <summary>
+        /// Indicates that all messages bearing the given time (or earlier) have been delivered.
+        /// </summary>
+        /// <param name="time">The timestamp of the notification.</param>
         public override void OnNotify(TTime time)
         {
             this.Action(this.Input.GetRecordsAt(time));
@@ -476,15 +575,26 @@ namespace Microsoft.Research.Naiad.Frameworks
     public class UnaryBufferingVertex<TInput, TOutput, TTime> : UnaryVertex<TInput, TOutput, TTime>
         where TTime : Time<TTime>
     {
+        /// <summary>
+        /// Input buffer
+        /// </summary>
         protected VertexInputBuffer<TInput, TTime> Input;
 
         readonly Func<IEnumerable<TInput>, IEnumerable<TOutput>> Transformation;
 
+        /// <summary>
+        /// Called when a message is received.
+        /// </summary>
+        /// <param name="message">The message.</param>
         public override void OnReceive(Message<TInput, TTime> message)
         {
-            this.Input.OnReceive(message, new RemotePostbox());
+            this.Input.OnReceive(message, new ReturnAddress());
         }
 
+        /// <summary>
+        /// Indicates that all messages bearing the given time (or earlier) have been delivered.
+        /// </summary>
+        /// <param name="time">The timestamp of the notification.</param>
         public override void OnNotify(TTime time)
         {
             var records = this.Input.GetRecordsAt(time);
@@ -519,21 +629,40 @@ namespace Microsoft.Research.Naiad.Frameworks
     public class BinaryBufferingVertex<TInput1, TInput2, TOutput, TTime> : BinaryVertex<TInput1, TInput2, TOutput, TTime>
         where TTime : Time<TTime>
     {
+        /// <summary>
+        /// First input buffer
+        /// </summary>
         protected VertexInputBuffer<TInput1, TTime> Input1;
+
+        /// <summary>
+        /// Second input buffer
+        /// </summary>
         protected VertexInputBuffer<TInput2, TTime> Input2;
 
         readonly Func<IEnumerable<TInput1>, IEnumerable<TInput2>, IEnumerable<TOutput>> Transformation;
 
+        /// <summary>
+        /// Called when a message is received on the first input.
+        /// </summary>
+        /// <param name="message">The message.</param>
         public override void OnReceive1(Message<TInput1, TTime> message)
         {
-            this.Input1.OnReceive(message, new RemotePostbox());
+            this.Input1.OnReceive(message, new ReturnAddress());
         }
 
+        /// <summary>
+        /// Called when a message is received on the second input.
+        /// </summary>
+        /// <param name="message">The message.</param>
         public override void OnReceive2(Message<TInput2, TTime> message)
         {
-            this.Input2.OnReceive(message, new RemotePostbox());
+            this.Input2.OnReceive(message, new ReturnAddress());
         }
 
+        /// <summary>
+        /// Indicates that all messages bearing the given time (or earlier) have been delivered.
+        /// </summary>
+        /// <param name="time">The timestamp of the notification.</param>
         public override void OnNotify(TTime time)
         {
             var records1 = this.Input1.GetRecordsAt(time);
@@ -632,7 +761,7 @@ namespace Microsoft.Research.Naiad.Frameworks
         /// <param name="factory">Vertex factory</param>
         /// <param name="name">Descriptive name</param>
         /// <returns>Constructed stage</returns>
-        public static Stage<TVertex, TTime> NewStage<TVertex, TTime>(OpaqueTimeContext<TTime> context, Func<int, Stage<TTime>, TVertex> factory, string name)
+        public static Stage<TVertex, TTime> NewStage<TVertex, TTime>(TimeContext<TTime> context, Func<int, Stage<TTime>, TVertex> factory, string name)
             where TTime : Time<TTime>
             where TVertex : Vertex<TTime>
         {
@@ -644,11 +773,12 @@ namespace Microsoft.Research.Naiad.Frameworks
         /// </summary>
         /// <typeparam name="TVertex">Vertex type</typeparam>
         /// <typeparam name="TTime">Time type</typeparam>
+        /// <param name="placement">Placement</param>
         /// <param name="context">Time context</param>
         /// <param name="factory">Vertex factory</param>
         /// <param name="name">Descriptive name</param>
         /// <returns>Constructed stage</returns>
-        public static Stage<TVertex, TTime> NewStage<TVertex, TTime>(Placement placement, OpaqueTimeContext<TTime> context, Func<int, Stage<TTime>, TVertex> factory, string name)
+        public static Stage<TVertex, TTime> NewStage<TVertex, TTime>(Placement placement, TimeContext<TTime> context, Func<int, Stage<TTime>, TVertex> factory, string name)
             where TTime : Time<TTime>
             where TVertex : Vertex<TTime>
         {

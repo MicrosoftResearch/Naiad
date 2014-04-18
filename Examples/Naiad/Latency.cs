@@ -1,5 +1,5 @@
 ﻿/*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -24,6 +24,9 @@ using Microsoft.Research.Naiad.Dataflow.Iteration;
 using Microsoft.Research.Naiad.Frameworks;
 using Microsoft.Research.Naiad.Runtime;
 using Microsoft.Research.Naiad.Scheduling;
+using Microsoft.Research.Naiad.Input;
+using Microsoft.Research.Naiad.Dataflow.StandardVertices;
+
 using Microsoft.WindowsAzure.Storage;
 using System;
 using System.Collections.Generic;
@@ -31,7 +34,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 
-namespace Examples.Latency
+namespace Microsoft.Research.Naiad.Examples.Latency
 {
     internal class Barrier : UnaryVertex<int, int, IterationIn<Epoch>>
     {
@@ -40,8 +43,8 @@ namespace Examples.Latency
         // Send round-robin to destinations to try and get better network utilization
         public override void OnNotify(IterationIn<Epoch> time)
         {
-            if (time.t < this.Iterations)
-                this.NotifyAt(new IterationIn<Epoch>(time.s, time.t + 1));
+            if (time.iteration < this.Iterations)
+                this.NotifyAt(new IterationIn<Epoch>(time.outerTime, time.iteration + 1));
         }
 
         public static Stream<int, IterationIn<Epoch>> MakeStage(Stream<int, IterationIn<Epoch>> ingress, Stream<int, IterationIn<Epoch>> feedbackOutput, int iterations)
@@ -70,70 +73,62 @@ namespace Examples.Latency
 
         public void Execute(string[] args)
         {
-            using (var controller = NewController.FromArgs(ref args))
+            using (var computation = NewComputation.FromArgs(ref args))
             {
-                Logging.LogLevel = LoggingLevel.Off;
-
                 int iterations = int.Parse(args[1]);
 
-                using (var manager = controller.NewComputation())
+                // first construct a simple graph with a feedback loop.
+                var inputStream = (new int[] { }).AsNaiadStream(computation);
+
+                var loopContext = new LoopContext<Epoch>(inputStream.Context, "loop");
+                var feedback = loopContext.Delay<int>();
+                var ingress = loopContext.EnterLoop(inputStream);
+
+                feedback.Input = Barrier.MakeStage(ingress, feedback.Output, iterations);
+
+                // prepare measurement callbacks
+                var sw = new Stopwatch();
+                var lastTime = 0L;
+                var times = new List<double>(iterations);
+
+                computation.OnStartup += (c, y) => { sw.Start(); };
+                computation.OnFrontierChange += (v, b) =>
                 {
-                    // first construct a simple graph with a feedback loop.
-                    var inputStream = (new int[] { }).AsNaiadStream(manager);
+                    var now = sw.ElapsedTicks;
 
-                    var loopContext = new LoopContext<Epoch>(inputStream.Context, "loop");
-                    var feedback = loopContext.Delay<int>();
-                    var ingress = loopContext.EnterLoop(inputStream);
+                    if (lastTime > 0)
+                        times.Add(1000.0 * (now - lastTime) / (double)Stopwatch.Frequency);
 
-                    feedback.Input = Barrier.MakeStage(ingress, feedback.Output, iterations);
+                    lastTime = now;
+                };
 
-                    // prepare measurement callbacks
-                    var sw = new Stopwatch();
-                    var lastTime = 0L;
-                    var times = new List<double>(iterations);
+                Console.WriteLine("Running barrier latency test with {0} iterations, vertices={1}", iterations, ingress.ForStage.Placement.Count);
 
-                    manager.OnStartup += (c, y) => { sw.Start(); };
-                    manager.Frontier.OnFrontierChanged += (v, b) =>
-                    {
-                        var now = sw.ElapsedTicks;
+                // start computation and block
+                computation.Activate();
+                computation.Join();
 
-                        if (lastTime > 0)
-                            times.Add(1000.0 * (now - lastTime) / (double)Stopwatch.Frequency);
+                // print results
+                times.Sort();
 
-                        lastTime = now;
-                    };
+                var percentiles = new[] { 0.00, 0.01, 0.05, 0.10, 0.25, 0.50, 0.75, 0.90, 0.95, 0.99 };
+                var latencies = percentiles.Select(f => times[(int)(iterations * f)]).ToArray();
 
-                    Console.Error.WriteLine("Running barrier latency test with {0} iterations, vertices={1}", iterations, ingress.ForStage.Placement.Count);
+                Console.WriteLine("Ran {0} iterations on {1} processes; this is process {2}", times.Count - 1, computation.Configuration.Processes, computation.Configuration.ProcessID);
 
-                    // start computation and block
-                    manager.Activate();
-                    manager.Join();
+                Console.WriteLine("%-ile\tLatency (ms)");
+                for (int i = 0; i < latencies.Length; i++)
+                    Console.WriteLine("{0:0.00}:\t{1:0.00}", percentiles[i], latencies[i]);
 
-                    // print results
-                    times.Sort();
+                Console.WriteLine("max:\t{0:0.00}", latencies[latencies.Length - 1]);
 
-                    var percentiles = new[] { 0.00, 0.01, 0.05, 0.10, 0.25, 0.50, 0.75, 0.90, 0.95, 0.99 };
-                    var latencies = percentiles.Select(f => times[(int)(iterations * f)]).ToArray();
-
-                    CloudStorageAccount account = CloudStorageAccount.Parse("DefaultEndpointsProtocol=https;AccountName=msrsvc;AccountKey=I4JPlk0bZ6YWypg+RJamyq0us1b+kCcuoeKlPhfiHTcVW7P4xvuzURvlRShSo1O3UDhcL2LiY4kMaarD+p1lKg==");
-
-                    var client = account.CreateCloudBlobClient();
-                    var cref = client.GetContainerReference("naiad-jobs");
-                    var bref = cref.GetBlockBlobReference(string.Format("foo-{0}", controller.Configuration.ProcessID));
-
-                    bref.UploadText("Done");
-
-                    Console.WriteLine("Ran {0} iterations on {1} processes; this is process {2}", times.Count - 1, controller.Configuration.Processes, controller.Configuration.ProcessID);
-
-                    Console.WriteLine("%-ile\tLatency (ms)");
-                    for (int i = 0; i < latencies.Length; i++)
-                        Console.WriteLine("{0:0.00}:\t{1:0.00}", percentiles[i], latencies[i]);
-
-                    Console.WriteLine("max:\t{0:0.00}", latencies[latencies.Length - 1]);
-                }
-
-                controller.Join();
             }
+        }
+
+
+        public string Help
+        {
+            get { return "Tests the latency of Naiad by iterating an empty loop as quickly as possible, for a user-specified number of iterations."; }
         }
     }
 }

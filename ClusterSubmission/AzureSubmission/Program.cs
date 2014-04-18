@@ -1,5 +1,5 @@
 ﻿/*
- * Naiad ver. 0.3
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -45,7 +45,6 @@ namespace Microsoft.Research.Naiad.Cluster.Azure
         private static Flag AzureStorageAccountName = Flags.Define("--storageaccount", typeof(string));
         private static Flag AzureStorageAccountKey = Flags.Define("--storagekey", typeof(string));
         private static Flag AzureStorageContainerName = Flags.Define("--container", typeof(string));
-        //private static Flag AzureStorageIsPublic = Flags.Define("--storageispublic", typeof(bool));
 
         private const string Usage = @"Usage: AzureSubmission [Azure options] NaiadExecutable.exe [Naiad options]
 
@@ -60,54 +59,13 @@ Options:
     
 Azure options:
     --subscriptionid     Azure subscription ID (default = taken from Powershell settings)
-    --clustername        HDInsight cluster name
-    --storageaccount     Azure storage account name
-    --storagekey         Azure storage account key
-    --container          Azure storage blob container name";
-
-        private static void GetPowershellDefaults(out string defaultSubscriptionId, out string defaultCertThumbprint)
-        {
-            defaultSubscriptionId = null;
-            defaultCertThumbprint = null;
-
-            var configDir = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                "Windows Azure Powershell");
-            var defaultFile = Path.Combine(configDir, "WindowsAzureProfile.xml");
-            if (File.Exists(defaultFile))
-            {
-                using (FileStream s = new FileStream(defaultFile, FileMode.Open, FileAccess.Read))
-                {
-                    XDocument doc = XDocument.Load(s);
-                    XNamespace ns = doc.Root.GetDefaultNamespace();
-                    IEnumerable<XElement> subs = doc.Descendants(ns + "AzureSubscriptionData");
-                    foreach (XElement sub in subs)
-                    {
-                        try
-                        {
-                            if (bool.Parse(sub.Descendants(ns + "IsDefault").Single().Value))
-                            {
-                                defaultCertThumbprint = sub.Descendants(ns + "ManagementCertificate").Single().Value;
-                                defaultSubscriptionId = sub.Descendants(ns + "SubscriptionId").Single().Value;
-                                break; // should be only one default
-                            }
-                        }
-                        catch { /* swallow any exceptions so we just return null values */ }
-                    }
-                }
-            }
-        }
+    --clustername        HDInsight cluster name (default = cluster if a single cluster is registered to all subscriptions)
+    --storageaccount     Azure storage account name for staging resources (default = cluster default storage account)
+    --storagekey         Azure storage account key for staging resources (default = cluster default storage acount key)
+    --container          Azure storage blob container name for staging resources (default = ""staging"")";
 
         static int Run(string[] args)
         {
-            string defaultSubscriptionId;
-            string defaultCertThumbprint;
-            GetPowershellDefaults(out defaultSubscriptionId, out defaultCertThumbprint);
-
-            if (!string.IsNullOrEmpty(defaultSubscriptionId))
-                AzureSubscriptionId.Parse(defaultSubscriptionId);
-            if (!string.IsNullOrEmpty(defaultCertThumbprint))
-                AzureCertificateThumbprint.Parse(defaultCertThumbprint);
 
             Flags.Parse(ConfigurationManager.AppSettings);
 
@@ -118,24 +76,7 @@ Azure options:
                 Console.Error.WriteLine(Usage);
                 return 0;
             }
-            if (!AzureStorageAccountName.IsSet)
-            {
-                Console.Error.WriteLine("Error: Azure storage account name not set.");
-                Console.Error.WriteLine(Usage);
-                return -1;
-            }
-            if (!AzureStorageAccountKey.IsSet)
-            {
-                Console.Error.WriteLine("Error: Azure storage key not set.");
-                Console.Error.WriteLine(Usage);
-                return -1;
-            }
-            if (!AzureStorageContainerName.IsSet)
-            {
-                Console.Error.WriteLine("Error: Azure storage container name not set.");
-                Console.Error.WriteLine(Usage);
-                return -1;
-            }
+
             if (!File.Exists(args[0]))
             {
                 Console.Error.WriteLine("Error: Naiad program {0} does not exist.", args[0]);
@@ -143,8 +84,69 @@ Azure options:
                 return -1;
             }
 
-            AzureDfsClient azureDfs = new AzureDfsClient(AzureStorageAccountName.StringValue, AzureStorageAccountKey.StringValue, AzureStorageContainerName.StringValue, false);
-            AzureYarnClient azureYarn = new AzureYarnClient(azureDfs, ConfigHelpers.GetPPMHome(null), AzureClusterName.StringValue, AzureSubscriptionId.StringValue, AzureCertificateThumbprint.StringValue);
+            AzureSubscriptions subscriptionManagement = new AzureSubscriptions();
+
+            if (AzureSubscriptionId.IsSet && AzureCertificateThumbprint.IsSet)
+            {
+                subscriptionManagement.AddSubscription(AzureSubscriptionId.StringValue, AzureCertificateThumbprint.StringValue);
+            }
+
+            string clusterName = null;
+            if (AzureClusterName.IsSet)
+            {
+                clusterName = AzureClusterName.StringValue;
+
+                if (AzureStorageAccountName.IsSet && AzureStorageAccountKey.IsSet)
+                {
+                    subscriptionManagement.SetClusterAccountAsync(clusterName, AzureStorageAccountName.StringValue, AzureStorageAccountKey.StringValue).Wait();
+                }
+            }
+            else
+            {
+                IEnumerable<AzureCluster> clusters = subscriptionManagement.GetClusters();
+                if (clusters.Count() == 1)
+                {
+                    clusterName = clusters.Single().Name;
+                }
+                else
+                {
+                    Console.Error.WriteLine("Error: Cluster name must be specified unless there is a single configured cluster in default and supplied subscriptions");
+                    Console.Error.WriteLine(Usage);
+                    return -1;
+                }
+            }
+
+            AzureCluster cluster;
+            try
+            {
+                cluster = subscriptionManagement.GetClusterAsync(clusterName).Result;
+            }
+            catch (Exception)
+            {
+                Console.Error.WriteLine("Error: Failed to find cluster " + clusterName + " in default or supplied subscriptions");
+                Console.Error.WriteLine(Usage);
+                return -1;
+            }
+            if (cluster == null)
+            {
+                Console.Error.WriteLine("Error: Failed to find cluster {0} in default or supplied subscriptions", clusterName);
+                Console.Error.WriteLine(Usage);
+                return -1;
+            }
+
+            string containerName = "staging";
+            if (AzureStorageContainerName.IsSet)
+            {
+                containerName = AzureStorageContainerName.StringValue;
+            }
+
+            // The args are augmented with an additional setting containing the Azure connection string.
+            args = args.Concat(new string[] { "--addsetting", "Microsoft.Research.Naiad.Cluster.Azure.DefaultConnectionString", string.Format("\"DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1}\"", cluster.StorageAccount.Split('.').First(), cluster.StorageKey) }).ToArray();
+
+            Console.Error.WriteLine("Submitting job with args: {0}", string.Join(" ", args));
+
+            AzureDfsClient azureDfs = new AzureDfsClient(cluster.StorageAccount, cluster.StorageKey, containerName);
+            AzureYarnClient azureYarn = new AzureYarnClient(subscriptionManagement, azureDfs, ConfigHelpers.GetPPMHome(null), clusterName);
             AzureYarnSubmission submission = new AzureYarnSubmission(azureDfs, azureYarn, NumHosts, args);
 
             submission.Submit();

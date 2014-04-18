@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -25,35 +25,76 @@ using System.Text;
 
 namespace Microsoft.Research.Naiad
 {
-
+    /// <summary>
+    /// Extension methods for the Pair type
+    /// </summary>
     public static class PairExtensionMethods
     {
-        public static Pair<V1, V2> PairWith<V1, V2>(this V1 s, V2 t)
+        /// <summary>
+        /// Returns a new Pair of two elements
+        /// </summary>
+        /// <typeparam name="V1">first element type</typeparam>
+        /// <typeparam name="V2">second element type</typeparam>
+        /// <param name="first">first element</param>
+        /// <param name="second">second element</param>
+        /// <returns>pair of first and second elements</returns>
+        public static Pair<V1, V2> PairWith<V1, V2>(this V1 first, V2 second)
         {
-            return new Pair<V1, V2>(s, t);
+            return new Pair<V1, V2>(first, second);
         }
     }
 
-    public struct Pair<V1, V2> : IEquatable<Pair<V1, V2>>
+    /// <summary>
+    /// Pair of two elements
+    /// </summary>
+    /// <typeparam name="TFirst">The first element type.</typeparam>
+    /// <typeparam name="TSecond">The second element type.</typeparam>
+    public struct Pair<TFirst, TSecond> : IEquatable<Pair<TFirst, TSecond>>
     {
-        public V1 v1;
-        public V2 v2;
+        /// <summary>
+        /// First element.
+        /// </summary>
+        public TFirst First;
 
-        public Pair(V1 ss, V2 tt) { v1 = ss; v2 = tt; }
+        /// <summary>
+        /// Second element.
+        /// </summary>
+        public TSecond Second;
 
+        /// <summary>
+        /// Constructs a pair from two elements
+        /// </summary>
+        /// <param name="first">The first element.</param>
+        /// <param name="second">The second element.</param>
+        public Pair(TFirst first, TSecond second) { First = first; Second = second; }
+
+        /// <summary>
+        /// Returns a string representation of this pair.
+        /// </summary>
+        /// <returns>A string representation of this pair.</returns>
         public override string ToString()
         {
-            return "[" + v1.ToString() + " " + v2.ToString() + "]";
+            return "[" + First.ToString() + " " + Second.ToString() + "]";
         }
 
+        /// <summary>
+        /// Returns a 32-bit signed integer hashcode for this pair.
+        /// </summary>
+        /// <returns>A 32-bit signed integer hashcode for this pair.</returns>
         public override int GetHashCode()
         {
-            return (this.v1 == null ? 0 : this.v1.GetHashCode()) + 123412324 * (this.v2 == null ? 0 : this.v2.GetHashCode());
+            return (this.First == null ? 0 : this.First.GetHashCode()) + 123412324 * (this.Second == null ? 0 : this.Second.GetHashCode());
         }
 
-        public bool Equals(Pair<V1, V2> other)
+
+        /// <summary>
+        /// Compares this pair and the <paramref name="other"/> pair for element-wise equality.
+        /// </summary>
+        /// <param name="other">The other pair.</param>
+        /// <returns><c>true</c>, if and only if both pairs are element-wise equal.</returns>
+        public bool Equals(Pair<TFirst, TSecond> other)
         {
-            return (EqualityComparer<V1>.Default.Equals(this.v1, other.v1) && EqualityComparer<V2>.Default.Equals(this.v2, other.v2));
+            return (EqualityComparer<TFirst>.Default.Equals(this.First, other.First) && EqualityComparer<TSecond>.Default.Equals(this.Second, other.Second));
         }
     }
 }

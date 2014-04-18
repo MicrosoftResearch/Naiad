@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -25,58 +25,67 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Microsoft.Research.Naiad.Dataflow
+using Microsoft.Research.Naiad.Diagnostics;
+using Microsoft.Research.Naiad.Dataflow;
+
+namespace Microsoft.Research.Naiad.Input
 {
     /// <summary>
-    /// Can be activated by a graph manager, and joined to block until complete.
+    /// Represents an untyped external input to a Naiad <see cref="Computation"/>.
     /// </summary>
     public interface DataSource
     {
         /// <summary>
-        /// Called by the GraphManager before it completes its own Activate().
+        /// Called by the Computation before it completes its own Activate().
         /// </summary>
         void Activate();
         /// <summary>
-        /// Called by the GraphManager before it completes its own Join().
+        /// Called by the Computation before it completes its own Join().
         /// </summary>
         void Join();
     }
 
     /// <summary>
-    /// Can be supplied with per-vertex inputs.
+    /// Represents a typed external input of <typeparamref name="TRecord"/> records.
     /// </summary>
-    /// <typeparam name="TRecord"></typeparam>
+    /// <typeparam name="TRecord">The type of records that this data source provides.</typeparam>
     public interface DataSource<TRecord> : DataSource
     {
-        // indicates a StreamingInput to be used for each local worker.
+        /// <summary>
+        /// Called with a sequence of streaming inputs to attach to the data source.
+        /// </summary>
+        /// <param name="inputs">A sequence of streaming inputs, one per local worker.</param>
         void RegisterInputs(IEnumerable<StreamingInput<TRecord>> inputs);
     }
 
+    /// <summary>
+    /// Extension methods
+    /// </summary>
     public static class DataSourceExtensionMethods
     {
         /// <summary>
-        /// Converts an IEnumerable into a constant Naiad stream, using the supplied graph manager.
+        /// Converts an <see cref="IEnumerable{TRecord}"/> into a constant Naiad <see cref="Stream{TRecord,Epoch}"/>, using the supplied <paramref name="computation"/>.
         /// </summary>
         /// <typeparam name="TRecord">record type</typeparam>
         /// <param name="source">input records</param>
-        /// <param name="manager">graph manager</param>
+        /// <param name="computation">graph manager</param>
         /// <returns>single epoch stream containing source records</returns>
-        public static Stream<TRecord, Epoch> AsNaiadStream<TRecord>(this IEnumerable<TRecord> source, GraphManager manager)
+        public static Stream<TRecord, Epoch> AsNaiadStream<TRecord>(this IEnumerable<TRecord> source, Computation computation)
         {
-            return manager.NewInput(new ConstantDataSource<TRecord>(source));
+            return computation.NewInput(new ConstantDataSource<TRecord>(source));
         }
 
         /// <summary>
-        /// Converts an IObservable of IEnumerables into a Naiad stream, using the supplied graph manager. 
+        /// Converts an <see cref="IObservable{TRecordEnumerable}"/> into a Naiad <see cref="Stream{TRecord,Epoch}"/>, using the supplied <paramref name="computation"/>. 
         /// </summary>
         /// <typeparam name="TRecord">record type</typeparam>
         /// <param name="source">input sequence of records</param>
-        /// <param name="manager">graph manager</param>
+        /// <param name="computation">graph manager</param>
         /// <returns>stream of records, each epoch defined by consecutive OnNext calls from the observable</returns>
-        public static Stream<TRecord, Epoch> AsNaiadStream<TRecord>(this IObservable<IEnumerable<TRecord>> source, GraphManager manager)
+        public static Stream<TRecord, Epoch> AsNaiadStream<TRecord>(this IObservable<IEnumerable<TRecord>> source, Computation computation)
         {
             var batched = new BatchedDataSource<TRecord>();
-            var result = manager.NewInput(batched);
+            var result = computation.NewInput(batched);
 
             source.Subscribe(batched);
 
@@ -108,12 +117,12 @@ namespace Microsoft.Research.Naiad.Dataflow
         }
 
         /// <summary>
-        /// Called by the GraphManager before it completes its own Activate().
+        /// Called by the Computation before it completes its own Activate().
         /// </summary>
         public virtual void Activate() { }
 
         /// <summary>
-        /// Called by the GraphManager before it completes its own Join().
+        /// Called by the Computation before it completes its own Join().
         /// </summary>
         public virtual void Join() { }
     }
@@ -148,21 +157,31 @@ namespace Microsoft.Research.Naiad.Dataflow
         /// </summary>
         public override void Activate()
         {
-            var array = this.contents == null ? new TRecord[] { } : this.contents.ToArray();
+            var currentBuffer = new TRecord[1024];
+            var currentCursor = 0;
+            var currentWorker = 0;
+
             lock (this)
             {
-                var arrayCursor = 0;
-                for (int i = 0; i < this.inputsByWorker.Length; i++)
+                foreach (var element in this.contents)
                 {
-                    var toEat = (array.Length / this.inputsByWorker.Length) + ((i < (array.Length % this.inputsByWorker.Length)) ? 1 : 0);
-                    var chunk = new TRecord[toEat];
+                    currentBuffer[currentCursor++] = element;
 
-                    Array.Copy(array, arrayCursor, chunk, 0, toEat);
-                    arrayCursor += toEat;
+                    if (currentCursor == currentBuffer.Length)
+                    {
+                        this.inputsByWorker[currentWorker].OnStreamingRecv(currentBuffer, 0);
 
-                    this.inputsByWorker[i].OnStreamingRecv(chunk, 0);
-                    this.inputsByWorker[i].OnCompleted();
+                        currentBuffer = new TRecord[currentBuffer.Length];
+                        currentCursor = 0;
+                        currentWorker = (currentWorker + 1) % this.inputsByWorker.Length;
+                    }
                 }
+
+                if (currentCursor > 0)
+                    this.inputsByWorker[currentWorker].OnStreamingRecv(currentBuffer.Take(currentCursor).ToArray(), 0);
+
+                for (int i = 0; i < this.inputsByWorker.Length; i++)
+                    this.inputsByWorker[i].OnCompleted();
             }
         }
     }
@@ -170,8 +189,11 @@ namespace Microsoft.Research.Naiad.Dataflow
     /// <summary>
     /// DataSource for reading from the Console.
     /// </summary>
-    public class ConsoleDataSource : BaseDataSource<string>
+    internal class ConsoleDataSource : BaseDataSource<string>
     {
+        /// <summary>
+        /// Consumes lines from the console
+        /// </summary>
         public void ConsumeLines()
         {
             if (this.inputsByWorker == null)
@@ -213,30 +235,48 @@ namespace Microsoft.Research.Naiad.Dataflow
     {
         private readonly InterGraphDataSink<TRecord> Sink;
 
+        /// <summary>
+        /// Registers itself with the InterGraphDataSink.
+        /// </summary>
         public override void Activate()
         {
             this.Sink.Register(this);
         }
         
+        /// <summary>
+        /// Forwards a message to the appropriate worker
+        /// </summary>
+        /// <param name="message">message</param>
+        /// <param name="epoch">epoch</param>
+        /// <param name="fromWorker">worker</param>
         public void OnRecv(TRecord[] message, int epoch, int fromWorker)
         {
             this.inputsByWorker[fromWorker].OnStreamingRecv(message, epoch);
         }
 
+        /// <summary>
+        /// Forwards a notification to the appropriate worker
+        /// </summary>
+        /// <param name="epoch">epoch</param>
+        /// <param name="fromWorker">worker</param>
         public void OnNotify(int epoch, int fromWorker)
         {
             this.inputsByWorker[fromWorker].OnStreamingNotify(epoch);
         }
 
+        /// <summary>
+        /// Forwards a completion to the appropriate worker
+        /// </summary>
+        /// <param name="fromWorker">worker</param>
         public void OnCompleted(int fromWorker)
         {
             this.inputsByWorker[fromWorker].OnCompleted();
         }
 
         /// <summary>
-        /// Constructs a new InterGraphDataSource from an InterGraphDataSink.
+        /// Constructs a new InterGraphDataSource from the given InterGraphDataSink.
         /// </summary>
-        /// <param name="sink"></param>
+        /// <param name="sink">The sink from which this source will consume records.</param>
         public InterGraphDataSource(InterGraphDataSink<TRecord> sink)
         {
             this.Sink = sink;
@@ -246,7 +286,7 @@ namespace Microsoft.Research.Naiad.Dataflow
     /// <summary>
     /// Data sink for use by other graph managers.
     /// </summary>
-    /// <typeparam name="TRecord"></typeparam>
+    /// <typeparam name="TRecord">The type of records produced by this sink.</typeparam>
     public class InterGraphDataSink<TRecord>
     {
         private readonly List<InterGraphDataSource<TRecord>> TargetSources;
@@ -259,10 +299,10 @@ namespace Microsoft.Research.Naiad.Dataflow
             lock (this)
             {
                 var dictionary = this.StatesByWorker[fromWorker];
-                if (!dictionary.ContainsKey(message.time.t))
-                    dictionary.Add(message.time.t, new List<TRecord>());
+                if (!dictionary.ContainsKey(message.time.epoch))
+                    dictionary.Add(message.time.epoch, new List<TRecord>());
 
-                var dictionaryTime = dictionary[message.time.t];
+                var dictionaryTime = dictionary[message.time.epoch];
 
                 for (int i = 0; i < message.length; i++)
                     dictionaryTime.Add(message.payload[i]);
@@ -319,8 +359,8 @@ namespace Microsoft.Research.Naiad.Dataflow
                 {
                     foreach (var frozen in this.FrozenStates[i])
                     {
-                        source.OnRecv(frozen.v2, frozen.v1, i);
-                        source.OnNotify(frozen.v1, i);
+                        source.OnRecv(frozen.Second, frozen.First, i);
+                        source.OnNotify(frozen.First, i);
                     }
 
                     if (this.Completed[i])
@@ -337,7 +377,7 @@ namespace Microsoft.Research.Naiad.Dataflow
         {
             this.TargetSources = new List<InterGraphDataSource<TRecord>>();
 
-            var workers = stream.Context.Context.Manager.GraphManager.Controller.Workers.Count;
+            var workers = stream.Context.Context.Manager.InternalComputation.Controller.Workers.Count;
 
             this.StatesByWorker = new Dictionary<int,List<TRecord>>[workers];
             for (int i = 0; i < this.StatesByWorker.Length; i++)
@@ -353,7 +393,7 @@ namespace Microsoft.Research.Naiad.Dataflow
 
             var placement = stream.StageOutput.ForStage.Placement;
 
-            stream.Subscribe((msg, i) => { this.OnRecv(msg, placement[i].ThreadId); }, (epoch, i) => { this.OnNotify(epoch.t, placement[i].ThreadId); }, i => this.OnCompleted(placement[i].ThreadId));
+            stream.Subscribe((msg, i) => { this.OnRecv(msg, placement[i].ThreadId); }, (epoch, i) => { this.OnNotify(epoch.epoch, placement[i].ThreadId); }, i => this.OnCompleted(placement[i].ThreadId));
         }
     }
 
@@ -466,12 +506,19 @@ namespace Microsoft.Research.Naiad.Dataflow
             }
         }
 
+        /// <summary>
+        /// Does nothing except test if OnCompleted has been called.
+        /// </summary>
         public override void Join()
         {
             if (!this.completed)
                 Logging.Error("BatchedDataSource.Join() called before BatchedDataSource.OnCompleted()");
         }
 
+        /// <summary>
+        /// Re-throws the exception.
+        /// </summary>
+        /// <param name="exception">exception</param>
         public void OnError(System.Exception exception) { throw exception; }
     }
 }

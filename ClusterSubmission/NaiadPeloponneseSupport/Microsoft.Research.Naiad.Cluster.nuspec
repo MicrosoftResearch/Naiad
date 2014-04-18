@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2013/01/nuspec.xsd">
   <metadata minClientVersion="2.5">
     <id>Microsoft.Research.Naiad.Cluster</id>
-    <version>0.3.1-beta</version>
+    <version>0.4.0-beta</version>
     <title>Naiad - Cluster Support</title>
     <authors>naiadquestions@microsoft.com</authors>
     <owners>naiadquestions@microsoft.com,Microsoft</owners>
@@ -16,7 +16,7 @@
     <language>en-US</language>
     <dependencies>
       <group targetFramework=".NETFramework4.5">
-        <dependency id="Microsoft.Research.Peloponnese" version="0.7.1-beta" />
+        <dependency id="Microsoft.Research.Peloponnese" version="0.7.2-beta" />
       </group>
     </dependencies>
     <frameworkAssemblies>
@@ -31,6 +31,8 @@
     </references>
   </metadata>
   <files>
+    <file src="bin\x64\Release\Microsoft.Research.Naiad.Cluster.DependencyLister.dll" target="lib\net45\Microsoft.Research.Naiad.Cluster.DependencyLister.dll" />
+    <file src="bin\x64\Release\Microsoft.Research.Naiad.Cluster.DependencyLister.pdb" target="lib\net45\Microsoft.Research.Naiad.Cluster.DependencyLister.pdb" />
     <file src="bin\x64\Release\Microsoft.Research.Naiad.Cluster.dll" target="lib\net45\Microsoft.Research.Naiad.Cluster.dll" />
     <file src="bin\x64\Release\Microsoft.Research.Naiad.Cluster.pdb" target="lib\net45\Microsoft.Research.Naiad.Cluster.pdb" />
   </files>

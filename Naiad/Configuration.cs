@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -28,24 +28,26 @@ using System.Text;
 using System.Threading;
 using Microsoft.Research.Naiad.DataStructures;
 using Microsoft.Research.Naiad.Dataflow.Channels;
-using Microsoft.Research.Naiad.CodeGeneration;
+using Microsoft.Research.Naiad.Serialization;
 using Microsoft.Research.Naiad.Frameworks;
 using System.IO;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
 using System.Net.Sockets;
 using System.Net;
-using Microsoft.Research.Naiad.Util;
+using Microsoft.Research.Naiad.Utilities;
 using Microsoft.Research.Naiad.Scheduling;
 using Microsoft.Research.Naiad.Runtime.Controlling;
-using Microsoft.Research.Naiad.FaultTolerance;
 using Microsoft.Research.Naiad.Runtime.Networking;
 using Microsoft.Research.Naiad.Runtime.Progress;
+
+using Microsoft.Research.Naiad.Diagnostics;
+using System.Collections.Specialized;
 
 namespace Microsoft.Research.Naiad
 {
 
-    public enum RuntimeStatistic
+    internal enum RuntimeStatistic
     {
         TxProgressMessages, TxProgressBytes,
         RxProgressMessages, RxProgressBytes,
@@ -56,6 +58,9 @@ namespace Microsoft.Research.Naiad
         NUM_STATISTICS
     }
 
+    /// <summary>
+    /// Configuration information
+    /// </summary>
     public class Configuration
     {
         private static Configuration staticConfiguration = null;
@@ -79,50 +84,77 @@ namespace Microsoft.Research.Naiad
             }
         }
 
+        /// <summary>
+        /// Network protocol used to broadcast progress updates
+        /// </summary>
         public enum BroadcastProtocol
         {
+            /// <summary>
+            /// Use TCP only.
+            /// </summary>
             TcpOnly,
+
+            /// <summary>
+            /// Use UDP only; non-functional unless UDP is lossless.
+            /// </summary>
             UdpOnly,
+
+            /// <summary>
+            /// Use both TCP and UDP.
+            /// </summary>
             TcpUdp
         }
 
+        /// <summary>
+        /// Level of pooling used for network send buffers
+        /// </summary>
         public enum SendBufferMode
         {
+            /// <summary>
+            /// Use a single pool for all connections.
+            /// </summary>
             Global,
+
+            /// <summary>
+            /// Use one pool for each connection.
+            /// </summary>
             PerRemoteProcess,
+
+            /// <summary>
+            /// Use one pool for each worker in this process.
+            /// </summary>
             PerWorker
         }
 
-        public static Configuration Default
-        {
-            get
-            {
-                string[] emptyArgs = new string[0];
-                Configuration ret = Configuration.FromArgs(ref emptyArgs);
-                return ret;
-            }
-        }
-
-        private SendBufferMode sendBufferPolicy = SendBufferMode.PerRemoteProcess;
+        /// <summary>
+        /// Defines how the buffer pool is divided
+        /// </summary>
         public SendBufferMode SendBufferPolicy
         {
             get { return this.sendBufferPolicy; }
             set { this.sendBufferPolicy = value; }
         }
+        private SendBufferMode sendBufferPolicy = SendBufferMode.PerRemoteProcess;
 
-        private int sendPageCount = 1 << 16;
+        /// <summary>
+        /// Number of pages used for sending network data
+        /// </summary>
         public int SendPageCount
         {
             get { return this.sendPageCount; }
             set { this.sendPageCount = value; }
         }
+        private int sendPageCount = 1 << 16;
 
-        private int sendPageSize = 1 << 14;
+        /// <summary>
+        /// Size in bytes of pages used for sending network data
+        /// </summary>
         public int SendPageSize
         {
             get { return this.sendPageSize; }
             set { this.sendPageSize = value; }
         }
+        private int sendPageSize = 1 << 14;
 
         private int processID = 0;
         /// <summary>
@@ -142,13 +174,6 @@ namespace Microsoft.Research.Naiad
         /// N.B. At present, all processes in a computation must use the same worker count.
         /// </summary>
         public int WorkerCount { get { return this.workerCount; } set { this.workerCount = value; } }
-
-        private int replication = 0;
-        /// <summary>
-        /// The number of secondary copies of each stage to maintain. The default value of zero indicates no
-        /// replication.
-        /// </summary>
-        public int Replication { get { return this.replication; } set { this.replication = value; } }
 
         private bool readEndpointsFromPPM = false;
         /// <summary>
@@ -183,20 +208,21 @@ namespace Microsoft.Research.Naiad
         /// </summary>
         public bool MultipleLocalProcesses { get { return this.multipleLocalProcesses; } set { this.multipleLocalProcesses = value; } }
 
-        private int centralizerProcessId = 0;
-        public int CentralizerProcessId { get { return this.centralizerProcessId; } set { this.centralizerProcessId = value; } }
 
+        internal int CentralizerProcessId { get { return this.centralizerProcessId; } set { this.centralizerProcessId = value; } }
+        private int centralizerProcessId = 0;
+
+        internal int CentralizerThreadId { get { return this.centralizerThreadId; } set { this.centralizerThreadId = value; } }
         private int centralizerThreadId = 0;
-        public int CentralizerThreadId { get { return this.centralizerThreadId; } set { this.centralizerThreadId = value; } }
 
         private bool distributedProgressTracker = false;
         /// <summary>
-        /// EXPERIMENTAL: Setting this to true enables the (original) distributed progress tracker.  Default is not.
+        /// EXPERIMENTAL: Setting this to true enables the (original) distributed progress tracker.  Default is false.
         /// </summary>
         public bool DistributedProgressTracker { get { return this.distributedProgressTracker; } set { this.distributedProgressTracker = value; } }
 
+        internal bool Impersonation { get { return this.impersonation; } set { this.impersonation = value; } }
         private bool impersonation = false;
-        public bool Impersonation { get { return this.impersonation; } set { this.impersonation = value; } }
 
         private bool duplexSockets = false;
         /// <summary>
@@ -220,7 +246,7 @@ namespace Microsoft.Research.Naiad
         /// <summary>
         /// If true, don't use the high priority queue for progress traffic
         /// </summary>
-        public bool DontUseHighPriorityQueue { get { return this.nothighpriorityqueue; } set { this.nothighpriorityqueue = value; } }
+        internal bool DontUseHighPriorityQueue { get { return this.nothighpriorityqueue; } set { this.nothighpriorityqueue = value; } }
         
         private bool domainReporting = false;
         /// <summary>
@@ -229,7 +255,7 @@ namespace Microsoft.Research.Naiad
         /// reporter at a vertex will only deliver the messages to a central location if domain reporting is enabled.
         /// Messages are all written to a file called rtdomain.txt at the root vertex's computer.
         /// </summary>
-        public bool DomainReporting { get { return this.domainReporting; } set { this.domainReporting = value; } }
+        internal bool DomainReporting { get { return this.domainReporting; } set { this.domainReporting = value; } }
 
         private bool inlineReporting = false;
         /// <summary>
@@ -239,7 +265,7 @@ namespace Microsoft.Research.Naiad
         /// to a central location if domain reporting is enabled. Messages are all written to a file called rtinline.txt
         /// at the root vertex's computer.
         /// </summary>
-        public bool InlineReporting { get { return this.inlineReporting; } set { this.inlineReporting = value; } }
+        internal bool InlineReporting { get { return this.inlineReporting; } set { this.inlineReporting = value; } }
 
         private bool aggregateReporting = false;
         /// <summary>
@@ -247,14 +273,8 @@ namespace Microsoft.Research.Naiad
         /// vertex will only aggregate and log messages if both InlineReporting and AggregateReporting are true. Aggregates
         /// are written to the rtinline.txt file at the root vertex's computer.
         /// </summary>
-        public bool AggregateReporting { get { return this.aggregateReporting; } set { this.aggregateReporting = value; } }
-
-        private bool collectNetStats = false;
-        /// <summary>
-        /// Periodically prints network interface and TCP statistics to a file.
-        /// </summary>
-        public bool CollectNetStats { get { return this.collectNetStats; } set { this.collectNetStats = value; } }
-
+        internal bool AggregateReporting { get { return this.aggregateReporting; } set { this.aggregateReporting = value; } }
+        
         private BroadcastProtocol broadcast = BroadcastProtocol.TcpOnly;
         /// <summary>
         /// The network protocol to be used for broadcasting control messages.
@@ -263,43 +283,42 @@ namespace Microsoft.Research.Naiad
         /// </summary>
         public BroadcastProtocol Broadcast { get { return this.broadcast; } set { this.broadcast = value; } }
 
+        /// <summary>
+        /// Version information about serialization format
+        /// </summary>
+        internal Pair<int, int> SerializerVersion { get { return this.serializerVersion; } set { this.serializerVersion = value; } }
         private Pair<int, int> serializerVersion = new Pair<int, int>(1, 0);
-        public Pair<int, int> SerializerVersion { get { return this.serializerVersion; } set { this.serializerVersion = value; } }
-
-
-        private bool variableLengthSerialization = false;
-        public bool VariableLengthSerialization { get { return this.variableLengthSerialization; } set { this.variableLengthSerialization = value; } }
 
         /// <summary>
-        /// EXPERIMENTAL: Uses a new code generation technique to generate more efficient code for serialization.
+        /// Uses a new code generation technique to generate more efficient code for serialization.
         /// </summary>
-        public bool UseInlineSerialization { get { return this.serializerVersion.v1 == 2; } set { this.SerializerVersion = new Pair<int, int>(2, 0); } }
+        public bool UseInlineSerialization { get { return this.serializerVersion.First == 2; } set { this.SerializerVersion = new Pair<int, int>(2, 0); } }
 
-        private bool oneTimePerMessageSerialization = true;
-        public bool OneTimePerMessageSerialization { get { return this.oneTimePerMessageSerialization; } set { this.oneTimePerMessageSerialization = value; } }
-
-        private IPEndPoint broadcastAddress = null;
         /// <summary>
         /// The address and port to be used for sending or receiving broadcast control messages.
         /// 
         /// N.B. Support for broadcast primitives is experimental. This must be set to use the TcpUdp and UdpOnly broadcast protocols.
         /// </summary>
         public IPEndPoint BroadcastAddress { get { return this.broadcastAddress; } set { this.broadcastAddress = value; } }
+        private IPEndPoint broadcastAddress = null;
 
-        private string interfaceName = "Ethernet 2";
-        public string NetStatsInterfaceName { get { return this.interfaceName; } set { this.interfaceName = value; } }
-
-        private bool useBroadcastWakeup = false;
         /// <summary>
         /// Uses optimization to wake multiple threads with a single kernel event.
         /// </summary>
         public bool UseBroadcastWakeup { get { return this.useBroadcastWakeup; } set { this.useBroadcastWakeup = value; } }
+        private bool useBroadcastWakeup = false;
 
-        private bool useNetworkBroadcastWakeup = false;
         /// <summary>
         /// Uses optimization to wake multiple networking threads with a single kernel event.
         /// </summary>
         public bool UseNetworkBroadcastWakeup { get { return this.useNetworkBroadcastWakeup; } set { this.useNetworkBroadcastWakeup = value; } }
+        private bool useNetworkBroadcastWakeup = false;
+
+        /// <summary>
+        /// Collection of application-specific settings.
+        /// </summary>
+        public NameValueCollection AdditionalSettings { get { return this.additionalSettings; } }
+        private NameValueCollection additionalSettings = new NameValueCollection();
 
         /// <summary>
         /// Prints information about the standard Naiad command-line options, which are used to build
@@ -330,8 +349,8 @@ namespace Microsoft.Research.Naiad
         /// Builds a Naiad configuration from the given command-line arguments, interpreting them according to
         /// the output of Configuration.Usage().
         /// </summary>
-        /// <param name="args"></param>
-        /// <returns></returns>
+        /// <param name="args">The command-line arguments, which will have Naiad-specific arguments removed.</param>
+        /// <returns>A new <see cref="Configuration"/> based on the given arguments.</returns>
         public static Configuration FromArgs(ref string[] args)
         {
             var config = new Configuration();
@@ -349,12 +368,6 @@ namespace Microsoft.Research.Naiad
             bool multipleProcsSingleMachine = true;
 
             int Processes = 1;
-
-            //Flags.Define("-l,--log-level", LoggingLevel.Progress);
-            //Flags.Define("--log-type", LoggingStyle.Console);
-            //args = Flags.Parse(args);
-            //Logging.LogLevel = Flags.Get("log-level").EnumValue<LoggingLevel>();
-            //Logging.LogStyle = Flags.Get("log-type").EnumValue<LoggingStyle>();
             
             Logging.Init();
 #if TRACING_ON
@@ -391,16 +404,8 @@ namespace Microsoft.Research.Naiad
                         config.WorkerCount = Int32.Parse(args[i + 1]);
                         i += 2;
                         break;
-                    case "--varlengthint":
-                        config.VariableLengthSerialization = true;
-                        ++i;
-                        break;
                     case "--inlineserializer":
                         config.UseInlineSerialization = true;
-                        ++i;
-                        break;
-                    case "--basic":
-                        config.OneTimePerMessageSerialization = false;
                         ++i;
                         break;
                     case "--numprocs":
@@ -536,16 +541,6 @@ namespace Microsoft.Research.Naiad
                         config.AggregateReporting = true;
                         i++;
                         break;
-                    case "--netstats":
-                        config.CollectNetStats = true;
-                        i++;
-                        break;
-                    case "--netstatsinterface":
-                        // doesn't handle multiword names, eg "Ethernet 2"
-                        // You'll have to hard-code if you want that
-                        config.interfaceName = args[i+1];
-                        i += 2;
-                        break;
                     case "--broadcastprotocol":
                         switch (args[i + 1].ToLower())
                         {
@@ -630,6 +625,12 @@ namespace Microsoft.Research.Naiad
                         {
                             config.SendPageCount = int.Parse(args[i + 1]);
                             i += 2;
+                            break;
+                        }
+                    case "--addsetting":
+                        {
+                            config.AdditionalSettings.Add(args[i + 1], args[i + 2]);
+                            i += 3;
                             break;
                         }
                     default:
@@ -754,46 +755,43 @@ namespace Microsoft.Research.Naiad
         }
     }
 
+    /// <summary>
+    /// Represents a group of workers and allows registration of callbacks
+    /// </summary>
     public interface WorkerGroup
     {
+        /// <summary>
+        /// Number of workers
+        /// </summary>
         int Count { get; }
 
         /// <summary>
-        /// This event is fired by each worker when it initially starts.
+        /// This event is raised by each worker when it initially starts.
         /// </summary>
-        event EventHandler<SchedulerStartArgs> Starting;
+        event EventHandler<WorkerStartArgs> Starting;
         /// <summary>
-        /// This event is fired by each worker when it wakes from sleeping.
+        /// This event is raised by each worker when it wakes from sleeping.
         /// </summary>
-        event EventHandler<SchedulerWakeArgs> Waking;
+        event EventHandler<WorkerWakeArgs> Waking;
         /// <summary>
-        /// This event is fired by a worker immediately before executing a work item.
+        /// This event is raised by a worker immediately before executing a work item.
         /// </summary>
-        event EventHandler<OperatorStartArgs> WorkItemStarting; 
+        event EventHandler<VertexStartArgs> WorkItemStarting; 
         /// <summary>
-        /// This event is fired by a worker immediately after executing a work item.
+        /// This event is raised by a worker immediately after executing a work item.
         /// </summary>
-        event EventHandler<OperatorEndArgs> WorkItemEnding;
+        event EventHandler<VertexEndArgs> WorkItemEnding;
         /// <summary>
-        /// This event is fired by a worker immediately after enqueueing a work item.
+        /// This event is raised by a worker immediately after enqueueing a work item.
         /// </summary>
-        event EventHandler<OperatorEnqArgs> WorkItemEnqueued;
+        event EventHandler<VertexEnqueuedArgs> WorkItemEnqueued;
         /// <summary>
-        /// This event is fired by a worker when it becomes idle, because it has no work to execute.
+        /// This event is raised by a worker when it becomes idle, because it has no work to execute.
         /// </summary>
-        event EventHandler<SchedulerSleepArgs> Sleeping;
+        event EventHandler<WorkerSleepArgs> Sleeping;
         /// <summary>
-        /// This event is fired by a worker when it has finished all work, and the computation has terminated.
+        /// This event is raised by a worker when it has finished all work, and the computation has terminated.
         /// </summary>
-        event EventHandler<SchedulerTerminateArgs> Terminating;
-        /// <summary>
-        /// This event is fired by a worker when a batch of records is delivered to an operator.
-        /// </summary>
-        event EventHandler<OperatorReceiveArgs> ReceivedRecords;
-        /// <summary>
-        /// This event is fired by a worker when a batch of records is sent by an operator.
-        /// (N.B. This event is currently not used.)
-        /// </summary>
-        event EventHandler<OperatorSendArgs> SentRecords;
+        event EventHandler<WorkerTerminateArgs> Terminating;
     }
 }

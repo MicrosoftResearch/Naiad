@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -25,25 +25,40 @@ using System.Text;
 using System.Linq.Expressions;
 using System.Collections.ObjectModel;
 
-namespace Microsoft.Research.Naiad.CodeGeneration
+namespace Microsoft.Research.Naiad.Utilities
 {
-
+    /// <summary>
+    /// Compares expressions
+    /// </summary>
     public class ExpressionComparer
     {
         private static ExpressionComparer instance = new ExpressionComparer();
+        
+        /// <summary>
+        /// Static instance to use.
+        /// </summary>
         public static ExpressionComparer Instance { get { return instance; } }
 
+        /// <summary>
+        /// Constructor
+        /// </summary>
         protected ExpressionComparer()
         {
             // Potentially store some state about parameter substitutions.
         }
 
+        /// <summary>
+        /// Compares two expressions for equality.
+        /// </summary>
+        /// <param name="left">first expression</param>
+        /// <param name="right">second expression</param>
+        /// <returns>true iff expressions are identical</returns>
         public bool Equals(Expression left, Expression right)
         {
             return this.Visit(left, right);
         }
         
-        protected virtual bool Visit(Expression exp, Expression other)
+        internal virtual bool Visit(Expression exp, Expression other)
         {
             if (exp == null || other == null)
                 return exp == null && other == null;
@@ -116,7 +131,7 @@ namespace Microsoft.Research.Naiad.CodeGeneration
             }
         }
 
-        protected virtual bool VisitBinding(MemberBinding binding, MemberBinding other)
+        internal virtual bool VisitBinding(MemberBinding binding, MemberBinding other)
         {
             if (binding.BindingType != other.BindingType)
                 return false;
@@ -133,118 +148,115 @@ namespace Microsoft.Research.Naiad.CodeGeneration
             }
         }
 
-        protected virtual bool VisitElementInitializer(ElementInit initializer, ElementInit other)
+        internal virtual bool VisitElementInitializer(ElementInit initializer, ElementInit other)
         {
             return this.VisitExpressionList(initializer.Arguments, other.Arguments);
         }
 
-        protected virtual bool VisitUnary(UnaryExpression u, UnaryExpression other)
+        internal virtual bool VisitUnary(UnaryExpression u, UnaryExpression other)
         {
             return this.Visit(u.Operand, other.Operand);
         }
 
-        protected virtual bool VisitBinary(BinaryExpression b, BinaryExpression other)
+        internal virtual bool VisitBinary(BinaryExpression b, BinaryExpression other)
         {
             return this.Visit(b.Left, other.Left) && this.Visit(b.Right, other.Right) && this.Visit(b.Conversion, other.Conversion);
         }
 
-        protected virtual bool VisitTypeIs(TypeBinaryExpression b, TypeBinaryExpression other)
+        internal virtual bool VisitTypeIs(TypeBinaryExpression b, TypeBinaryExpression other)
         {
             return b.TypeOperand.Equals(other.TypeOperand) && this.Visit(b.Expression, other.Expression);
         }
 
-        protected virtual bool VisitConstant(ConstantExpression c, ConstantExpression other)
+        internal virtual bool VisitConstant(ConstantExpression c, ConstantExpression other)
         {
             return c.Value.Equals(other.Value);
         }
 
-        protected virtual bool VisitConditional(ConditionalExpression c, ConditionalExpression other)
+        internal virtual bool VisitConditional(ConditionalExpression c, ConditionalExpression other)
         {
             return this.Visit(c.Test, other.Test) && this.Visit(c.IfTrue, other.IfTrue) && this.Visit(c.IfFalse, other.IfFalse);
         }
 
-        protected virtual bool VisitParameter(ParameterExpression p, ParameterExpression other)
+        internal virtual bool VisitParameter(ParameterExpression p, ParameterExpression other)
         {
             return p.Name.Equals(other.Name);
         }
 
-        protected virtual bool VisitMemberAccess(MemberExpression m, MemberExpression other)
+        internal virtual bool VisitMemberAccess(MemberExpression m, MemberExpression other)
         {
             return this.Visit(m.Expression, other.Expression) && m.Member.Equals(other.Member);
         }
 
-        protected virtual bool VisitMethodCall(MethodCallExpression m, MethodCallExpression other)
+        internal virtual bool VisitMethodCall(MethodCallExpression m, MethodCallExpression other)
         {
             return this.Visit(m.Object, other.Object) && m.Method.Equals(other.Method) && this.VisitExpressionList(m.Arguments, other.Arguments);
         }
 
-        protected virtual bool VisitExpressionList(ReadOnlyCollection<Expression> original, ReadOnlyCollection<Expression> other)
+        internal virtual bool VisitExpressionList(ReadOnlyCollection<Expression> original, ReadOnlyCollection<Expression> other)
         {
             return original.Zip(other, (x, y) => this.Visit(x, y)).All(x => x);
         }
 
-        protected virtual bool VisitExpressionList(ReadOnlyCollection<ParameterExpression> original, ReadOnlyCollection<ParameterExpression> other)
+        internal virtual bool VisitExpressionList(ReadOnlyCollection<ParameterExpression> original, ReadOnlyCollection<ParameterExpression> other)
         {
             return original.Zip(other, (x, y) => this.Visit(x, y)).All(x => x);
         }
 
-        protected virtual bool VisitMemberAssignment(MemberAssignment assignment, MemberAssignment other)
+        internal virtual bool VisitMemberAssignment(MemberAssignment assignment, MemberAssignment other)
         {
             return this.Visit(assignment.Expression, other.Expression) && assignment.Member.Equals(other.Member);
         }
 
-        protected virtual bool VisitMemberMemberBinding(MemberMemberBinding binding, MemberMemberBinding other)
+        internal virtual bool VisitMemberMemberBinding(MemberMemberBinding binding, MemberMemberBinding other)
         {
             return this.VisitBindingList(binding.Bindings, other.Bindings) && binding.Member.Equals(other.Member);
         }
 
-        protected virtual bool VisitMemberListBinding(MemberListBinding binding, MemberListBinding other)
+        internal virtual bool VisitMemberListBinding(MemberListBinding binding, MemberListBinding other)
         {
             return this.VisitElementInitializerList(binding.Initializers, other.Initializers) && binding.Member.Equals(other.Member);
         }
 
-        protected virtual bool VisitBindingList(ReadOnlyCollection<MemberBinding> original, ReadOnlyCollection<MemberBinding> other)
+        internal virtual bool VisitBindingList(ReadOnlyCollection<MemberBinding> original, ReadOnlyCollection<MemberBinding> other)
         {
             return original.Zip(other, (x, y) => this.VisitBinding(x, y)).All(x => x);
         }
 
-        protected virtual bool VisitElementInitializerList(ReadOnlyCollection<ElementInit> original, ReadOnlyCollection<ElementInit> other)
+        internal virtual bool VisitElementInitializerList(ReadOnlyCollection<ElementInit> original, ReadOnlyCollection<ElementInit> other)
         {
             return original.Zip(other, (x, y) => this.VisitElementInitializer(x, y)).All(x => x);
         }
 
-        protected virtual bool VisitLambda(LambdaExpression lambda, LambdaExpression other)
+        internal virtual bool VisitLambda(LambdaExpression lambda, LambdaExpression other)
         {
             return this.Visit(lambda.Body, other.Body) && lambda.Type.Equals(other.Type) && this.VisitExpressionList(lambda.Parameters, other.Parameters);
         }
 
-        protected virtual bool VisitNew(NewExpression nex, NewExpression other)
+        internal virtual bool VisitNew(NewExpression nex, NewExpression other)
         {
             return this.VisitExpressionList(nex.Arguments, other.Arguments) && nex.Constructor.Equals(other.Constructor) &&
                 ((nex.Members == null && other.Members == null) || nex.Members.Zip(other.Members, (x, y) => x.Equals(y)).All(x => x));
         }
 
-        protected virtual bool VisitMemberInit(MemberInitExpression init, MemberInitExpression other)
+        internal virtual bool VisitMemberInit(MemberInitExpression init, MemberInitExpression other)
         {
             return this.VisitNew(init.NewExpression, other.NewExpression) && this.VisitBindingList(init.Bindings, other.Bindings);
         }
 
-        protected virtual bool VisitListInit(ListInitExpression init, ListInitExpression other)
+        internal virtual bool VisitListInit(ListInitExpression init, ListInitExpression other)
         {
             return this.VisitNew(init.NewExpression, other.NewExpression) && this.VisitElementInitializerList(init.Initializers, other.Initializers);
         }
 
-        protected virtual bool VisitNewArray(NewArrayExpression na, NewArrayExpression other)
+        internal virtual bool VisitNewArray(NewArrayExpression na, NewArrayExpression other)
         {
             return this.VisitExpressionList(na.Expressions, other.Expressions) && na.Type.GetElementType().Equals(na.Type.GetElementType());
         }
 
-        protected virtual bool VisitInvocation(InvocationExpression iv, InvocationExpression other)
+        internal virtual bool VisitInvocation(InvocationExpression iv, InvocationExpression other)
         {
             return this.VisitExpressionList(iv.Arguments, other.Arguments) && this.Visit(iv.Expression, other.Expression);
         }
     }
-
-
-
 }

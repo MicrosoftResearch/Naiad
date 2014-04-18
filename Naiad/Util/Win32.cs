@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.2
+ * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -25,9 +25,11 @@ using System.Text;
 using System.Runtime.InteropServices;
 using System.Threading;
 
-namespace Microsoft.Research.Naiad.Util
+using Microsoft.Research.Naiad.Diagnostics;
+
+namespace Microsoft.Research.Naiad.Utilities
 {
-    public class Win32
+    internal class Win32
     {
         [DllImport("kernel32.dll")]
         internal static extern UInt32 GetLastError();
@@ -134,7 +136,7 @@ WSAIoctl(
     }
 
 
-    public class PinnedThread : IDisposable
+    internal class PinnedThread : IDisposable
     {
         internal IntPtr processHandle;    // handle to the process object
         public UInt32 processId;        // process id
@@ -171,6 +173,7 @@ WSAIoctl(
         /// Affinitizes the current runtime thread to the OS thread and the OS thread to the specified processor
         /// </summary>
         /// <param name="cpu">Processor number</param>
+        /// <param name="soft">if true use soft affinity</param>
         public PinnedThread(int cpu, bool soft=false)
         {
             // Tie the runtime thread to the OS thread
