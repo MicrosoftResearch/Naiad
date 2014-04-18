@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<shfbBuild product="Sandcastle Help File Builder" version="2014.2.15.0 Beta" projectFile="C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\NaiadDocumentation.shfbproj" started="4/17/2014 12:42:47 AM">
+<shfbBuild product="Sandcastle Help File Builder" version="2014.2.15.0 Beta" projectFile="C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\NaiadDocumentation.shfbproj" started="4/17/2014 11:02:45 PM">
 <buildStep step="Initializing">
 Finding tools...
 The Sandcastle tools are located in &#39;C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\&#39;
@@ -33,16 +33,16 @@ Copying XML comments files
 </buildStep>
 <buildStep step="GenerateSharedContent">
 Generating shared content files (en-US, English (United States))...
-    Last step completed in 00:00:00.0000
+    Last step completed in 00:00:00.0300
 </buildStep>
 <buildStep step="GenerateApiFilter">
 Generating API filter for MRefBuilder...
-    Last step completed in 00:00:00.0300
+    Last step completed in 00:00:00.0200
 </buildStep>
 <buildStep step="GenerateReflectionInfo">
 Generating reflection information...
 [C:\Program Files (x86)\MSBuild\12.0\bin\MSBuild.exe]
-Build started 4/17/2014 12:42:48 AM.
+Build started 4/17/2014 11:02:46 PM.
 Project &quot;C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\GenerateRefInfo.proj&quot; on node 1 (default targets).
 PrepareForBuild:
   Creating directory &quot;obj\Debug\&quot;.
@@ -61,13 +61,13 @@ Done Building Project &quot;C:\gits\naiad\Documentation\NaiadDocumentation\Naiad
 
 Build succeeded.
 
-Time Elapsed 00:00:01.19
-    Last step completed in 00:00:01.2941
+Time Elapsed 00:00:00.94
+    Last step completed in 00:00:01.0601
 </buildStep>
 <buildStep step="TransformReflectionInfo">
 Transforming reflection output...
 [C:\Program Files (x86)\MSBuild\12.0\bin\MSBuild.exe]
-Build started 4/17/2014 12:42:49 AM.
+Build started 4/17/2014 11:02:47 PM.
 Project &quot;C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\TransformManifest.proj&quot; on node 1 (default targets).
 TransformManifest:
   XslTransform (v2014.1.26.0)
@@ -164,12 +164,12 @@ Done Building Project &quot;C:\gits\naiad\Documentation\NaiadDocumentation\Naiad
 
 Build succeeded.
 
-Time Elapsed 00:00:01.28
-    Last step completed in 00:00:01.5306
+Time Elapsed 00:00:01.26
+    Last step completed in 00:00:01.3802
 </buildStep>
 <buildStep step="GenerateNamespaceSummaries">
 Generating namespace summary information...
-    Last step completed in 00:00:00.1750
+    Last step completed in 00:00:00.0900
 </buildStep>
 <buildStep step="CopyConceptualContent">
 Copying conceptual content...
@@ -186,16 +186,22 @@ Generating conceptual topic files
     C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Content\NaiadOnAzure.aml -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\ddueXml\b3ff7ae9-7d4a-49b5-89c4-4e8832660d8d.xml
     Parsing topic file &#39;C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Content\VersionHistory\VersionHistory.aml&#39;
     C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Content\VersionHistory\VersionHistory.aml -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\ddueXml\c2a31aaa-d867-4d3b-9315-dbb7c7527659.xml
-    Parsing topic file &#39;C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Content\VersionHistory\v1.0.0.0.aml&#39;
-    C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Content\VersionHistory\v1.0.0.0.aml -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\ddueXml\576fa56a-c7d5-4dc9-81bb-6fbd7e312fec.xml
-    Last step completed in 00:00:00.1300
+    Parsing topic file &#39;C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Content\VersionHistory\v0.4.aml&#39;
+    C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Content\VersionHistory\v0.4.aml -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\ddueXml\576fa56a-c7d5-4dc9-81bb-6fbd7e312fec.xml
+    Parsing topic file &#39;C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Content\VersionHistory\v0.2.aml&#39;
+    C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Content\VersionHistory\v0.2.aml -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\ddueXml\4306361f-4369-4b46-9c0d-464ccb176161.xml
+    Parsing topic file &#39;C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Content\VersionHistory\v0.3.aml&#39;
+    C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Content\VersionHistory\v0.3.aml -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\ddueXml\6163523e-3519-436b-a09a-0c71d98f6f25.xml
+    Parsing topic file &#39;C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Content\VersionHistory\v0.1.aml&#39;
+    C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Content\VersionHistory\v0.1.aml -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\ddueXml\9ab3eec5-5f40-421a-92aa-2e9d4cab33bf.xml
+    Last step completed in 00:00:00.1200
 </buildStep>
 <buildStep step="CreateConceptualTopicConfigs">
 Creating conceptual topic configuration files...
     Companion files
     _ContentMetadata_.xml
     ConceptualManifest.xml
-    Last step completed in 00:00:00.0150
+    Last step completed in 00:00:00.0350
 </buildStep>
 <buildStep step="CopyAdditionalContent">
 Copying additional content files...
@@ -209,7 +215,7 @@ Merging conceptual and additional tables of contents...
 <buildStep step="GenerateIntermediateTableOfContents">
 Generating intermediate table of contents file...
 [C:\Program Files (x86)\MSBuild\12.0\bin\MSBuild.exe]
-Build started 4/17/2014 12:42:51 AM.
+Build started 4/17/2014 11:02:48 PM.
 Project &quot;C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\GenerateIntermediateTOC.proj&quot; on node 1 (default targets).
 GenerateIntermediateTOC:
   XslTransform (v2014.1.26.0)
@@ -220,27 +226,27 @@ Done Building Project &quot;C:\gits\naiad\Documentation\NaiadDocumentation\Naiad
 
 Build succeeded.
 
-Time Elapsed 00:00:00.21
+Time Elapsed 00:00:00.12
 Generating conceptual content intermediate TOC file...
-    Last step completed in 00:00:00.2950
+    Last step completed in 00:00:00.2050
 </buildStep>
 <buildStep step="CreateBuildAssemblerConfigs">
 Creating Sandcastle configuration files...
     sandcastle.config
     conceptual.config
-    Last step completed in 00:00:00.3550
+    Last step completed in 00:00:00.2800
 </buildStep>
 <buildStep step="MergeCustomConfigs">
 Merging custom build component configurations
 C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\sandcastle.config
 C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\conceptual.config
     Removing unused ExampleComponent.
-    Last step completed in 00:00:00.1550
+    Last step completed in 00:00:00.1100
 </buildStep>
 <buildStep step="BuildConceptualTopics">
 Building conceptual help topics...
 [C:\Program Files (x86)\MSBuild\12.0\bin\MSBuild.exe]
-Build started 4/17/2014 12:42:52 AM.
+Build started 4/17/2014 11:02:49 PM.
 Project &quot;C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildConceptualTopics.proj&quot; on node 1 (default targets).
 BuildConceptualTopics:
   BuildAssembler (v2014.1.26.0)
@@ -248,19 +254,19 @@ BuildConceptualTopics:
   Portions Copyright c 2006-2014, Eric Woodruff, All Rights Reserved.
   Loading configuration...
   Processing topics...
-  Processed 5 topic(s)
+  Processed 8 topic(s)
   CopyFromIndexComponent: &quot;metadata&quot; in-memory cache entries used: 1 of 15.
 Done Building Project &quot;C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildConceptualTopics.proj&quot; (default targets).
 
 Build succeeded.
 
-Time Elapsed 00:00:06.95
-    Last step completed in 00:00:07.2356
+Time Elapsed 00:00:05.81
+    Last step completed in 00:00:05.9607
 </buildStep>
 <buildStep step="BuildReferenceTopics">
 Building reference help topics...
 [C:\Program Files (x86)\MSBuild\12.0\bin\MSBuild.exe]
-Build started 4/17/2014 12:42:59 AM.
+Build started 4/17/2014 11:02:55 PM.
 Project &quot;C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj&quot; on node 1 (default targets).
 BuildReferenceTopics:
   BuildAssembler (v2014.1.26.0)
@@ -308,14 +314,14 @@ Done Building Project &quot;C:\gits\naiad\Documentation\NaiadDocumentation\Naiad
 
 Build succeeded.
 
-Time Elapsed 00:00:38.60
-    Last step completed in 00:00:38.7422
+Time Elapsed 00:00:28.41
+    Last step completed in 00:00:28.5184
 </buildStep>
 <buildStep step="CombiningIntermediateTocFiles">
 Combining conceptual and API intermediate TOC files...
 
 Clearing any prior web output
-    Last step completed in 00:00:00.3550
+    Last step completed in 00:00:00.0200
 </buildStep>
 <buildStep step="ExtractingHtmlInfo">
 Extracting HTML info for HTML Help 1 and/or website...
@@ -327,11 +333,11 @@ E-Mail: Eric@EWoodruff.us
 Using LCID &#39;1033&#39;, code page &#39;65001&#39;, encoding charset &#39;UTF-8&#39;.
 
 Processing website files in C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website
-Processed 869 HTML files
+Processed 872 HTML files
 Sorting keywords and generating See Also indices
 Saving website keyword index to C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\WebKI.xml
 Saving website table of contents to C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\WebTOC.xml
-    Last step completed in 00:00:09.9071
+    Last step completed in 00:00:05.8046
 </buildStep>
 <buildStep step="CopyStandardHelpContent">
 Copying standard help content...
@@ -430,16 +436,16 @@ C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\\Web\SyncTOC.gif 
 C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\\Web\TOC.css -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\.\TOC.css
 C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\\Web\TOC.js -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\.\TOC.js
 C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\\Web\Web.Config -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\.\Web.Config
-    Last step completed in 00:00:00.7551
+    Last step completed in 00:00:00.6351
 </buildStep>
 <buildStep step="GenerateHelpFormatTableOfContents">
 Generating website table of contents file...
-    Last step completed in 00:00:00.0050
+    Last step completed in 00:00:00.0000
 </buildStep>
 <buildStep step="GenerateFullTextIndex">
 Generating full-text index for the website...
 
-    Last step completed in 00:00:03.6850
+    Last step completed in 00:00:02.5403
 </buildStep>
 <buildStep step="CopyingWebsiteFiles">
 Copying website files to output folder...
@@ -453,16 +459,16 @@ Copied 600 files
 Copied 700 files
 Copied 800 files
 Copied 900 files
-Copied 992 files for the website content
-    Last step completed in 00:00:01.5036
+Copied 996 files for the website content
+    Last step completed in 00:00:00.9401
 </buildStep>
 <buildStep step="CleanIntermediates">
 Removing intermediate files...
-    Last step completed in 00:00:00.3350
+    Last step completed in 00:00:00.1950
 </buildStep>
 <buildStep step="Completed">
 
-Build completed successfully at 04/17/2014 12:43 AM.  Total time: 00:01:07.0750
+Build completed successfully at 04/17/2014 11:03 PM.  Total time: 00:00:48.9246
 
 </buildStep>
 </shfbBuild>
