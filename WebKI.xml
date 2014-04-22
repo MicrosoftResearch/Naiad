@@ -523,24 +523,24 @@
   <HelpKINode Title="ExpressionComparer.ExpressionComparer constructor" Url="html/M_Microsoft_Research_Naiad_Utilities_ExpressionComparer__ctor.htm" />
   <HelpKINode Title="ExpressionComparer.Instance property" Url="html/P_Microsoft_Research_Naiad_Utilities_ExpressionComparer_Instance.htm" />
   <HelpKINode Title="ExtensionMethods class">
-    <HelpKINode Title="ExtensionMethods Class" Url="html/T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_ExtensionMethods.htm" />
-    <HelpKINode Title="ExtensionMethods Class" Url="html/T_Microsoft_Research_Naiad_Frameworks_Lindi_ExtensionMethods.htm" />
-    <HelpKINode Title="ExtensionMethods Class" Url="html/T_Microsoft_Research_Naiad_Frameworks_GraphLINQ_ExtensionMethods.htm" />
-    <HelpKINode Title="ExtensionMethods Class" Url="html/T_Microsoft_Research_Naiad_Dataflow_StandardVertices_ExtensionMethods.htm" />
     <HelpKINode Title="ExtensionMethods Class" Url="html/T_Microsoft_Research_Naiad_Dataflow_PartitionBy_ExtensionMethods.htm" />
+    <HelpKINode Title="ExtensionMethods Class" Url="html/T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_ExtensionMethods.htm" />
+    <HelpKINode Title="ExtensionMethods Class" Url="html/T_Microsoft_Research_Naiad_Dataflow_StandardVertices_ExtensionMethods.htm" />
+    <HelpKINode Title="ExtensionMethods Class" Url="html/T_Microsoft_Research_Naiad_Frameworks_GraphLINQ_ExtensionMethods.htm" />
+    <HelpKINode Title="ExtensionMethods Class" Url="html/T_Microsoft_Research_Naiad_Frameworks_Lindi_ExtensionMethods.htm" />
     <HelpKINode Title="ExtensionMethods Class" Url="html/T_Microsoft_Research_Naiad_Frameworks_Azure_ExtensionMethods.htm" />
-    <HelpKINode Title="about ExtensionMethods class" Url="html/T_Microsoft_Research_Naiad_Frameworks_Azure_ExtensionMethods.htm" />
-    <HelpKINode Title="about ExtensionMethods class" Url="html/T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_ExtensionMethods.htm" />
     <HelpKINode Title="about ExtensionMethods class" Url="html/T_Microsoft_Research_Naiad_Frameworks_Lindi_ExtensionMethods.htm" />
     <HelpKINode Title="about ExtensionMethods class" Url="html/T_Microsoft_Research_Naiad_Dataflow_PartitionBy_ExtensionMethods.htm" />
     <HelpKINode Title="about ExtensionMethods class" Url="html/T_Microsoft_Research_Naiad_Frameworks_GraphLINQ_ExtensionMethods.htm" />
+    <HelpKINode Title="about ExtensionMethods class" Url="html/T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_ExtensionMethods.htm" />
+    <HelpKINode Title="about ExtensionMethods class" Url="html/T_Microsoft_Research_Naiad_Frameworks_Azure_ExtensionMethods.htm" />
     <HelpKINode Title="about ExtensionMethods class" Url="html/T_Microsoft_Research_Naiad_Dataflow_StandardVertices_ExtensionMethods.htm" />
-    <HelpKINode Title="methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_StandardVertices_ExtensionMethods.htm" />
     <HelpKINode Title="methods" Url="html/Methods_T_Microsoft_Research_Naiad_Frameworks_GraphLINQ_ExtensionMethods.htm" />
     <HelpKINode Title="methods" Url="html/Methods_T_Microsoft_Research_Naiad_Frameworks_Lindi_ExtensionMethods.htm" />
-    <HelpKINode Title="methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_PartitionBy_ExtensionMethods.htm" />
-    <HelpKINode Title="methods" Url="html/Methods_T_Microsoft_Research_Naiad_Frameworks_Azure_ExtensionMethods.htm" />
+    <HelpKINode Title="methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_StandardVertices_ExtensionMethods.htm" />
     <HelpKINode Title="methods" Url="html/Methods_T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_ExtensionMethods.htm" />
+    <HelpKINode Title="methods" Url="html/Methods_T_Microsoft_Research_Naiad_Frameworks_Azure_ExtensionMethods.htm" />
+    <HelpKINode Title="methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_PartitionBy_ExtensionMethods.htm" />
   </HelpKINode>
   <HelpKINode Title="ExtensionMethods.AdjustTime(Of TRecord, TTime) method" Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_ExtensionMethods_AdjustTime__2.htm" />
   <HelpKINode Title="ExtensionMethods.AdjustTime&lt;TRecord, TTime&gt; method" Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_ExtensionMethods_AdjustTime__2.htm" />
@@ -891,8 +891,8 @@
   <HelpKINode Title="JoinAsync method" Url="html/M_Microsoft_Research_Naiad_Controller_JoinAsync.htm" />
   <HelpKINode Title="KeepAlives property" Url="html/P_Microsoft_Research_Naiad_Configuration_KeepAlives.htm" />
   <HelpKINode Title="Length field">
-    <HelpKINode Title="MessageHeader.Length Field" Url="html/F_Microsoft_Research_Naiad_Serialization_MessageHeader_Length.htm" />
     <HelpKINode Title="Pointstamp.FakeArray.Length Field" Url="html/F_Microsoft_Research_Naiad_Runtime_Progress_Pointstamp_FakeArray_Length.htm" />
+    <HelpKINode Title="MessageHeader.Length Field" Url="html/F_Microsoft_Research_Naiad_Serialization_MessageHeader_Length.htm" />
   </HelpKINode>
   <HelpKINode Title="length field" Url="html/F_Microsoft_Research_Naiad_Dataflow_Message_2_length.htm" />
   <HelpKINode Title="Length property" Url="html/P_Microsoft_Research_Naiad_Serialization_SubArray_1_Length.htm" />
@@ -2055,6 +2055,7 @@
   <HelpKINode Title="VertexEnqueuedArgs.Stage field" Url="html/F_Microsoft_Research_Naiad_Diagnostics_VertexEnqueuedArgs_Stage.htm" />
   <HelpKINode Title="VertexEnqueuedArgs.ThreadId field" Url="html/F_Microsoft_Research_Naiad_Diagnostics_VertexEnqueuedArgs_ThreadId.htm" />
   <HelpKINode Title="VertexEnqueuedArgs.VertexId field" Url="html/F_Microsoft_Research_Naiad_Diagnostics_VertexEnqueuedArgs_VertexId.htm" />
+  <HelpKINode Title="VertexID field" Url="html/F_Microsoft_Research_Naiad_Dataflow_ReturnAddress_VertexID.htm" />
   <HelpKINode Title="VertexId field">
     <HelpKINode Title="Vertex.VertexId Field" Url="html/F_Microsoft_Research_Naiad_Dataflow_Vertex_VertexId.htm" />
     <HelpKINode Title="VertexEndArgs.VertexId Field" Url="html/F_Microsoft_Research_Naiad_Diagnostics_VertexEndArgs_VertexId.htm" />
@@ -2062,7 +2063,6 @@
     <HelpKINode Title="VertexLocation.VertexId Field" Url="html/F_Microsoft_Research_Naiad_Dataflow_VertexLocation_VertexId.htm" />
     <HelpKINode Title="VertexStartArgs.VertexId Field" Url="html/F_Microsoft_Research_Naiad_Diagnostics_VertexStartArgs_VertexId.htm" />
   </HelpKINode>
-  <HelpKINode Title="VertexID field" Url="html/F_Microsoft_Research_Naiad_Dataflow_ReturnAddress_VertexID.htm" />
   <HelpKINode Title="VertexInput(Of TRecord, TTime) interface">
     <HelpKINode Title="VertexInput(TRecord, TTime) Interface" Url="html/T_Microsoft_Research_Naiad_Dataflow_VertexInput_2.htm" />
     <HelpKINode Title="about VertexInput(Of TRecord, TTime) interface" Url="html/T_Microsoft_Research_Naiad_Dataflow_VertexInput_2.htm" />

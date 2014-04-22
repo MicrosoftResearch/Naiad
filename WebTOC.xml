@@ -4,40 +4,41 @@
   <HelpTOCNode Title="Welcome to Naiad" Url="html/2a378dc0-df87-470e-9d7c-450ef7248667.htm" />
   <HelpTOCNode Title="Writing your first Naiad program" Url="html/450c8ec2-65e4-4396-93e8-634e6a2144f4.htm" />
   <HelpTOCNode Title="Running Naiad programs on Microsoft Azure" Url="html/b3ff7ae9-7d4a-49b5-89c4-4e8832660d8d.htm" />
-  <HelpTOCNode Id="cb2faa2b-0e95-4c90-b238-525a04bf6eb6" Title="Version History" Url="html/c2a31aaa-d867-4d3b-9315-dbb7c7527659.htm">
+  <HelpTOCNode Title="Implementing a custom Naiad vertex" Url="html/1aff01be-2d57-406e-9f1d-b0872c8733e5.htm" />
+  <HelpTOCNode Id="be309f40-3e63-4d9c-acd3-86ea22113bfa" Title="Version History" Url="html/c2a31aaa-d867-4d3b-9315-dbb7c7527659.htm">
     <HelpTOCNode Title="Version 0.4" Url="html/576fa56a-c7d5-4dc9-81bb-6fbd7e312fec.htm" />
     <HelpTOCNode Title="Version 0.2" Url="html/4306361f-4369-4b46-9c0d-464ccb176161.htm" />
     <HelpTOCNode Title="Version 0.3" Url="html/6163523e-3519-436b-a09a-0c71d98f6f25.htm" />
     <HelpTOCNode Title="Version 0.1" Url="html/9ab3eec5-5f40-421a-92aa-2e9d4cab33bf.htm" />
   </HelpTOCNode>
-  <HelpTOCNode Id="0e854bd6-9950-4c72-acf1-6553bf76d425" Title="Naiad SDK" Url="html/R_Project_NaiadDocumentation.htm">
-    <HelpTOCNode Id="81b4b97c-5449-4a64-832b-3a9fee8bddd9" Title="Microsoft.Research.Naiad Namespace" Url="html/N_Microsoft_Research_Naiad.htm">
-      <HelpTOCNode Id="df58bf92-0cda-48f0-9af2-1cb696b0406f" Title="Computation Interface" Url="html/T_Microsoft_Research_Naiad_Computation.htm">
-        <HelpTOCNode Id="00fa21a4-4a05-431b-9b3a-f18022aec8b2" Title="Computation Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Computation.htm">
+  <HelpTOCNode Id="4b6f411b-fabd-4a0b-9632-74fa17ba5728" Title="Naiad SDK" Url="html/R_Project_NaiadDocumentation.htm">
+    <HelpTOCNode Id="3b3d4e9f-33dc-4f0a-99f9-56eb1e959cc3" Title="Microsoft.Research.Naiad Namespace" Url="html/N_Microsoft_Research_Naiad.htm">
+      <HelpTOCNode Id="fc5ff802-4c92-49d7-9bf8-b7c9c9399b14" Title="Computation Interface" Url="html/T_Microsoft_Research_Naiad_Computation.htm">
+        <HelpTOCNode Id="8dc0fdc7-67c9-4ac6-9aa5-c552112e1496" Title="Computation Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Computation.htm">
           <HelpTOCNode Title="Activate Method " Url="html/M_Microsoft_Research_Naiad_Computation_Activate.htm" />
           <HelpTOCNode Title="Join Method " Url="html/M_Microsoft_Research_Naiad_Computation_Join.htm" />
-          <HelpTOCNode Id="2453f780-f4f5-4e9c-a502-77000749a86a" Title="NewInput Method " Url="html/Overload_Microsoft_Research_Naiad_Computation_NewInput.htm">
+          <HelpTOCNode Id="7b4a48d4-f470-4fc0-b085-b3aebb7e3359" Title="NewInput Method " Url="html/Overload_Microsoft_Research_Naiad_Computation_NewInput.htm">
             <HelpTOCNode Title="NewInput(TRecord) Method (DataSource(TRecord))" Url="html/M_Microsoft_Research_Naiad_Computation_NewInput__1.htm" />
             <HelpTOCNode Title="NewInput(TRecord) Method (DataSource(TRecord), String)" Url="html/M_Microsoft_Research_Naiad_Computation_NewInput__1_1.htm" />
           </HelpTOCNode>
           <HelpTOCNode Title="Sync Method " Url="html/M_Microsoft_Research_Naiad_Computation_Sync.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="64d8fb9f-4c45-47e7-8bcf-1200c57d908a" Title="Computation Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Computation.htm">
+        <HelpTOCNode Id="f7f00c34-f618-4141-85e8-0f40f0e341d6" Title="Computation Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Computation.htm">
           <HelpTOCNode Title="Controller Property " Url="html/P_Microsoft_Research_Naiad_Computation_Controller.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="ae693bdc-78c9-481c-a5dd-cd36004b413c" Title="Computation Events" Url="html/Events_T_Microsoft_Research_Naiad_Computation.htm">
+        <HelpTOCNode Id="504bb80b-f8de-4f79-a4e5-0230747d691e" Title="Computation Events" Url="html/Events_T_Microsoft_Research_Naiad_Computation.htm">
           <HelpTOCNode Title="OnFrontierChange Event" Url="html/E_Microsoft_Research_Naiad_Computation_OnFrontierChange.htm" />
           <HelpTOCNode Title="OnShutdown Event" Url="html/E_Microsoft_Research_Naiad_Computation_OnShutdown.htm" />
           <HelpTOCNode Title="OnStartup Event" Url="html/E_Microsoft_Research_Naiad_Computation_OnStartup.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="902cb565-4b17-424e-867e-4fc658f239ee" Title="Configuration Class" Url="html/T_Microsoft_Research_Naiad_Configuration.htm">
+      <HelpTOCNode Id="64d5aea1-16f7-4aaf-ab30-d9120ebbfd0b" Title="Configuration Class" Url="html/T_Microsoft_Research_Naiad_Configuration.htm">
         <HelpTOCNode Title="Configuration Constructor " Url="html/M_Microsoft_Research_Naiad_Configuration__ctor.htm" />
-        <HelpTOCNode Id="770308f1-50fb-42e4-9103-ff88ccdee187" Title="Configuration Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Configuration.htm">
+        <HelpTOCNode Id="6f4d4188-10dd-4363-a02f-c0c932caae8f" Title="Configuration Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Configuration.htm">
           <HelpTOCNode Title="FromArgs Method " Url="html/M_Microsoft_Research_Naiad_Configuration_FromArgs.htm" />
           <HelpTOCNode Title="Usage Method " Url="html/M_Microsoft_Research_Naiad_Configuration_Usage.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="1eccde33-1b55-4cef-a7c4-90ad5c1586fc" Title="Configuration Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Configuration.htm">
+        <HelpTOCNode Id="95cb23c6-7802-49b8-bad7-9379b90766d2" Title="Configuration Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Configuration.htm">
           <HelpTOCNode Title="AdditionalSettings Property " Url="html/P_Microsoft_Research_Naiad_Configuration_AdditionalSettings.htm" />
           <HelpTOCNode Title="Broadcast Property " Url="html/P_Microsoft_Research_Naiad_Configuration_Broadcast.htm" />
           <HelpTOCNode Title="BroadcastAddress Property " Url="html/P_Microsoft_Research_Naiad_Configuration_BroadcastAddress.htm" />
@@ -63,66 +64,66 @@
       </HelpTOCNode>
       <HelpTOCNode Title="Configuration.BroadcastProtocol Enumeration" Url="html/T_Microsoft_Research_Naiad_Configuration_BroadcastProtocol.htm" />
       <HelpTOCNode Title="Configuration.SendBufferMode Enumeration" Url="html/T_Microsoft_Research_Naiad_Configuration_SendBufferMode.htm" />
-      <HelpTOCNode Id="38d06129-5745-4a52-8212-2870381c6ca5" Title="Controller Interface" Url="html/T_Microsoft_Research_Naiad_Controller.htm">
-        <HelpTOCNode Id="65b89397-ca28-4ec8-92d2-fda1afb2aad5" Title="Controller Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Controller.htm">
+      <HelpTOCNode Id="86e824ca-e354-46ff-beff-5a5370e2657c" Title="Controller Interface" Url="html/T_Microsoft_Research_Naiad_Controller.htm">
+        <HelpTOCNode Id="f9075086-983b-4ef6-9b95-fbfefb7a583b" Title="Controller Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Controller.htm">
           <HelpTOCNode Title="Join Method " Url="html/M_Microsoft_Research_Naiad_Controller_Join.htm" />
           <HelpTOCNode Title="JoinAsync Method " Url="html/M_Microsoft_Research_Naiad_Controller_JoinAsync.htm" />
           <HelpTOCNode Title="NewComputation Method " Url="html/M_Microsoft_Research_Naiad_Controller_NewComputation.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="c1232222-66a4-4821-bc47-f62ca1f56519" Title="Controller Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Controller.htm">
+        <HelpTOCNode Id="82a623cb-3e33-4605-8752-a88e78eb5073" Title="Controller Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Controller.htm">
           <HelpTOCNode Title="Configuration Property " Url="html/P_Microsoft_Research_Naiad_Controller_Configuration.htm" />
           <HelpTOCNode Title="DefaultPlacement Property " Url="html/P_Microsoft_Research_Naiad_Controller_DefaultPlacement.htm" />
           <HelpTOCNode Title="SerializationFormat Property " Url="html/P_Microsoft_Research_Naiad_Controller_SerializationFormat.htm" />
           <HelpTOCNode Title="WorkerGroup Property " Url="html/P_Microsoft_Research_Naiad_Controller_WorkerGroup.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="61089005-d86a-4ba7-b856-efdf0e27c5e7" Title="NewComputation Class" Url="html/T_Microsoft_Research_Naiad_NewComputation.htm">
-        <HelpTOCNode Id="ba446ba2-d2e1-4cf8-a73e-7970367e3666" Title="NewComputation Methods" Url="html/Methods_T_Microsoft_Research_Naiad_NewComputation.htm">
+      <HelpTOCNode Id="48d3ff2a-7616-4860-904b-ca40d4450884" Title="NewComputation Class" Url="html/T_Microsoft_Research_Naiad_NewComputation.htm">
+        <HelpTOCNode Id="de662bf7-6018-42a4-82cc-b1da9303f66e" Title="NewComputation Methods" Url="html/Methods_T_Microsoft_Research_Naiad_NewComputation.htm">
           <HelpTOCNode Title="FromArgs Method " Url="html/M_Microsoft_Research_Naiad_NewComputation_FromArgs.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="7e0f4627-0dae-404e-b074-65df4e155c1d" Title="NewController Class" Url="html/T_Microsoft_Research_Naiad_NewController.htm">
-        <HelpTOCNode Id="5fe8778b-f4c4-41bf-ad1b-b6ae5b5277f8" Title="NewController Methods" Url="html/Methods_T_Microsoft_Research_Naiad_NewController.htm">
+      <HelpTOCNode Id="6e16787c-13f0-44ba-850a-cc93ea34d32f" Title="NewController Class" Url="html/T_Microsoft_Research_Naiad_NewController.htm">
+        <HelpTOCNode Id="8f23e734-20a8-48ae-a7b5-bc0636925250" Title="NewController Methods" Url="html/Methods_T_Microsoft_Research_Naiad_NewController.htm">
           <HelpTOCNode Title="FromArgs Method " Url="html/M_Microsoft_Research_Naiad_NewController_FromArgs.htm" />
           <HelpTOCNode Title="FromConfig Method " Url="html/M_Microsoft_Research_Naiad_NewController_FromConfig.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="7fa6d367-366b-4a25-a03c-d396dd7dd1bf" Title="OneOffComputation Interface" Url="html/T_Microsoft_Research_Naiad_OneOffComputation.htm">
+      <HelpTOCNode Id="5424955c-2f30-4d86-86ec-785d54ae494f" Title="OneOffComputation Interface" Url="html/T_Microsoft_Research_Naiad_OneOffComputation.htm">
         <HelpTOCNode Title="OneOffComputation Methods" Url="html/Methods_T_Microsoft_Research_Naiad_OneOffComputation.htm" />
-        <HelpTOCNode Id="41a10d32-ef6c-431d-a6b8-45328ac3d5d2" Title="OneOffComputation Properties" Url="html/Properties_T_Microsoft_Research_Naiad_OneOffComputation.htm">
+        <HelpTOCNode Id="c28f476d-e3d5-42c9-b7ce-6c22c56575e5" Title="OneOffComputation Properties" Url="html/Properties_T_Microsoft_Research_Naiad_OneOffComputation.htm">
           <HelpTOCNode Title="Configuration Property " Url="html/P_Microsoft_Research_Naiad_OneOffComputation_Configuration.htm" />
           <HelpTOCNode Title="DefaultPlacement Property " Url="html/P_Microsoft_Research_Naiad_OneOffComputation_DefaultPlacement.htm" />
           <HelpTOCNode Title="WorkerGroup Property " Url="html/P_Microsoft_Research_Naiad_OneOffComputation_WorkerGroup.htm" />
         </HelpTOCNode>
         <HelpTOCNode Title="OneOffComputation Events" Url="html/Events_T_Microsoft_Research_Naiad_OneOffComputation.htm" />
       </HelpTOCNode>
-      <HelpTOCNode Id="11595bad-f98f-49e2-a0cd-f1a6702212d4" Title="Pair(TFirst, TSecond) Structure" Url="html/T_Microsoft_Research_Naiad_Pair_2.htm">
+      <HelpTOCNode Id="7a681fcf-7e20-4f8f-b7a0-01be42cfa7ce" Title="Pair(TFirst, TSecond) Structure" Url="html/T_Microsoft_Research_Naiad_Pair_2.htm">
         <HelpTOCNode Title="Pair(TFirst, TSecond) Constructor " Url="html/M_Microsoft_Research_Naiad_Pair_2__ctor.htm" />
-        <HelpTOCNode Id="8dc62e03-9e7d-4c1e-8fc3-d3dbdddbc54c" Title="Pair(TFirst, TSecond) Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Pair_2.htm">
+        <HelpTOCNode Id="89707d00-fa06-4e82-ae0f-0938f1501197" Title="Pair(TFirst, TSecond) Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Pair_2.htm">
           <HelpTOCNode Title="First Field" Url="html/F_Microsoft_Research_Naiad_Pair_2_First.htm" />
           <HelpTOCNode Title="Second Field" Url="html/F_Microsoft_Research_Naiad_Pair_2_Second.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="e79a51e0-aa7c-402b-9dc2-8afadb362468" Title="Pair(TFirst, TSecond) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Pair_2.htm">
+        <HelpTOCNode Id="cc941642-08e2-4fb0-8f7e-4b5a34b6698a" Title="Pair(TFirst, TSecond) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Pair_2.htm">
           <HelpTOCNode Title="Equals Method " Url="html/M_Microsoft_Research_Naiad_Pair_2_Equals.htm" />
           <HelpTOCNode Title="GetHashCode Method " Url="html/M_Microsoft_Research_Naiad_Pair_2_GetHashCode.htm" />
           <HelpTOCNode Title="ToString Method " Url="html/M_Microsoft_Research_Naiad_Pair_2_ToString.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="81324bb2-7567-46ee-9d02-4a9ae5bf90b4" Title="PairExtensionMethods Class" Url="html/T_Microsoft_Research_Naiad_PairExtensionMethods.htm">
-        <HelpTOCNode Id="e1df0b95-e658-4a75-8e15-3842b4422beb" Title="PairExtensionMethods Methods" Url="html/Methods_T_Microsoft_Research_Naiad_PairExtensionMethods.htm">
+      <HelpTOCNode Id="b9edeaa7-da48-492e-b195-9fe8b5854a3d" Title="PairExtensionMethods Class" Url="html/T_Microsoft_Research_Naiad_PairExtensionMethods.htm">
+        <HelpTOCNode Id="3a8d3d0c-cc15-4f77-a70a-35e3977d0410" Title="PairExtensionMethods Methods" Url="html/Methods_T_Microsoft_Research_Naiad_PairExtensionMethods.htm">
           <HelpTOCNode Title="PairWith(V1, V2) Method " Url="html/M_Microsoft_Research_Naiad_PairExtensionMethods_PairWith__2.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="e8d765b6-af0b-432f-8c8e-1afabe18870e" Title="Stream(TRecord, TTime) Class" Url="html/T_Microsoft_Research_Naiad_Stream_2.htm">
-        <HelpTOCNode Id="3cf5947a-b4c3-4d7f-8d03-2c131b2d23bc" Title="Stream(TRecord, TTime) Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Stream_2.htm">
+      <HelpTOCNode Id="aefb2041-ed3b-42ea-a8f1-2aa555b4057d" Title="Stream(TRecord, TTime) Class" Url="html/T_Microsoft_Research_Naiad_Stream_2.htm">
+        <HelpTOCNode Id="1d9b6992-1cfa-4508-a015-b4d790b7ced5" Title="Stream(TRecord, TTime) Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Stream_2.htm">
           <HelpTOCNode Title="Context Property " Url="html/P_Microsoft_Research_Naiad_Stream_2_Context.htm" />
           <HelpTOCNode Title="ForStage Property " Url="html/P_Microsoft_Research_Naiad_Stream_2_ForStage.htm" />
           <HelpTOCNode Title="PartitionedBy Property " Url="html/P_Microsoft_Research_Naiad_Stream_2_PartitionedBy.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="66583ddc-e625-4f7b-b5df-bfc500f46fa2" Title="SubscribeExtensionMethods Class" Url="html/T_Microsoft_Research_Naiad_SubscribeExtensionMethods.htm">
-        <HelpTOCNode Id="62464a13-b4b8-4ace-a54e-00fc6cdc8ca1" Title="SubscribeExtensionMethods Methods" Url="html/Methods_T_Microsoft_Research_Naiad_SubscribeExtensionMethods.htm">
-          <HelpTOCNode Id="1c96951c-f32a-4f17-abc5-f6b3baac17f3" Title="Subscribe Method " Url="html/Overload_Microsoft_Research_Naiad_SubscribeExtensionMethods_Subscribe.htm">
+      <HelpTOCNode Id="d5c62992-7391-401e-815d-d61052298b97" Title="SubscribeExtensionMethods Class" Url="html/T_Microsoft_Research_Naiad_SubscribeExtensionMethods.htm">
+        <HelpTOCNode Id="95a629bf-e2a1-4ecd-b678-131fa1738948" Title="SubscribeExtensionMethods Methods" Url="html/Methods_T_Microsoft_Research_Naiad_SubscribeExtensionMethods.htm">
+          <HelpTOCNode Id="4dcff67b-3022-41be-9b2c-5ff87bc6c829" Title="Subscribe Method " Url="html/Overload_Microsoft_Research_Naiad_SubscribeExtensionMethods_Subscribe.htm">
             <HelpTOCNode Title="Subscribe(R) Method (Stream(R, Epoch))" Url="html/M_Microsoft_Research_Naiad_SubscribeExtensionMethods_Subscribe__1.htm" />
             <HelpTOCNode Title="Subscribe(R) Method (Stream(R, Epoch), Action(IEnumerable(R)))" Url="html/M_Microsoft_Research_Naiad_SubscribeExtensionMethods_Subscribe__1_1.htm" />
             <HelpTOCNode Title="Subscribe(R) Method (Stream(R, Epoch), Action(Int32, IEnumerable(R)))" Url="html/M_Microsoft_Research_Naiad_SubscribeExtensionMethods_Subscribe__1_3.htm" />
@@ -131,13 +132,13 @@
           </HelpTOCNode>
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="6d38b5ea-2868-4c6d-8588-bfb022ae04ef" Title="Subscription Interface" Url="html/T_Microsoft_Research_Naiad_Subscription.htm">
-        <HelpTOCNode Id="34b7886d-f2bc-412b-bfa7-55afe3bd5109" Title="Subscription Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Subscription.htm">
+      <HelpTOCNode Id="e1c890e3-ea5b-4e65-aaae-10840559e81e" Title="Subscription Interface" Url="html/T_Microsoft_Research_Naiad_Subscription.htm">
+        <HelpTOCNode Id="131b2c4b-5c26-4860-9a83-edcab370a930" Title="Subscription Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Subscription.htm">
           <HelpTOCNode Title="Sync Method " Url="html/M_Microsoft_Research_Naiad_Subscription_Sync.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="52d15002-d624-488a-aabc-2ecebbf22efd" Title="Time(TTime) Interface" Url="html/T_Microsoft_Research_Naiad_Time_1.htm">
-        <HelpTOCNode Id="fba2c503-181b-4ce7-9835-925bc01bf20c" Title="Time(TTime) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Time_1.htm">
+      <HelpTOCNode Id="d46ab178-0766-4615-a63c-ad62f74333de" Title="Time(TTime) Interface" Url="html/T_Microsoft_Research_Naiad_Time_1.htm">
+        <HelpTOCNode Id="8f0ade82-3c7e-44c7-a855-6fdcc0059216" Title="Time(TTime) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Time_1.htm">
           <HelpTOCNode Title="GetHashCode Method " Url="html/M_Microsoft_Research_Naiad_Time_1_GetHashCode.htm" />
           <HelpTOCNode Title="InitializeFrom Method " Url="html/M_Microsoft_Research_Naiad_Time_1_InitializeFrom.htm" />
           <HelpTOCNode Title="Join Method " Url="html/M_Microsoft_Research_Naiad_Time_1_Join.htm" />
@@ -145,15 +146,15 @@
           <HelpTOCNode Title="Meet Method " Url="html/M_Microsoft_Research_Naiad_Time_1_Meet.htm" />
           <HelpTOCNode Title="Populate Method " Url="html/M_Microsoft_Research_Naiad_Time_1_Populate.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="7bde5faa-0276-4ae5-bcfe-89f38f176ddc" Title="Time(TTime) Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Time_1.htm">
+        <HelpTOCNode Id="297531a8-ba60-4519-a67b-58e0f067d65d" Title="Time(TTime) Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Time_1.htm">
           <HelpTOCNode Title="Coordinates Property " Url="html/P_Microsoft_Research_Naiad_Time_1_Coordinates.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="3fad92e0-a411-4a70-b882-7f4013a0b74c" Title="WorkerGroup Interface" Url="html/T_Microsoft_Research_Naiad_WorkerGroup.htm">
-        <HelpTOCNode Id="5ecc1f8c-e5af-423e-99fa-485c6730a519" Title="WorkerGroup Properties" Url="html/Properties_T_Microsoft_Research_Naiad_WorkerGroup.htm">
+      <HelpTOCNode Id="f4b7cb11-9296-4922-b7b5-922942f075c0" Title="WorkerGroup Interface" Url="html/T_Microsoft_Research_Naiad_WorkerGroup.htm">
+        <HelpTOCNode Id="5ecebb91-0ee0-49fb-af8d-3e61d9ccf52e" Title="WorkerGroup Properties" Url="html/Properties_T_Microsoft_Research_Naiad_WorkerGroup.htm">
           <HelpTOCNode Title="Count Property " Url="html/P_Microsoft_Research_Naiad_WorkerGroup_Count.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="78a922c4-a8ba-4b7d-acd3-53781178f368" Title="WorkerGroup Events" Url="html/Events_T_Microsoft_Research_Naiad_WorkerGroup.htm">
+        <HelpTOCNode Id="d26b662b-d079-486d-9edb-42da6ba9c738" Title="WorkerGroup Events" Url="html/Events_T_Microsoft_Research_Naiad_WorkerGroup.htm">
           <HelpTOCNode Title="Sleeping Event" Url="html/E_Microsoft_Research_Naiad_WorkerGroup_Sleeping.htm" />
           <HelpTOCNode Title="Starting Event" Url="html/E_Microsoft_Research_Naiad_WorkerGroup_Starting.htm" />
           <HelpTOCNode Title="Terminating Event" Url="html/E_Microsoft_Research_Naiad_WorkerGroup_Terminating.htm" />
@@ -164,12 +165,12 @@
         </HelpTOCNode>
       </HelpTOCNode>
     </HelpTOCNode>
-    <HelpTOCNode Id="1ceb63cc-982f-40bb-bf7a-398050319fdc" Title="Microsoft.Research.Naiad.Dataflow Namespace" Url="html/N_Microsoft_Research_Naiad_Dataflow.htm">
-      <HelpTOCNode Id="03aca097-68fa-4e91-bf32-ed5650479886" Title="Empty Structure" Url="html/T_Microsoft_Research_Naiad_Dataflow_Empty.htm">
-        <HelpTOCNode Id="2528a746-f8cc-4d5d-b315-aa9c35e504c2" Title="Empty Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Dataflow_Empty.htm">
+    <HelpTOCNode Id="fb29465b-f25a-4c41-ac18-d5473bbf4986" Title="Microsoft.Research.Naiad.Dataflow Namespace" Url="html/N_Microsoft_Research_Naiad_Dataflow.htm">
+      <HelpTOCNode Id="3644f8f7-44df-4a29-9100-1bf4964c71d1" Title="Empty Structure" Url="html/T_Microsoft_Research_Naiad_Dataflow_Empty.htm">
+        <HelpTOCNode Id="8b5225bd-bb89-44b3-a437-83ec60440635" Title="Empty Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Dataflow_Empty.htm">
           <HelpTOCNode Title="zero Field" Url="html/F_Microsoft_Research_Naiad_Dataflow_Empty_zero.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="e47cca57-eca6-4f9e-b232-d52ade7e32fd" Title="Empty Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_Empty.htm">
+        <HelpTOCNode Id="63d9904a-d23d-499f-b711-852aa2c20b2c" Title="Empty Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_Empty.htm">
           <HelpTOCNode Title="CompareTo Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_Empty_CompareTo.htm" />
           <HelpTOCNode Title="Equals Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_Empty_Equals.htm" />
           <HelpTOCNode Title="InitializeFrom Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_Empty_InitializeFrom.htm" />
@@ -178,16 +179,16 @@
           <HelpTOCNode Title="Meet Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_Empty_Meet.htm" />
           <HelpTOCNode Title="Populate Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_Empty_Populate.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="867d84ec-8884-48ce-abd7-f65e3ad838df" Title="Empty Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Dataflow_Empty.htm">
+        <HelpTOCNode Id="f81882ec-b706-408c-90d1-3103536bd45d" Title="Empty Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Dataflow_Empty.htm">
           <HelpTOCNode Title="Coordinates Property " Url="html/P_Microsoft_Research_Naiad_Dataflow_Empty_Coordinates.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="e74d68b1-bca3-478d-9e87-00b9b2d19483" Title="Epoch Structure" Url="html/T_Microsoft_Research_Naiad_Dataflow_Epoch.htm">
+      <HelpTOCNode Id="dcc478b4-a7a5-43fc-8565-a17c393f85a1" Title="Epoch Structure" Url="html/T_Microsoft_Research_Naiad_Dataflow_Epoch.htm">
         <HelpTOCNode Title="Epoch Constructor " Url="html/M_Microsoft_Research_Naiad_Dataflow_Epoch__ctor.htm" />
-        <HelpTOCNode Id="49db2975-67b5-4f2e-af0a-43bc38480ae2" Title="Epoch Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Dataflow_Epoch.htm">
+        <HelpTOCNode Id="22f22ad4-9d52-4cf7-aec4-2a7b34fdaf2d" Title="Epoch Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Dataflow_Epoch.htm">
           <HelpTOCNode Title="epoch Field" Url="html/F_Microsoft_Research_Naiad_Dataflow_Epoch_epoch.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="c74e1967-8817-4b2f-9e3d-d0c176719c60" Title="Epoch Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_Epoch.htm">
+        <HelpTOCNode Id="77509b2a-b63a-4476-a84d-3ce7f7f891ac" Title="Epoch Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_Epoch.htm">
           <HelpTOCNode Title="CompareTo Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_Epoch_CompareTo.htm" />
           <HelpTOCNode Title="Equals Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_Epoch_Equals.htm" />
           <HelpTOCNode Title="GetHashCode Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_Epoch_GetHashCode.htm" />
@@ -198,17 +199,17 @@
           <HelpTOCNode Title="Populate Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_Epoch_Populate.htm" />
           <HelpTOCNode Title="ToString Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_Epoch_ToString.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="b5e29b08-039e-4e12-9807-5150428b94fb" Title="Epoch Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Dataflow_Epoch.htm">
+        <HelpTOCNode Id="aee6ced6-534f-4d8a-a343-ee6f96949008" Title="Epoch Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Dataflow_Epoch.htm">
           <HelpTOCNode Title="Coordinates Property " Url="html/P_Microsoft_Research_Naiad_Dataflow_Epoch_Coordinates.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="a4aefb88-3245-46f4-9087-3c8f9b4bb9da" Title="IterationIn(TTime) Structure" Url="html/T_Microsoft_Research_Naiad_Dataflow_IterationIn_1.htm">
+      <HelpTOCNode Id="9859d562-de5c-436a-b71b-cd3be71feac4" Title="IterationIn(TTime) Structure" Url="html/T_Microsoft_Research_Naiad_Dataflow_IterationIn_1.htm">
         <HelpTOCNode Title="IterationIn(TTime) Constructor " Url="html/M_Microsoft_Research_Naiad_Dataflow_IterationIn_1__ctor.htm" />
-        <HelpTOCNode Id="5a878e74-f5cb-4b95-9dad-429edc216a8a" Title="IterationIn(TTime) Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Dataflow_IterationIn_1.htm">
+        <HelpTOCNode Id="68c48228-ca54-43de-9677-9bf7d303a670" Title="IterationIn(TTime) Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Dataflow_IterationIn_1.htm">
           <HelpTOCNode Title="iteration Field" Url="html/F_Microsoft_Research_Naiad_Dataflow_IterationIn_1_iteration.htm" />
           <HelpTOCNode Title="outerTime Field" Url="html/F_Microsoft_Research_Naiad_Dataflow_IterationIn_1_outerTime.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="65c0ad1f-a012-43ca-b495-ef3f8d2f0566" Title="IterationIn(TTime) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_IterationIn_1.htm">
+        <HelpTOCNode Id="bc87c140-81ab-42e7-b6be-5b78968b1f10" Title="IterationIn(TTime) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_IterationIn_1.htm">
           <HelpTOCNode Title="CompareTo Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_IterationIn_1_CompareTo.htm" />
           <HelpTOCNode Title="Equals Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_IterationIn_1_Equals.htm" />
           <HelpTOCNode Title="GetHashCode Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_IterationIn_1_GetHashCode.htm" />
@@ -219,121 +220,121 @@
           <HelpTOCNode Title="Populate Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_IterationIn_1_Populate.htm" />
           <HelpTOCNode Title="ToString Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_IterationIn_1_ToString.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="0b8f5ddc-3c51-4e39-bea9-f3714486afb9" Title="IterationIn(TTime) Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Dataflow_IterationIn_1.htm">
+        <HelpTOCNode Id="5c889bfa-9392-44f6-ad5c-98710453cd50" Title="IterationIn(TTime) Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Dataflow_IterationIn_1.htm">
           <HelpTOCNode Title="Coordinates Property " Url="html/P_Microsoft_Research_Naiad_Dataflow_IterationIn_1_Coordinates.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="6bbea7e7-ca63-4193-a72f-a0d0453fe331" Title="Message(TRecord, TTime) Structure" Url="html/T_Microsoft_Research_Naiad_Dataflow_Message_2.htm">
-        <HelpTOCNode Id="747e54f6-9d30-4b49-8ae1-b697689ca74f" Title="Message(TRecord, TTime) Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Dataflow_Message_2.htm">
+      <HelpTOCNode Id="59c3061d-517a-4b89-8be3-fc302398746e" Title="Message(TRecord, TTime) Structure" Url="html/T_Microsoft_Research_Naiad_Dataflow_Message_2.htm">
+        <HelpTOCNode Id="920698e9-e331-4b3b-a020-d5e9432f0d89" Title="Message(TRecord, TTime) Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Dataflow_Message_2.htm">
           <HelpTOCNode Title="length Field" Url="html/F_Microsoft_Research_Naiad_Dataflow_Message_2_length.htm" />
           <HelpTOCNode Title="payload Field" Url="html/F_Microsoft_Research_Naiad_Dataflow_Message_2_payload.htm" />
           <HelpTOCNode Title="time Field" Url="html/F_Microsoft_Research_Naiad_Dataflow_Message_2_time.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="f2c0e4c1-194e-4865-8120-bd73b1e9330c" Title="Message(TRecord, TTime) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_Message_2.htm">
+        <HelpTOCNode Id="082dc627-d812-463d-952c-cebc89ad7f95" Title="Message(TRecord, TTime) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_Message_2.htm">
           <HelpTOCNode Title="Allocate Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_Message_2_Allocate.htm" />
           <HelpTOCNode Title="Release Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_Message_2_Release.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="17041df3-2fa0-448f-ad73-22decac0cc4c" Title="Message(TRecord, TTime) Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Dataflow_Message_2.htm">
+        <HelpTOCNode Id="411c1717-2cbe-4e4c-bc39-347fb901e644" Title="Message(TRecord, TTime) Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Dataflow_Message_2.htm">
           <HelpTOCNode Title="Unallocated Property " Url="html/P_Microsoft_Research_Naiad_Dataflow_Message_2_Unallocated.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="34088417-aa03-42e3-b105-92554ac877a3" Title="Placement Class" Url="html/T_Microsoft_Research_Naiad_Dataflow_Placement.htm">
+      <HelpTOCNode Id="0f8100e2-b13d-4454-85cf-86bdcd753d86" Title="Placement Class" Url="html/T_Microsoft_Research_Naiad_Dataflow_Placement.htm">
         <HelpTOCNode Title="Placement Constructor " Url="html/M_Microsoft_Research_Naiad_Dataflow_Placement__ctor.htm" />
-        <HelpTOCNode Id="a6098828-880f-48c0-9fbc-3c8bd7abaffe" Title="Placement Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_Placement.htm">
+        <HelpTOCNode Id="7d3e64a9-cd71-4a9d-b0eb-c1c5ccb53e88" Title="Placement Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_Placement.htm">
           <HelpTOCNode Title="Equals Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_Placement_Equals.htm" />
           <HelpTOCNode Title="GetEnumerator Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_Placement_GetEnumerator.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="3a5b5875-6ce4-4044-84be-6871ccc161cf" Title="Placement Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Dataflow_Placement.htm">
+        <HelpTOCNode Id="9a8db7d1-a608-492f-be49-a1be4c8102bf" Title="Placement Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Dataflow_Placement.htm">
           <HelpTOCNode Title="Count Property " Url="html/P_Microsoft_Research_Naiad_Dataflow_Placement_Count.htm" />
           <HelpTOCNode Title="Item Property " Url="html/P_Microsoft_Research_Naiad_Dataflow_Placement_Item.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="8e6ce2f9-8ed8-41c6-a0bf-9eff38697d1a" Title="Placement.Explicit Class" Url="html/T_Microsoft_Research_Naiad_Dataflow_Placement_Explicit.htm">
+      <HelpTOCNode Id="fd736e15-d24b-4442-a572-979a414e59e0" Title="Placement.Explicit Class" Url="html/T_Microsoft_Research_Naiad_Dataflow_Placement_Explicit.htm">
         <HelpTOCNode Title="Placement.Explicit Constructor " Url="html/M_Microsoft_Research_Naiad_Dataflow_Placement_Explicit__ctor.htm" />
-        <HelpTOCNode Id="a19cd1a5-6a13-4e2e-8755-ea3c02e0c0ff" Title="Placement.Explicit Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_Placement_Explicit.htm">
+        <HelpTOCNode Id="50f7c44f-a469-431c-b6b1-4d1207d912fa" Title="Placement.Explicit Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_Placement_Explicit.htm">
           <HelpTOCNode Title="Equals Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_Placement_Explicit_Equals.htm" />
           <HelpTOCNode Title="GetEnumerator Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_Placement_Explicit_GetEnumerator.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="4ee032cb-a74a-444f-9537-4d4f616b59d7" Title="Placement.Explicit Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Dataflow_Placement_Explicit.htm">
+        <HelpTOCNode Id="b69bf8d1-d596-44fb-8773-fc0a0daadb11" Title="Placement.Explicit Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Dataflow_Placement_Explicit.htm">
           <HelpTOCNode Title="Count Property " Url="html/P_Microsoft_Research_Naiad_Dataflow_Placement_Explicit_Count.htm" />
           <HelpTOCNode Title="Item Property " Url="html/P_Microsoft_Research_Naiad_Dataflow_Placement_Explicit_Item.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="db0bdf75-4d61-488f-b4e6-27f105d83751" Title="ReturnAddress Structure" Url="html/T_Microsoft_Research_Naiad_Dataflow_ReturnAddress.htm">
-        <HelpTOCNode Id="7016ec15-4f2d-41d6-b26d-b72ec3f33c79" Title="ReturnAddress Constructor " Url="html/Overload_Microsoft_Research_Naiad_Dataflow_ReturnAddress__ctor.htm">
+      <HelpTOCNode Id="c44a1254-f6b1-45cf-ad3d-b70ada726928" Title="ReturnAddress Structure" Url="html/T_Microsoft_Research_Naiad_Dataflow_ReturnAddress.htm">
+        <HelpTOCNode Id="005d106f-8cd3-49ae-b181-ad4c06dec4b0" Title="ReturnAddress Constructor " Url="html/Overload_Microsoft_Research_Naiad_Dataflow_ReturnAddress__ctor.htm">
           <HelpTOCNode Title="ReturnAddress Constructor (Int32, Int32)" Url="html/M_Microsoft_Research_Naiad_Dataflow_ReturnAddress__ctor.htm" />
           <HelpTOCNode Title="ReturnAddress Constructor (Int32, Int32, Int32)" Url="html/M_Microsoft_Research_Naiad_Dataflow_ReturnAddress__ctor_1.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="15a80fdb-0bf6-4c47-a8eb-df9d954cbb3d" Title="ReturnAddress Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Dataflow_ReturnAddress.htm">
+        <HelpTOCNode Id="7ee04125-497c-48f3-b014-51fe6b5b959d" Title="ReturnAddress Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Dataflow_ReturnAddress.htm">
           <HelpTOCNode Title="ProcessID Field" Url="html/F_Microsoft_Research_Naiad_Dataflow_ReturnAddress_ProcessID.htm" />
           <HelpTOCNode Title="ThreadIndex Field" Url="html/F_Microsoft_Research_Naiad_Dataflow_ReturnAddress_ThreadIndex.htm" />
           <HelpTOCNode Title="VertexID Field" Url="html/F_Microsoft_Research_Naiad_Dataflow_ReturnAddress_VertexID.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="b8d7ddbc-ff7a-4bdd-b30f-bf33ee565aa7" Title="SendChannel(TRecord, TTime) Interface" Url="html/T_Microsoft_Research_Naiad_Dataflow_SendChannel_2.htm">
-        <HelpTOCNode Id="4607c76c-1467-4126-a845-8a9381887a3f" Title="SendChannel(TRecord, TTime) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_SendChannel_2.htm">
+      <HelpTOCNode Id="94e8e55f-28b8-4289-92bb-02eaedbc686c" Title="SendChannel(TRecord, TTime) Interface" Url="html/T_Microsoft_Research_Naiad_Dataflow_SendChannel_2.htm">
+        <HelpTOCNode Id="6faee50c-e72c-4e03-8c5f-835af10c1eb2" Title="SendChannel(TRecord, TTime) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_SendChannel_2.htm">
           <HelpTOCNode Title="Flush Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_SendChannel_2_Flush.htm" />
           <HelpTOCNode Title="Send Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_SendChannel_2_Send.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="58ac2126-a36b-4ab3-8014-12a35c1487f5" Title="Stage Class" Url="html/T_Microsoft_Research_Naiad_Dataflow_Stage.htm">
-        <HelpTOCNode Id="c96da550-d4f2-4650-bb3c-8aeb85057da4" Title="Stage Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Dataflow_Stage.htm">
+      <HelpTOCNode Id="e0b8b2f4-18bf-4725-a4d6-3eb46f8e5e67" Title="Stage Class" Url="html/T_Microsoft_Research_Naiad_Dataflow_Stage.htm">
+        <HelpTOCNode Id="bc8b7304-c03f-47e8-a348-b053563f56a6" Title="Stage Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Dataflow_Stage.htm">
           <HelpTOCNode Title="Placement Field" Url="html/F_Microsoft_Research_Naiad_Dataflow_Stage_Placement.htm" />
           <HelpTOCNode Title="StageId Field" Url="html/F_Microsoft_Research_Naiad_Dataflow_Stage_StageId.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="7e722b3c-82dc-40a4-8148-e0d3ab450944" Title="Stage Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_Stage.htm">
+        <HelpTOCNode Id="52532174-8359-4448-8da6-8b69d0953d74" Title="Stage Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_Stage.htm">
           <HelpTOCNode Title="NewInput(TRecord, TTime) Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_Stage_NewInput__2.htm" />
           <HelpTOCNode Title="ToString Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_Stage_ToString.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="2613d2ac-5ae8-4e99-91ab-5d043ecd5422" Title="Stage Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Dataflow_Stage.htm">
+        <HelpTOCNode Id="954ab8b3-661b-450c-8b19-9387bb833077" Title="Stage Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Dataflow_Stage.htm">
           <HelpTOCNode Title="Computation Property " Url="html/P_Microsoft_Research_Naiad_Dataflow_Stage_Computation.htm" />
           <HelpTOCNode Title="Name Property " Url="html/P_Microsoft_Research_Naiad_Dataflow_Stage_Name.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="779c7665-7edf-4ff1-a0c4-6afc80934725" Title="Stage(TTime) Class" Url="html/T_Microsoft_Research_Naiad_Dataflow_Stage_1.htm">
+      <HelpTOCNode Id="0bb1eafe-bd2a-4322-b883-b2d26798d40e" Title="Stage(TTime) Class" Url="html/T_Microsoft_Research_Naiad_Dataflow_Stage_1.htm">
         <HelpTOCNode Title="Stage(TTime) Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Dataflow_Stage_1.htm" />
         <HelpTOCNode Title="Stage(TTime) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_Stage_1.htm" />
-        <HelpTOCNode Id="6c662dc3-175a-4bd4-b7f2-ed040b147a8a" Title="Stage(TTime) Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Dataflow_Stage_1.htm">
+        <HelpTOCNode Id="c64ecd8a-6008-4e4c-9520-e48d2f26fab9" Title="Stage(TTime) Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Dataflow_Stage_1.htm">
           <HelpTOCNode Title="Context Property " Url="html/P_Microsoft_Research_Naiad_Dataflow_Stage_1_Context.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="97c48bcc-e454-41a1-9028-ec4327e3acc6" Title="Stage(TVertex, TTime) Class" Url="html/T_Microsoft_Research_Naiad_Dataflow_Stage_2.htm">
+      <HelpTOCNode Id="d5768b75-0a0e-40fc-9719-4f96a2991477" Title="Stage(TVertex, TTime) Class" Url="html/T_Microsoft_Research_Naiad_Dataflow_Stage_2.htm">
         <HelpTOCNode Title="Stage(TVertex, TTime) Constructor " Url="html/M_Microsoft_Research_Naiad_Dataflow_Stage_2__ctor.htm" />
         <HelpTOCNode Title="Stage(TVertex, TTime) Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Dataflow_Stage_2.htm" />
-        <HelpTOCNode Id="e4722688-9405-4685-8da8-b124371402af" Title="Stage(TVertex, TTime) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_Stage_2.htm">
-          <HelpTOCNode Id="630a487b-8f29-45f9-b2de-cb9a94efa26d" Title="NewInput Method " Url="html/Overload_Microsoft_Research_Naiad_Dataflow_Stage_2_NewInput.htm">
+        <HelpTOCNode Id="38b3e24a-ab33-49ba-82a9-8cb8843e7f50" Title="Stage(TVertex, TTime) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_Stage_2.htm">
+          <HelpTOCNode Id="70342db3-d36b-4190-9669-4648788a1613" Title="NewInput Method " Url="html/Overload_Microsoft_Research_Naiad_Dataflow_Stage_2_NewInput.htm">
             <HelpTOCNode Title="NewInput(TRecord) Method (Stream(TRecord, TTime), Action(Message(TRecord, TTime), TVertex), Expression(Func(TRecord, Int32)))" Url="html/M_Microsoft_Research_Naiad_Dataflow_Stage_2_NewInput__1.htm" />
           </HelpTOCNode>
-          <HelpTOCNode Id="22f2f98f-2306-453d-814c-51606be079c6" Title="NewOutput Method " Url="html/Overload_Microsoft_Research_Naiad_Dataflow_Stage_2_NewOutput.htm">
+          <HelpTOCNode Id="c024508a-87e5-4de1-8024-577af1f15e9d" Title="NewOutput Method " Url="html/Overload_Microsoft_Research_Naiad_Dataflow_Stage_2_NewOutput.htm">
             <HelpTOCNode Title="NewOutput(R) Method (Func(TVertex, VertexOutput(R, TTime)))" Url="html/M_Microsoft_Research_Naiad_Dataflow_Stage_2_NewOutput__1.htm" />
             <HelpTOCNode Title="NewOutput(R) Method (Func(TVertex, VertexOutput(R, TTime)), Expression(Func(R, Int32)))" Url="html/M_Microsoft_Research_Naiad_Dataflow_Stage_2_NewOutput__1_1.htm" />
           </HelpTOCNode>
         </HelpTOCNode>
         <HelpTOCNode Title="Stage(TVertex, TTime) Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Dataflow_Stage_2.htm" />
       </HelpTOCNode>
-      <HelpTOCNode Id="b7dd044f-03e1-461f-a0d7-12afe9050539" Title="StageInput(TRecord, TTime) Class" Url="html/T_Microsoft_Research_Naiad_Dataflow_StageInput_2.htm">
-        <HelpTOCNode Id="a73bcd1e-be84-46ca-92fd-d0f897830b8f" Title="StageInput(TRecord, TTime) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_StageInput_2.htm">
+      <HelpTOCNode Id="ba084a99-4dc6-4e16-810f-c91759fc3ee2" Title="StageInput(TRecord, TTime) Class" Url="html/T_Microsoft_Research_Naiad_Dataflow_StageInput_2.htm">
+        <HelpTOCNode Id="0eec6a20-6eda-483a-bb78-01db783887be" Title="StageInput(TRecord, TTime) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_StageInput_2.htm">
           <HelpTOCNode Title="ToString Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_StageInput_2_ToString.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="786faa70-304e-49ec-b0a1-666872a35a8d" Title="StreamingInput(TRecord) Interface" Url="html/T_Microsoft_Research_Naiad_Dataflow_StreamingInput_1.htm">
-        <HelpTOCNode Id="c86a0e72-6051-49aa-9821-188cc0019322" Title="StreamingInput(TRecord) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_StreamingInput_1.htm">
+      <HelpTOCNode Id="2a7b7a0d-80b7-4f36-ac9f-aa1cb9256f90" Title="StreamingInput(TRecord) Interface" Url="html/T_Microsoft_Research_Naiad_Dataflow_StreamingInput_1.htm">
+        <HelpTOCNode Id="356b2e3b-6125-49b4-99f9-da448e259e7c" Title="StreamingInput(TRecord) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_StreamingInput_1.htm">
           <HelpTOCNode Title="OnCompleted Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_StreamingInput_1_OnCompleted.htm" />
           <HelpTOCNode Title="OnStreamingNotify Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_StreamingInput_1_OnStreamingNotify.htm" />
           <HelpTOCNode Title="OnStreamingRecv Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_StreamingInput_1_OnStreamingRecv.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="c197c500-2b84-4695-b9ba-ffc4f14a8f02" Title="StreamingInput(TRecord) Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Dataflow_StreamingInput_1.htm">
+        <HelpTOCNode Id="1c1c5b28-c583-40a1-85e2-550613f8117f" Title="StreamingInput(TRecord) Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Dataflow_StreamingInput_1.htm">
           <HelpTOCNode Title="WorkerId Property " Url="html/P_Microsoft_Research_Naiad_Dataflow_StreamingInput_1_WorkerId.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
       <HelpTOCNode Title="TimeContext(TTime) Structure" Url="html/T_Microsoft_Research_Naiad_Dataflow_TimeContext_1.htm" />
-      <HelpTOCNode Id="1781cdb0-d68d-4845-9b74-dbdb713ecde9" Title="Vertex Class" Url="html/T_Microsoft_Research_Naiad_Dataflow_Vertex.htm">
-        <HelpTOCNode Id="3bba87cf-78e2-4acd-a753-73011ef527a4" Title="Vertex Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Dataflow_Vertex.htm">
+      <HelpTOCNode Id="5d36162c-a4b1-4e1a-b08c-290b490fc852" Title="Vertex Class" Url="html/T_Microsoft_Research_Naiad_Dataflow_Vertex.htm">
+        <HelpTOCNode Id="5b957318-84ad-48a8-8e7f-adeefcb0e1ee" Title="Vertex Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Dataflow_Vertex.htm">
           <HelpTOCNode Title="isShutdown Field" Url="html/F_Microsoft_Research_Naiad_Dataflow_Vertex_isShutdown.htm" />
           <HelpTOCNode Title="Stage Field" Url="html/F_Microsoft_Research_Naiad_Dataflow_Vertex_Stage.htm" />
           <HelpTOCNode Title="VertexId Field" Url="html/F_Microsoft_Research_Naiad_Dataflow_Vertex_VertexId.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="c5ffd3eb-4c78-4e6a-a384-f876153946e1" Title="Vertex Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_Vertex.htm">
+        <HelpTOCNode Id="8b7cec34-ec00-4c01-8c8a-183714ff2746" Title="Vertex Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_Vertex.htm">
           <HelpTOCNode Title="AddOnFlushAction Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_Vertex_AddOnFlushAction.htm" />
           <HelpTOCNode Title="Checkpoint Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_Vertex_Checkpoint.htm" />
           <HelpTOCNode Title="Flush Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_Vertex_Flush.htm" />
@@ -342,18 +343,18 @@
           <HelpTOCNode Title="ToString Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_Vertex_ToString.htm" />
           <HelpTOCNode Title="UpdateReachability Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_Vertex_UpdateReachability.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="dcc11ebb-8b2c-41ae-888f-51663feebaeb" Title="Vertex Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Dataflow_Vertex.htm">
+        <HelpTOCNode Id="bf77736c-5c04-4299-9956-b99fe09c3243" Title="Vertex Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Dataflow_Vertex.htm">
           <HelpTOCNode Title="Entrancy Property " Url="html/P_Microsoft_Research_Naiad_Dataflow_Vertex_Entrancy.htm" />
           <HelpTOCNode Title="IsShutDown Property " Url="html/P_Microsoft_Research_Naiad_Dataflow_Vertex_IsShutDown.htm" />
           <HelpTOCNode Title="LoggingOutput Property " Url="html/P_Microsoft_Research_Naiad_Dataflow_Vertex_LoggingOutput.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="7df7b820-cb04-4b53-b3bf-0f8be4a147af" Title="Vertex(TTime) Class" Url="html/T_Microsoft_Research_Naiad_Dataflow_Vertex_1.htm">
+      <HelpTOCNode Id="b1942f01-718f-47a6-8621-2b02582edc6a" Title="Vertex(TTime) Class" Url="html/T_Microsoft_Research_Naiad_Dataflow_Vertex_1.htm">
         <HelpTOCNode Title="Vertex(TTime) Constructor " Url="html/M_Microsoft_Research_Naiad_Dataflow_Vertex_1__ctor.htm" />
         <HelpTOCNode Title="Vertex(TTime) Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Dataflow_Vertex_1.htm" />
-        <HelpTOCNode Id="848adc36-28d3-43d1-afc5-2a5e8a9392fa" Title="Vertex(TTime) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_Vertex_1.htm">
+        <HelpTOCNode Id="1a17846b-33e3-4ef9-9c9e-2263e749039a" Title="Vertex(TTime) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_Vertex_1.htm">
           <HelpTOCNode Title="Checkpoint Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_Vertex_1_Checkpoint.htm" />
-          <HelpTOCNode Id="1db98c4d-d976-411a-b8ae-46de9548c934" Title="NotifyAt Method " Url="html/Overload_Microsoft_Research_Naiad_Dataflow_Vertex_1_NotifyAt.htm">
+          <HelpTOCNode Id="d86cb076-a4d3-49b3-bcf6-283b39cb5810" Title="NotifyAt Method " Url="html/Overload_Microsoft_Research_Naiad_Dataflow_Vertex_1_NotifyAt.htm">
             <HelpTOCNode Title="NotifyAt Method (TTime)" Url="html/M_Microsoft_Research_Naiad_Dataflow_Vertex_1_NotifyAt.htm" />
             <HelpTOCNode Title="NotifyAt Method (TTime, TTime)" Url="html/M_Microsoft_Research_Naiad_Dataflow_Vertex_1_NotifyAt_1.htm" />
           </HelpTOCNode>
@@ -363,21 +364,21 @@
         </HelpTOCNode>
         <HelpTOCNode Title="Vertex(TTime) Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Dataflow_Vertex_1.htm" />
       </HelpTOCNode>
-      <HelpTOCNode Id="db346e2e-fdc3-4b9a-9147-a431ed69c507" Title="VertexInput(TRecord, TTime) Interface" Url="html/T_Microsoft_Research_Naiad_Dataflow_VertexInput_2.htm">
-        <HelpTOCNode Id="21ee690b-bfc6-42ea-bde0-c6a3c94314db" Title="VertexInput(TRecord, TTime) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_VertexInput_2.htm">
+      <HelpTOCNode Id="c73b1a13-19a1-48e8-99bd-450fd0bca754" Title="VertexInput(TRecord, TTime) Interface" Url="html/T_Microsoft_Research_Naiad_Dataflow_VertexInput_2.htm">
+        <HelpTOCNode Id="ec18303b-5bec-4807-a851-4c088a3c28b5" Title="VertexInput(TRecord, TTime) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_VertexInput_2.htm">
           <HelpTOCNode Title="Flush Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_VertexInput_2_Flush.htm" />
           <HelpTOCNode Title="OnReceive Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_VertexInput_2_OnReceive.htm" />
           <HelpTOCNode Title="SerializedMessageReceived Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_VertexInput_2_SerializedMessageReceived.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="1f1d2597-5597-4fab-8a01-b38e9b13b94d" Title="VertexInput(TRecord, TTime) Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Dataflow_VertexInput_2.htm">
+        <HelpTOCNode Id="64e9126d-ba50-4903-b592-c692b3d2b0dc" Title="VertexInput(TRecord, TTime) Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Dataflow_VertexInput_2.htm">
           <HelpTOCNode Title="AvailableEntrancy Property " Url="html/P_Microsoft_Research_Naiad_Dataflow_VertexInput_2_AvailableEntrancy.htm" />
           <HelpTOCNode Title="LoggingEnabled Property " Url="html/P_Microsoft_Research_Naiad_Dataflow_VertexInput_2_LoggingEnabled.htm" />
           <HelpTOCNode Title="Vertex Property " Url="html/P_Microsoft_Research_Naiad_Dataflow_VertexInput_2_Vertex.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="880b5ba1-9e83-4b9f-94a8-7265b9388749" Title="VertexInputBuffer(TRecord, TTime) Class" Url="html/T_Microsoft_Research_Naiad_Dataflow_VertexInputBuffer_2.htm">
+      <HelpTOCNode Id="d015818e-36a4-4bd9-985d-38b32d873482" Title="VertexInputBuffer(TRecord, TTime) Class" Url="html/T_Microsoft_Research_Naiad_Dataflow_VertexInputBuffer_2.htm">
         <HelpTOCNode Title="VertexInputBuffer(TRecord, TTime) Constructor " Url="html/M_Microsoft_Research_Naiad_Dataflow_VertexInputBuffer_2__ctor.htm" />
-        <HelpTOCNode Id="a1f63009-571c-4179-93d6-ded8576ac44f" Title="VertexInputBuffer(TRecord, TTime) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_VertexInputBuffer_2.htm">
+        <HelpTOCNode Id="4ba83857-4716-449b-adc9-69d683c2454d" Title="VertexInputBuffer(TRecord, TTime) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_VertexInputBuffer_2.htm">
           <HelpTOCNode Title="Checkpoint Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_VertexInputBuffer_2_Checkpoint.htm" />
           <HelpTOCNode Title="Flush Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_VertexInputBuffer_2_Flush.htm" />
           <HelpTOCNode Title="GetRecordsAt Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_VertexInputBuffer_2_GetRecordsAt.htm" />
@@ -386,174 +387,174 @@
           <HelpTOCNode Title="SerializedMessageReceived Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_VertexInputBuffer_2_SerializedMessageReceived.htm" />
           <HelpTOCNode Title="ToString Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_VertexInputBuffer_2_ToString.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="12897d21-b615-481a-b34e-668be7b535c7" Title="VertexInputBuffer(TRecord, TTime) Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Dataflow_VertexInputBuffer_2.htm">
+        <HelpTOCNode Id="a0f292e4-d12f-4673-94c8-b819c84863e9" Title="VertexInputBuffer(TRecord, TTime) Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Dataflow_VertexInputBuffer_2.htm">
           <HelpTOCNode Title="AvailableEntrancy Property " Url="html/P_Microsoft_Research_Naiad_Dataflow_VertexInputBuffer_2_AvailableEntrancy.htm" />
           <HelpTOCNode Title="LoggingEnabled Property " Url="html/P_Microsoft_Research_Naiad_Dataflow_VertexInputBuffer_2_LoggingEnabled.htm" />
           <HelpTOCNode Title="Vertex Property " Url="html/P_Microsoft_Research_Naiad_Dataflow_VertexInputBuffer_2_Vertex.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="f769ec3b-f827-447c-b3c4-63654305fcf9" Title="VertexLocation Structure" Url="html/T_Microsoft_Research_Naiad_Dataflow_VertexLocation.htm">
+      <HelpTOCNode Id="37f99d1b-9b0c-45b5-a01f-35daa8b88a45" Title="VertexLocation Structure" Url="html/T_Microsoft_Research_Naiad_Dataflow_VertexLocation.htm">
         <HelpTOCNode Title="VertexLocation Constructor " Url="html/M_Microsoft_Research_Naiad_Dataflow_VertexLocation__ctor.htm" />
-        <HelpTOCNode Id="d7504c0a-bd98-43df-8ee6-1f8c1ecfbd4f" Title="VertexLocation Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Dataflow_VertexLocation.htm">
+        <HelpTOCNode Id="0f6a0507-8850-4830-9f57-55bca4020ec5" Title="VertexLocation Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Dataflow_VertexLocation.htm">
           <HelpTOCNode Title="ProcessId Field" Url="html/F_Microsoft_Research_Naiad_Dataflow_VertexLocation_ProcessId.htm" />
           <HelpTOCNode Title="ThreadId Field" Url="html/F_Microsoft_Research_Naiad_Dataflow_VertexLocation_ThreadId.htm" />
           <HelpTOCNode Title="VertexId Field" Url="html/F_Microsoft_Research_Naiad_Dataflow_VertexLocation_VertexId.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="5a5c032a-9924-4a4b-95b1-b87b32dc7725" Title="VertexOutput(TRecord, TTime) Interface" Url="html/T_Microsoft_Research_Naiad_Dataflow_VertexOutput_2.htm">
-        <HelpTOCNode Id="1269258e-68cf-4733-9f71-0b68c39097cd" Title="VertexOutput(TRecord, TTime) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_VertexOutput_2.htm">
+      <HelpTOCNode Id="e9b48838-da91-42e6-8d1c-c744f5ae3caf" Title="VertexOutput(TRecord, TTime) Interface" Url="html/T_Microsoft_Research_Naiad_Dataflow_VertexOutput_2.htm">
+        <HelpTOCNode Id="eaf75cfc-665e-4832-a225-fdc026bd83a4" Title="VertexOutput(TRecord, TTime) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_VertexOutput_2.htm">
           <HelpTOCNode Title="AddReceiver Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_VertexOutput_2_AddReceiver.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="0cb7ef2c-be67-4a44-bca2-7570ae24c77b" Title="VertexOutput(TRecord, TTime) Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Dataflow_VertexOutput_2.htm">
+        <HelpTOCNode Id="ed524014-43f5-4fc1-b04d-5a4954c88270" Title="VertexOutput(TRecord, TTime) Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Dataflow_VertexOutput_2.htm">
           <HelpTOCNode Title="Vertex Property " Url="html/P_Microsoft_Research_Naiad_Dataflow_VertexOutput_2_Vertex.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="030d204f-7ad8-49dd-85fe-448508dcede1" Title="VertexOutputBuffer(TRecord, TTime) Class" Url="html/T_Microsoft_Research_Naiad_Dataflow_VertexOutputBuffer_2.htm">
+      <HelpTOCNode Id="770de090-38e1-4a0a-8afa-ebe06067a169" Title="VertexOutputBuffer(TRecord, TTime) Class" Url="html/T_Microsoft_Research_Naiad_Dataflow_VertexOutputBuffer_2.htm">
         <HelpTOCNode Title="VertexOutputBuffer(TRecord, TTime) Constructor " Url="html/M_Microsoft_Research_Naiad_Dataflow_VertexOutputBuffer_2__ctor.htm" />
-        <HelpTOCNode Id="8bdc9073-4ad2-431c-ab84-4e7c00248458" Title="VertexOutputBuffer(TRecord, TTime) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_VertexOutputBuffer_2.htm">
+        <HelpTOCNode Id="7eab7ae4-a033-4f64-b40f-134cfbbb20bf" Title="VertexOutputBuffer(TRecord, TTime) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_VertexOutputBuffer_2.htm">
           <HelpTOCNode Title="AddReceiver Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_VertexOutputBuffer_2_AddReceiver.htm" />
           <HelpTOCNode Title="Flush Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_VertexOutputBuffer_2_Flush.htm" />
           <HelpTOCNode Title="GetBufferForTime Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_VertexOutputBuffer_2_GetBufferForTime.htm" />
           <HelpTOCNode Title="Send Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_VertexOutputBuffer_2_Send.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="44bed77c-e502-4d4f-94db-ebe8c287a0cb" Title="VertexOutputBuffer(TRecord, TTime) Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Dataflow_VertexOutputBuffer_2.htm">
+        <HelpTOCNode Id="0631595a-0855-496e-bbc6-50ba3ed7ddd2" Title="VertexOutputBuffer(TRecord, TTime) Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Dataflow_VertexOutputBuffer_2.htm">
           <HelpTOCNode Title="Vertex Property " Url="html/P_Microsoft_Research_Naiad_Dataflow_VertexOutputBuffer_2_Vertex.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="e396386c-9f7d-416d-8112-e6202fe94f25" Title="VertexOutputBufferPerTime(TRecord, TTime) Class" Url="html/T_Microsoft_Research_Naiad_Dataflow_VertexOutputBufferPerTime_2.htm">
-        <HelpTOCNode Id="af99942a-f4d6-4980-9bad-b4f57dcf134b" Title="VertexOutputBufferPerTime(TRecord, TTime) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_VertexOutputBufferPerTime_2.htm">
+      <HelpTOCNode Id="2249911f-e2e8-4fdd-9001-c1a652c3c77d" Title="VertexOutputBufferPerTime(TRecord, TTime) Class" Url="html/T_Microsoft_Research_Naiad_Dataflow_VertexOutputBufferPerTime_2.htm">
+        <HelpTOCNode Id="6a49bf89-6b68-4df6-b328-cbc328618ee1" Title="VertexOutputBufferPerTime(TRecord, TTime) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_VertexOutputBufferPerTime_2.htm">
           <HelpTOCNode Title="Send Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_VertexOutputBufferPerTime_2_Send.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
     </HelpTOCNode>
-    <HelpTOCNode Id="f669d9be-3556-47ea-901c-bd07643f861d" Title="Microsoft.Research.Naiad.Dataflow.Iteration Namespace" Url="html/N_Microsoft_Research_Naiad_Dataflow_Iteration.htm">
-      <HelpTOCNode Id="afe8f227-1312-42f1-b446-1437aaadcad9" Title="Feedback(TRecord, TTime) Class" Url="html/T_Microsoft_Research_Naiad_Dataflow_Iteration_Feedback_2.htm">
-        <HelpTOCNode Id="7f47b5f5-da97-4f04-a2ef-73f0431e5b22" Title="Feedback(TRecord, TTime) Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Dataflow_Iteration_Feedback_2.htm">
+    <HelpTOCNode Id="0d4f3056-8405-47cd-a96a-85af01012a6e" Title="Microsoft.Research.Naiad.Dataflow.Iteration Namespace" Url="html/N_Microsoft_Research_Naiad_Dataflow_Iteration.htm">
+      <HelpTOCNode Id="fb71d032-f6ea-48d0-ad4e-d12f631d3935" Title="Feedback(TRecord, TTime) Class" Url="html/T_Microsoft_Research_Naiad_Dataflow_Iteration_Feedback_2.htm">
+        <HelpTOCNode Id="ee8e8b66-3551-452f-8bb9-231e69154b9e" Title="Feedback(TRecord, TTime) Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Dataflow_Iteration_Feedback_2.htm">
           <HelpTOCNode Title="Input Property " Url="html/P_Microsoft_Research_Naiad_Dataflow_Iteration_Feedback_2_Input.htm" />
           <HelpTOCNode Title="Output Property " Url="html/P_Microsoft_Research_Naiad_Dataflow_Iteration_Feedback_2_Output.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="e2f13b9d-9514-4d58-a5bb-67dc11089738" Title="LoopContext(TTime) Class" Url="html/T_Microsoft_Research_Naiad_Dataflow_Iteration_LoopContext_1.htm">
+      <HelpTOCNode Id="f4d71e73-caef-4780-8ee0-8b1ae49d6ce2" Title="LoopContext(TTime) Class" Url="html/T_Microsoft_Research_Naiad_Dataflow_Iteration_LoopContext_1.htm">
         <HelpTOCNode Title="LoopContext(TTime) Constructor " Url="html/M_Microsoft_Research_Naiad_Dataflow_Iteration_LoopContext_1__ctor.htm" />
-        <HelpTOCNode Id="bb67890e-ebf9-4de3-b660-e77e5881b167" Title="LoopContext(TTime) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_Iteration_LoopContext_1.htm">
-          <HelpTOCNode Id="795059a0-9228-4c83-9cfa-ea98f5869a0b" Title="Delay Method " Url="html/Overload_Microsoft_Research_Naiad_Dataflow_Iteration_LoopContext_1_Delay.htm">
+        <HelpTOCNode Id="08b6b26b-f8d7-46a2-be49-754a784a2cdd" Title="LoopContext(TTime) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_Iteration_LoopContext_1.htm">
+          <HelpTOCNode Id="8642058a-e5d7-4985-834a-fb5d29dea226" Title="Delay Method " Url="html/Overload_Microsoft_Research_Naiad_Dataflow_Iteration_LoopContext_1_Delay.htm">
             <HelpTOCNode Title="Delay(TRecord) Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_Iteration_LoopContext_1_Delay__1.htm" />
             <HelpTOCNode Title="Delay(TRecord) Method (Int32)" Url="html/M_Microsoft_Research_Naiad_Dataflow_Iteration_LoopContext_1_Delay__1_1.htm" />
             <HelpTOCNode Title="Delay(TRecord) Method (Expression(Func(TRecord, Int32)))" Url="html/M_Microsoft_Research_Naiad_Dataflow_Iteration_LoopContext_1_Delay__1_2.htm" />
             <HelpTOCNode Title="Delay(TRecord) Method (Expression(Func(TRecord, Int32)), Int32)" Url="html/M_Microsoft_Research_Naiad_Dataflow_Iteration_LoopContext_1_Delay__1_3.htm" />
           </HelpTOCNode>
-          <HelpTOCNode Id="2b95d5e2-f635-41fd-a2f8-423d4eb0b9ea" Title="EnterLoop Method " Url="html/Overload_Microsoft_Research_Naiad_Dataflow_Iteration_LoopContext_1_EnterLoop.htm">
+          <HelpTOCNode Id="373c5e7e-925b-4f8d-bb0d-32f54185ff57" Title="EnterLoop Method " Url="html/Overload_Microsoft_Research_Naiad_Dataflow_Iteration_LoopContext_1_EnterLoop.htm">
             <HelpTOCNode Title="EnterLoop(TRecord) Method (Stream(TRecord, TTime))" Url="html/M_Microsoft_Research_Naiad_Dataflow_Iteration_LoopContext_1_EnterLoop__1.htm" />
             <HelpTOCNode Title="EnterLoop(TRecord) Method (Stream(TRecord, TTime), Func(TRecord, Int32))" Url="html/M_Microsoft_Research_Naiad_Dataflow_Iteration_LoopContext_1_EnterLoop__1_1.htm" />
           </HelpTOCNode>
-          <HelpTOCNode Id="63b37041-c279-4469-afe2-3e7ccae1e84d" Title="ExitLoop Method " Url="html/Overload_Microsoft_Research_Naiad_Dataflow_Iteration_LoopContext_1_ExitLoop.htm">
+          <HelpTOCNode Id="2ec3dda0-f72b-471c-b868-58f721575368" Title="ExitLoop Method " Url="html/Overload_Microsoft_Research_Naiad_Dataflow_Iteration_LoopContext_1_ExitLoop.htm">
             <HelpTOCNode Title="ExitLoop(TRecord) Method (Stream(TRecord, IterationIn(TTime)))" Url="html/M_Microsoft_Research_Naiad_Dataflow_Iteration_LoopContext_1_ExitLoop__1.htm" />
             <HelpTOCNode Title="ExitLoop(TRecord) Method (Stream(TRecord, IterationIn(TTime)), Int32)" Url="html/M_Microsoft_Research_Naiad_Dataflow_Iteration_LoopContext_1_ExitLoop__1_1.htm" />
           </HelpTOCNode>
         </HelpTOCNode>
       </HelpTOCNode>
     </HelpTOCNode>
-    <HelpTOCNode Id="c1ab056d-0b7a-4bb4-913f-a7581e07e372" Title="Microsoft.Research.Naiad.Dataflow.PartitionBy Namespace" Url="html/N_Microsoft_Research_Naiad_Dataflow_PartitionBy.htm">
-      <HelpTOCNode Id="584e6322-ad81-4ea5-b432-840c35a861c7" Title="ExtensionMethods Class" Url="html/T_Microsoft_Research_Naiad_Dataflow_PartitionBy_ExtensionMethods.htm">
-        <HelpTOCNode Id="11b6b8a5-22c8-44a1-9410-34112e328ecb" Title="ExtensionMethods Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_PartitionBy_ExtensionMethods.htm">
+    <HelpTOCNode Id="a1704abc-1da1-4e29-a9cf-e93baeb9d465" Title="Microsoft.Research.Naiad.Dataflow.PartitionBy Namespace" Url="html/N_Microsoft_Research_Naiad_Dataflow_PartitionBy.htm">
+      <HelpTOCNode Id="c68a7ead-075c-4dfb-90ea-7aec18186c0c" Title="ExtensionMethods Class" Url="html/T_Microsoft_Research_Naiad_Dataflow_PartitionBy_ExtensionMethods.htm">
+        <HelpTOCNode Id="62cc5d54-8120-41c5-8039-7731e8a0798c" Title="ExtensionMethods Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_PartitionBy_ExtensionMethods.htm">
           <HelpTOCNode Title="AssertPartitionedBy(TRecord, TTime) Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_PartitionBy_ExtensionMethods_AssertPartitionedBy__2.htm" />
           <HelpTOCNode Title="AssumePartitionedBy(TRecord, TTime) Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_PartitionBy_ExtensionMethods_AssumePartitionedBy__2.htm" />
           <HelpTOCNode Title="PartitionBy(TRecord, TTime) Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_PartitionBy_ExtensionMethods_PartitionBy__2.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
     </HelpTOCNode>
-    <HelpTOCNode Id="eeb883d3-54ce-49e9-a75b-90bf288fe592" Title="Microsoft.Research.Naiad.Dataflow.StandardVertices Namespace" Url="html/N_Microsoft_Research_Naiad_Dataflow_StandardVertices.htm">
-      <HelpTOCNode Id="61ebcf9e-4aea-46c7-8cdf-6e8bc85b0e74" Title="BinaryBufferingVertex(TInput1, TInput2, TOutput, TTime) Class" Url="html/T_Microsoft_Research_Naiad_Dataflow_StandardVertices_BinaryBufferingVertex_4.htm">
+    <HelpTOCNode Id="e3998e60-3c73-46d3-a693-2f536786503f" Title="Microsoft.Research.Naiad.Dataflow.StandardVertices Namespace" Url="html/N_Microsoft_Research_Naiad_Dataflow_StandardVertices.htm">
+      <HelpTOCNode Id="f77368d7-67ac-49c0-aace-28e7373f3828" Title="BinaryBufferingVertex(TInput1, TInput2, TOutput, TTime) Class" Url="html/T_Microsoft_Research_Naiad_Dataflow_StandardVertices_BinaryBufferingVertex_4.htm">
         <HelpTOCNode Title="BinaryBufferingVertex(TInput1, TInput2, TOutput, TTime) Constructor " Url="html/M_Microsoft_Research_Naiad_Dataflow_StandardVertices_BinaryBufferingVertex_4__ctor.htm" />
-        <HelpTOCNode Id="605de89e-d2dd-4aea-b5dd-32b8c51ec4db" Title="BinaryBufferingVertex(TInput1, TInput2, TOutput, TTime) Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Dataflow_StandardVertices_BinaryBufferingVertex_4.htm">
+        <HelpTOCNode Id="9234e487-7f29-4ea6-8f8c-6f032d3ebf01" Title="BinaryBufferingVertex(TInput1, TInput2, TOutput, TTime) Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Dataflow_StandardVertices_BinaryBufferingVertex_4.htm">
           <HelpTOCNode Title="Input1 Field" Url="html/F_Microsoft_Research_Naiad_Dataflow_StandardVertices_BinaryBufferingVertex_4_Input1.htm" />
           <HelpTOCNode Title="Input2 Field" Url="html/F_Microsoft_Research_Naiad_Dataflow_StandardVertices_BinaryBufferingVertex_4_Input2.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="4b251b87-75d1-4808-80d3-cd8315d02af8" Title="BinaryBufferingVertex(TInput1, TInput2, TOutput, TTime) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_StandardVertices_BinaryBufferingVertex_4.htm">
+        <HelpTOCNode Id="60668bc9-d98d-439a-aa9e-d2b6e44a1351" Title="BinaryBufferingVertex(TInput1, TInput2, TOutput, TTime) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_StandardVertices_BinaryBufferingVertex_4.htm">
           <HelpTOCNode Title="OnNotify Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_StandardVertices_BinaryBufferingVertex_4_OnNotify.htm" />
           <HelpTOCNode Title="OnReceive1 Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_StandardVertices_BinaryBufferingVertex_4_OnReceive1.htm" />
           <HelpTOCNode Title="OnReceive2 Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_StandardVertices_BinaryBufferingVertex_4_OnReceive2.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="10cbe299-7748-4707-a8d2-565beaed85f7" Title="BinaryVertex(TInput1, TInput2, TOutput, TTime) Class" Url="html/T_Microsoft_Research_Naiad_Dataflow_StandardVertices_BinaryVertex_4.htm">
+      <HelpTOCNode Id="88bbf614-71f3-4b6a-af6a-5a48c6fc90b8" Title="BinaryVertex(TInput1, TInput2, TOutput, TTime) Class" Url="html/T_Microsoft_Research_Naiad_Dataflow_StandardVertices_BinaryVertex_4.htm">
         <HelpTOCNode Title="BinaryVertex(TInput1, TInput2, TOutput, TTime) Constructor " Url="html/M_Microsoft_Research_Naiad_Dataflow_StandardVertices_BinaryVertex_4__ctor.htm" />
-        <HelpTOCNode Id="fc4d818c-c8a2-492f-bad5-55c133a04f4e" Title="BinaryVertex(TInput1, TInput2, TOutput, TTime) Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Dataflow_StandardVertices_BinaryVertex_4.htm">
+        <HelpTOCNode Id="36b7841a-b27d-4be0-9e3d-4fff296e87d4" Title="BinaryVertex(TInput1, TInput2, TOutput, TTime) Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Dataflow_StandardVertices_BinaryVertex_4.htm">
           <HelpTOCNode Title="Output Field" Url="html/F_Microsoft_Research_Naiad_Dataflow_StandardVertices_BinaryVertex_4_Output.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="ec9b1c61-2530-4afa-815e-ca330a8163bc" Title="BinaryVertex(TInput1, TInput2, TOutput, TTime) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_StandardVertices_BinaryVertex_4.htm">
+        <HelpTOCNode Id="28d0fb65-9f2d-4d5a-9f2a-94b51356fd32" Title="BinaryVertex(TInput1, TInput2, TOutput, TTime) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_StandardVertices_BinaryVertex_4.htm">
           <HelpTOCNode Title="MakeStage Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_StandardVertices_BinaryVertex_4_MakeStage.htm" />
           <HelpTOCNode Title="OnReceive1 Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_StandardVertices_BinaryVertex_4_OnReceive1.htm" />
           <HelpTOCNode Title="OnReceive2 Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_StandardVertices_BinaryVertex_4_OnReceive2.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="64440056-b476-4ea6-8a5d-91be7d47d5c0" Title="ExtensionMethods Class" Url="html/T_Microsoft_Research_Naiad_Dataflow_StandardVertices_ExtensionMethods.htm">
-        <HelpTOCNode Id="4dfec1ea-e6bc-4f49-becb-3d54355e51ef" Title="ExtensionMethods Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_StandardVertices_ExtensionMethods.htm">
+      <HelpTOCNode Id="ab37a432-d7e7-49b4-9694-7a31e9699e6c" Title="ExtensionMethods Class" Url="html/T_Microsoft_Research_Naiad_Dataflow_StandardVertices_ExtensionMethods.htm">
+        <HelpTOCNode Id="78e069f9-53c8-4403-8054-b424e1bf6959" Title="ExtensionMethods Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_StandardVertices_ExtensionMethods.htm">
           <HelpTOCNode Title="BinaryExpression(TInput1, TInput2, TOutput, TTime) Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_StandardVertices_ExtensionMethods_BinaryExpression__4.htm" />
           <HelpTOCNode Title="UnaryExpression(TInput, TOutput, TTime) Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_StandardVertices_ExtensionMethods_UnaryExpression__3.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="db97148a-2acd-463e-ba20-2cf204a12af9" Title="Foundry Class" Url="html/T_Microsoft_Research_Naiad_Dataflow_StandardVertices_Foundry.htm">
-        <HelpTOCNode Id="403f153e-9568-4516-a9af-4a742a1410f6" Title="Foundry Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_StandardVertices_Foundry.htm">
+      <HelpTOCNode Id="b4d50f6b-b4d3-4792-a555-b5749cd66f91" Title="Foundry Class" Url="html/T_Microsoft_Research_Naiad_Dataflow_StandardVertices_Foundry.htm">
+        <HelpTOCNode Id="46813c38-5d40-409a-8d70-01a1d841a20e" Title="Foundry Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_StandardVertices_Foundry.htm">
           <HelpTOCNode Title="NewBinaryStage(TInput1, TInput2, TOutput, TTime) Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_StandardVertices_Foundry_NewBinaryStage__4.htm" />
           <HelpTOCNode Title="NewSinkStage(TOutput, TTime) Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_StandardVertices_Foundry_NewSinkStage__2.htm" />
-          <HelpTOCNode Id="7c2e4d9d-0798-4fbf-93a2-83a966ed8ed2" Title="NewStage Method " Url="html/Overload_Microsoft_Research_Naiad_Dataflow_StandardVertices_Foundry_NewStage.htm">
+          <HelpTOCNode Id="1339f6fc-30e6-4d09-9505-1f9bc60f6fbb" Title="NewStage Method " Url="html/Overload_Microsoft_Research_Naiad_Dataflow_StandardVertices_Foundry_NewStage.htm">
             <HelpTOCNode Title="NewStage(TVertex, TTime) Method (TimeContext(TTime), Func(Int32, Stage(TTime), TVertex), String)" Url="html/M_Microsoft_Research_Naiad_Dataflow_StandardVertices_Foundry_NewStage__2_1.htm" />
             <HelpTOCNode Title="NewStage(TVertex, TTime) Method (Placement, TimeContext(TTime), Func(Int32, Stage(TTime), TVertex), String)" Url="html/M_Microsoft_Research_Naiad_Dataflow_StandardVertices_Foundry_NewStage__2.htm" />
           </HelpTOCNode>
           <HelpTOCNode Title="NewUnaryStage(TInput, TOutput, TTime) Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_StandardVertices_Foundry_NewUnaryStage__3.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="e21f8e43-a1cf-4693-a407-95d9ad0282de" Title="SinkBufferingVertex(TOutput, TTime) Class" Url="html/T_Microsoft_Research_Naiad_Dataflow_StandardVertices_SinkBufferingVertex_2.htm">
+      <HelpTOCNode Id="b9e56dff-686a-45a4-8fc6-ecb50aad9c15" Title="SinkBufferingVertex(TOutput, TTime) Class" Url="html/T_Microsoft_Research_Naiad_Dataflow_StandardVertices_SinkBufferingVertex_2.htm">
         <HelpTOCNode Title="SinkBufferingVertex(TOutput, TTime) Constructor " Url="html/M_Microsoft_Research_Naiad_Dataflow_StandardVertices_SinkBufferingVertex_2__ctor.htm" />
-        <HelpTOCNode Id="98e182a4-cde1-4641-bbff-6f75a8beb825" Title="SinkBufferingVertex(TOutput, TTime) Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Dataflow_StandardVertices_SinkBufferingVertex_2.htm">
+        <HelpTOCNode Id="b4a99a42-ce79-4a6d-a7c2-2f86f017f440" Title="SinkBufferingVertex(TOutput, TTime) Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Dataflow_StandardVertices_SinkBufferingVertex_2.htm">
           <HelpTOCNode Title="Input Field" Url="html/F_Microsoft_Research_Naiad_Dataflow_StandardVertices_SinkBufferingVertex_2_Input.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="20bd76c3-a06c-487a-a302-89ed28eea28a" Title="SinkBufferingVertex(TOutput, TTime) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_StandardVertices_SinkBufferingVertex_2.htm">
+        <HelpTOCNode Id="e7ed79b2-6db6-4a90-af4d-8893d2cb101e" Title="SinkBufferingVertex(TOutput, TTime) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_StandardVertices_SinkBufferingVertex_2.htm">
           <HelpTOCNode Title="OnNotify Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_StandardVertices_SinkBufferingVertex_2_OnNotify.htm" />
           <HelpTOCNode Title="OnReceive Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_StandardVertices_SinkBufferingVertex_2_OnReceive.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="a9986004-f3bc-4466-8d23-e97aef41f2ed" Title="SinkVertex(TOutput, TTime) Class" Url="html/T_Microsoft_Research_Naiad_Dataflow_StandardVertices_SinkVertex_2.htm">
+      <HelpTOCNode Id="58247239-dc6a-4db5-bac3-0f91182de3b5" Title="SinkVertex(TOutput, TTime) Class" Url="html/T_Microsoft_Research_Naiad_Dataflow_StandardVertices_SinkVertex_2.htm">
         <HelpTOCNode Title="SinkVertex(TOutput, TTime) Constructor " Url="html/M_Microsoft_Research_Naiad_Dataflow_StandardVertices_SinkVertex_2__ctor.htm" />
-        <HelpTOCNode Id="6189322f-6a00-4121-8da6-59a99e05f49e" Title="SinkVertex(TOutput, TTime) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_StandardVertices_SinkVertex_2.htm">
+        <HelpTOCNode Id="31ddc3b3-6805-495a-ae76-8786ef1061cf" Title="SinkVertex(TOutput, TTime) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_StandardVertices_SinkVertex_2.htm">
           <HelpTOCNode Title="MakeStage Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_StandardVertices_SinkVertex_2_MakeStage.htm" />
           <HelpTOCNode Title="OnReceive Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_StandardVertices_SinkVertex_2_OnReceive.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="4f20c48f-34be-4500-aeea-9e01622e5e59" Title="UnaryBufferingVertex(TInput, TOutput, TTime) Class" Url="html/T_Microsoft_Research_Naiad_Dataflow_StandardVertices_UnaryBufferingVertex_3.htm">
+      <HelpTOCNode Id="34f75524-854c-4566-8afe-53eb7eb9573a" Title="UnaryBufferingVertex(TInput, TOutput, TTime) Class" Url="html/T_Microsoft_Research_Naiad_Dataflow_StandardVertices_UnaryBufferingVertex_3.htm">
         <HelpTOCNode Title="UnaryBufferingVertex(TInput, TOutput, TTime) Constructor " Url="html/M_Microsoft_Research_Naiad_Dataflow_StandardVertices_UnaryBufferingVertex_3__ctor.htm" />
-        <HelpTOCNode Id="b1c7c2b1-04d0-4c53-886f-b952f99fe896" Title="UnaryBufferingVertex(TInput, TOutput, TTime) Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Dataflow_StandardVertices_UnaryBufferingVertex_3.htm">
+        <HelpTOCNode Id="1ce9fcaf-2318-4041-8305-f03610bc408f" Title="UnaryBufferingVertex(TInput, TOutput, TTime) Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Dataflow_StandardVertices_UnaryBufferingVertex_3.htm">
           <HelpTOCNode Title="Input Field" Url="html/F_Microsoft_Research_Naiad_Dataflow_StandardVertices_UnaryBufferingVertex_3_Input.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="0d193c1c-1c45-419e-90ff-107afbb89a15" Title="UnaryBufferingVertex(TInput, TOutput, TTime) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_StandardVertices_UnaryBufferingVertex_3.htm">
+        <HelpTOCNode Id="1bd9ce8e-d37f-4d16-8217-407a9f9ff919" Title="UnaryBufferingVertex(TInput, TOutput, TTime) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_StandardVertices_UnaryBufferingVertex_3.htm">
           <HelpTOCNode Title="OnNotify Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_StandardVertices_UnaryBufferingVertex_3_OnNotify.htm" />
           <HelpTOCNode Title="OnReceive Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_StandardVertices_UnaryBufferingVertex_3_OnReceive.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="5ff29032-7106-4679-a1f7-5b41a878c7a0" Title="UnaryVertex(TInput, TOutput, TTime) Class" Url="html/T_Microsoft_Research_Naiad_Dataflow_StandardVertices_UnaryVertex_3.htm">
+      <HelpTOCNode Id="5041cb2b-5366-425f-a83f-b7a425fdac37" Title="UnaryVertex(TInput, TOutput, TTime) Class" Url="html/T_Microsoft_Research_Naiad_Dataflow_StandardVertices_UnaryVertex_3.htm">
         <HelpTOCNode Title="UnaryVertex(TInput, TOutput, TTime) Constructor " Url="html/M_Microsoft_Research_Naiad_Dataflow_StandardVertices_UnaryVertex_3__ctor.htm" />
-        <HelpTOCNode Id="fafbf4be-86b7-4850-8c83-ca9c2ceda290" Title="UnaryVertex(TInput, TOutput, TTime) Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Dataflow_StandardVertices_UnaryVertex_3.htm">
+        <HelpTOCNode Id="d116718a-d13a-4ef5-98af-05f4390f65d4" Title="UnaryVertex(TInput, TOutput, TTime) Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Dataflow_StandardVertices_UnaryVertex_3.htm">
           <HelpTOCNode Title="Output Field" Url="html/F_Microsoft_Research_Naiad_Dataflow_StandardVertices_UnaryVertex_3_Output.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="86d0c1a3-a41a-4081-984b-0046412a4e13" Title="UnaryVertex(TInput, TOutput, TTime) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_StandardVertices_UnaryVertex_3.htm">
+        <HelpTOCNode Id="2bcac95e-9445-4fdd-8385-8661f0efe7ce" Title="UnaryVertex(TInput, TOutput, TTime) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Dataflow_StandardVertices_UnaryVertex_3.htm">
           <HelpTOCNode Title="MakeStage Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_StandardVertices_UnaryVertex_3_MakeStage.htm" />
           <HelpTOCNode Title="OnReceive Method " Url="html/M_Microsoft_Research_Naiad_Dataflow_StandardVertices_UnaryVertex_3_OnReceive.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
     </HelpTOCNode>
-    <HelpTOCNode Id="9500216a-ea5c-4bf5-acb6-e426914a5e40" Title="Microsoft.Research.Naiad.Diagnostics Namespace" Url="html/N_Microsoft_Research_Naiad_Diagnostics.htm">
-      <HelpTOCNode Id="3e00d9de-3b4d-41f9-aebd-e75edb964916" Title="FrontierChangedEventArgs Class" Url="html/T_Microsoft_Research_Naiad_Diagnostics_FrontierChangedEventArgs.htm">
+    <HelpTOCNode Id="09c38892-7a8a-4de8-aa1e-f7daae95ff71" Title="Microsoft.Research.Naiad.Diagnostics Namespace" Url="html/N_Microsoft_Research_Naiad_Diagnostics.htm">
+      <HelpTOCNode Id="2a7f14e1-3860-4d68-b961-2a897ada28e4" Title="FrontierChangedEventArgs Class" Url="html/T_Microsoft_Research_Naiad_Diagnostics_FrontierChangedEventArgs.htm">
         <HelpTOCNode Title="FrontierChangedEventArgs Constructor " Url="html/M_Microsoft_Research_Naiad_Diagnostics_FrontierChangedEventArgs__ctor.htm" />
-        <HelpTOCNode Id="1c3f3afb-3154-41c4-b01e-bf4bd5500701" Title="FrontierChangedEventArgs Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Diagnostics_FrontierChangedEventArgs.htm">
+        <HelpTOCNode Id="085bcbbd-79b5-41d3-a884-2868077eb548" Title="FrontierChangedEventArgs Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Diagnostics_FrontierChangedEventArgs.htm">
           <HelpTOCNode Title="NewFrontier Field" Url="html/F_Microsoft_Research_Naiad_Diagnostics_FrontierChangedEventArgs_NewFrontier.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="8a734620-df11-4cf5-83b0-d7cdae524c1f" Title="Logging Class" Url="html/T_Microsoft_Research_Naiad_Diagnostics_Logging.htm">
-        <HelpTOCNode Id="c1f1b4e5-26b7-42c3-be86-9854a5cd4ce3" Title="Logging Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Diagnostics_Logging.htm">
+      <HelpTOCNode Id="4f458c9c-d54c-4f54-8402-1f2d303fe7dd" Title="Logging Class" Url="html/T_Microsoft_Research_Naiad_Diagnostics_Logging.htm">
+        <HelpTOCNode Id="4432b6d5-f21a-4af8-a4ff-5f8e2efd81e7" Title="Logging Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Diagnostics_Logging.htm">
           <HelpTOCNode Title="LogStyle Field" Url="html/F_Microsoft_Research_Naiad_Diagnostics_Logging_LogStyle.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="e4b2ae96-85ef-4b8c-86ff-bb0a8cd7e305" Title="Logging Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Diagnostics_Logging.htm">
-          <HelpTOCNode Id="4728d3f9-5787-4818-9aef-0438dcc10281" Title="Assert Method " Url="html/Overload_Microsoft_Research_Naiad_Diagnostics_Logging_Assert.htm">
+        <HelpTOCNode Id="e0bd54fd-b265-4354-8070-722bacbfdcbe" Title="Logging Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Diagnostics_Logging.htm">
+          <HelpTOCNode Id="f66c802b-cf17-4528-a5d3-a102ccaca61d" Title="Assert Method " Url="html/Overload_Microsoft_Research_Naiad_Diagnostics_Logging_Assert.htm">
             <HelpTOCNode Title="Assert Method (Boolean)" Url="html/M_Microsoft_Research_Naiad_Diagnostics_Logging_Assert.htm" />
             <HelpTOCNode Title="Assert Method (Boolean, String, Object[])" Url="html/M_Microsoft_Research_Naiad_Diagnostics_Logging_Assert_1.htm" />
           </HelpTOCNode>
@@ -565,16 +566,16 @@
           <HelpTOCNode Title="Progress Method " Url="html/M_Microsoft_Research_Naiad_Diagnostics_Logging_Progress.htm" />
           <HelpTOCNode Title="Stop Method " Url="html/M_Microsoft_Research_Naiad_Diagnostics_Logging_Stop.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="091fb4e5-b793-4631-84c7-f1431900ee8a" Title="Logging Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Diagnostics_Logging.htm">
+        <HelpTOCNode Id="c74a5ff0-27e9-4896-9c7a-9dbb0c7da9e6" Title="Logging Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Diagnostics_Logging.htm">
           <HelpTOCNode Title="LogLevel Property " Url="html/P_Microsoft_Research_Naiad_Diagnostics_Logging_LogLevel.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
       <HelpTOCNode Title="LoggingLevel Enumeration" Url="html/T_Microsoft_Research_Naiad_Diagnostics_LoggingLevel.htm" />
       <HelpTOCNode Title="LoggingStyle Enumeration" Url="html/T_Microsoft_Research_Naiad_Diagnostics_LoggingStyle.htm" />
-      <HelpTOCNode Id="5fb385e7-a5d3-4141-9945-d2ffd09364d3" Title="Tracing Class" Url="html/T_Microsoft_Research_Naiad_Diagnostics_Tracing.htm">
+      <HelpTOCNode Id="67ee0fed-79d7-47a2-a29c-10cef37f3071" Title="Tracing Class" Url="html/T_Microsoft_Research_Naiad_Diagnostics_Tracing.htm">
         <HelpTOCNode Title="Tracing Constructor " Url="html/M_Microsoft_Research_Naiad_Diagnostics_Tracing__ctor.htm" />
-        <HelpTOCNode Id="f078ba46-641f-4a25-9384-c1a4f607b753" Title="Tracing Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Diagnostics_Tracing.htm">
-          <HelpTOCNode Id="e1247b44-c309-4f2e-becc-e6cc2c2caf2d" Title="Trace Method " Url="html/Overload_Microsoft_Research_Naiad_Diagnostics_Tracing_Trace.htm">
+        <HelpTOCNode Id="928f220f-e264-4871-bfdd-a1b1a56cb9a1" Title="Tracing Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Diagnostics_Tracing.htm">
+          <HelpTOCNode Id="fe905157-b8d8-4030-86a6-84781cb14c32" Title="Trace Method " Url="html/Overload_Microsoft_Research_Naiad_Diagnostics_Tracing_Trace.htm">
             <HelpTOCNode Title="Trace Method (String)" Url="html/M_Microsoft_Research_Naiad_Diagnostics_Tracing_Trace.htm" />
             <HelpTOCNode Title="Trace Method (String, Object[])" Url="html/M_Microsoft_Research_Naiad_Diagnostics_Tracing_Trace_1.htm" />
           </HelpTOCNode>
@@ -582,60 +583,60 @@
           <HelpTOCNode Title="TraceProducer Method " Url="html/M_Microsoft_Research_Naiad_Diagnostics_Tracing_TraceProducer.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="bdef5436-8f16-4275-8b03-230d5d64f4be" Title="VertexEndArgs Class" Url="html/T_Microsoft_Research_Naiad_Diagnostics_VertexEndArgs.htm">
-        <HelpTOCNode Id="7df24145-0c8e-4738-a17c-d5d014a52d7a" Title="VertexEndArgs Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Diagnostics_VertexEndArgs.htm">
+      <HelpTOCNode Id="a85f958d-145c-48f0-b099-d75c3e5080a5" Title="VertexEndArgs Class" Url="html/T_Microsoft_Research_Naiad_Diagnostics_VertexEndArgs.htm">
+        <HelpTOCNode Id="328af59b-4bc7-435a-92df-0d853e82a2df" Title="VertexEndArgs Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Diagnostics_VertexEndArgs.htm">
           <HelpTOCNode Title="Pointstamp Field" Url="html/F_Microsoft_Research_Naiad_Diagnostics_VertexEndArgs_Pointstamp.htm" />
           <HelpTOCNode Title="Stage Field" Url="html/F_Microsoft_Research_Naiad_Diagnostics_VertexEndArgs_Stage.htm" />
           <HelpTOCNode Title="ThreadId Field" Url="html/F_Microsoft_Research_Naiad_Diagnostics_VertexEndArgs_ThreadId.htm" />
           <HelpTOCNode Title="VertexId Field" Url="html/F_Microsoft_Research_Naiad_Diagnostics_VertexEndArgs_VertexId.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="8bd45d98-3ae1-4806-a8fb-7f643e6339ba" Title="VertexEnqueuedArgs Class" Url="html/T_Microsoft_Research_Naiad_Diagnostics_VertexEnqueuedArgs.htm">
-        <HelpTOCNode Id="2634ab65-209f-4357-adf6-c8a7e3f51022" Title="VertexEnqueuedArgs Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Diagnostics_VertexEnqueuedArgs.htm">
+      <HelpTOCNode Id="58bc87a7-3940-4a42-9837-d2aa87bb1334" Title="VertexEnqueuedArgs Class" Url="html/T_Microsoft_Research_Naiad_Diagnostics_VertexEnqueuedArgs.htm">
+        <HelpTOCNode Id="53594d02-c96f-4951-8733-9482c5a86428" Title="VertexEnqueuedArgs Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Diagnostics_VertexEnqueuedArgs.htm">
           <HelpTOCNode Title="Pointstamp Field" Url="html/F_Microsoft_Research_Naiad_Diagnostics_VertexEnqueuedArgs_Pointstamp.htm" />
           <HelpTOCNode Title="Stage Field" Url="html/F_Microsoft_Research_Naiad_Diagnostics_VertexEnqueuedArgs_Stage.htm" />
           <HelpTOCNode Title="ThreadId Field" Url="html/F_Microsoft_Research_Naiad_Diagnostics_VertexEnqueuedArgs_ThreadId.htm" />
           <HelpTOCNode Title="VertexId Field" Url="html/F_Microsoft_Research_Naiad_Diagnostics_VertexEnqueuedArgs_VertexId.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="58f4a0c8-5624-48cf-9de1-da42340d8bf6" Title="VertexStartArgs Class" Url="html/T_Microsoft_Research_Naiad_Diagnostics_VertexStartArgs.htm">
-        <HelpTOCNode Id="609b79ca-6dbd-4ffc-9186-63af9eb0493b" Title="VertexStartArgs Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Diagnostics_VertexStartArgs.htm">
+      <HelpTOCNode Id="70ef1faf-412e-420a-aa0d-9d4f10c0b1e6" Title="VertexStartArgs Class" Url="html/T_Microsoft_Research_Naiad_Diagnostics_VertexStartArgs.htm">
+        <HelpTOCNode Id="ba0654a6-8c4b-4b8e-ba2d-468717f46e58" Title="VertexStartArgs Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Diagnostics_VertexStartArgs.htm">
           <HelpTOCNode Title="Pointstamp Field" Url="html/F_Microsoft_Research_Naiad_Diagnostics_VertexStartArgs_Pointstamp.htm" />
           <HelpTOCNode Title="Stage Field" Url="html/F_Microsoft_Research_Naiad_Diagnostics_VertexStartArgs_Stage.htm" />
           <HelpTOCNode Title="ThreadId Field" Url="html/F_Microsoft_Research_Naiad_Diagnostics_VertexStartArgs_ThreadId.htm" />
           <HelpTOCNode Title="VertexId Field" Url="html/F_Microsoft_Research_Naiad_Diagnostics_VertexStartArgs_VertexId.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="68ea18f2-cb6c-4e29-abcd-b6ec14ab043e" Title="WorkerSleepArgs Class" Url="html/T_Microsoft_Research_Naiad_Diagnostics_WorkerSleepArgs.htm">
-        <HelpTOCNode Id="37bae5b0-3723-4b93-9afd-b6d3d507bc04" Title="WorkerSleepArgs Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Diagnostics_WorkerSleepArgs.htm">
+      <HelpTOCNode Id="adf20faa-01b4-4c72-baf6-bb18a66a393a" Title="WorkerSleepArgs Class" Url="html/T_Microsoft_Research_Naiad_Diagnostics_WorkerSleepArgs.htm">
+        <HelpTOCNode Id="aa3e9570-d928-45ad-a767-d69482e92aaf" Title="WorkerSleepArgs Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Diagnostics_WorkerSleepArgs.htm">
           <HelpTOCNode Title="ThreadId Field" Url="html/F_Microsoft_Research_Naiad_Diagnostics_WorkerSleepArgs_ThreadId.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="6d7e4cd9-3647-4542-a746-371f44ee9551" Title="WorkerStartArgs Class" Url="html/T_Microsoft_Research_Naiad_Diagnostics_WorkerStartArgs.htm">
-        <HelpTOCNode Id="d8633140-c1b9-4ba7-b289-5b331f8e2f97" Title="WorkerStartArgs Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Diagnostics_WorkerStartArgs.htm">
+      <HelpTOCNode Id="033590f0-9eca-480e-919d-492c9af87aaf" Title="WorkerStartArgs Class" Url="html/T_Microsoft_Research_Naiad_Diagnostics_WorkerStartArgs.htm">
+        <HelpTOCNode Id="a7d54b7a-258c-4128-bb3e-7e4feec50d7f" Title="WorkerStartArgs Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Diagnostics_WorkerStartArgs.htm">
           <HelpTOCNode Title="ThreadId Field" Url="html/F_Microsoft_Research_Naiad_Diagnostics_WorkerStartArgs_ThreadId.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="df862a37-bb16-4526-b245-1c7b6012e861" Title="WorkerTerminateArgs Class" Url="html/T_Microsoft_Research_Naiad_Diagnostics_WorkerTerminateArgs.htm">
-        <HelpTOCNode Id="185535d4-5268-450d-aa95-db37e271ede3" Title="WorkerTerminateArgs Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Diagnostics_WorkerTerminateArgs.htm">
+      <HelpTOCNode Id="d19c0c89-cf0d-4892-b484-0a74d944a33e" Title="WorkerTerminateArgs Class" Url="html/T_Microsoft_Research_Naiad_Diagnostics_WorkerTerminateArgs.htm">
+        <HelpTOCNode Id="074087c1-476e-49d6-8f80-3ca4aa689fd2" Title="WorkerTerminateArgs Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Diagnostics_WorkerTerminateArgs.htm">
           <HelpTOCNode Title="ThreadId Field" Url="html/F_Microsoft_Research_Naiad_Diagnostics_WorkerTerminateArgs_ThreadId.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="e1e6bd83-0174-4bd3-b944-1cd8b4a24fee" Title="WorkerWakeArgs Class" Url="html/T_Microsoft_Research_Naiad_Diagnostics_WorkerWakeArgs.htm">
-        <HelpTOCNode Id="77e565e9-80ef-4f6e-9934-5951ae9aab2c" Title="WorkerWakeArgs Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Diagnostics_WorkerWakeArgs.htm">
+      <HelpTOCNode Id="0c9b2eb2-b5f4-4e95-ab4e-dd97f8413810" Title="WorkerWakeArgs Class" Url="html/T_Microsoft_Research_Naiad_Diagnostics_WorkerWakeArgs.htm">
+        <HelpTOCNode Id="2e83b389-c898-4459-ac95-54317ef380ad" Title="WorkerWakeArgs Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Diagnostics_WorkerWakeArgs.htm">
           <HelpTOCNode Title="ThreadId Field" Url="html/F_Microsoft_Research_Naiad_Diagnostics_WorkerWakeArgs_ThreadId.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
     </HelpTOCNode>
-    <HelpTOCNode Id="3775bfea-82aa-4cbc-a83e-294dac0cf7c1" Title="Microsoft.Research.Naiad.Frameworks.Azure Namespace" Url="html/N_Microsoft_Research_Naiad_Frameworks_Azure.htm">
-      <HelpTOCNode Id="bc21c560-92b2-41c3-be51-11a52f0e7203" Title="ConsoleExtensionMethods Class" Url="html/T_Microsoft_Research_Naiad_Frameworks_Azure_ConsoleExtensionMethods.htm">
-        <HelpTOCNode Id="86b4d9b8-8930-42d2-aea0-55192e05dca6" Title="ConsoleExtensionMethods Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Frameworks_Azure_ConsoleExtensionMethods.htm">
+    <HelpTOCNode Id="23e4729a-a946-4dd9-b9f1-bbb09d9f84f2" Title="Microsoft.Research.Naiad.Frameworks.Azure Namespace" Url="html/N_Microsoft_Research_Naiad_Frameworks_Azure.htm">
+      <HelpTOCNode Id="4bf766c6-b0ff-41af-bd49-0731eb2c0a32" Title="ConsoleExtensionMethods Class" Url="html/T_Microsoft_Research_Naiad_Frameworks_Azure_ConsoleExtensionMethods.htm">
+        <HelpTOCNode Id="6fc4f162-dd53-4e89-b297-e0c9e89e2cd6" Title="ConsoleExtensionMethods Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Frameworks_Azure_ConsoleExtensionMethods.htm">
           <HelpTOCNode Title="SetConsoleError Method " Url="html/M_Microsoft_Research_Naiad_Frameworks_Azure_ConsoleExtensionMethods_SetConsoleError.htm" />
           <HelpTOCNode Title="SetConsoleOut Method " Url="html/M_Microsoft_Research_Naiad_Frameworks_Azure_ConsoleExtensionMethods_SetConsoleOut.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="cd002a30-8ae6-4b19-84d9-45fa072606ae" Title="ExtensionMethods Class" Url="html/T_Microsoft_Research_Naiad_Frameworks_Azure_ExtensionMethods.htm">
-        <HelpTOCNode Id="086c66df-93b9-426e-a008-4159e9ab8ec7" Title="ExtensionMethods Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Frameworks_Azure_ExtensionMethods.htm">
+      <HelpTOCNode Id="7d28194c-dcb7-4fa7-b08f-441af5141b70" Title="ExtensionMethods Class" Url="html/T_Microsoft_Research_Naiad_Frameworks_Azure_ExtensionMethods.htm">
+        <HelpTOCNode Id="410a4e3d-4369-437f-a7eb-22ce3e5d6a73" Title="ExtensionMethods Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Frameworks_Azure_ExtensionMethods.htm">
           <HelpTOCNode Title="DefaultAccount Method " Url="html/M_Microsoft_Research_Naiad_Frameworks_Azure_ExtensionMethods_DefaultAccount.htm" />
           <HelpTOCNode Title="DefaultBlobContainer Method " Url="html/M_Microsoft_Research_Naiad_Frameworks_Azure_ExtensionMethods_DefaultBlobContainer.htm" />
           <HelpTOCNode Title="ReadBinaryFromAzureBlobs(TRecord) Method " Url="html/M_Microsoft_Research_Naiad_Frameworks_Azure_ExtensionMethods_ReadBinaryFromAzureBlobs__1.htm" />
@@ -645,7 +646,7 @@
           <HelpTOCNode Title="ReadTextFromAzureBlobs Method " Url="html/M_Microsoft_Research_Naiad_Frameworks_Azure_ExtensionMethods_ReadTextFromAzureBlobs.htm" />
           <HelpTOCNode Title="WriteBinaryToAzureBlobs(TRecord) Method " Url="html/M_Microsoft_Research_Naiad_Frameworks_Azure_ExtensionMethods_WriteBinaryToAzureBlobs__1.htm" />
           <HelpTOCNode Title="WriteCustomBinaryToAzureBlobs(TRecord) Method " Url="html/M_Microsoft_Research_Naiad_Frameworks_Azure_ExtensionMethods_WriteCustomBinaryToAzureBlobs__1.htm" />
-          <HelpTOCNode Id="2191c8df-4c01-4c23-952b-4c69875848a2" Title="WriteTextToAzureBlobs Method " Url="html/Overload_Microsoft_Research_Naiad_Frameworks_Azure_ExtensionMethods_WriteTextToAzureBlobs.htm">
+          <HelpTOCNode Id="bcbaede2-be1f-4390-87e5-ea9c78c9293e" Title="WriteTextToAzureBlobs Method " Url="html/Overload_Microsoft_Research_Naiad_Frameworks_Azure_ExtensionMethods_WriteTextToAzureBlobs.htm">
             <HelpTOCNode Title="WriteTextToAzureBlobs Method (Stream(String, Epoch), , String)" Url="html/M_Microsoft_Research_Naiad_Frameworks_Azure_ExtensionMethods_WriteTextToAzureBlobs.htm" />
             <HelpTOCNode Title="WriteTextToAzureBlobs(TRecord) Method (Stream(TRecord, Epoch), , String)" Url="html/M_Microsoft_Research_Naiad_Frameworks_Azure_ExtensionMethods_WriteTextToAzureBlobs__1.htm" />
           </HelpTOCNode>
@@ -653,53 +654,53 @@
         </HelpTOCNode>
       </HelpTOCNode>
     </HelpTOCNode>
-    <HelpTOCNode Id="82f6b137-0502-4125-a08b-726babeb1534" Title="Microsoft.Research.Naiad.Frameworks.DifferentialDataflow Namespace" Url="html/N_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow.htm">
-      <HelpTOCNode Id="0f6526ad-a09b-4d8b-966a-2211257af8b2" Title="Collection(TRecord, TTime) Interface" Url="html/T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2.htm">
-        <HelpTOCNode Id="b9652dee-3a3d-4990-a8d4-ac52ca6a9c3e" Title="Collection(TRecord, TTime) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2.htm">
+    <HelpTOCNode Id="796f3329-594b-490d-8535-9cd8e4314cc7" Title="Microsoft.Research.Naiad.Frameworks.DifferentialDataflow Namespace" Url="html/N_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow.htm">
+      <HelpTOCNode Id="12e8705e-16a0-4a8c-831c-16c47bb8d363" Title="Collection(TRecord, TTime) Interface" Url="html/T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2.htm">
+        <HelpTOCNode Id="94bd761a-7db9-42f5-a2a2-9f7b3ddaeaac" Title="Collection(TRecord, TTime) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2.htm">
           <HelpTOCNode Title="Aggregate(TKey, TValue, TOutput) Method " Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Aggregate__3.htm" />
-          <HelpTOCNode Id="34002d6a-f423-4f35-981c-11c2e00050b4" Title="CoGroupBy Method " Url="html/Overload_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_CoGroupBy.htm">
+          <HelpTOCNode Id="ecd78b63-997d-4f11-ac57-3c384bb192aa" Title="CoGroupBy Method " Url="html/Overload_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_CoGroupBy.htm">
             <HelpTOCNode Title="CoGroupBy(TKey, TRecord2, TOutput) Method (Collection(TRecord2, TTime), Expression(Func(TRecord, TKey)), Expression(Func(TRecord2, TKey)), Expression(Func(TKey, IEnumerable(Weighted(TRecord)), IEnumerable(Weighted(TRecord2)), IEnumerable(Weighted(TOutput)))))" Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_CoGroupBy__3.htm" />
             <HelpTOCNode Title="CoGroupBy(TKey, TRecord2, TOutput) Method (Collection(TRecord2, TTime), Expression(Func(TRecord, TKey)), Expression(Func(TRecord2, TKey)), Expression(Func(TKey, IEnumerable(TRecord), IEnumerable(TRecord2), IEnumerable(TOutput))))" Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_CoGroupBy__3_1.htm" />
             <HelpTOCNode Title="CoGroupBy(TKey, TValue1, TValue2, TRecord2, TOutput) Method (Collection(TRecord2, TTime), Expression(Func(TRecord, TKey)), Expression(Func(TRecord2, TKey)), Expression(Func(TRecord, TValue1)), Expression(Func(TRecord2, TValue2)), Expression(Func(TKey, IEnumerable(Weighted(TValue1)), IEnumerable(Weighted(TValue2)), IEnumerable(Weighted(TOutput)))))" Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_CoGroupBy__5.htm" />
             <HelpTOCNode Title="CoGroupBy(TKey, TValue1, TValue2, TRecord2, TOutput) Method (Collection(TRecord2, TTime), Expression(Func(TRecord, TKey)), Expression(Func(TRecord2, TKey)), Expression(Func(TRecord, TValue1)), Expression(Func(TRecord2, TValue2)), Expression(Func(TKey, IEnumerable(TValue1), IEnumerable(TValue2), IEnumerable(TOutput))))" Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_CoGroupBy__5_1.htm" />
           </HelpTOCNode>
           <HelpTOCNode Title="Concat Method " Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Concat.htm" />
-          <HelpTOCNode Id="a23f1a89-561a-4088-b0f0-bcc0c8c9e48c" Title="Consolidate Method " Url="html/Overload_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Consolidate.htm">
+          <HelpTOCNode Id="b30717a4-1f9e-4422-8f4c-210e531d59ae" Title="Consolidate Method " Url="html/Overload_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Consolidate.htm">
             <HelpTOCNode Title="Consolidate Method " Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Consolidate.htm" />
             <HelpTOCNode Title="Consolidate(TKey) Method (Expression(Func(TRecord, TKey)))" Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Consolidate__1.htm" />
           </HelpTOCNode>
-          <HelpTOCNode Id="ce4a9a73-6429-42a8-b7b9-95a5a9825c3a" Title="Count Method " Url="html/Overload_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Count.htm">
+          <HelpTOCNode Id="2022b3ce-6839-4f3a-8025-03169052a31c" Title="Count Method " Url="html/Overload_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Count.htm">
             <HelpTOCNode Title="Count(TKey) Method (Expression(Func(TRecord, TKey)))" Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Count__1.htm" />
             <HelpTOCNode Title="Count(TKey, TOutput) Method (Expression(Func(TRecord, TKey)), Expression(Func(TKey, Int64, TOutput)))" Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Count__2.htm" />
           </HelpTOCNode>
           <HelpTOCNode Title="Distinct Method " Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Distinct.htm" />
-          <HelpTOCNode Id="22e7af00-a479-4501-ae0f-cc8eb0cdff6e" Title="EnterLoop Method " Url="html/Overload_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_EnterLoop.htm">
+          <HelpTOCNode Id="b1f85be0-f2c1-4040-a1d3-1b64bc25a5fa" Title="EnterLoop Method " Url="html/Overload_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_EnterLoop.htm">
             <HelpTOCNode Title="EnterLoop Method (LoopContext(TTime))" Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_EnterLoop.htm" />
             <HelpTOCNode Title="EnterLoop Method (LoopContext(TTime), Func(TRecord, Int32))" Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_EnterLoop_1.htm" />
           </HelpTOCNode>
           <HelpTOCNode Title="Except Method " Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Except.htm" />
-          <HelpTOCNode Id="baed88af-86a0-4793-9e56-b6dcbc6119a3" Title="FixedPoint Method " Url="html/Overload_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_FixedPoint.htm">
+          <HelpTOCNode Id="da623e50-4417-4f7b-9ae5-250c3328c7bd" Title="FixedPoint Method " Url="html/Overload_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_FixedPoint.htm">
             <HelpTOCNode Title="FixedPoint Method (Func(LoopContext(TTime), Collection(TRecord, IterationIn(TTime)), Collection(TRecord, IterationIn(TTime))))" Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_FixedPoint.htm" />
             <HelpTOCNode Title="FixedPoint Method (Func(LoopContext(TTime), Collection(TRecord, IterationIn(TTime)), Collection(TRecord, IterationIn(TTime))), Int32)" Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_FixedPoint_1.htm" />
             <HelpTOCNode Title="FixedPoint(TKey) Method (Func(LoopContext(TTime), Collection(TRecord, IterationIn(TTime)), Collection(TRecord, IterationIn(TTime))), Expression(Func(TRecord, TKey)))" Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_FixedPoint__1.htm" />
             <HelpTOCNode Title="FixedPoint(TKey) Method (Func(LoopContext(TTime), Collection(TRecord, IterationIn(TTime)), Collection(TRecord, IterationIn(TTime))), Expression(Func(TRecord, TKey)), Int32)" Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_FixedPoint__1_1.htm" />
           </HelpTOCNode>
           <HelpTOCNode Title="GeneralFixedPoint(TKey) Method " Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_GeneralFixedPoint__1.htm" />
-          <HelpTOCNode Id="1270fa6e-4ea2-46f8-96d7-e23ada9a4483" Title="GroupBy Method " Url="html/Overload_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_GroupBy.htm">
+          <HelpTOCNode Id="124c475d-5cfd-4c58-9504-384755ed1e13" Title="GroupBy Method " Url="html/Overload_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_GroupBy.htm">
             <HelpTOCNode Title="GroupBy(TKey, TOutput) Method (Expression(Func(TRecord, TKey)), Func(TKey, IEnumerable(TRecord), IEnumerable(TOutput)))" Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_GroupBy__2.htm" />
             <HelpTOCNode Title="GroupBy(TKey, TValue, TOutput) Method (Expression(Func(TRecord, TKey)), Expression(Func(TRecord, TValue)), Func(TKey, IEnumerable(TValue), IEnumerable(TOutput)))" Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_GroupBy__3.htm" />
           </HelpTOCNode>
           <HelpTOCNode Title="Intersect Method " Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Intersect.htm" />
-          <HelpTOCNode Id="9e1eabdd-e669-4d69-9065-8b7bcd40907b" Title="Join Method " Url="html/Overload_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Join.htm">
+          <HelpTOCNode Id="20640c2a-2a37-4991-bed2-64de9ae4d295" Title="Join Method " Url="html/Overload_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Join.htm">
             <HelpTOCNode Title="Join(TKey, TRecord2, TOutput) Method (Collection(TRecord2, TTime), Expression(Func(TRecord, TKey)), Expression(Func(TRecord2, TKey)), Expression(Func(TRecord, TRecord2, TOutput)))" Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Join__3.htm" />
             <HelpTOCNode Title="Join(TKey, TValue1, TValue2, TRecord2, TOutput) Method (Collection(TRecord2, TTime), Expression(Func(TRecord, TKey)), Expression(Func(TRecord2, TKey)), Expression(Func(TRecord, TValue1)), Expression(Func(TRecord2, TValue2)), Expression(Func(TKey, TValue1, TValue2, TOutput)))" Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Join__5.htm" />
             <HelpTOCNode Title="Join(TValue1, TValue2, TRecord2, TOutput) Method (Collection(TRecord2, TTime), Expression(Func(TRecord, Int32)), Expression(Func(TRecord2, Int32)), Expression(Func(TRecord, TValue1)), Expression(Func(TRecord2, TValue2)), Expression(Func(Int32, TValue1, TValue2, TOutput)), Boolean)" Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Join__4.htm" />
           </HelpTOCNode>
-          <HelpTOCNode Id="a9d0adcc-5bdc-47c3-b734-7ff1688c710b" Title="Max Method " Url="html/Overload_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Max.htm">
+          <HelpTOCNode Id="30f0d6fb-fe03-4e8e-ac35-9631c78185a8" Title="Max Method " Url="html/Overload_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Max.htm">
             <HelpTOCNode Title="Max(TKey, TComparable) Method (Expression(Func(TRecord, TKey)), Expression(Func(TRecord, TComparable)))" Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Max__2.htm" />
             <HelpTOCNode Title="Max(TKey, TComparable, TValue) Method (Expression(Func(TRecord, TKey)), Expression(Func(TRecord, TValue)), Expression(Func(TKey, TValue, TComparable)), Expression(Func(TKey, TValue, TRecord)))" Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Max__3.htm" />
           </HelpTOCNode>
-          <HelpTOCNode Id="8fea6d24-52cb-42e7-8240-36cffa173f8a" Title="Min Method " Url="html/Overload_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Min.htm">
+          <HelpTOCNode Id="98db6400-21ff-47f3-80d5-17ae45585815" Title="Min Method " Url="html/Overload_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Min.htm">
             <HelpTOCNode Title="Min(TKey, TComparable) Method (Expression(Func(TRecord, TKey)), Expression(Func(TRecord, TComparable)))" Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Min__2_1.htm" />
             <HelpTOCNode Title="Min(TKey, TComparable, TValue) Method (Expression(Func(TRecord, TKey)), Expression(Func(TRecord, TValue)), Expression(Func(TKey, TValue, TComparable)), Expression(Func(TKey, TValue, TRecord)))" Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Min__3.htm" />
             <HelpTOCNode Title="Min(TValue, TComparable) Method (Expression(Func(TRecord, Int32)), Expression(Func(TRecord, TValue)), Expression(Func(Int32, TValue, TComparable)), Expression(Func(Int32, TValue, TRecord)), Boolean)" Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Min__2.htm" />
@@ -707,11 +708,11 @@
           <HelpTOCNode Title="Monitor Method " Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Monitor.htm" />
           <HelpTOCNode Title="PartitionBy(TKey) Method " Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_PartitionBy__1.htm" />
           <HelpTOCNode Title="Select(TOutput) Method " Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Select__1.htm" />
-          <HelpTOCNode Id="c887be09-4957-4a08-9252-8b46d401bd81" Title="SelectMany Method " Url="html/Overload_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_SelectMany.htm">
+          <HelpTOCNode Id="e0c1f160-22db-4e80-9e52-3ab3905201d3" Title="SelectMany Method " Url="html/Overload_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_SelectMany.htm">
             <HelpTOCNode Title="SelectMany(TOutput) Method (Expression(Func(TRecord, IEnumerable(ArraySegment(TOutput)))))" Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_SelectMany__1.htm" />
             <HelpTOCNode Title="SelectMany(TOutput) Method (Expression(Func(TRecord, IEnumerable(TOutput))))" Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_SelectMany__1_1.htm" />
           </HelpTOCNode>
-          <HelpTOCNode Id="5af75d49-db61-44ab-bc8f-24179f8f8ac6" Title="Sum Method " Url="html/Overload_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Sum.htm">
+          <HelpTOCNode Id="316aa1c5-bd8b-4c2b-8fee-cd81ea3bd9b0" Title="Sum Method " Url="html/Overload_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Sum.htm">
             <HelpTOCNode Title="Sum(TKey, TOutput) Method (Expression(Func(TRecord, TKey)), Expression(Func(TRecord, Double)), Expression(Func(TKey, Double, TOutput)))" Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Sum__2.htm" />
             <HelpTOCNode Title="Sum(TKey, TOutput) Method (Expression(Func(TRecord, TKey)), Expression(Func(TRecord, Int32)), Expression(Func(TKey, Int32, TOutput)))" Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Sum__2_1.htm" />
             <HelpTOCNode Title="Sum(TKey, TOutput) Method (Expression(Func(TRecord, TKey)), Expression(Func(TRecord, Int64)), Expression(Func(TKey, Int64, TOutput)))" Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Sum__2_2.htm" />
@@ -721,29 +722,29 @@
           <HelpTOCNode Title="Union Method " Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Union.htm" />
           <HelpTOCNode Title="Where Method " Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Where.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="b5c175ac-fcc4-40f3-94e0-9a892758de69" Title="Collection(TRecord, TTime) Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2.htm">
+        <HelpTOCNode Id="322983b5-c3ec-4725-901a-ca88a32ec7cb" Title="Collection(TRecord, TTime) Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2.htm">
           <HelpTOCNode Title="Output Property " Url="html/P_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_Output.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="461c130f-09eb-4f99-9d09-cec42ff542b1" Title="ExtensionMethods Class" Url="html/T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_ExtensionMethods.htm">
-        <HelpTOCNode Id="a85da365-9dad-4bc5-ba86-746d7f2c17ba" Title="ExtensionMethods Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_ExtensionMethods.htm">
+      <HelpTOCNode Id="4992b09d-c284-4dc1-bcc7-153d8d932b1e" Title="ExtensionMethods Class" Url="html/T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_ExtensionMethods.htm">
+        <HelpTOCNode Id="c20072b2-044f-40f5-b54e-8471c1e72680" Title="ExtensionMethods Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_ExtensionMethods.htm">
           <HelpTOCNode Title="AdjustTime(TRecord, TTime) Method " Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_ExtensionMethods_AdjustTime__2.htm" />
           <HelpTOCNode Title="AsCollection(TRecord, TTime) Method " Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_ExtensionMethods_AsCollection__2.htm" />
           <HelpTOCNode Title="AssumeImmutable(TRecord, TTime) Method " Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_ExtensionMethods_AssumeImmutable__2.htm" />
           <HelpTOCNode Title="AssumePartitionedBy(TRecord, TTime, TKey) Method " Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_ExtensionMethods_AssumePartitionedBy__3.htm" />
-          <HelpTOCNode Id="1e36d34b-78ba-4d6a-9d59-2b4d5e119328" Title="OnCompleted Method " Url="html/Overload_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_ExtensionMethods_OnCompleted.htm">
+          <HelpTOCNode Id="120c20e0-81d3-45f8-a7d1-8edbf7af6873" Title="OnCompleted Method " Url="html/Overload_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_ExtensionMethods_OnCompleted.htm">
             <HelpTOCNode Title="OnCompleted(TRecord) Method (InputCollection(TRecord), Weighted(TRecord))" Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_ExtensionMethods_OnCompleted__1.htm" />
             <HelpTOCNode Title="OnCompleted(TRecord) Method (InputCollection(TRecord), IEnumerable(TRecord))" Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_ExtensionMethods_OnCompleted__1_1.htm" />
             <HelpTOCNode Title="OnCompleted(TRecord) Method (InputCollection(TRecord), TRecord)" Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_ExtensionMethods_OnCompleted__1_2.htm" />
           </HelpTOCNode>
-          <HelpTOCNode Id="579c3b71-bda1-4bc0-b207-000ed85a2b3b" Title="OnNext Method " Url="html/Overload_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_ExtensionMethods_OnNext.htm">
+          <HelpTOCNode Id="9b2ed89c-48f0-4e55-8e23-afbcf9ece814" Title="OnNext Method " Url="html/Overload_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_ExtensionMethods_OnNext.htm">
             <HelpTOCNode Title="OnNext(TRecord) Method (InputCollection(TRecord))" Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_ExtensionMethods_OnNext__1.htm" />
             <HelpTOCNode Title="OnNext(TRecord) Method (InputCollection(TRecord), IEnumerable(TRecord))" Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_ExtensionMethods_OnNext__1_1.htm" />
             <HelpTOCNode Title="OnNext(TRecord) Method (InputCollection(TRecord), TRecord)" Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_ExtensionMethods_OnNext__1_3.htm" />
             <HelpTOCNode Title="OnNext(TRecord) Method (InputCollection(TRecord), IEnumerable(TRecord), Int32)" Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_ExtensionMethods_OnNext__1_2.htm" />
             <HelpTOCNode Title="OnNext(TRecord) Method (InputCollection(TRecord), TRecord, Int32)" Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_ExtensionMethods_OnNext__1_4.htm" />
           </HelpTOCNode>
-          <HelpTOCNode Id="64e9112b-cc3c-4fa4-87f7-28af0e64f795" Title="SlidingWindow Method " Url="html/Overload_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_ExtensionMethods_SlidingWindow.htm">
+          <HelpTOCNode Id="68c7721b-0a99-4573-807d-30b966ddb7b1" Title="SlidingWindow Method " Url="html/Overload_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_ExtensionMethods_SlidingWindow.htm">
             <HelpTOCNode Title="SlidingWindow(TRecord) Method (Collection(TRecord, Epoch), Int32)" Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_ExtensionMethods_SlidingWindow__1.htm" />
             <HelpTOCNode Title="SlidingWindow(TRecord) Method (Stream(TRecord, Epoch), Int32)" Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_ExtensionMethods_SlidingWindow__1_1.htm" />
           </HelpTOCNode>
@@ -751,9 +752,9 @@
           <HelpTOCNode Title="ToWeighted(TRecord) Method " Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_ExtensionMethods_ToWeighted__1.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="5867d94e-c838-44ae-91b8-db110554cb9f" Title="InputCollection(TRecord) Interface" Url="html/T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_InputCollection_1.htm">
-        <HelpTOCNode Id="07d3e203-5e79-4fe7-9e5a-ec379cf8b311" Title="InputCollection(TRecord) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_InputCollection_1.htm">
-          <HelpTOCNode Id="0f3e26a8-cc36-406f-8a7b-c1fae8d4953a" Title="OnCompleted Method " Url="html/Overload_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_InputCollection_1_OnCompleted.htm">
+      <HelpTOCNode Id="96671a50-dfd7-45c4-b656-48b206ebc339" Title="InputCollection(TRecord) Interface" Url="html/T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_InputCollection_1.htm">
+        <HelpTOCNode Id="66f603af-0164-4879-a12e-4f5adc90c4a3" Title="InputCollection(TRecord) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_InputCollection_1.htm">
+          <HelpTOCNode Id="7e5948e2-aca9-4f5c-8ae4-e77e82d992bf" Title="OnCompleted Method " Url="html/Overload_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_InputCollection_1_OnCompleted.htm">
             <HelpTOCNode Title="OnCompleted Method " Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_InputCollection_1_OnCompleted.htm" />
             <HelpTOCNode Title="OnCompleted Method (IEnumerable(Weighted(TRecord)))" Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_InputCollection_1_OnCompleted_1.htm" />
           </HelpTOCNode>
@@ -761,57 +762,57 @@
         </HelpTOCNode>
         <HelpTOCNode Title="InputCollection(TRecord) Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_InputCollection_1.htm" />
       </HelpTOCNode>
-      <HelpTOCNode Id="569877ab-5e94-48e6-92c1-8e07821c341b" Title="InputCollectionExtensionMethods Class" Url="html/T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_InputCollectionExtensionMethods.htm">
-        <HelpTOCNode Id="1e7c30f5-19da-46bc-9f39-0f6e240971ae" Title="InputCollectionExtensionMethods Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_InputCollectionExtensionMethods.htm">
+      <HelpTOCNode Id="dc421311-fa3c-45bf-b908-e9ec9fe861fc" Title="InputCollectionExtensionMethods Class" Url="html/T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_InputCollectionExtensionMethods.htm">
+        <HelpTOCNode Id="e7eb3674-411c-48af-bd76-19de63103172" Title="InputCollectionExtensionMethods Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_InputCollectionExtensionMethods.htm">
           <HelpTOCNode Title="NewInputCollection(TRecord) Method " Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_InputCollectionExtensionMethods_NewInputCollection__1.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="ad75b320-6e8a-4213-98bd-33244b3f9451" Title="IntPair Structure" Url="html/T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_IntPair.htm">
+      <HelpTOCNode Id="26b332a7-6b62-4c57-b3b6-70c9d8cc6f99" Title="IntPair Structure" Url="html/T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_IntPair.htm">
         <HelpTOCNode Title="IntPair Constructor " Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_IntPair__ctor.htm" />
-        <HelpTOCNode Id="6a5ed44d-6b4e-4af5-b9d1-a704ec7f6334" Title="IntPair Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_IntPair.htm">
+        <HelpTOCNode Id="7cbed127-94ab-46aa-8c99-fee4fe831c1d" Title="IntPair Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_IntPair.htm">
           <HelpTOCNode Title="s Field" Url="html/F_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_IntPair_s.htm" />
           <HelpTOCNode Title="t Field" Url="html/F_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_IntPair_t.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="7a5f2ba7-3d0b-4b37-a33e-eaa0aab5a969" Title="IntPair Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_IntPair.htm">
+        <HelpTOCNode Id="08387c61-ebec-4143-9807-19e1b66f8201" Title="IntPair Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_IntPair.htm">
           <HelpTOCNode Title="Equals Method " Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_IntPair_Equals.htm" />
           <HelpTOCNode Title="GetHashCode Method " Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_IntPair_GetHashCode.htm" />
           <HelpTOCNode Title="ToString Method " Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_IntPair_ToString.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="8d1724b1-51e9-4180-923e-c7013bcdddef" Title="Weighted(TRecord) Structure" Url="html/T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Weighted_1.htm">
+      <HelpTOCNode Id="a72bb128-70c9-475b-8f48-59ad9577c979" Title="Weighted(TRecord) Structure" Url="html/T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Weighted_1.htm">
         <HelpTOCNode Title="Weighted(TRecord) Constructor " Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Weighted_1__ctor.htm" />
-        <HelpTOCNode Id="d84a52f7-d3af-47ba-9e8b-a8589ea5e1e0" Title="Weighted(TRecord) Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Weighted_1.htm">
+        <HelpTOCNode Id="0149487a-b9da-4b40-a9ac-5ae7685abdfa" Title="Weighted(TRecord) Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Weighted_1.htm">
           <HelpTOCNode Title="record Field" Url="html/F_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Weighted_1_record.htm" />
           <HelpTOCNode Title="weight Field" Url="html/F_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Weighted_1_weight.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="ea45bfb1-589e-4d78-a8b8-d184c5e5cdce" Title="Weighted(TRecord) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Weighted_1.htm">
+        <HelpTOCNode Id="414fd4eb-3bc4-47f2-88ed-9dc85108de11" Title="Weighted(TRecord) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Weighted_1.htm">
           <HelpTOCNode Title="Equals Method " Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Weighted_1_Equals.htm" />
           <HelpTOCNode Title="ToString Method " Url="html/M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Weighted_1_ToString.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
     </HelpTOCNode>
-    <HelpTOCNode Id="0bddb093-35f3-4093-a4d2-85231c9c73ff" Title="Microsoft.Research.Naiad.Frameworks.GraphLINQ Namespace" Url="html/N_Microsoft_Research_Naiad_Frameworks_GraphLINQ.htm">
-      <HelpTOCNode Id="3ac67923-4588-46b1-99df-80806eb5507e" Title="Edge Structure" Url="html/T_Microsoft_Research_Naiad_Frameworks_GraphLINQ_Edge.htm">
+    <HelpTOCNode Id="fca49507-f7a7-435d-b337-0555c13ce6f5" Title="Microsoft.Research.Naiad.Frameworks.GraphLINQ Namespace" Url="html/N_Microsoft_Research_Naiad_Frameworks_GraphLINQ.htm">
+      <HelpTOCNode Id="d6a32f51-280b-4551-ab9b-1c188d07ae14" Title="Edge Structure" Url="html/T_Microsoft_Research_Naiad_Frameworks_GraphLINQ_Edge.htm">
         <HelpTOCNode Title="Edge Constructor " Url="html/M_Microsoft_Research_Naiad_Frameworks_GraphLINQ_Edge__ctor.htm" />
-        <HelpTOCNode Id="2281e24c-395a-494a-b2b9-bfd08810b1d3" Title="Edge Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Frameworks_GraphLINQ_Edge.htm">
+        <HelpTOCNode Id="eb368555-65a9-4545-8a6d-dc86658baf16" Title="Edge Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Frameworks_GraphLINQ_Edge.htm">
           <HelpTOCNode Title="source Field" Url="html/F_Microsoft_Research_Naiad_Frameworks_GraphLINQ_Edge_source.htm" />
           <HelpTOCNode Title="target Field" Url="html/F_Microsoft_Research_Naiad_Frameworks_GraphLINQ_Edge_target.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="74bd90a6-ebf5-4e80-9c57-40ad8da7c59d" Title="Edge Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Frameworks_GraphLINQ_Edge.htm">
+        <HelpTOCNode Id="8e06db7b-011a-4d6e-b6da-7c97552ac249" Title="Edge Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Frameworks_GraphLINQ_Edge.htm">
           <HelpTOCNode Title="Equals Method " Url="html/M_Microsoft_Research_Naiad_Frameworks_GraphLINQ_Edge_Equals.htm" />
           <HelpTOCNode Title="GetHashCode Method " Url="html/M_Microsoft_Research_Naiad_Frameworks_GraphLINQ_Edge_GetHashCode.htm" />
           <HelpTOCNode Title="ToString Method " Url="html/M_Microsoft_Research_Naiad_Frameworks_GraphLINQ_Edge_ToString.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="e4b0fbe1-0bd9-4151-baea-3780552c2d66" Title="EdgeWithValue(TValue) Structure" Url="html/T_Microsoft_Research_Naiad_Frameworks_GraphLINQ_EdgeWithValue_1.htm">
+      <HelpTOCNode Id="153c8480-0400-425d-9d20-e5cda9c88530" Title="EdgeWithValue(TValue) Structure" Url="html/T_Microsoft_Research_Naiad_Frameworks_GraphLINQ_EdgeWithValue_1.htm">
         <HelpTOCNode Title="EdgeWithValue(TValue) Constructor " Url="html/M_Microsoft_Research_Naiad_Frameworks_GraphLINQ_EdgeWithValue_1__ctor.htm" />
-        <HelpTOCNode Id="93dbd495-28ee-49d5-981f-1acf1e9ef3bf" Title="EdgeWithValue(TValue) Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Frameworks_GraphLINQ_EdgeWithValue_1.htm">
+        <HelpTOCNode Id="d4340773-a2fd-4df3-b28f-8b5a06b1582b" Title="EdgeWithValue(TValue) Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Frameworks_GraphLINQ_EdgeWithValue_1.htm">
           <HelpTOCNode Title="edge Field" Url="html/F_Microsoft_Research_Naiad_Frameworks_GraphLINQ_EdgeWithValue_1_edge.htm" />
           <HelpTOCNode Title="value Field" Url="html/F_Microsoft_Research_Naiad_Frameworks_GraphLINQ_EdgeWithValue_1_value.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="b6572906-ce28-43dc-8f67-10381559efd4" Title="ExtensionMethods Class" Url="html/T_Microsoft_Research_Naiad_Frameworks_GraphLINQ_ExtensionMethods.htm">
-        <HelpTOCNode Id="6f2e8ddf-11bd-434e-82ff-ca4f039d78ef" Title="ExtensionMethods Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Frameworks_GraphLINQ_ExtensionMethods.htm">
+      <HelpTOCNode Id="900dcdbe-4486-46a3-8553-bc982d10ae47" Title="ExtensionMethods Class" Url="html/T_Microsoft_Research_Naiad_Frameworks_GraphLINQ_ExtensionMethods.htm">
+        <HelpTOCNode Id="175abf5b-a12b-48b0-8263-ef957db5f856" Title="ExtensionMethods Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Frameworks_GraphLINQ_ExtensionMethods.htm">
           <HelpTOCNode Title="CountNodes(TTime) Method " Url="html/M_Microsoft_Research_Naiad_Frameworks_GraphLINQ_ExtensionMethods_CountNodes__1.htm" />
           <HelpTOCNode Title="DistinctNodes(TTime) Method " Url="html/M_Microsoft_Research_Naiad_Frameworks_GraphLINQ_ExtensionMethods_DistinctNodes__1.htm" />
           <HelpTOCNode Title="FilterBy(TValue, TTime) Method " Url="html/M_Microsoft_Research_Naiad_Frameworks_GraphLINQ_ExtensionMethods_FilterBy__2.htm" />
@@ -823,7 +824,7 @@
           <HelpTOCNode Title="RenameEdges(TIdentifier) Method " Url="html/M_Microsoft_Research_Naiad_Frameworks_GraphLINQ_ExtensionMethods_RenameEdges__1.htm" />
           <HelpTOCNode Title="RenameNodes(TIdentifier) Method " Url="html/M_Microsoft_Research_Naiad_Frameworks_GraphLINQ_ExtensionMethods_RenameNodes__1.htm" />
           <HelpTOCNode Title="RenameUsing(TInput, TIdentifier) Method " Url="html/M_Microsoft_Research_Naiad_Frameworks_GraphLINQ_ExtensionMethods_RenameUsing__2.htm" />
-          <HelpTOCNode Id="671f3da8-d384-49cd-882b-b07a58afd9c0" Title="StateMachine Method " Url="html/Overload_Microsoft_Research_Naiad_Frameworks_GraphLINQ_ExtensionMethods_StateMachine.htm">
+          <HelpTOCNode Id="fa25de60-ae44-46eb-8dc2-3353ebcdba05" Title="StateMachine Method " Url="html/Overload_Microsoft_Research_Naiad_Frameworks_GraphLINQ_ExtensionMethods_StateMachine.htm">
             <HelpTOCNode Title="StateMachine(TValue, TState, TOutput, TTime) Method (Stream(NodeWithValue(TValue), TTime), Func(TValue, TState, Pair(TState, TOutput)))" Url="html/M_Microsoft_Research_Naiad_Frameworks_GraphLINQ_ExtensionMethods_StateMachine__4_1.htm" />
             <HelpTOCNode Title="StateMachine(TValue, TState, TTime) Method (Stream(NodeWithValue(TValue), TTime), Func(TValue, TState, TState))" Url="html/M_Microsoft_Research_Naiad_Frameworks_GraphLINQ_ExtensionMethods_StateMachine__3.htm" />
             <HelpTOCNode Title="StateMachine(TValue, TState, TOutput, TTime) Method (Stream(NodeWithValue(TValue), TTime), Func(TValue, TState, Pair(TState, TOutput)), TState)" Url="html/M_Microsoft_Research_Naiad_Frameworks_GraphLINQ_ExtensionMethods_StateMachine__4_2.htm" />
@@ -833,32 +834,32 @@
           <HelpTOCNode Title="TransmitAlong(TValue, TTime) Method " Url="html/M_Microsoft_Research_Naiad_Frameworks_GraphLINQ_ExtensionMethods_TransmitAlong__2.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="abb00106-f5b0-43e7-a47a-587e41164e55" Title="Node Structure" Url="html/T_Microsoft_Research_Naiad_Frameworks_GraphLINQ_Node.htm">
+      <HelpTOCNode Id="5627a3cd-0018-48a8-b642-fce9aa173723" Title="Node Structure" Url="html/T_Microsoft_Research_Naiad_Frameworks_GraphLINQ_Node.htm">
         <HelpTOCNode Title="Node Constructor " Url="html/M_Microsoft_Research_Naiad_Frameworks_GraphLINQ_Node__ctor.htm" />
-        <HelpTOCNode Id="a002fb4b-45a6-4d14-ac57-6f25a4ee0c51" Title="Node Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Frameworks_GraphLINQ_Node.htm">
+        <HelpTOCNode Id="fd2fc162-d90b-4d72-a681-bb06e4500c23" Title="Node Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Frameworks_GraphLINQ_Node.htm">
           <HelpTOCNode Title="index Field" Url="html/F_Microsoft_Research_Naiad_Frameworks_GraphLINQ_Node_index.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="cd44daea-3db2-4bcd-ba8b-2bd117a14921" Title="Node Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Frameworks_GraphLINQ_Node.htm">
+        <HelpTOCNode Id="014b34df-1e93-433c-8a1e-f5bc1b27c306" Title="Node Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Frameworks_GraphLINQ_Node.htm">
           <HelpTOCNode Title="Equals Method " Url="html/M_Microsoft_Research_Naiad_Frameworks_GraphLINQ_Node_Equals.htm" />
           <HelpTOCNode Title="ToString Method " Url="html/M_Microsoft_Research_Naiad_Frameworks_GraphLINQ_Node_ToString.htm" />
           <HelpTOCNode Title="WithValue(TValue) Method " Url="html/M_Microsoft_Research_Naiad_Frameworks_GraphLINQ_Node_WithValue__1.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="dda7ed0f-3b59-469e-b247-63e320189165" Title="Node Type Conversions" Url="html/Operators_T_Microsoft_Research_Naiad_Frameworks_GraphLINQ_Node.htm">
+        <HelpTOCNode Id="4bd52430-3931-456f-bb5a-4a933138d47d" Title="Node Type Conversions" Url="html/Operators_T_Microsoft_Research_Naiad_Frameworks_GraphLINQ_Node.htm">
           <HelpTOCNode Title="Implicit Conversion (Node to Int32)" Url="html/M_Microsoft_Research_Naiad_Frameworks_GraphLINQ_Node_op_Implicit.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="cb603294-f283-4321-bd4b-f43e60a2c21d" Title="NodeWithValue(TValue) Structure" Url="html/T_Microsoft_Research_Naiad_Frameworks_GraphLINQ_NodeWithValue_1.htm">
+      <HelpTOCNode Id="7d695ba2-281d-4238-94ec-baa3d0907029" Title="NodeWithValue(TValue) Structure" Url="html/T_Microsoft_Research_Naiad_Frameworks_GraphLINQ_NodeWithValue_1.htm">
         <HelpTOCNode Title="NodeWithValue(TValue) Constructor " Url="html/M_Microsoft_Research_Naiad_Frameworks_GraphLINQ_NodeWithValue_1__ctor.htm" />
-        <HelpTOCNode Id="b5ad263c-e826-4bc6-950b-1967802705e7" Title="NodeWithValue(TValue) Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Frameworks_GraphLINQ_NodeWithValue_1.htm">
+        <HelpTOCNode Id="1d1f39bc-318c-4b30-bbb6-a844bbae5190" Title="NodeWithValue(TValue) Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Frameworks_GraphLINQ_NodeWithValue_1.htm">
           <HelpTOCNode Title="node Field" Url="html/F_Microsoft_Research_Naiad_Frameworks_GraphLINQ_NodeWithValue_1_node.htm" />
           <HelpTOCNode Title="value Field" Url="html/F_Microsoft_Research_Naiad_Frameworks_GraphLINQ_NodeWithValue_1_value.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
     </HelpTOCNode>
-    <HelpTOCNode Id="60a17302-7432-4643-aaf1-27022f38ebbd" Title="Microsoft.Research.Naiad.Frameworks.Lindi Namespace" Url="html/N_Microsoft_Research_Naiad_Frameworks_Lindi.htm">
-      <HelpTOCNode Id="7306b471-3e79-465f-b668-d6f794cc6d99" Title="ExtensionMethods Class" Url="html/T_Microsoft_Research_Naiad_Frameworks_Lindi_ExtensionMethods.htm">
-        <HelpTOCNode Id="e31fc99e-363a-4668-b388-6e9f2569d5f3" Title="ExtensionMethods Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Frameworks_Lindi_ExtensionMethods.htm">
-          <HelpTOCNode Id="49ae82f8-75ef-480a-b4a4-0547fb8eb9fa" Title="Aggregate Method " Url="html/Overload_Microsoft_Research_Naiad_Frameworks_Lindi_ExtensionMethods_Aggregate.htm">
+    <HelpTOCNode Id="9f7712f0-fa06-41b4-a2bc-e403e8fcf111" Title="Microsoft.Research.Naiad.Frameworks.Lindi Namespace" Url="html/N_Microsoft_Research_Naiad_Frameworks_Lindi.htm">
+      <HelpTOCNode Id="28fffcdb-9463-4058-9f6f-079b2e9582e7" Title="ExtensionMethods Class" Url="html/T_Microsoft_Research_Naiad_Frameworks_Lindi_ExtensionMethods.htm">
+        <HelpTOCNode Id="1c324b5a-0f45-4246-a1f8-a13a8014f566" Title="ExtensionMethods Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Frameworks_Lindi_ExtensionMethods.htm">
+          <HelpTOCNode Id="b84dab80-e4f0-42fd-acd5-45dff11c0177" Title="Aggregate Method " Url="html/Overload_Microsoft_Research_Naiad_Frameworks_Lindi_ExtensionMethods_Aggregate.htm">
             <HelpTOCNode Title="Aggregate(TKey, TState, TTime) Method (Stream(Pair(TKey, TState), TTime), Func(TState, TState, TState))" Url="html/M_Microsoft_Research_Naiad_Frameworks_Lindi_ExtensionMethods_Aggregate__3.htm" />
             <HelpTOCNode Title="Aggregate(TKey, TState, TTime) Method (Stream(Pair(TKey, TState), TTime), Func(TState, TState, TState), Boolean)" Url="html/M_Microsoft_Research_Naiad_Frameworks_Lindi_ExtensionMethods_Aggregate__3_1.htm" />
             <HelpTOCNode Title="Aggregate(TInput, TKey, TState, TOutput, TTime) Method (Stream(TInput, TTime), Func(TInput, TKey), Func(TInput, TState), Func(TState, TState, TState), Func(TKey, TState, TOutput))" Url="html/M_Microsoft_Research_Naiad_Frameworks_Lindi_ExtensionMethods_Aggregate__5.htm" />
@@ -880,13 +881,13 @@
           <HelpTOCNode Title="Where(TRecord, TTime) Method " Url="html/M_Microsoft_Research_Naiad_Frameworks_Lindi_ExtensionMethods_Where__2.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="7be97151-a68d-4136-b90c-e31687304bc2" Title="NonStandardExtensionMethods Class" Url="html/T_Microsoft_Research_Naiad_Frameworks_Lindi_NonStandardExtensionMethods.htm">
-        <HelpTOCNode Id="6ca8b0a8-d414-4000-929b-594aeb481255" Title="NonStandardExtensionMethods Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Frameworks_Lindi_NonStandardExtensionMethods.htm">
-          <HelpTOCNode Id="57abdedd-c1c5-4ea8-b438-94476920afa8" Title="Iterate Method " Url="html/Overload_Microsoft_Research_Naiad_Frameworks_Lindi_NonStandardExtensionMethods_Iterate.htm">
+      <HelpTOCNode Id="766abf52-697e-4b77-bd8e-32e3b43dc4fd" Title="NonStandardExtensionMethods Class" Url="html/T_Microsoft_Research_Naiad_Frameworks_Lindi_NonStandardExtensionMethods.htm">
+        <HelpTOCNode Id="1d741042-c02f-4fc8-acf0-40057bcbe1eb" Title="NonStandardExtensionMethods Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Frameworks_Lindi_NonStandardExtensionMethods.htm">
+          <HelpTOCNode Id="7f55b136-27f7-44ac-8aef-0ef48bf11376" Title="Iterate Method " Url="html/Overload_Microsoft_Research_Naiad_Frameworks_Lindi_NonStandardExtensionMethods_Iterate.htm">
             <HelpTOCNode Title="Iterate(TInput, TTime) Method (Stream(TInput, TTime), Func(LoopContext(TTime), Stream(TInput, IterationIn(TTime)), Stream(TInput, IterationIn(TTime))), Expression(Func(TInput, Int32)), Int32, String)" Url="html/M_Microsoft_Research_Naiad_Frameworks_Lindi_NonStandardExtensionMethods_Iterate__2_1.htm" />
             <HelpTOCNode Title="Iterate(TInput, TTime) Method (Stream(TInput, TTime), Func(LoopContext(TTime), Stream(TInput, IterationIn(TTime)), Stream(TInput, IterationIn(TTime))), Func(TInput, Int32), Expression(Func(TInput, Int32)), Int32, String)" Url="html/M_Microsoft_Research_Naiad_Frameworks_Lindi_NonStandardExtensionMethods_Iterate__2.htm" />
           </HelpTOCNode>
-          <HelpTOCNode Id="70abef9d-5745-4bd6-9f31-4e878ddc007f" Title="IterateAndAccumulate Method " Url="html/Overload_Microsoft_Research_Naiad_Frameworks_Lindi_NonStandardExtensionMethods_IterateAndAccumulate.htm">
+          <HelpTOCNode Id="69f1cd7f-a51b-43ec-a257-8e9ae4c6c0c7" Title="IterateAndAccumulate Method " Url="html/Overload_Microsoft_Research_Naiad_Frameworks_Lindi_NonStandardExtensionMethods_IterateAndAccumulate.htm">
             <HelpTOCNode Title="IterateAndAccumulate(TInput, TTime) Method (Stream(TInput, TTime), Func(LoopContext(TTime), Stream(TInput, IterationIn(TTime)), Stream(TInput, IterationIn(TTime))), Expression(Func(TInput, Int32)), Int32, String)" Url="html/M_Microsoft_Research_Naiad_Frameworks_Lindi_NonStandardExtensionMethods_IterateAndAccumulate__2_1.htm" />
             <HelpTOCNode Title="IterateAndAccumulate(TInput, TTime) Method (Stream(TInput, TTime), Func(LoopContext(TTime), Stream(TInput, IterationIn(TTime)), Stream(TInput, IterationIn(TTime))), Func(TInput, Int32), Expression(Func(TInput, Int32)), Int32, String)" Url="html/M_Microsoft_Research_Naiad_Frameworks_Lindi_NonStandardExtensionMethods_IterateAndAccumulate__2.htm" />
           </HelpTOCNode>
@@ -897,76 +898,76 @@
         </HelpTOCNode>
       </HelpTOCNode>
     </HelpTOCNode>
-    <HelpTOCNode Id="e9d986f9-e76f-4417-a6b1-18d92d2baa0e" Title="Microsoft.Research.Naiad.Input Namespace" Url="html/N_Microsoft_Research_Naiad_Input.htm">
-      <HelpTOCNode Id="31ba26a4-3390-45b3-9e42-d8df55750379" Title="BaseDataSource(TRecord) Class" Url="html/T_Microsoft_Research_Naiad_Input_BaseDataSource_1.htm">
+    <HelpTOCNode Id="34c264e1-0647-44ed-bb42-84f6f5b5f642" Title="Microsoft.Research.Naiad.Input Namespace" Url="html/N_Microsoft_Research_Naiad_Input.htm">
+      <HelpTOCNode Id="194741c2-e795-41c5-961d-1fa6302a822e" Title="BaseDataSource(TRecord) Class" Url="html/T_Microsoft_Research_Naiad_Input_BaseDataSource_1.htm">
         <HelpTOCNode Title="BaseDataSource(TRecord) Constructor " Url="html/M_Microsoft_Research_Naiad_Input_BaseDataSource_1__ctor.htm" />
-        <HelpTOCNode Id="a8e2c334-cb28-47c5-a3f4-058022cc3d07" Title="BaseDataSource(TRecord) Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Input_BaseDataSource_1.htm">
+        <HelpTOCNode Id="cb787ac7-52b4-4387-a179-9aa427cba088" Title="BaseDataSource(TRecord) Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Input_BaseDataSource_1.htm">
           <HelpTOCNode Title="inputsByWorker Field" Url="html/F_Microsoft_Research_Naiad_Input_BaseDataSource_1_inputsByWorker.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="59e931aa-55ec-493d-8e3d-934d64adec37" Title="BaseDataSource(TRecord) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Input_BaseDataSource_1.htm">
+        <HelpTOCNode Id="c0c471f0-48f1-430c-95be-028efc299003" Title="BaseDataSource(TRecord) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Input_BaseDataSource_1.htm">
           <HelpTOCNode Title="Activate Method " Url="html/M_Microsoft_Research_Naiad_Input_BaseDataSource_1_Activate.htm" />
           <HelpTOCNode Title="Join Method " Url="html/M_Microsoft_Research_Naiad_Input_BaseDataSource_1_Join.htm" />
           <HelpTOCNode Title="RegisterInputs Method " Url="html/M_Microsoft_Research_Naiad_Input_BaseDataSource_1_RegisterInputs.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="85b35c92-6301-4ec0-86b8-13437342402a" Title="BatchedDataSource(TRecord) Class" Url="html/T_Microsoft_Research_Naiad_Input_BatchedDataSource_1.htm">
+      <HelpTOCNode Id="bb954dc8-72c3-43e9-b143-86eb20a4a8f1" Title="BatchedDataSource(TRecord) Class" Url="html/T_Microsoft_Research_Naiad_Input_BatchedDataSource_1.htm">
         <HelpTOCNode Title="BatchedDataSource(TRecord) Constructor " Url="html/M_Microsoft_Research_Naiad_Input_BatchedDataSource_1__ctor.htm" />
         <HelpTOCNode Title="BatchedDataSource(TRecord) Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Input_BatchedDataSource_1.htm" />
-        <HelpTOCNode Id="43ffac7a-ddf4-4ebd-b85e-b9e3491bc890" Title="BatchedDataSource(TRecord) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Input_BatchedDataSource_1.htm">
+        <HelpTOCNode Id="8380dfb9-a6f8-438e-823f-8bb0e9da5bea" Title="BatchedDataSource(TRecord) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Input_BatchedDataSource_1.htm">
           <HelpTOCNode Title="Join Method " Url="html/M_Microsoft_Research_Naiad_Input_BatchedDataSource_1_Join.htm" />
-          <HelpTOCNode Id="61801e81-09e7-419b-a9f3-ef188eeb0a20" Title="OnCompleted Method " Url="html/Overload_Microsoft_Research_Naiad_Input_BatchedDataSource_1_OnCompleted.htm">
+          <HelpTOCNode Id="58fc5df7-de89-4c34-a094-e4dc244499fb" Title="OnCompleted Method " Url="html/Overload_Microsoft_Research_Naiad_Input_BatchedDataSource_1_OnCompleted.htm">
             <HelpTOCNode Title="OnCompleted Method " Url="html/M_Microsoft_Research_Naiad_Input_BatchedDataSource_1_OnCompleted.htm" />
             <HelpTOCNode Title="OnCompleted Method (IEnumerable(TRecord))" Url="html/M_Microsoft_Research_Naiad_Input_BatchedDataSource_1_OnCompleted_1.htm" />
             <HelpTOCNode Title="OnCompleted Method (TRecord)" Url="html/M_Microsoft_Research_Naiad_Input_BatchedDataSource_1_OnCompleted_2.htm" />
           </HelpTOCNode>
           <HelpTOCNode Title="OnError Method " Url="html/M_Microsoft_Research_Naiad_Input_BatchedDataSource_1_OnError.htm" />
-          <HelpTOCNode Id="59e95afe-dee0-415a-9471-5853745816d9" Title="OnNext Method " Url="html/Overload_Microsoft_Research_Naiad_Input_BatchedDataSource_1_OnNext.htm">
+          <HelpTOCNode Id="dc16e4ee-0510-486e-b576-2940ad61e355" Title="OnNext Method " Url="html/Overload_Microsoft_Research_Naiad_Input_BatchedDataSource_1_OnNext.htm">
             <HelpTOCNode Title="OnNext Method " Url="html/M_Microsoft_Research_Naiad_Input_BatchedDataSource_1_OnNext.htm" />
             <HelpTOCNode Title="OnNext Method (IEnumerable(TRecord))" Url="html/M_Microsoft_Research_Naiad_Input_BatchedDataSource_1_OnNext_1.htm" />
             <HelpTOCNode Title="OnNext Method (TRecord)" Url="html/M_Microsoft_Research_Naiad_Input_BatchedDataSource_1_OnNext_2.htm" />
           </HelpTOCNode>
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="c5cd465b-cdbc-4ac3-b2b8-4fd1438c07e5" Title="ConstantDataSource(TRecord) Class" Url="html/T_Microsoft_Research_Naiad_Input_ConstantDataSource_1.htm">
-        <HelpTOCNode Id="25d424f5-393c-40b0-bf01-aa594e9f56c8" Title="ConstantDataSource(TRecord) Constructor " Url="html/Overload_Microsoft_Research_Naiad_Input_ConstantDataSource_1__ctor.htm">
+      <HelpTOCNode Id="be3f7d85-22ad-40b1-9f6d-a9cb54eda0ee" Title="ConstantDataSource(TRecord) Class" Url="html/T_Microsoft_Research_Naiad_Input_ConstantDataSource_1.htm">
+        <HelpTOCNode Id="b51e3452-d747-4864-ae28-22cc7bc3e5f5" Title="ConstantDataSource(TRecord) Constructor " Url="html/Overload_Microsoft_Research_Naiad_Input_ConstantDataSource_1__ctor.htm">
           <HelpTOCNode Title="ConstantDataSource(TRecord) Constructor " Url="html/M_Microsoft_Research_Naiad_Input_ConstantDataSource_1__ctor.htm" />
           <HelpTOCNode Title="ConstantDataSource(TRecord) Constructor (IEnumerable(TRecord))" Url="html/M_Microsoft_Research_Naiad_Input_ConstantDataSource_1__ctor_1.htm" />
           <HelpTOCNode Title="ConstantDataSource(TRecord) Constructor (TRecord)" Url="html/M_Microsoft_Research_Naiad_Input_ConstantDataSource_1__ctor_2.htm" />
         </HelpTOCNode>
         <HelpTOCNode Title="ConstantDataSource(TRecord) Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Input_ConstantDataSource_1.htm" />
-        <HelpTOCNode Id="2256a385-b2d6-456c-bc8f-18e54de8326f" Title="ConstantDataSource(TRecord) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Input_ConstantDataSource_1.htm">
+        <HelpTOCNode Id="190e27a2-f01d-4dcb-bed2-565103735065" Title="ConstantDataSource(TRecord) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Input_ConstantDataSource_1.htm">
           <HelpTOCNode Title="Activate Method " Url="html/M_Microsoft_Research_Naiad_Input_ConstantDataSource_1_Activate.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="9b6f6d1e-33c1-41c6-a384-b3030e48870d" Title="DataSource Interface" Url="html/T_Microsoft_Research_Naiad_Input_DataSource.htm">
-        <HelpTOCNode Id="7437045e-ce24-4cee-aeb3-0d91b9f11d2e" Title="DataSource Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Input_DataSource.htm">
+      <HelpTOCNode Id="fa3c7571-b6f9-4e19-8510-3b23071702f4" Title="DataSource Interface" Url="html/T_Microsoft_Research_Naiad_Input_DataSource.htm">
+        <HelpTOCNode Id="2262207d-fab1-4a39-b966-6091c2987bd0" Title="DataSource Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Input_DataSource.htm">
           <HelpTOCNode Title="Activate Method " Url="html/M_Microsoft_Research_Naiad_Input_DataSource_Activate.htm" />
           <HelpTOCNode Title="Join Method " Url="html/M_Microsoft_Research_Naiad_Input_DataSource_Join.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="979ef610-78a7-41f1-a718-b6787de60055" Title="DataSource(TRecord) Interface" Url="html/T_Microsoft_Research_Naiad_Input_DataSource_1.htm">
-        <HelpTOCNode Id="e00460cd-56ca-4de2-afc6-25358191bc8a" Title="DataSource(TRecord) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Input_DataSource_1.htm">
+      <HelpTOCNode Id="2a1950f2-4af9-4510-bc75-a8f2d141eb68" Title="DataSource(TRecord) Interface" Url="html/T_Microsoft_Research_Naiad_Input_DataSource_1.htm">
+        <HelpTOCNode Id="837f4dba-959b-4aa9-839e-07a4e45beaeb" Title="DataSource(TRecord) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Input_DataSource_1.htm">
           <HelpTOCNode Title="RegisterInputs Method " Url="html/M_Microsoft_Research_Naiad_Input_DataSource_1_RegisterInputs.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="faf418b4-70dd-4cc1-abea-ccc715d2b66e" Title="DataSourceExtensionMethods Class" Url="html/T_Microsoft_Research_Naiad_Input_DataSourceExtensionMethods.htm">
-        <HelpTOCNode Id="365c74ee-a5a1-4abd-9228-e47fdf8a758a" Title="DataSourceExtensionMethods Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Input_DataSourceExtensionMethods.htm">
-          <HelpTOCNode Id="235f24e0-edf0-44f8-9ea4-a27301e38a4f" Title="AsNaiadStream Method " Url="html/Overload_Microsoft_Research_Naiad_Input_DataSourceExtensionMethods_AsNaiadStream.htm">
+      <HelpTOCNode Id="e02251f6-f9cc-4017-8ba1-9ce1d526ce7a" Title="DataSourceExtensionMethods Class" Url="html/T_Microsoft_Research_Naiad_Input_DataSourceExtensionMethods.htm">
+        <HelpTOCNode Id="a7bcfb7c-3587-4f59-8307-7ab5ddeb91e6" Title="DataSourceExtensionMethods Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Input_DataSourceExtensionMethods.htm">
+          <HelpTOCNode Id="0935672e-bae5-4f98-ba4d-cd7c67eb1303" Title="AsNaiadStream Method " Url="html/Overload_Microsoft_Research_Naiad_Input_DataSourceExtensionMethods_AsNaiadStream.htm">
             <HelpTOCNode Title="AsNaiadStream(TRecord) Method (IEnumerable(TRecord), Computation)" Url="html/M_Microsoft_Research_Naiad_Input_DataSourceExtensionMethods_AsNaiadStream__1.htm" />
             <HelpTOCNode Title="AsNaiadStream(TRecord) Method (IObservable(IEnumerable(TRecord)), Computation)" Url="html/M_Microsoft_Research_Naiad_Input_DataSourceExtensionMethods_AsNaiadStream__1_1.htm" />
           </HelpTOCNode>
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="a18ca2c2-31ed-47bc-8883-268f528b1819" Title="InterGraphDataSink(TRecord) Class" Url="html/T_Microsoft_Research_Naiad_Input_InterGraphDataSink_1.htm">
+      <HelpTOCNode Id="331d116e-6845-4e3e-87b3-d2c599f19190" Title="InterGraphDataSink(TRecord) Class" Url="html/T_Microsoft_Research_Naiad_Input_InterGraphDataSink_1.htm">
         <HelpTOCNode Title="InterGraphDataSink(TRecord) Constructor " Url="html/M_Microsoft_Research_Naiad_Input_InterGraphDataSink_1__ctor.htm" />
-        <HelpTOCNode Id="7c128ebe-d600-4668-8c91-0f9fd7dac803" Title="InterGraphDataSink(TRecord) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Input_InterGraphDataSink_1.htm">
+        <HelpTOCNode Id="66ddcca0-c90e-4e10-97ba-45f9b30fb9aa" Title="InterGraphDataSink(TRecord) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Input_InterGraphDataSink_1.htm">
           <HelpTOCNode Title="NewDataSource Method " Url="html/M_Microsoft_Research_Naiad_Input_InterGraphDataSink_1_NewDataSource.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="0fc1a5b6-f769-42da-b4d7-a64086730ae8" Title="InterGraphDataSource(TRecord) Class" Url="html/T_Microsoft_Research_Naiad_Input_InterGraphDataSource_1.htm">
+      <HelpTOCNode Id="91b912cb-9c62-4e60-bf86-de3622dfe703" Title="InterGraphDataSource(TRecord) Class" Url="html/T_Microsoft_Research_Naiad_Input_InterGraphDataSource_1.htm">
         <HelpTOCNode Title="InterGraphDataSource(TRecord) Constructor " Url="html/M_Microsoft_Research_Naiad_Input_InterGraphDataSource_1__ctor.htm" />
         <HelpTOCNode Title="InterGraphDataSource(TRecord) Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Input_InterGraphDataSource_1.htm" />
-        <HelpTOCNode Id="27eb6886-3d85-4cca-b1b8-7be6f6241354" Title="InterGraphDataSource(TRecord) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Input_InterGraphDataSource_1.htm">
+        <HelpTOCNode Id="ce1c7612-f73f-4be1-aba3-a573e62030ec" Title="InterGraphDataSource(TRecord) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Input_InterGraphDataSource_1.htm">
           <HelpTOCNode Title="Activate Method " Url="html/M_Microsoft_Research_Naiad_Input_InterGraphDataSource_1_Activate.htm" />
           <HelpTOCNode Title="OnCompleted Method " Url="html/M_Microsoft_Research_Naiad_Input_InterGraphDataSource_1_OnCompleted.htm" />
           <HelpTOCNode Title="OnNotify Method " Url="html/M_Microsoft_Research_Naiad_Input_InterGraphDataSource_1_OnNotify.htm" />
@@ -974,21 +975,21 @@
         </HelpTOCNode>
       </HelpTOCNode>
     </HelpTOCNode>
-    <HelpTOCNode Id="41d64dee-ac50-4b2a-a699-6e29cb8f6661" Title="Microsoft.Research.Naiad.Runtime.Progress Namespace" Url="html/N_Microsoft_Research_Naiad_Runtime_Progress.htm">
-      <HelpTOCNode Id="71c7c185-169c-49b4-aab9-7436b08180f9" Title="Pointstamp Structure" Url="html/T_Microsoft_Research_Naiad_Runtime_Progress_Pointstamp.htm">
-        <HelpTOCNode Id="39cefc97-2b91-417d-9c6b-4887821744eb" Title="Pointstamp Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Runtime_Progress_Pointstamp.htm">
+    <HelpTOCNode Id="aeec6fff-8d33-44b7-87bd-a24b5eabd152" Title="Microsoft.Research.Naiad.Runtime.Progress Namespace" Url="html/N_Microsoft_Research_Naiad_Runtime_Progress.htm">
+      <HelpTOCNode Id="41d61cd4-79d8-4b2e-b944-02d55399e8b9" Title="Pointstamp Structure" Url="html/T_Microsoft_Research_Naiad_Runtime_Progress_Pointstamp.htm">
+        <HelpTOCNode Id="d7587d55-5575-439d-a610-0e4185820807" Title="Pointstamp Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Runtime_Progress_Pointstamp.htm">
           <HelpTOCNode Title="Location Field" Url="html/F_Microsoft_Research_Naiad_Runtime_Progress_Pointstamp_Location.htm" />
           <HelpTOCNode Title="Timestamp Field" Url="html/F_Microsoft_Research_Naiad_Runtime_Progress_Pointstamp_Timestamp.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="9d36fa5d-9ee5-48da-8541-d7edfe9c3f8f" Title="Pointstamp Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Runtime_Progress_Pointstamp.htm">
+        <HelpTOCNode Id="9e9ba15d-3c7d-48d6-9091-820f5e9e79f9" Title="Pointstamp Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Runtime_Progress_Pointstamp.htm">
           <HelpTOCNode Title="Equals Method " Url="html/M_Microsoft_Research_Naiad_Runtime_Progress_Pointstamp_Equals.htm" />
           <HelpTOCNode Title="GetHashCode Method " Url="html/M_Microsoft_Research_Naiad_Runtime_Progress_Pointstamp_GetHashCode.htm" />
           <HelpTOCNode Title="ToString Method " Url="html/M_Microsoft_Research_Naiad_Runtime_Progress_Pointstamp_ToString.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="6e167d16-4354-479b-a8f3-a4a0acbcd47c" Title="Pointstamp.FakeArray Structure" Url="html/T_Microsoft_Research_Naiad_Runtime_Progress_Pointstamp_FakeArray.htm">
+      <HelpTOCNode Id="bafc22e3-26a8-4967-bd1b-9366b74c4888" Title="Pointstamp.FakeArray Structure" Url="html/T_Microsoft_Research_Naiad_Runtime_Progress_Pointstamp_FakeArray.htm">
         <HelpTOCNode Title="Pointstamp.FakeArray Constructor " Url="html/M_Microsoft_Research_Naiad_Runtime_Progress_Pointstamp_FakeArray__ctor.htm" />
-        <HelpTOCNode Id="3f624a9b-afd2-4f09-a0d6-7fc87cdef77b" Title="Pointstamp.FakeArray Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Runtime_Progress_Pointstamp_FakeArray.htm">
+        <HelpTOCNode Id="0397098a-d48d-45e4-929c-13d884eecbcf" Title="Pointstamp.FakeArray Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Runtime_Progress_Pointstamp_FakeArray.htm">
           <HelpTOCNode Title="a Field" Url="html/F_Microsoft_Research_Naiad_Runtime_Progress_Pointstamp_FakeArray_a.htm" />
           <HelpTOCNode Title="b Field" Url="html/F_Microsoft_Research_Naiad_Runtime_Progress_Pointstamp_FakeArray_b.htm" />
           <HelpTOCNode Title="c Field" Url="html/F_Microsoft_Research_Naiad_Runtime_Progress_Pointstamp_FakeArray_c.htm" />
@@ -996,39 +997,39 @@
           <HelpTOCNode Title="Length Field" Url="html/F_Microsoft_Research_Naiad_Runtime_Progress_Pointstamp_FakeArray_Length.htm" />
           <HelpTOCNode Title="spillover Field" Url="html/F_Microsoft_Research_Naiad_Runtime_Progress_Pointstamp_FakeArray_spillover.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="30ed3f0b-fe5b-4848-8965-dbd3d6f3568f" Title="Pointstamp.FakeArray Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Runtime_Progress_Pointstamp_FakeArray.htm">
+        <HelpTOCNode Id="0fe685c2-13ba-4041-97e4-45ffdab826dd" Title="Pointstamp.FakeArray Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Runtime_Progress_Pointstamp_FakeArray.htm">
           <HelpTOCNode Title="ToString Method " Url="html/M_Microsoft_Research_Naiad_Runtime_Progress_Pointstamp_FakeArray_ToString.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="e23fd55d-eb48-4b19-89f1-63eda6c0828e" Title="Pointstamp.FakeArray Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Runtime_Progress_Pointstamp_FakeArray.htm">
+        <HelpTOCNode Id="89395d9f-ed9d-4ed0-b586-9910df3fbe9f" Title="Pointstamp.FakeArray Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Runtime_Progress_Pointstamp_FakeArray.htm">
           <HelpTOCNode Title="Item Property " Url="html/P_Microsoft_Research_Naiad_Runtime_Progress_Pointstamp_FakeArray_Item.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="be42e7e7-dd64-42c1-969f-40e8c2857256" Title="Update Structure" Url="html/T_Microsoft_Research_Naiad_Runtime_Progress_Update.htm">
-        <HelpTOCNode Id="516b22ad-775c-4245-9b77-be6f293c943c" Title="Update Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Runtime_Progress_Update.htm">
+      <HelpTOCNode Id="74c2da1b-ae4f-48f9-bd19-8346b17ebe69" Title="Update Structure" Url="html/T_Microsoft_Research_Naiad_Runtime_Progress_Update.htm">
+        <HelpTOCNode Id="4d9e9481-bb87-4899-bc34-c218e0f19042" Title="Update Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Runtime_Progress_Update.htm">
           <HelpTOCNode Title="Delta Field" Url="html/F_Microsoft_Research_Naiad_Runtime_Progress_Update_Delta.htm" />
           <HelpTOCNode Title="Pointstamp Field" Url="html/F_Microsoft_Research_Naiad_Runtime_Progress_Update_Pointstamp.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
     </HelpTOCNode>
-    <HelpTOCNode Id="31d91f75-277e-4d28-baad-52ba3b862fe7" Title="Microsoft.Research.Naiad.Serialization Namespace" Url="html/N_Microsoft_Research_Naiad_Serialization.htm">
+    <HelpTOCNode Id="2f337b9f-1b59-4cc5-9d17-119fce293930" Title="Microsoft.Research.Naiad.Serialization Namespace" Url="html/N_Microsoft_Research_Naiad_Serialization.htm">
       <HelpTOCNode Title="AutoSerialization Class" Url="html/T_Microsoft_Research_Naiad_Serialization_AutoSerialization.htm" />
-      <HelpTOCNode Id="130d339f-b283-4d19-8131-915e7a756baf" Title="CheckpointRestoreExtensionMethods Class" Url="html/T_Microsoft_Research_Naiad_Serialization_CheckpointRestoreExtensionMethods.htm">
-        <HelpTOCNode Id="a7bd6a9d-34bb-4e0a-9869-dcc575152257" Title="CheckpointRestoreExtensionMethods Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Serialization_CheckpointRestoreExtensionMethods.htm">
-          <HelpTOCNode Id="16306675-c8f7-439c-bc83-994c4aeca27d" Title="Checkpoint Method " Url="html/Overload_Microsoft_Research_Naiad_Serialization_CheckpointRestoreExtensionMethods_Checkpoint.htm">
+      <HelpTOCNode Id="be39972c-7da0-4498-994d-330969f8dde9" Title="CheckpointRestoreExtensionMethods Class" Url="html/T_Microsoft_Research_Naiad_Serialization_CheckpointRestoreExtensionMethods.htm">
+        <HelpTOCNode Id="66fd58f6-7601-4857-a0ee-c64817a1152d" Title="CheckpointRestoreExtensionMethods Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Serialization_CheckpointRestoreExtensionMethods.htm">
+          <HelpTOCNode Id="d3743ac1-796e-48be-91ce-5080cc2846e6" Title="Checkpoint Method " Url="html/Overload_Microsoft_Research_Naiad_Serialization_CheckpointRestoreExtensionMethods_Checkpoint.htm">
             <HelpTOCNode Title="Checkpoint(TKey, TValue) Method (Dictionary(TKey, TValue), NaiadWriter)" Url="html/M_Microsoft_Research_Naiad_Serialization_CheckpointRestoreExtensionMethods_Checkpoint__2.htm" />
             <HelpTOCNode Title="Checkpoint(TElement) Method (List(TElement), NaiadWriter)" Url="html/M_Microsoft_Research_Naiad_Serialization_CheckpointRestoreExtensionMethods_Checkpoint__1.htm" />
             <HelpTOCNode Title="Checkpoint(TElement) Method (TElement[], Int32, NaiadWriter)" Url="html/M_Microsoft_Research_Naiad_Serialization_CheckpointRestoreExtensionMethods_Checkpoint__1_1.htm" />
           </HelpTOCNode>
-          <HelpTOCNode Id="9706bb0c-11ea-42a6-a2aa-196c68513937" Title="Restore Method " Url="html/Overload_Microsoft_Research_Naiad_Serialization_CheckpointRestoreExtensionMethods_Restore.htm">
+          <HelpTOCNode Id="fc11f8f1-c574-4fb0-8615-304462167f30" Title="Restore Method " Url="html/Overload_Microsoft_Research_Naiad_Serialization_CheckpointRestoreExtensionMethods_Restore.htm">
             <HelpTOCNode Title="Restore(TKey, TValue) Method (Dictionary(TKey, TValue), NaiadReader)" Url="html/M_Microsoft_Research_Naiad_Serialization_CheckpointRestoreExtensionMethods_Restore__2.htm" />
             <HelpTOCNode Title="Restore(TElement) Method (List(TElement), NaiadReader)" Url="html/M_Microsoft_Research_Naiad_Serialization_CheckpointRestoreExtensionMethods_Restore__1.htm" />
           </HelpTOCNode>
           <HelpTOCNode Title="RestoreArray(TElement) Method " Url="html/M_Microsoft_Research_Naiad_Serialization_CheckpointRestoreExtensionMethods_RestoreArray__1.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="b614da4d-b5f2-4135-9f80-2953da5ae609" Title="Deserializers Class" Url="html/T_Microsoft_Research_Naiad_Serialization_Deserializers.htm">
-        <HelpTOCNode Id="44b7bfe1-e978-433f-89c8-98b6332d44a3" Title="Deserializers Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Serialization_Deserializers.htm">
-          <HelpTOCNode Id="16ede5bc-50c3-49fd-b23f-de205e00644a" Title="TryDeserialize Method " Url="html/Overload_Microsoft_Research_Naiad_Serialization_Deserializers_TryDeserialize.htm">
+      <HelpTOCNode Id="07d603aa-00c2-46cf-b7f5-37cfa8677220" Title="Deserializers Class" Url="html/T_Microsoft_Research_Naiad_Serialization_Deserializers.htm">
+        <HelpTOCNode Id="97f03ea7-d763-4b76-b6c1-d6f299879082" Title="Deserializers Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Serialization_Deserializers.htm">
+          <HelpTOCNode Id="4facf2dc-3743-420b-9a1f-4fbb5b5349fc" Title="TryDeserialize Method " Url="html/Overload_Microsoft_Research_Naiad_Serialization_Deserializers_TryDeserialize.htm">
             <HelpTOCNode Title="TryDeserialize Method (RecvBuffer, Boolean)" Url="html/M_Microsoft_Research_Naiad_Serialization_Deserializers_TryDeserialize.htm" />
             <HelpTOCNode Title="TryDeserialize Method (RecvBuffer, Byte)" Url="html/M_Microsoft_Research_Naiad_Serialization_Deserializers_TryDeserialize_1.htm" />
             <HelpTOCNode Title="TryDeserialize Method (RecvBuffer, Byte[])" Url="html/M_Microsoft_Research_Naiad_Serialization_Deserializers_TryDeserialize_2.htm" />
@@ -1046,8 +1047,8 @@
           </HelpTOCNode>
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="f3953f00-fbf8-4d75-8594-06135780a6ae" Title="MessageHeader Structure" Url="html/T_Microsoft_Research_Naiad_Serialization_MessageHeader.htm">
-        <HelpTOCNode Id="609a1ec6-cd6b-4e08-85ec-c683048b7aeb" Title="MessageHeader Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Serialization_MessageHeader.htm">
+      <HelpTOCNode Id="42b38c0a-d9c8-4316-9467-7b5f1d23bf0a" Title="MessageHeader Structure" Url="html/T_Microsoft_Research_Naiad_Serialization_MessageHeader.htm">
+        <HelpTOCNode Id="825da2ff-289d-4697-b8de-de199bfe925c" Title="MessageHeader Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Serialization_MessageHeader.htm">
           <HelpTOCNode Title="ChannelID Field" Url="html/F_Microsoft_Research_Naiad_Serialization_MessageHeader_ChannelID.htm" />
           <HelpTOCNode Title="DestVertexID Field" Url="html/F_Microsoft_Research_Naiad_Serialization_MessageHeader_DestVertexID.htm" />
           <HelpTOCNode Title="FromVertexID Field" Url="html/F_Microsoft_Research_Naiad_Serialization_MessageHeader_FromVertexID.htm" />
@@ -1056,72 +1057,72 @@
           <HelpTOCNode Title="Type Field" Url="html/F_Microsoft_Research_Naiad_Serialization_MessageHeader_Type.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="1812a1de-a76c-46ad-b804-ec6991585464" Title="NaiadReader Class" Url="html/T_Microsoft_Research_Naiad_Serialization_NaiadReader.htm">
+      <HelpTOCNode Id="c9884712-c939-4976-8ec4-ed91374dd46f" Title="NaiadReader Class" Url="html/T_Microsoft_Research_Naiad_Serialization_NaiadReader.htm">
         <HelpTOCNode Title="NaiadReader Constructor " Url="html/M_Microsoft_Research_Naiad_Serialization_NaiadReader__ctor.htm" />
-        <HelpTOCNode Id="95cf32c7-ae93-4640-b1e0-3b7f067bd3e2" Title="NaiadReader Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Serialization_NaiadReader.htm">
+        <HelpTOCNode Id="36f78176-d5e2-4748-bedf-e053b5a6b91d" Title="NaiadReader Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Serialization_NaiadReader.htm">
           <HelpTOCNode Title="Dispose Method " Url="html/M_Microsoft_Research_Naiad_Serialization_NaiadReader_Dispose.htm" />
-          <HelpTOCNode Id="14631291-25f3-4174-b726-b72f2a755622" Title="Read Method " Url="html/Overload_Microsoft_Research_Naiad_Serialization_NaiadReader_Read.htm">
+          <HelpTOCNode Id="e16096f2-da28-44b9-acd4-9bc59c9d746d" Title="Read Method " Url="html/Overload_Microsoft_Research_Naiad_Serialization_NaiadReader_Read.htm">
             <HelpTOCNode Title="Read(TElement) Method " Url="html/M_Microsoft_Research_Naiad_Serialization_NaiadReader_Read__1.htm" />
             <HelpTOCNode Title="Read(TElement) Method (NaiadSerialization(TElement))" Url="html/M_Microsoft_Research_Naiad_Serialization_NaiadReader_Read__1_1.htm" />
           </HelpTOCNode>
           <HelpTOCNode Title="TryRead(TElement) Method " Url="html/M_Microsoft_Research_Naiad_Serialization_NaiadReader_TryRead__1.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="dfd35b94-fe4f-4cb2-b7a1-be874de5e7fc" Title="NaiadSerialization(TElement) Interface" Url="html/T_Microsoft_Research_Naiad_Serialization_NaiadSerialization_1.htm">
-        <HelpTOCNode Id="e1a18844-808e-48e7-b348-647761ca8bdb" Title="NaiadSerialization(TElement) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Serialization_NaiadSerialization_1.htm">
+      <HelpTOCNode Id="664f646f-42b7-49ab-b7b4-c4dffa23d45e" Title="NaiadSerialization(TElement) Interface" Url="html/T_Microsoft_Research_Naiad_Serialization_NaiadSerialization_1.htm">
+        <HelpTOCNode Id="67dec282-7123-49b6-bff5-97216e274dba" Title="NaiadSerialization(TElement) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Serialization_NaiadSerialization_1.htm">
           <HelpTOCNode Title="Serialize Method " Url="html/M_Microsoft_Research_Naiad_Serialization_NaiadSerialization_1_Serialize.htm" />
           <HelpTOCNode Title="TryDeserialize Method " Url="html/M_Microsoft_Research_Naiad_Serialization_NaiadSerialization_1_TryDeserialize.htm" />
           <HelpTOCNode Title="TrySerializeMany Method " Url="html/M_Microsoft_Research_Naiad_Serialization_NaiadSerialization_1_TrySerializeMany.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="7144b15b-09d7-489a-b569-0fec5a939d52" Title="NaiadWriter Class" Url="html/T_Microsoft_Research_Naiad_Serialization_NaiadWriter.htm">
+      <HelpTOCNode Id="7783563b-34c8-4b76-ac8e-0a0344f2c61c" Title="NaiadWriter Class" Url="html/T_Microsoft_Research_Naiad_Serialization_NaiadWriter.htm">
         <HelpTOCNode Title="NaiadWriter Constructor " Url="html/M_Microsoft_Research_Naiad_Serialization_NaiadWriter__ctor.htm" />
-        <HelpTOCNode Id="9d4074ca-42ad-4fe0-832e-71d6b06828b8" Title="NaiadWriter Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Serialization_NaiadWriter.htm">
+        <HelpTOCNode Id="fffd8b6e-1750-4ecc-aef2-87d6476b7eed" Title="NaiadWriter Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Serialization_NaiadWriter.htm">
           <HelpTOCNode Title="Dispose Method " Url="html/M_Microsoft_Research_Naiad_Serialization_NaiadWriter_Dispose.htm" />
-          <HelpTOCNode Id="f376cf62-23bb-473e-a2f2-058a9a554e36" Title="Write Method " Url="html/Overload_Microsoft_Research_Naiad_Serialization_NaiadWriter_Write.htm">
+          <HelpTOCNode Id="f8fb087b-8fe2-426b-9bae-45b58c33fdd4" Title="Write Method " Url="html/Overload_Microsoft_Research_Naiad_Serialization_NaiadWriter_Write.htm">
             <HelpTOCNode Title="Write(TElement) Method (TElement)" Url="html/M_Microsoft_Research_Naiad_Serialization_NaiadWriter_Write__1.htm" />
             <HelpTOCNode Title="Write(TElement) Method (TElement, NaiadSerialization(TElement))" Url="html/M_Microsoft_Research_Naiad_Serialization_NaiadWriter_Write__1_1.htm" />
           </HelpTOCNode>
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="5bed38ec-5520-4a51-bcb5-381daef0e4aa" Title="NaiadWriter(TElement) Class" Url="html/T_Microsoft_Research_Naiad_Serialization_NaiadWriter_1.htm">
+      <HelpTOCNode Id="76af6960-32f8-47c7-8fdd-b57743adccaf" Title="NaiadWriter(TElement) Class" Url="html/T_Microsoft_Research_Naiad_Serialization_NaiadWriter_1.htm">
         <HelpTOCNode Title="NaiadWriter(TElement) Constructor " Url="html/M_Microsoft_Research_Naiad_Serialization_NaiadWriter_1__ctor.htm" />
-        <HelpTOCNode Id="391b8aa0-c0fc-43c3-bb41-7b8a10a123af" Title="NaiadWriter(TElement) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Serialization_NaiadWriter_1.htm">
+        <HelpTOCNode Id="b9b95eab-3623-4b5b-aa05-19c92573e5c6" Title="NaiadWriter(TElement) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Serialization_NaiadWriter_1.htm">
           <HelpTOCNode Title="Dispose Method " Url="html/M_Microsoft_Research_Naiad_Serialization_NaiadWriter_1_Dispose.htm" />
           <HelpTOCNode Title="Write Method " Url="html/M_Microsoft_Research_Naiad_Serialization_NaiadWriter_1_Write.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="ea233f5f-233d-4d45-a029-6c5dab917b72" Title="RecvBuffer Structure" Url="html/T_Microsoft_Research_Naiad_Serialization_RecvBuffer.htm">
-        <HelpTOCNode Id="0e6586dd-1de7-4aca-9eca-f8ac1aa67f4e" Title="RecvBuffer Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Serialization_RecvBuffer.htm">
+      <HelpTOCNode Id="a91edb31-e332-4ff0-85c8-1ce7d3e99997" Title="RecvBuffer Structure" Url="html/T_Microsoft_Research_Naiad_Serialization_RecvBuffer.htm">
+        <HelpTOCNode Id="b9be0a63-f337-499e-a319-7338d7d101a1" Title="RecvBuffer Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Serialization_RecvBuffer.htm">
           <HelpTOCNode Title="Buffer Field" Url="html/F_Microsoft_Research_Naiad_Serialization_RecvBuffer_Buffer.htm" />
           <HelpTOCNode Title="CurrentPos Field" Url="html/F_Microsoft_Research_Naiad_Serialization_RecvBuffer_CurrentPos.htm" />
           <HelpTOCNode Title="End Field" Url="html/F_Microsoft_Research_Naiad_Serialization_RecvBuffer_End.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="451e49b4-d082-4d89-8079-c3b8a73b0df9" Title="RecvBuffer Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Serialization_RecvBuffer.htm">
+        <HelpTOCNode Id="31d488c0-e5f8-47a7-b9e0-c64d76d417c4" Title="RecvBuffer Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Serialization_RecvBuffer.htm">
           <HelpTOCNode Title="Available Property " Url="html/P_Microsoft_Research_Naiad_Serialization_RecvBuffer_Available.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="9d12831e-5db8-4d77-a512-f7602dd0f988" Title="SerializationFormat Interface" Url="html/T_Microsoft_Research_Naiad_Serialization_SerializationFormat.htm">
-        <HelpTOCNode Id="f2ee780a-53a7-4d1e-9869-4443c992aa5c" Title="SerializationFormat Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Serialization_SerializationFormat.htm">
+      <HelpTOCNode Id="af626d46-d585-46e4-87cb-1deb8046aa07" Title="SerializationFormat Interface" Url="html/T_Microsoft_Research_Naiad_Serialization_SerializationFormat.htm">
+        <HelpTOCNode Id="8a1744a1-29e3-4234-b490-21021dd379ca" Title="SerializationFormat Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Serialization_SerializationFormat.htm">
           <HelpTOCNode Title="GetSerializer(TElement) Method " Url="html/M_Microsoft_Research_Naiad_Serialization_SerializationFormat_GetSerializer__1.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="9d7d429b-6a43-4a55-99f2-301de00054f9" Title="SerializationFormat Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Serialization_SerializationFormat.htm">
+        <HelpTOCNode Id="ea56259d-12a6-4c13-9016-da1e673f36d0" Title="SerializationFormat Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Serialization_SerializationFormat.htm">
           <HelpTOCNode Title="MajorVersion Property " Url="html/P_Microsoft_Research_Naiad_Serialization_SerializationFormat_MajorVersion.htm" />
           <HelpTOCNode Title="MinorVersion Property " Url="html/P_Microsoft_Research_Naiad_Serialization_SerializationFormat_MinorVersion.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="25ccd14a-529c-4a03-8def-8dc1a569e0c9" Title="SerializedMessage Class" Url="html/T_Microsoft_Research_Naiad_Serialization_SerializedMessage.htm">
-        <HelpTOCNode Id="04d5174f-c024-4bd3-9235-2ebb67089f85" Title="SerializedMessage Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Serialization_SerializedMessage.htm">
+      <HelpTOCNode Id="4d779cd3-5cf3-47f0-a295-3edce8573a33" Title="SerializedMessage Class" Url="html/T_Microsoft_Research_Naiad_Serialization_SerializedMessage.htm">
+        <HelpTOCNode Id="3b5c974c-c914-4311-a092-c21a3443e3ad" Title="SerializedMessage Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Serialization_SerializedMessage.htm">
           <HelpTOCNode Title="Body Field" Url="html/F_Microsoft_Research_Naiad_Serialization_SerializedMessage_Body.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="179ff4fd-dcb8-49a0-8924-bafe5d04d9a1" Title="SerializedMessage Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Serialization_SerializedMessage.htm">
+        <HelpTOCNode Id="e8681e45-66af-4e60-b17c-9a8c2a959def" Title="SerializedMessage Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Serialization_SerializedMessage.htm">
           <HelpTOCNode Title="Dispose Method " Url="html/M_Microsoft_Research_Naiad_Serialization_SerializedMessage_Dispose.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
       <HelpTOCNode Title="SerializedMessageType Enumeration" Url="html/T_Microsoft_Research_Naiad_Serialization_SerializedMessageType.htm" />
-      <HelpTOCNode Id="2b937a95-ff40-4828-8a6a-ab48b430b073" Title="Serializers Class" Url="html/T_Microsoft_Research_Naiad_Serialization_Serializers.htm">
-        <HelpTOCNode Id="eb7fdbe4-291f-44b7-9109-b2b8bbd5845f" Title="Serializers Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Serialization_Serializers.htm">
-          <HelpTOCNode Id="124d2a19-462e-429f-acb9-cf5cc28e50bb" Title="Serialize Method " Url="html/Overload_Microsoft_Research_Naiad_Serialization_Serializers_Serialize.htm">
+      <HelpTOCNode Id="8ddb3a78-5abc-4944-8013-f654a969d98f" Title="Serializers Class" Url="html/T_Microsoft_Research_Naiad_Serialization_Serializers.htm">
+        <HelpTOCNode Id="c8fff1ce-f2f2-4677-ab77-3a18ff2356a5" Title="Serializers Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Serialization_Serializers.htm">
+          <HelpTOCNode Id="4f34dd61-e300-4773-92ec-087bd4bd7cab" Title="Serialize Method " Url="html/Overload_Microsoft_Research_Naiad_Serialization_Serializers_Serialize.htm">
             <HelpTOCNode Title="Serialize Method (SubArray(Byte), Boolean)" Url="html/M_Microsoft_Research_Naiad_Serialization_Serializers_Serialize.htm" />
             <HelpTOCNode Title="Serialize Method (SubArray(Byte), Byte)" Url="html/M_Microsoft_Research_Naiad_Serialization_Serializers_Serialize_1.htm" />
             <HelpTOCNode Title="Serialize Method (SubArray(Byte), Byte[])" Url="html/M_Microsoft_Research_Naiad_Serialization_Serializers_Serialize_2.htm" />
@@ -1138,32 +1139,32 @@
           </HelpTOCNode>
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="42d27dc0-7874-4235-b8e7-ea8fd21afb14" Title="SubArray(TElement) Structure" Url="html/T_Microsoft_Research_Naiad_Serialization_SubArray_1.htm">
-        <HelpTOCNode Id="c71d99fc-4df1-4f1c-92de-16120282a04e" Title="SubArray(TElement) Constructor " Url="html/Overload_Microsoft_Research_Naiad_Serialization_SubArray_1__ctor.htm">
+      <HelpTOCNode Id="810b1625-32c3-4b4e-9a86-44193538b4b3" Title="SubArray(TElement) Structure" Url="html/T_Microsoft_Research_Naiad_Serialization_SubArray_1.htm">
+        <HelpTOCNode Id="40d75142-3daf-4416-a9fa-8402ecf234f1" Title="SubArray(TElement) Constructor " Url="html/Overload_Microsoft_Research_Naiad_Serialization_SubArray_1__ctor.htm">
           <HelpTOCNode Title="SubArray(TElement) Constructor (TElement[])" Url="html/M_Microsoft_Research_Naiad_Serialization_SubArray_1__ctor.htm" />
           <HelpTOCNode Title="SubArray(TElement) Constructor (TElement[], Int32)" Url="html/M_Microsoft_Research_Naiad_Serialization_SubArray_1__ctor_1.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="dc5f9150-e66f-4fb0-821c-0f1611cf6c44" Title="SubArray(TElement) Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Serialization_SubArray_1.htm">
+        <HelpTOCNode Id="e5f86292-7e89-4b64-a0a8-aab5cb93bc12" Title="SubArray(TElement) Fields" Url="html/Fields_T_Microsoft_Research_Naiad_Serialization_SubArray_1.htm">
           <HelpTOCNode Title="Array Field" Url="html/F_Microsoft_Research_Naiad_Serialization_SubArray_1_Array.htm" />
           <HelpTOCNode Title="Count Field" Url="html/F_Microsoft_Research_Naiad_Serialization_SubArray_1_Count.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="cc5a29ac-e5a2-4b0c-8983-390f9546f5e2" Title="SubArray(TElement) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Serialization_SubArray_1.htm">
+        <HelpTOCNode Id="b583ac25-bf7a-4d04-bbe8-8491f38439b6" Title="SubArray(TElement) Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Serialization_SubArray_1.htm">
           <HelpTOCNode Title="EnsureAvailable Method " Url="html/M_Microsoft_Research_Naiad_Serialization_SubArray_1_EnsureAvailable.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="c61dc5e7-32e7-4d8e-a3df-82366cd17ed4" Title="SubArray(TElement) Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Serialization_SubArray_1.htm">
+        <HelpTOCNode Id="34d85eea-27ac-4f8f-a7d1-f93c49a76f4c" Title="SubArray(TElement) Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Serialization_SubArray_1.htm">
           <HelpTOCNode Title="Available Property " Url="html/P_Microsoft_Research_Naiad_Serialization_SubArray_1_Available.htm" />
           <HelpTOCNode Title="Item Property " Url="html/P_Microsoft_Research_Naiad_Serialization_SubArray_1_Item.htm" />
           <HelpTOCNode Title="Length Property " Url="html/P_Microsoft_Research_Naiad_Serialization_SubArray_1_Length.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
     </HelpTOCNode>
-    <HelpTOCNode Id="997064e6-5236-4313-8f78-36ca253a82b7" Title="Microsoft.Research.Naiad.Utilities Namespace" Url="html/N_Microsoft_Research_Naiad_Utilities.htm">
-      <HelpTOCNode Id="ad19e458-f072-46c8-99c4-841b7057b1e4" Title="ExpressionComparer Class" Url="html/T_Microsoft_Research_Naiad_Utilities_ExpressionComparer.htm">
+    <HelpTOCNode Id="615d540e-4b14-41c2-b4ef-46e2b807cda3" Title="Microsoft.Research.Naiad.Utilities Namespace" Url="html/N_Microsoft_Research_Naiad_Utilities.htm">
+      <HelpTOCNode Id="a103066c-39fe-4594-ba96-20ab9617100e" Title="ExpressionComparer Class" Url="html/T_Microsoft_Research_Naiad_Utilities_ExpressionComparer.htm">
         <HelpTOCNode Title="ExpressionComparer Constructor " Url="html/M_Microsoft_Research_Naiad_Utilities_ExpressionComparer__ctor.htm" />
-        <HelpTOCNode Id="268ab1c1-6fe1-4c3e-9277-0ff95b14c2b8" Title="ExpressionComparer Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Utilities_ExpressionComparer.htm">
+        <HelpTOCNode Id="be1b14f2-29dd-4c77-bdef-ab2f9bec5107" Title="ExpressionComparer Methods" Url="html/Methods_T_Microsoft_Research_Naiad_Utilities_ExpressionComparer.htm">
           <HelpTOCNode Title="Equals Method " Url="html/M_Microsoft_Research_Naiad_Utilities_ExpressionComparer_Equals.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="89118187-2505-4f3b-b360-97212fded67b" Title="ExpressionComparer Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Utilities_ExpressionComparer.htm">
+        <HelpTOCNode Id="886962f4-49ef-4c7d-a531-8518ad6d36b3" Title="ExpressionComparer Properties" Url="html/Properties_T_Microsoft_Research_Naiad_Utilities_ExpressionComparer.htm">
           <HelpTOCNode Title="Instance Property " Url="html/P_Microsoft_Research_Naiad_Utilities_ExpressionComparer_Instance.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
