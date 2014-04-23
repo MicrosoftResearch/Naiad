@@ -93,6 +93,15 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
         }
 
         /// <summary>
+        /// GetHashCode override
+        /// </summary>
+        /// <returns>the node index</returns>
+        public override int GetHashCode()
+        {
+            return this.index;
+        }
+
+        /// <summary>
         /// Returns a string representation of this node.
         /// </summary>
         /// <returns>A string representation of this node.</returns>
@@ -170,6 +179,15 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
         public TValue value;
 
         /// <summary>
+        /// GetHashCode override
+        /// </summary>
+        /// <returns>node index plus value hash code</returns>
+        public override int GetHashCode()
+        {
+            return node.index + value.GetHashCode();
+        }
+
+        /// <summary>
         /// Constructs a node-value pair from the given <paramref name="node"/> and <paramref name="value"/>.
         /// </summary>
         /// <param name="node">The node.</param>
@@ -192,6 +210,15 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
         /// The value.
         /// </summary>
         public TValue value;
+
+        /// <summary>
+        /// GetHashCode override
+        /// </summary>
+        /// <returns>edge hashcode plus value hashcode</returns>
+        public override int GetHashCode()
+        {
+            return edge.GetHashCode() + value.GetHashCode();
+        }
 
         /// <summary>
         /// Constructs an edge-value pair from the given <paramref name="edge"/> and <paramref name="value"/>.
@@ -278,9 +305,52 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
         /// <returns>A stream of nodes each associated with its respective input record.</returns>
         public static Stream<NodeWithValue<TInput>, Epoch> RenameUsing<TInput, TIdentifier>(this Stream<TInput, Epoch> stream, Stream<NodeWithValue<TIdentifier>, Epoch> renameMapping, Func<TInput, TIdentifier> identifierSelector)
         {
-            return stream.NewBinaryStage(renameMapping, (i, v) => new Renamer<TInput, TIdentifier>(i, v, identifierSelector), x => identifierSelector(x).GetHashCode(), x => x.value.GetHashCode(), null, "RenameUsing");
+            return stream.NewBinaryStage(renameMapping, (i, v) => new RenamerVertex<TInput, TIdentifier>(i, v, identifierSelector), x => identifierSelector(x).GetHashCode(), x => x.value.GetHashCode(), null, "RenameUsing");
         }
 
+        /// <summary>
+        /// Uses an AutoRenamer to create and attach names to records in an input stream based on identifiers producer by an identifierSelector function.
+        /// </summary>
+        /// <typeparam name="TInput">Input record type</typeparam>
+        /// <typeparam name="TIdentifier">Identifier type</typeparam>
+        /// <param name="stream">The input stream</param>
+        /// <param name="renamer">The AutoRenamer</param>
+        /// <param name="identifierSelector">Function from input record to identifier</param>
+        /// <returns>A stream of pairs of input record and the node corresponding to the record's identifier</returns>
+        public static Stream<NodeWithValue<TInput>, IterationIn<Epoch>> RenameUsing<TInput, TIdentifier>(this Stream<TInput, IterationIn<Epoch>> stream, AutoRenamer<TIdentifier> renamer, Func<TInput, TIdentifier> identifierSelector)
+        {
+            return renamer.AddRenameTask(stream, identifierSelector);
+        }
+
+        /// <summary>
+        /// Uses an AutoRenamer to create and attach names to records in an input stream based on identifiers producer by an identifierSelector function.
+        /// </summary>
+        /// <typeparam name="TInput">Input record type</typeparam>
+        /// <typeparam name="TIdentifier">Identifier type</typeparam>
+        /// <param name="stream">The input stream</param>
+        /// <param name="renamer">The AutoRenamer</param>
+        /// <param name="identifierSelector">Function from input record to identifier</param>
+        /// <returns>A stream of pairs of input record and the node corresponding to the record's identifier</returns>
+        public static Stream<NodeWithValue<TInput>, IterationIn<Epoch>> RenameUsing<TInput, TIdentifier>(this Stream<TInput, Epoch> stream, AutoRenamer<TIdentifier> renamer, Func<TInput, TIdentifier> identifierSelector)
+        {
+            if (renamer.Context == null)
+                renamer.InitializeContext(stream.Context);
+
+            return renamer.AddRenameTask(renamer.Context.EnterLoop(stream), identifierSelector);
+        }
+
+        /// <summary>
+        /// Extracts a stream from an AutoRenaming context. Once called, no further RenameUsing invocations may be used.
+        /// </summary>
+        /// <typeparam name="TRecord">Record type</typeparam>
+        /// <typeparam name="TIdentifier">Identifier type</typeparam>
+        /// <param name="stream">The stream of records</param>
+        /// <param name="renamer">The AutoRenamer</param>
+        /// <returns>The same stream of records, outside of the renaming context.</returns>
+        public static Stream<TRecord, Epoch> FinishRenaming<TRecord, TIdentifier>(this Stream<TRecord, IterationIn<Epoch>> stream, AutoRenamer<TIdentifier> renamer)
+        {
+            return renamer.Context.ExitLoop(stream);
+        }
         #endregion
 
         #region Methods relating to exchanging data across the edges in a graph.
@@ -303,7 +373,31 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
         {
             var compacted = edges.Compact();    // could be cached and retreived as needed
 
-            return compacted.NewBinaryStage(nodes, (i, v) => new GraphJoin<TValue, TTime>(i, v), null, x => x.node.index, null, "TransmitAlong");
+            return compacted.NewBinaryStage(nodes, (i, v) => new GraphJoin<TValue, TValue, TTime>(i, v, (x, y) => x.value), null, x => x.node.index, null, "TransmitAlong");
+        }
+
+
+        /// <summary>
+        /// Transmits the value associated with each node in <paramref name="nodes"/> along the matching edges in <paramref name="edges"/>
+        /// to produce a stream of <see cref="NodeWithValue{TValue}"/>s for each target of a matching edge.
+        /// </summary>
+        /// <typeparam name="TValue">The type of value associated with each node.</typeparam>
+        /// <typeparam name="TOutput">The type of value sent to each destination node.</typeparam>
+        /// <typeparam name="TTime">The type of timestamp on each record.</typeparam>
+        /// <param name="nodes">The stream of nodes with values.</param>
+        /// <param name="edges">The stream of edges.</param>
+        /// <param name="valueSelector">A function from input (node, value) pair and destination node producing the value to send to that destination.</param>
+        /// <returns>The stream of targets with values for each edge in <paramref name="edges"/>.</returns>
+        /// <remarks>
+        /// This operator may produce several values for a particular target node. The <see cref="GraphReduce{TValue,TTime}"/> operator
+        /// produces a unique value for each target node.
+        /// </remarks>
+        public static Stream<NodeWithValue<TOutput>, TTime> TransmitAlong<TValue, TOutput, TTime>(this Stream<NodeWithValue<TValue>, TTime> nodes, Stream<Edge, TTime> edges, Func<NodeWithValue<TValue>, Node, TOutput> valueSelector)
+            where TTime : Time<TTime>
+        {
+            var compacted = edges.Compact();    // could be cached and retreived as needed
+
+            return compacted.NewBinaryStage(nodes, (i, v) => new GraphJoin<TValue, TOutput, TTime>(i, v, valueSelector), null, x => x.node.index, null, "TransmitAlong");
         }
 
         /// <summary>
@@ -427,7 +521,7 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
             return nodes.NewBinaryStage(initialStates, (i, v) => new NodeBinaryStateMachine<TValue, TState, TOutput, TTime>(i, v, transitionSelector, defaultState), x => x.node.index, x => x.node.index, x => x.node.index, "NodeStateMachine");
         }
 
-        #region Convenience overloads for unary StateMachine<TValue, TState, TOutput, TTime> 
+        #region Convenience overloads for unary StateMachine<TValue, TState, TOutput, TTime>
 
         /// <summary>
         /// Represents either a value or an invalid value
@@ -567,32 +661,43 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
 
         #endregion
     }
-    
+
     // a blocking aggregation vertex, reporting the aggregate value for any received keys.
     internal class NodeAggregatorVertex<V, T> : UnaryVertex<NodeWithValue<V>, NodeWithValue<V>, T>
         where T : Time<T>
     {
-        private readonly Dictionary<T, Dictionary<Node, V>> Values;
+        private readonly Dictionary<T, V[]> Values;
 
         private readonly Func<V, V, V> Update; // value aggregator
+
+        private readonly Int32 Parts;
+        private readonly Int32 Index;
 
         public override void OnReceive(Message<NodeWithValue<V>, T> message)
         {
             if (!this.Values.ContainsKey(message.time))
             {
-                this.Values.Add(message.time, new Dictionary<Node, V>());
+                this.Values.Add(message.time, new V[] {});
                 this.NotifyAt(message.time);
             }
 
+            var array = this.Values[message.time];
             for (int i = 0; i < message.length; i++)
             {
                 var record = message.payload[i];
 
-                var dictionary = this.Values[message.time];
-                if (!dictionary.ContainsKey(record.node))
-                    dictionary.Add(record.node, record.value);
-                else
-                    dictionary[record.node] = this.Update(dictionary[record.node], record.value);
+                var localName = record.node.index / this.Parts;
+                if (array.Length <= localName)
+                {
+                    var newArray = new V[Math.Max(2 * array.Length, localName + 1)];
+                    for (int j = 0; j < array.Length; j++)
+                        newArray[j] = array[j];
+
+                    this.Values[message.time] = newArray;
+                    array = newArray;
+                }
+
+                array[localName] = this.Update(array[localName], record.value);
             }
         }
 
@@ -602,8 +707,9 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
             if (this.Values.ContainsKey(time))
             {
                 var output = this.Output.GetBufferForTime(time);
-                foreach (var pair in this.Values[time])
-                    output.Send(pair.Key.WithValue(pair.Value));
+                var array = this.Values[time];
+                for (int i = 0; i < array.Length; i++)
+                    output.Send(new Node((this.Parts * i) + this.Index).WithValue(array[i]));
 
                 this.Values.Remove(time);
             }
@@ -612,8 +718,11 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
         public NodeAggregatorVertex(int index, Stage<T> stage, Func<V, V, V> aggregate)
             : base(index, stage)
         {
-            this.Values = new Dictionary<T, Dictionary<Node, V>>();
+            this.Values = new Dictionary<T, V[]>();
             this.Update = aggregate;
+
+            this.Parts = stage.Placement.Count;
+            this.Index = this.VertexId;
         }
     }
 
@@ -784,12 +893,14 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
     }
 
     // vertex managing a CompactGraph fragment, processing corresponding values by applying a reducer.
-    internal class GraphJoin<S, T> : BinaryVertex<CompactGraph, NodeWithValue<S>, NodeWithValue<S>, T>
+    internal class GraphJoin<S, TOutput, T> : BinaryVertex<CompactGraph, NodeWithValue<S>, NodeWithValue<TOutput>, T>
         where T : Time<T>
     {
         CompactGraph Graph;
 
         List<NodeWithValue<S>> ToProcess;
+
+        Func<NodeWithValue<S>, Node, TOutput> ValueSelector;
 
         public override void OnReceive1(Message<CompactGraph, T> message)
         {
@@ -816,7 +927,7 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
 
                     if (localName + 1 < this.Graph.nodes.Length)
                         for (int j = this.Graph.nodes[localName]; j < this.Graph.nodes[localName + 1]; j++)
-                            output.Send(this.Graph.edges[j].WithValue(record.value));
+                            output.Send(this.Graph.edges[j].WithValue(this.ValueSelector(record, this.Graph.edges[j])));
                 }
             }
         }
@@ -829,17 +940,18 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
                 var localName = record.node.index / this.Stage.Placement.Count;
                 if (localName + 1 < this.Graph.nodes.Length)
                     for (int j = this.Graph.nodes[localName]; j < this.Graph.nodes[localName + 1]; j++)
-                        output.Send(this.Graph.edges[j].WithValue(record.value));
+                        output.Send(this.Graph.edges[j].WithValue(this.ValueSelector(record, this.Graph.edges[j])));
             }
 
             this.ToProcess = new List<NodeWithValue<S>>();
         }
 
-        public GraphJoin(int index, Stage<T> vertex)
+        public GraphJoin(int index, Stage<T> vertex, Func<NodeWithValue<S>, Node, TOutput> valueSelector)
             : base(index, vertex)
         {
             this.Graph = new CompactGraph();
             this.ToProcess = new List<NodeWithValue<S>>();
+            this.ValueSelector = valueSelector;
 
             this.Entrancy = 5;
         }
@@ -980,7 +1092,7 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
     }
 
     // joins on keys of type S to look up integer names provided as input.
-    internal class Renamer<TInput, TIdentifier> : BinaryVertex<TInput, NodeWithValue<TIdentifier>, NodeWithValue<TInput>, Epoch>
+    internal class RenamerVertex<TInput, TIdentifier> : BinaryVertex<TInput, NodeWithValue<TIdentifier>, NodeWithValue<TInput>, Epoch>
     {
         private Dictionary<TIdentifier, Node> Rename = new Dictionary<TIdentifier, Node>();
         private Dictionary<TIdentifier, List<TInput>> delayed = new Dictionary<TIdentifier, List<TInput>>();
@@ -1059,14 +1171,137 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
                         output.Send(Rename[pair.Key].WithValue(pair.Value[j]));
             }
 
-            this.Rename = new Dictionary<TIdentifier,Node>();
-            this.delayed = new Dictionary<TIdentifier,List<TInput>>();
+            this.Rename = new Dictionary<TIdentifier, Node>();
+            this.delayed = new Dictionary<TIdentifier, List<TInput>>();
         }
 
-        public Renamer(int index, Stage<Epoch> vertex, Func<TInput, TIdentifier> oldN)
+        public RenamerVertex(int index, Stage<Epoch> vertex, Func<TInput, TIdentifier> oldN)
             : base(index, vertex)
         {
             this.oldName = oldN;
+        }
+    }
+
+    /// <summary>
+    /// A renaming context with the ability to choose its own names for identifiers.
+    /// </summary>
+    /// <typeparam name="TIdentifier">common identifier type</typeparam>
+    public class AutoRenamer<TIdentifier> : IDisposable
+    {
+        private class Vertex : Vertex<IterationIn<Epoch>>
+        {
+            private Dictionary<TIdentifier, Node> Rename = new Dictionary<TIdentifier, Node>();
+
+            internal VertexOutputBuffer<NodeWithValue<TIdentifier>, IterationIn<Epoch>> RenameOutput;
+
+            internal void OnReceive<TInput>(Message<TInput, IterationIn<Epoch>> message,
+                                            Func<TInput, TIdentifier> nameSelector,
+                                            VertexOutputBuffer<NodeWithValue<TInput>, IterationIn<Epoch>> Output)
+            {
+                var time = message.time;
+
+                var rename = this.RenameOutput.GetBufferForTime(time);
+                var output = Output.GetBufferForTime(time);
+                for (int i = 0; i < message.length; i++)
+                {
+                    var name = nameSelector(message.payload[i]);
+                    if (!Rename.ContainsKey(name))
+                    {
+                        var newNode = new Node((this.Rename.Count * this.Stage.Placement.Count) + this.VertexId);
+                        this.Rename.Add(name, newNode);
+                        rename.Send(newNode.WithValue(name));
+                    }
+
+                    output.Send(Rename[name].WithValue(message.payload[i]));
+                }
+            }
+
+            public void OnNotify(Epoch time)
+            {
+                this.Rename = null;
+            }
+
+            internal Vertex(int index, Stage<IterationIn<Epoch>> stage)
+                : base(index, stage)
+            {
+                this.RenameOutput = new VertexOutputBuffer<NodeWithValue<TIdentifier>, IterationIn<Epoch>>(this);
+
+                this.NotifyAt(new IterationIn<Epoch>(new Epoch(Int32.MaxValue), Int32.MaxValue));
+                this.Entrancy = 5;
+            }
+        }
+
+        /// <summary>
+        /// Context used to enter and exit the renaming scope.
+        /// </summary>
+        internal Naiad.Dataflow.Iteration.LoopContext<Epoch> Context;
+
+        private Stage<Vertex, IterationIn<Epoch>> Stage;
+        private readonly List<Action> ConnectLoopsActions = new List<Action>();
+
+        /// <summary>
+        /// Constructs a new renamer with the ability to choose its own names for identifiers.
+        /// </summary>
+        public AutoRenamer() { }
+
+        internal void InitializeContext(TimeContext<Epoch> context)
+        {
+            if (this.Context == null)
+            {
+                this.Context = new Naiad.Dataflow.Iteration.LoopContext<Epoch>(context, "RenameContext");
+
+                var delay = this.Context.Delay<bool>();
+
+                this.Stage = new Stage<Vertex, IterationIn<Epoch>>(delay.Output.Context, (i, s) => new Vertex(i, s), "Renamer");
+            }
+        }
+
+        /// <summary>
+        /// Adds a rename task, taking a stream in the rename context and a name selection function.
+        /// </summary>
+        /// <typeparam name="TInput">input type</typeparam>
+        /// <param name="stream">source stream</param>
+        /// <param name="nameSelector">function from input to identifier</param>
+        /// <returns>stream of pairs of inputs and node name of associated identifier</returns>
+        public Stream<NodeWithValue<TInput>, IterationIn<Epoch>> AddRenameTask<TInput>(Stream<TInput, IterationIn<Epoch>> stream, Func<TInput, TIdentifier> nameSelector)
+        {
+            var result = this.Context.Delay<NodeWithValue<TInput>>();
+
+            // shared dictionary of VertexOutputBuffers. not how things should really be structured, but ... =/
+            var dictionary = new Dictionary<Vertex, VertexOutputBuffer<NodeWithValue<TInput>, IterationIn<Epoch>>>();
+
+            this.Stage.NewInput(stream, (message, vertex) => vertex.OnReceive(message, nameSelector, dictionary[vertex]), x => nameSelector(x).GetHashCode());
+
+            this.ConnectLoopsActions.Add(() => result.Input = this.Stage.NewOutput(vertex =>
+            {
+                if (!dictionary.ContainsKey(vertex))
+                    dictionary.Add(vertex, new VertexOutputBuffer<NodeWithValue<TInput>, IterationIn<Epoch>>(vertex));
+
+                return dictionary[vertex];
+            }, null));
+
+            return result.Output;
+        }
+
+        /// <summary>
+        /// Creates and connects outputs to their feedback vertices.
+        /// </summary>
+        public void Dispose()
+        {
+            foreach (var action in this.ConnectLoopsActions)
+                action();
+        }
+
+        /// <summary>
+        /// A stream of renamings produced by the AutoRenamer.
+        /// </summary>
+        public Stream<NodeWithValue<TIdentifier>, Epoch> FinalRenamings
+        {
+            get
+            {
+                return this.Stage.NewOutput(vertex => vertex.RenameOutput, x => x.value.GetHashCode())
+                                 .FinishRenaming(this);
+            }
         }
     }
 }

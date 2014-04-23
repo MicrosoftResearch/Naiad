@@ -1,0 +1,155 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<topic id="1aff01be-2d57-406e-9f1d-b0872c8733e5" revisionNumber="1">
+  <developerHowToDocument
+    xmlns="http://ddue.schemas.microsoft.com/authoring/2003/5"
+    xmlns:xlink="http://www.w3.org/1999/xlink">
+
+    <!--
+    <summary>
+      <para>Optional summary abstract</para>
+    </summary>
+    -->
+
+    <introduction>
+      <para>
+        Naiad programs are described as dataflow graphs, where the nodes in the graph (Naiad calls them stages) correspond to computation, and the edges describe the flow of data. A large collection of pre-fabricated stages exist, and while most programmers will likely use these predominantly, it can also be useful to be able to understand how stages are defined in case the programmer needs to introduce custom computations.
+      </para>
+      <para>
+        There are two steps to implementing a custom dataflow stage: one needs to define a dataflow vertex containing the associated state and logic, and one needs to tell Naiad how to connect inputs and outputs to this logic so that input records trigger the correct computation. We will go through each of these parts, demonstrating not only how to perform these steps from the ground up, but also how Naiad has wrapped up some common patterns to try and make life easier for the programmer.
+      </para>
+    </introduction>
+
+    <!-- Optional procedures followed by optional code example but must have
+         at least one procedure or code example -->
+
+    <section>
+      <title>Defining the dataflow vertex</title>
+      <content>
+        <para>
+          Custom vertices are defined by inheriting from the <codeEntityReference>T:Microsoft.Research.Naiad.Dataflow.Vertex`1</codeEntityReference> class,
+          which is a class wrapping the common logic for all vertices that may be brought in to existence in a Naiad stage.
+          The generic parameter  <codeInline>TTime</codeInline>  denotes the type of Naiad timestamp the vertex uses, which will often be a generic parameter
+          for your custom vertex, too. We'll get to the specific features of the Vertex class later.
+          An example vertex with one input and one output might look like the following
+        </para>
+        <code>
+// Single input, single output Naiad vertex. Each vertex must specify a time type.
+public class ExampleVertex&lt;TRecord, TTime&gt; : Vertex&lt;TTime&gt;
+    where TTime : Time&lt;TTime&gt;
+{
+    // each received message is simply forwarded to any listeners.
+    public void OnReceive(Message&lt;TRecord, TTime&gt; message)
+    {
+        foreach (var listener in this.Listeners)
+            recipient.Send(message);
+    }
+
+    // list of output recipients, each of which require all sent records.
+    public readonly List&lt;SendWire&lt;TRecord, TTime&gt;&gt; Listeners;
+
+    // each vertex requires its index in the stage, and the stage itself.
+    public ExampleVertex(int index, Stage&lt;TTime&gt; stage)
+        : base(index, stage)
+    {
+        this.Listeners = new List&lt;SendWire&lt;TRecord, TTime&gt;&gt;();
+    }
+}
+        </code>
+        <para>
+          This vertex isn't especially interesting yet,
+          and it isn't even clear how this list of recipients is populated. However, assuming that we sort that out, 
+          the vertex's behavior is specified: for each received message, it sends that message to every one in its list of recipients.
+        </para>
+      </content>
+    </section>
+
+    <section>
+      <title>Building a dataflow stage</title>
+      <content>
+        <para>
+          To complete this example, we have to assemble a stage consisting of many of these vertices, and describe how the inputs and outputs are connected.
+          The standard pattern is to first create a new stage from a vertex factory, then add any number of inputs (defined by a message callback and partitioning
+          requirement), and finally add any number of outputs (defined by a registration callback and partitioning guarantee). The example looks like:
+        </para>
+        <code>
+// constructs a stage of our ExampleVertex, and returns the associated output stream.
+public static Stream&lt;TRecord, TTime&gt; MakeStage(Stream&lt;TRecord, TTime&gt; stream,
+                                                     Expression&lt;Func&lt;TRecord, int&gt;&gt; inputPartitionBy,
+                                                     Expression&lt;Func&lt;TRecord, int&gt;&gt; outputPartitionBy,
+                                                     string name)
+{
+    // first we define the innards of the stage, supplying a context, a vertex factory, and a friendly name.
+    var stage = Foundry.NewStage(stream.Context, (index, parent) =&gt; new ExampleVertex&lt;TRecord, TTime&gt;(index, parent), name);
+
+    // each new input requires a source of data, a (message, vertex) callback, and a partitioning requirement.
+    var input = stage.NewInput(stream, (message, vertex) =&gt; vertex.OnReceive(message), inputPartitionBy);
+
+    // each new output requires a (listener, vertex) callback, and a partitioning guarantee.
+    var output = stage.NewOutput((listener, vertex) =&gt; vertex.Listeners.Add(listener), outputPartitionBy);
+
+    return output;
+}          
+        </code>
+        <para>
+          In more detail, the <codeEntityReference>M:Microsoft.Research.Naiad.Dataflow.StandardVertices.Foundry.NewStage``2(Microsoft.Research.Naiad.Dataflow.TimeContext{``1},System.Func{System.Int32,Microsoft.Research.Naiad.Dataflow.Stage{``1},``0},System.String)</codeEntityReference>
+          method is what Naiad uses to assemble a new stage, taking a <codeEntityReference>T:Microsoft.Research.Naiad.Dataflow.TimeContext`1</codeEntityReference> 
+          from which the stage understands its place in the dataflow graph,
+          a factory capable of producing vertices for each vertex index and stage,
+          and a tasteful name to use in describing the vertex.
+          This stage will contain many vertices constructed by the factory, but does not yet have any incoming or outgoing edges. 
+          To add a new input, the <codeEntityReference>M:Microsoft.Research.Naiad.Dataflow.Stage`2.NewInput``1(Microsoft.Research.Naiad.Stream{``0,`1},System.Action{Microsoft.Research.Naiad.Dataflow.Message{``0,`1},`0},System.Linq.Expressions.Expression{System.Func{``0,System.Int32}})</codeEntityReference> 
+          method needs a source of data, a callback for each vertex supplied as an action  on messages and vertices, and a partitioning requirement.
+          Naiad will make sure that all records passed along the input will be partitioned according to the requirement, in that two records evaluating to the same value will arrive at the same vertex instance. Once all inputs are added we can add outputs 
+          using <codeEntityReference>M:Microsoft.Research.Naiad.Dataflow.Stage`2.NewOutput``1(System.Func{`0,Microsoft.Research.Naiad.Dataflow.VertexOutput{``0,`1}},System.Linq.Expressions.Expression{System.Func{``0,System.Int32}})</codeEntityReference>,
+          which requires a registration callback (essentially what the vertex should do when another vertex expresses interest in its output), and a partitioning guarantee.
+          Naiad uses the guarantee to pipeline communication when an interested consumer has a requirement matching the guarantee.
+
+        </para>
+      </content>
+    </section>
+    
+    <!-- <codeExample>Optional code example</codeExample> -->
+
+    <!-- <buildInstructions>Optional instructions for building a
+         code example.</buildInstructions> -->
+
+    <!-- <robustProgramming>Optional discussion of error handling and other
+         issues related to writing solid code.</robustProgramming> -->
+
+    <!-- <security>Optional discussion of security issues.</security> -->
+
+    <relatedTopics>
+      <!-- One or more of the following:
+           - A local link
+           - An external link
+           - A code entity reference
+
+      <link xlink:href="Other Topic's ID">Link text</link>
+      <externalLink>
+          <linkText>Link text</linkText>
+          <linkAlternateText>Optional alternate link text</linkAlternateText>
+          <linkUri>URI</linkUri>
+      </externalLink>
+      <codeEntityReference>API member ID</codeEntityReference>
+
+      Examples:
+
+      <link xlink:href="00e97994-e9e6-46e0-b420-5be86b2f8278">Some other topic</link>
+
+      <externalLink>
+          <linkText>SHFB on CodePlex</linkText>
+          <linkAlternateText>Go to CodePlex</linkAlternateText>
+          <linkUri>http://shfb.codeplex.com</linkUri>
+      </externalLink>
+
+      <codeEntityReference>T:TestDoc.TestClass</codeEntityReference>
+      <codeEntityReference>P:TestDoc.TestClass.SomeProperty</codeEntityReference>
+      <codeEntityReference>M:TestDoc.TestClass.#ctor</codeEntityReference>
+      <codeEntityReference>M:TestDoc.TestClass.#ctor(System.String,System.Int32)</codeEntityReference>
+      <codeEntityReference>M:TestDoc.TestClass.ToString</codeEntityReference>
+      <codeEntityReference>M:TestDoc.TestClass.FirstMethod</codeEntityReference>
+      <codeEntityReference>M:TestDoc.TestClass.SecondMethod(System.Int32,System.String)</codeEntityReference>
+      -->
+    </relatedTopics>
+  </developerHowToDocument>
+</topic>

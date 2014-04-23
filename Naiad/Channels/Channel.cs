@@ -83,6 +83,8 @@ namespace Microsoft.Research.Naiad.Dataflow
             if (this.Unallocated)
                 throw new Exception("Attempting to release an unallocated message.");
 
+            Array.Clear(this.payload, 0, this.length);
+
             // return to a shared queue.
             ThreadLocalBufferPools<TRecord>.pool.Value.CheckIn(this.payload);
             

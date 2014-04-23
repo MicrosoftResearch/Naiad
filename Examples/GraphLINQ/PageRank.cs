@@ -36,14 +36,15 @@ namespace Microsoft.Research.Naiad.Examples.GraphLINQ
     public static class ExtensionMethods
     {
         // performs one step of pagerank, scaling ranks by (1.0 - reset) / degree, tranmitting to neighbors, aggregating along the way.
-        public static Stream<NodeWithValue<float>, IterationIn<Epoch>> PageRankStep(this Stream<NodeWithValue<float>, IterationIn<Epoch>> ranks,
-                                                                                         Stream<Edge, Epoch> edges,
-                                                                                         Stream<NodeWithValue<Int64>, Epoch> degrees,
-                                                                                         LoopContext<Epoch> loopContext)
+        public static Stream<NodeWithValue<float>, T> PageRankStep<T>(this Stream<NodeWithValue<float>, T> ranks,
+                                                                           Stream<NodeWithValue<Int64>, T> degrees,
+                                                                           Stream<Edge, T> edges)
+            where T : Time<T>
         {
-            // join ranks with degrees, scaled down. then "graphreduce", meaning accumulate over graph edges.
-            return ranks.NodeJoin(loopContext.EnterLoop(degrees), (rank, degree) => degree > 0 ? rank * (0.85f / degree) : 0.0f)
-                        .GraphReduce(loopContext.EnterLoop(edges), (x, y) => x + y, true);
+            // join ranks with degrees, scaled down. then "graphreduce", accumulating ranks over graph edges.
+            return ranks.NodeJoin(degrees, (rank, degree) => degree > 0 ? rank * (0.85f / degree) : 0.0f)
+                        .GraphReduce(edges, (x, y) => x + y, true)
+                        .Where(x => x.value > 0.0f);
         }
 
         public static IEnumerable<string> ReadLinesOfText(this string filename)
@@ -51,7 +52,6 @@ namespace Microsoft.Research.Naiad.Examples.GraphLINQ
             if (System.IO.File.Exists(filename))
             {
                 var file = System.IO.File.OpenText(filename);
-
                 while (!file.EndOfStream)
                     yield return file.ReadLine();
             }
@@ -77,11 +77,14 @@ namespace Microsoft.Research.Naiad.Examples.GraphLINQ
 
                 if (args.Length > 1)
                 {
+                    Console.WriteLine("{1}\tReading file: {0}", args[1], stopwatch.Elapsed);
                     edges = args[1].ReadLinesOfText()
                                    .Where(x => !x.StartsWith("#"))
                                    .Select(x => x.Split())
                                    .Select(x => new Edge(new Node(Int32.Parse(x[0])), new Node(Int32.Parse(x[1]))))
                                    .ToArray();
+
+                    Console.WriteLine("{2}\tRead file: {0}, edges {1}", args[1], edges.Length, stopwatch.Elapsed);
                 }
                 else
                 {
@@ -98,7 +101,7 @@ namespace Microsoft.Research.Naiad.Examples.GraphLINQ
 
         public static void PageRankMain(Computation computation, IEnumerable<Edge> graph, int iterations)
         {
-            // initializes a graph and converts it to a Stream<Pair<int, int>, Epoch>.
+            // initializes a graph and converts it to a Stream<Edge, Epoch>.
             var edges = graph.AsNaiadStream(computation);
 
             // capture degrees before trimming leaves.
@@ -117,18 +120,18 @@ namespace Microsoft.Research.Naiad.Examples.GraphLINQ
                                .PartitionBy(x => x.node.index);
 
             // define an iterative pagerank computation, add initial values, aggregate up the results and print them to the screen.
-            var ranks = start.IterateAndAccumulate((lc, deltas) => deltas.PageRankStep(edges, degrees, lc),
+            var ranks = start.IterateAndAccumulate((lc, deltas) => deltas.PageRankStep(lc.EnterLoop(degrees),
+                                                                                       lc.EnterLoop(edges)),
                                                     x => x.node.index,
                                                     iterations,
                                                     "PageRank")
-                             .Concat(start)
-                             .NodeAggregate((x, y) => x + y);
-            //.Subscribe(x => { foreach (var y in x.OrderBy(z => z.node.index)) Console.WriteLine(y.value); });
+                             .Concat(start)                             // add initial ranks in for correctness.
+                             .NodeAggregate((x, y) => x + y)            // accumulate up the ranks.
+                             .Where(x => x.value > 0.0f);               // report only positive ranks.
 
             // start computation, and block until completion.
             computation.Activate();
             computation.Join();
-
         }
 
         public static Edge[] GenerateEdges(int nodes, int edges)

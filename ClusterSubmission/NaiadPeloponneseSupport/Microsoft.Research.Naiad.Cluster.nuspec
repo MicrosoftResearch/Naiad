@@ -31,9 +31,9 @@
     </references>
   </metadata>
   <files>
-    <file src="bin\x64\Release\Microsoft.Research.Naiad.Cluster.DependencyLister.dll" target="lib\net45\Microsoft.Research.Naiad.Cluster.DependencyLister.dll" />
-    <file src="bin\x64\Release\Microsoft.Research.Naiad.Cluster.DependencyLister.pdb" target="lib\net45\Microsoft.Research.Naiad.Cluster.DependencyLister.pdb" />
-    <file src="bin\x64\Release\Microsoft.Research.Naiad.Cluster.dll" target="lib\net45\Microsoft.Research.Naiad.Cluster.dll" />
-    <file src="bin\x64\Release\Microsoft.Research.Naiad.Cluster.pdb" target="lib\net45\Microsoft.Research.Naiad.Cluster.pdb" />
+    <file src="..\..\signed\Microsoft.Research.Naiad.Cluster.DependencyLister.dll" target="lib\net45\Microsoft.Research.Naiad.Cluster.DependencyLister.dll" />
+    <file src="..\..\signed\Microsoft.Research.Naiad.Cluster.DependencyLister.pdb" target="lib\net45\Microsoft.Research.Naiad.Cluster.DependencyLister.pdb" />
+    <file src="..\..\signed\Microsoft.Research.Naiad.Cluster.dll" target="lib\net45\Microsoft.Research.Naiad.Cluster.dll" />
+    <file src="..\..\signed\Microsoft.Research.Naiad.Cluster.pdb" target="lib\net45\Microsoft.Research.Naiad.Cluster.pdb" />
   </files>
 </package>

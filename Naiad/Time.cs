@@ -141,6 +141,15 @@ namespace Microsoft.Research.Naiad.Dataflow
         public Empty InitializeFrom(Pointstamp pointstamp, int length) { return new Empty(); }
 
         /// <summary>
+        /// GetHashCode override
+        /// </summary>
+        /// <returns>zero</returns>
+        public override int GetHashCode()
+        {
+            return 0;
+        }
+
+        /// <summary>
         /// Returns <c>true</c>.
         /// </summary>
         /// <param name="other">The other time.</param>

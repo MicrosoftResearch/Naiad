@@ -33,8 +33,8 @@
     </references>
   </metadata>
   <files>
-    <file src="bin\x64\Release\LocalSubmission.exe" target="lib\net45\LocalSubmission.exe" />
-    <file src="bin\x64\Release\LocalSubmission.pdb" target="lib\net45\LocalSubmission.pdb" />
-    <file src="bin\x64\Release\LocalSubmission.exe.config" target="lib\net45\LocalSubmission.exe.config" />
+    <file src="..\..\signed\LocalSubmission.exe" target="lib\net45\LocalSubmission.exe" />
+    <file src="..\..\signed\LocalSubmission.pdb" target="lib\net45\LocalSubmission.pdb" />
+    <file src="..\..\signed\LocalSubmission.exe.config" target="lib\net45\LocalSubmission.exe.config" />
   </files>
 </package>

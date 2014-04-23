@@ -28,6 +28,7 @@ using Microsoft.Research.Naiad.Input;
 using Microsoft.Research.Naiad.Frameworks.GraphLINQ;
 using Microsoft.Research.Naiad.Frameworks.Lindi;
 using Microsoft.Research.Naiad.Dataflow;
+using Microsoft.Research.Naiad.Dataflow.PartitionBy;
 
 namespace Microsoft.Research.Naiad.Examples.GraphLINQ
 {
@@ -53,16 +54,25 @@ namespace Microsoft.Research.Naiad.Examples.GraphLINQ
                 var rootStrings = new[] { args[2] }.AsNaiadStream(computation)
                                                    .SelectMany(x => ReadLines(x));
 
-                // collect all names of known vertices in the graph we want.
-                var nodes = rootStrings.Concat(edgeStrings.Select(x => x.First))
-                                       .Concat(edgeStrings.Select(x => x.Second));
+                // convert (string, string) -> edge and string -> node.
+                Stream<Edge, Epoch> edges;  // will eventually hold stream of edges
+                Stream<Node, Epoch> roots;  // will eventually hold stream of roots
 
-                // create a string->node mapping.
-                var names = nodes.GenerateDenseNameMapping();
+                // an autorenamer context is used to consistently rename identifiers.
+                using (var renamer = new AutoRenamer<string>())
+                {
+                    var tempEdges = edgeStrings.RenameUsing(renamer, x => x.First)              // use the first string to find a name
+                                               .Select(x => x.node.WithValue(x.value.Second))   // discard the first string
+                                               .RenameUsing(renamer, x => x.value)              // use the second string to find a name
+                                               .Select(x => new Edge(x.value.node, x.node));    // discard the second string and form an edge
+                                       
+                    var tempRoots = rootStrings.RenameUsing(renamer, x => x)                    // use the string itself to find a name
+                                               .Select(x => x.node);                            // discard the string and keep the node
 
-                // converts (string, string) -> edge and string -> node.
-                var edges = edgeStrings.RenameEdges(names);
-                var roots = rootStrings.RenameNodes(names);
+                    // FinishRenaming only after all RenameUsing
+                    edges = tempEdges.FinishRenaming(renamer);
+                    roots = tempRoots.FinishRenaming(renamer);
+                }
 
                 // iteratively expand reachable set as pairs (node, isReachable).
                 var limit = roots.Select(x => x.WithValue(true))
@@ -72,15 +82,12 @@ namespace Microsoft.Research.Naiad.Examples.GraphLINQ
                                                         Int32.MaxValue,                                     // the number of iterations
                                                         "Reachability")                                     // a nice descriptive name
                                  .Concat(roots.Select(x => x.WithValue(true)))                              // add the original trusted nodes
-                                 .NodeAggregate((a, b) => true);                                            // aggregate, for the originals
+                                 .NodeAggregate((a, b) => true)
+                                 .Where(x => x.value);                                                      // aggregate, for the originals
 
                 // print the results onto the screen (or write to file, as appopriate)
                 limit.Select(x => x.node.index)
                      .Subscribe(x => Console.WriteLine(x.Count()));
-
-                // enable some diagnostic information about execution times.
-                var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-                computation.OnFrontierChange += (x, y) => Console.WriteLine("{0}: {1}", stopwatch.Elapsed, string.Join(", ", y.NewFrontier));
 
                 // start the computation and wait until it finishes
                 computation.Activate();

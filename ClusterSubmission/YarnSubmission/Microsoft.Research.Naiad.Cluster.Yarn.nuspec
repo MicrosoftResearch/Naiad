@@ -33,8 +33,8 @@
     </references>
   </metadata>
   <files>
-    <file src="bin\x64\Release\YarnSubmission.exe" target="lib\net45\YarnSubmission.exe" />
-    <file src="bin\x64\Release\YarnSubmission.pdb" target="lib\net45\YarnSubmission.pdb" />
-    <file src="bin\x64\Release\YarnSubmission.exe.config" target="lib\net45\YarnSubmission.exe.config" />
+    <file src="..\..\signed\YarnSubmission.exe" target="lib\net45\YarnSubmission.exe" />
+    <file src="..\..\signed\YarnSubmission.pdb" target="lib\net45\YarnSubmission.pdb" />
+    <file src="..\..\signed\YarnSubmission.exe.config" target="lib\net45\YarnSubmission.exe.config" />
   </files>
 </package>

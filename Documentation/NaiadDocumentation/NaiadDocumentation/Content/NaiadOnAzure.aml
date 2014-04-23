@@ -7,8 +7,9 @@
 
     <introduction>
       <para>
-        Naiad programs can be run on Microsoft Azure using the HDInsight 3.0 platform.
-        The same Naiad programs you run on your computer or cluster of computers can be run on Azure with some configuration of your environment, some Azure hints for your program, and a simple loader program.
+        Naiad programs can run on Microsoft Azure using the HDInsight 3.0 platform as a service.
+        This walkthrough describes the helper methods and tools
+        that Naiad includes to help you process data in Azure.
       </para>
     </introduction>
 
@@ -20,7 +21,9 @@
       <steps class="ordered">
         <step>
           <content>
-            <para>Set up powershell and configure Azure using 
+            <para>The Naiad tools assume that you have configured Azure PowerShell, and configured the
+            PowerShell environment with your Azure subscription.
+            Use
             <externalLink>
               <linkText>
                 these instructions
@@ -28,9 +31,12 @@
               <linkUri>
                 http://azure.microsoft.com/en-us/documentation/articles/install-configure-powershell/
               </linkUri>
-            </externalLink>.
-            In the "How to: Connect your subcription" item, follow the instructions under "Use the certificate method".
-            Ensure that your environment is correctly set up by running <codeInline>Get-AzureSubscription</codeInline> and verifying that your subscription has "IsDefault:True" and information identifying the management certificate.
+            </externalLink> to configure Azure PowerShell.
+            Under "<externalLink>
+              <linkText>How to: Connect your subscription</linkText>
+              <linkUri>http://azure.microsoft.com/en-us/documentation/articles/install-configure-powershell/#Connect</linkUri>
+            </externalLink>", follow the instructions under "Use the certificate method".
+            To ensure that your environment is correctly set up, run the <codeInline>Get-AzureSubscription</codeInline> cmdlet and verify that your subscription has "IsDefault:True" and information identifying the management certificate.
             </para>
           </content>
         </step>
@@ -45,7 +51,15 @@
                 <linkUri>
                   http://azure.microsoft.com/en-us/documentation/articles/hdinsight-get-started-30/
                 </linkUri>
-              </externalLink>.
+              </externalLink>. The following instructions assume that you have given your cluster the name <codeInline>mycluster</codeInline>.
+            </para>
+          </content>
+        </step>
+        <step>
+          <content>
+            <para>
+              Implement a Naiad program, such as the <link xlink:href="450c8ec2-65e4-4396-93e8-634e6a2144f4">tutorial Naiad program in this article</link>.
+              Although the following instructions are general, for concreteness they assume that you are using the tutorial program.
             </para>
           </content>
         </step>
@@ -53,8 +67,9 @@
       <conclusion>
         <content>
           <para>
-            These steps can take some time, but while you are waiting you can read ahead to the next section where we learn how we may need to modify a Naiad program to behave well in Azure.
-            Technically, no modifications are required of a Naiad program, but when running in Azure your program may need read from and write to resources other than your console or local filesystem.
+            The first two steps can take some time, but in the mean time the next section will tell you how
+            to modify your Naiad program to take advantage of data stored in Azure.
+            <!--Technically, no modifications are required of a Naiad program, but when running in Azure your program may need read from and write to resources other than your console or local filesystem.-->
           </para>
         </content>
       </conclusion>
@@ -68,52 +83,81 @@
         <step>
           <content>
             <para>
-              The first step you will want to take is to add a reference to Naiad's Azure support framework.
-              This library can be acquired through NuGet.org or compiled from Naiad source.
-              Once you have included a reference to <codeInline>Microsoft.Research.Naiad.Azure</codeInline>, you will want to add the following to the top of your program:
+              The Naiad distribution includes an Azure Support framework, which includes helper methods
+              for accessing Azure Storage. Add a reference to this framework, by installing <externalLink>
+                <linkText>the NuGet package</linkText>
+                <linkUri>http://www.nuget.org/packages/Microsoft.Research.Naiad.AzureSupport/0.4.0-beta</linkUri>
+              </externalLink>.
+              To make use of the Azure Support framework, add the following using statement:
             </para>
             <code>
               using Microsoft.Research.Naiad.Frameworks.Azure;
             </code>
+            <para>
+              See the <codeEntityReference>N:Microsoft.Research.Naiad.Frameworks.Azure</codeEntityReference> documentation
+              for more details of the helper methods in this framework.
+            </para>
           </content>
         </step>
         <step>
           <content>
             <para>
-              Just after creating a new computation, step 1 in the first example, it is good to redirect <codeInline>Console.Out</codeInline> and possibly <codeInline>Console.Error</codeInline> to write to Azure blobs. 
-              This can be done by invoking the <codeInline>SetConsoleOut</codeInline> and <codeInline>SetConsoleError</codeInline> methods on a computation's controller.
+              After creating a new <codeEntityReference>T:Microsoft.Research.Naiad.Computation</codeEntityReference>,
+              it can be useful to redirect <codeInline>Console.Out</codeInline> (and <codeInline>Console.Error</codeInline>) to write to Azure blobs. 
+              This can be done by invoking the <codeEntityReference>M:Microsoft.Research.Naiad.Frameworks.Azure.ConsoleExtensionMethods.SetConsoleOut(Microsoft.Research.Naiad.Controller,Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer,System.String)</codeEntityReference> 
+              and <codeEntityReference>M:Microsoft.Research.Naiad.Frameworks.Azure.ConsoleExtensionMethods.SetConsoleError(Microsoft.Research.Naiad.Controller,Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer,System.String)</codeEntityReference>
+              methods on a computation's controller.
               These methods require an Azure container, and a format string which accepts one parameter, the process identifier.
-              For example, the line
+              For example, the lines:
             </para>
             <code>
-              computation.Controller.SetConsoleOutput(container, "naiad/out-{0}.txt");
+              var container = computation.DefaultBlobContainer("naiad-output");
+              computation.Controller.SetConsoleOut(container, "naiad/out-{0}.txt");
             </code>
             <para>
-              would redirect <codeInline>Console.Out</codeInline> for each process to the corresponding Azure blobs where <codeInline>"{0}"</codeInline> is replaced by the process identifier.
+              would redirect <codeInline>Console.Out</codeInline> for each process to a blob in the <codeInline>naiad-output</codeInline> container where <codeInline>"{0}"</codeInline> in the blob name replaced by the process identifier.
             </para>
             <para>
-              Importantly, you should also add a <codeInline>Console.Out.Close();</codeInline> line after calling <codeInline>Join</codeInline> on the computation, to ensure that all writes are flushed to Azure before your program exits.
+              To ensure that all writes are flushed to Azure before your program exits, you should also add a <codeInline>Console.Out.Close();</codeInline> line after calling <codeInline>Join</codeInline> on the computation.
             </para>
           </content>
         </step>
         <step>
           <content>
             <para>
-              Naiad's Azure framework also contains helper methods to write streams to Azure blobs and read streams from Azure blobs.
-              If your Naiad program was previously taking inputs from and writing back to your local file systems, it will want to read them from and write them to Azure blob storage instead.
-              Note that your Naiad progams can read from and write to Azure storage even without being run on Azure; the same calls will work on your local computer or cluster, but the data movement is more efficient (and cheaper) when run in Azure.
+              The <link xlink:href="450c8ec2-65e4-4396-93e8-634e6a2144f4">tutorial Naiad program</link>
+              reads lines from the Console, and so we must change this to read data from elsewhere.
+              Instead of the loop (step 6), the following lines ingest constant data:
+            </para>
+            <code>
+              source.OnNext("hi there".Split());
+              source.OnNext("hello there".Split());
+              source.OnNext("good bye".Split());
+            </code>
+            <para>
+              Alternatively, the <codeEntityReference>M:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods.ReadTextFromAzureBlobs(Microsoft.Research.Naiad.Computation,Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer,System.String)</codeEntityReference>
+              method provides a mechanism to read textual data one line at a time from an Azure blob.
+            </para>
+          </content>
+        </step>
+        <step>
+          <content>
+            <para>
+              Naiad's <codeEntityReference>N:Microsoft.Research.Naiad.Frameworks.Azure</codeEntityReference> framework also contains helper methods to write streams to Azure blobs and read streams from Azure blobs.
+              If your Naiad program previously took inputs from and wrote outputs to your local file systems, it should be modified to read them from and write them to Azure blob storage instead.
+              Note that your Naiad progams can read from and write to Azure storage  without running on Azure; the same calls will work on your local computer or cluster, but the data movement is more efficient (and cheaper) when run in Azure.
             </para>
           </content>
         </step>
       </steps>
-      <conclusion>
+      <!--<conclusion>
         <content>
           <para>
             These steps are, strictly speaking, optional. 
             Any Naiad program can be run unmodified in Azure, but without access to the console or local filesystems it can be difficult to determine if it has behaved successfully.
           </para>
         </content>
-      </conclusion>
+      </conclusion>-->
     </procedure>
     
     <procedure>
@@ -122,32 +166,35 @@
         <step>
           <content>
             <para>
-              Install "Naiad - Azure submission tool" from NuGet.org, or build <codeInline>NaiadAzureSubmission.exe</codeInline> from the Naiad source repository.
+              Install "Naiad - Azure submission tool" package from <externalLink>
+                <linkText>the NuGet repository</linkText>
+                <linkUri>https://www.nuget.org/packages/Microsoft.Research.Naiad.Cluster.Azure</linkUri>
+              </externalLink>.
             </para>
           </content>
         </step>
         <step>
           <content>
             <para>
-              To see the arguments that Naiad's Azure tools require, run: <codeInline>./NaiadAzureSubmission.exe</codeInline>
+              To see the arguments that Naiad's Azure tools require, run: <codeInline>.\NaiadAzureSubmission.exe</codeInline> with no arguments.
             </para>
           </content>
         </step>
         <step>
           <content>
             <para>
-              Double-check that you have followed the steps above to bind your subscription ID in powershell.
+              Double-check that you have followed the steps above to bind your Azure subscription ID in Azure PowerShell.
             </para>
           </content>
         </step>
         <step>
           <content>
             <para>
-              To run a Naiad program in Azure you will need to provide an HDInsight cluster name to <codeInline>NaiadAzureSubmission.exe</codeInline>. 
-              If your cluster name is <codeInline>myCluster</codeInline> and your program compiles to <codeInline>NaiadProgram.exe</codeInline>, you would type
+              To run a Naiad program in Azure you must provide an HDInsight cluster name to <codeInline>NaiadAzureSubmission.exe</codeInline>. 
+              If your cluster name is <codeInline>mycluster</codeInline> and your program compiles to <codeInline>NaiadProgram.exe</codeInline>, you would type
             </para>
             <code>
-              ./NaiadAzureSubmission --cluster myCluster NaiadProgram.exe [args]
+              .\NaiadAzureSubmission --clustername mycluster NaiadProgram.exe [args]
             </code>
           </content>
         </step>

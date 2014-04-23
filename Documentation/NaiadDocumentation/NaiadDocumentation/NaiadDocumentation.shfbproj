@@ -58,7 +58,8 @@
     <ContentPlacement>AboveNamespaces</ContentPlacement>
     <RootNamespaceTitle>Naiad SDK</RootNamespaceTitle>
     <FeedbackEMailAddress>naiadquestions%40microsoft.com</FeedbackEMailAddress>
-    <ProjectSummary>Project summary goes here%3f</ProjectSummary>
+    <ProjectSummary>
+    </ProjectSummary>
   </PropertyGroup>
   <!-- There are no properties for these groups.  AnyCPU needs to appear in order for Visual Studio to perform
 			 the build.  The others are optional common platform types that may appear. -->
@@ -92,8 +93,8 @@
     <None Include="Content\VersionHistory\v0.3.aml" />
     <None Include="Content\VersionHistory\v0.4.aml" />
     <None Include="Content\VersionHistory\VersionHistory.aml" />
-    <None Include="Content\Walkthrough1.aml" />
     <None Include="Content\Welcome.aml" />
+    <None Include="Content\Writing a custom Naiad vertex.aml" />
   </ItemGroup>
   <ItemGroup>
     <ContentLayout Include="ContentLayout.content" />

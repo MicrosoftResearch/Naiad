@@ -305,6 +305,8 @@ namespace Microsoft.Research.Naiad.Dataflow.Iteration
         private readonly ITimeContext<TTime> externalContext;
         private readonly ITimeContext<IterationIn<TTime>> internalContext;
 
+        private bool inputsSealed;
+
         /// <summary>
         /// Introduces a stream into the loop context from outside
         /// </summary>
@@ -313,6 +315,9 @@ namespace Microsoft.Research.Naiad.Dataflow.Iteration
         /// <returns>the same stream with an addition time coordinate</returns>
         public Stream<TRecord, IterationIn<TTime>> EnterLoop<TRecord>(Stream<TRecord, TTime> stream)
         {
+            if (this.inputsSealed)
+                throw new Exception("EnterLoop is not valid following the use of ExitLoop");
+
             return IngressVertex<TRecord, TTime>.NewStage(stream, internalContext);
         }
 
@@ -325,6 +330,9 @@ namespace Microsoft.Research.Naiad.Dataflow.Iteration
         /// <returns>the same stream with an addition time coordinate</returns>
         public Stream<TRecord, IterationIn<TTime>> EnterLoop<TRecord>(Stream<TRecord, TTime> stream, Func<TRecord, int> initialIteration)
         {
+            if (this.inputsSealed)
+                throw new Exception("EnterLoop is not valid following the use of ExitLoop");
+
             return IngressVertex<TRecord, TTime>.NewStage(stream, internalContext, initialIteration);
         }
 
@@ -337,6 +345,8 @@ namespace Microsoft.Research.Naiad.Dataflow.Iteration
         /// <returns>A stream containing records in the corresponding iteration</returns>
         public Stream<TRecord, TTime> ExitLoop<TRecord>(Stream<TRecord, IterationIn<TTime>> stream, int iterationNumber)
         {
+            this.inputsSealed = true;
+
             return EgressVertex<TRecord, TTime>.NewStage(stream, externalContext, iterationNumber);
         }
 
@@ -348,6 +358,8 @@ namespace Microsoft.Research.Naiad.Dataflow.Iteration
         /// <returns>A stream containing all records</returns>
         public Stream<TRecord, TTime> ExitLoop<TRecord>(Stream<TRecord, IterationIn<TTime>> stream)
         {
+            this.inputsSealed = true;
+
             return this.ExitLoop(stream, 0);
         }
 

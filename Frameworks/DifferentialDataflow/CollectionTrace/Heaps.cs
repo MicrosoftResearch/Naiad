@@ -325,7 +325,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.CollectionTra
 
         public VariableLengthHeap(int heapCount)
         {
-            heaps = Enumerable.Range(0, heapCount).Select(i => new FixedLengthHeap<T>(1 << i, 1 << 10)).ToArray();
+            heaps = Enumerable.Range(0, heapCount).Select(i => new FixedLengthHeap<T>(1 << i, 1 << 16)).ToArray();
         }
     }
 
@@ -389,7 +389,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.CollectionTra
             }
         }
 
-        public VariableLengthHeapAlt(int heapCount, int segmentSize = 1 << 10)
+        public VariableLengthHeapAlt(int heapCount, int segmentSize = 1 << 16)
         {
             heaps = Enumerable.Range(0, heapCount).Select(i => new FixedLengthHeap<T>(1 << i, segmentSize)).ToArray();
         }

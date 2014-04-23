@@ -3,7 +3,7 @@
   <metadata>
     <id>Microsoft.Research.Naiad</id>
     <title>Naiad - Core</title>
-    <version>0.4.0-beta</version>
+    <version>0.4.1-beta</version>
     <authors>naiadquestions@microsoft.com</authors>
     <owners>naiadquestions@microsoft.com,Microsoft</owners>
     <licenseUrl>http://www.apache.org/licenses/LICENSE-2.0.html</licenseUrl>
@@ -25,8 +25,8 @@
     </references>
   </metadata>
   <files>
-    <file src="bin\Release\Microsoft.Research.Naiad.dll" target="lib\net40-Client\Microsoft.Research.Naiad.dll" />
-    <file src="bin\Release\Microsoft.Research.Naiad.pdb" target="lib\net40-Client\Microsoft.Research.Naiad.pdb" />
-    <file src="bin\Release\Microsoft.Research.Naiad.xml" target="lib\net40-Client\Microsoft.Research.Naiad.xml" />
+    <file src="..\signed\Microsoft.Research.Naiad.dll" target="lib\net40-Client\Microsoft.Research.Naiad.dll" />
+    <file src="..\signed\Microsoft.Research.Naiad.pdb" target="lib\net40-Client\Microsoft.Research.Naiad.pdb" />
+    <file src="..\signed\Microsoft.Research.Naiad.xml" target="lib\net40-Client\Microsoft.Research.Naiad.xml" />
   </files>
 </package>
