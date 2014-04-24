@@ -219,6 +219,16 @@ namespace Microsoft.Research.Naiad
         {
             return new InternalOneOffComputation(Configuration.FromArgs(ref args));
         }
+
+        /// <summary>
+        /// Constructs a <see cref="OneOffComputation"/> with the given configuration.
+        /// </summary>
+        /// <param name="conf">The configuration.</param>
+        /// <returns>A new <see cref="OneOffComputation"/> based on the given arguments.</returns>
+        public static OneOffComputation FromConfig(Configuration conf)
+        {
+            return new InternalOneOffComputation(conf);
+        }
     }
 
     /// <summary>

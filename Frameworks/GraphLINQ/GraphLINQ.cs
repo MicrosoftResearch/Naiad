@@ -20,6 +20,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 using Microsoft.Research.Naiad.Dataflow;
@@ -559,13 +560,13 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
         private struct Option<TElement>
         {
             public readonly TElement Value;
-            public readonly bool isValid;
+            public readonly bool IsValid;
 
             /// <summary>
             /// Constructs a option with a valid value.
             /// </summary>
             /// <param name="value">value</param>
-            public Option(TElement value) { this.Value = value; this.isValid = true; }
+            public Option(TElement value) { this.Value = value; this.IsValid = true; }
         }
 
         /// <summary>
@@ -605,7 +606,7 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
             if (nodes == null) throw new ArgumentNullException("nodes");
             if (transitionSelector == null) throw new ArgumentNullException("transitionSelector");
             return nodes.StateMachine((v, s) => { var n = transitionSelector(v, s); return n.PairWith(s.Equals(n) ? new Option<TState>() : new Option<TState>(n)); }, defaultState)
-                         .Where(x => x.value.isValid)
+                         .Where(x => x.value.IsValid)
                          .Select(x => x.node.WithValue(x.value.Value));
         }
 
@@ -668,7 +669,7 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
             if (nodes == null) throw new ArgumentNullException("nodes");
             if (restriction == null) throw new ArgumentNullException("restriction");
             return nodes.NodeJoin(restriction.Select(x => x.WithValue(true)), (x, y) => y ? new Option<TValue>(x) : new Option<TValue>())
-                        .Where(x => x.value.isValid)
+                        .Where(x => x.value.IsValid)
                         .Select(x => x.node.WithValue(x.value.Value));
         }
 
@@ -827,7 +828,6 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
                 if (index >= this.state.Length)
                 {
                     var newState = new TState[Math.Max(index + 1, 2 * this.state.Length)];
-                    var newValid = new bool[newState.Length];
 
                     for (int j = 0; j < this.state.Length; j++)
                         newState[j] = this.state[j];
@@ -1103,12 +1103,12 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
     }
 
     // turns a stream of S records into a stream of Pair<S, int>, where the integers are unique, and largely dense.
-    internal class Densifier<S> : UnaryVertex<S, NodeWithValue<S>, Epoch>
+    internal class Densifier<TRecord> : UnaryVertex<TRecord, NodeWithValue<TRecord>, Epoch>
     {
-        private HashSet<S> hashSet;
+        private HashSet<TRecord> hashSet;
         private readonly int parts;
 
-        public override void OnReceive(Message<S, Epoch> message)
+        public override void OnReceive(Message<TRecord, Epoch> message)
         {
             var output = this.Output.GetBufferForTime(message.time);
             for (int i = 0; i < message.length; i++)
@@ -1121,13 +1121,13 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
 
         public override void OnNotify(Epoch time)
         {
-            hashSet = new HashSet<S>();
+            hashSet = new HashSet<TRecord>();
         }
 
         public Densifier(int index, Stage<Epoch> vertex)
             : base(index, vertex)
         {
-            this.hashSet = new HashSet<S>();
+            this.hashSet = new HashSet<TRecord>();
             this.parts = this.Stage.Placement.Count;
         }
     }
@@ -1140,8 +1140,8 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
 
         private readonly Func<TInput, TIdentifier> oldName;
 
-        Int64 enqueuedWork;
-        Int64 processedWork;
+        //Int64 enqueuedWork;
+        //Int64 processedWork;
         //Int64 highWaterMark;
 
         /// <summary>
@@ -1167,7 +1167,7 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
 
                     this.delayed[name].Add(message.payload[i]);
 
-                    enqueuedWork++;
+                    //enqueuedWork++;
 
                     this.NotifyAt(message.time);
                 }
@@ -1188,11 +1188,11 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
                     var list = this.delayed[message.payload[i].value];
                     this.delayed.Remove(message.payload[i].value);
 
-                    processedWork += list.Count;
+                    //processedWork += list.Count;
 
                     var output = this.Output.GetBufferForTime(message.time);
-                    for (int j = 0; j < list.Count; j++)
-                        output.Send(message.payload[i].node.WithValue(list[j]));
+                    foreach (TInput t in list)
+                        output.Send(message.payload[i].node.WithValue(t));
                 }
             }
         }

@@ -63,26 +63,7 @@ namespace Microsoft.Research.Naiad
     /// </summary>
     public class Configuration
     {
-        private static Configuration staticConfiguration = null;
-        /// <summary>
-        /// Hack to expose a configuration to static components (i.e. code generation).
-        /// </summary>
-        internal static Configuration StaticConfiguration
-        {
-            get
-            {
-                if (staticConfiguration == null)
-                {
-                    string[] args = new string[0];
-                    staticConfiguration = Configuration.FromArgs(ref args);
-                }
-                return staticConfiguration;
-            }
-            set
-            {
-                staticConfiguration = value;
-            }
-        }
+
 
         /// <summary>
         /// Network protocol used to broadcast progress updates
@@ -349,6 +330,21 @@ namespace Microsoft.Research.Naiad
         /// Builds a Naiad configuration from the given command-line arguments, interpreting them according to
         /// the output of Configuration.Usage().
         /// </summary>
+        /// <param name="args">The command-line arguments.</param>
+        /// <param name="strippedArgs">The command-line arguments with Naiad-specific arguments removed.</param>
+        /// <returns>A new <see cref="Configuration"/> based on the given arguments.</returns>
+        public static Configuration BuildFromArguments(string[] args, out string[] strippedArgs)
+        {
+            string[] copiedArgs = args.ToArray();
+            Configuration ret = FromArgs(ref copiedArgs);
+            strippedArgs = copiedArgs;
+            return ret;
+        }
+
+        /// <summary>
+        /// Builds a Naiad configuration from the given command-line arguments, interpreting them according to
+        /// the output of Configuration.Usage().
+        /// </summary>
         /// <param name="args">The command-line arguments, which will have Naiad-specific arguments removed.</param>
         /// <returns>A new <see cref="Configuration"/> based on the given arguments.</returns>
         public static Configuration FromArgs(ref string[] args)
@@ -358,7 +354,7 @@ namespace Microsoft.Research.Naiad
             List<string> strippedArgs = new List<string>();
 
             // Defaults
-            string[] Prefixes = new string[] { "localhost:2101" };
+            string[] prefixes = new string[] { "localhost:2101" };
 
             bool procIDSet = false;
             bool numProcsSet = false;
@@ -367,7 +363,7 @@ namespace Microsoft.Research.Naiad
             
             bool multipleProcsSingleMachine = true;
 
-            int Processes = 1;
+            int processes = 1;
             
             Logging.Init();
 #if TRACING_ON
@@ -416,7 +412,7 @@ namespace Microsoft.Research.Naiad
                             Usage();
                             System.Environment.Exit(-1);
                         }
-                        Processes = Int32.Parse(args[i + 1]);
+                        processes = Int32.Parse(args[i + 1]);
                         i += 2;
                         numProcsSet = true;
                         break;
@@ -434,7 +430,7 @@ namespace Microsoft.Research.Naiad
                             Usage();
                             System.Environment.Exit(-1);
                         }
-                        Prefixes = new string[Processes];
+                        prefixes = new string[processes];
                         if (args[i + 1].StartsWith("@"))
                         {
                             string hostsFilename = args[i + 1].Substring(1);
@@ -442,14 +438,14 @@ namespace Microsoft.Research.Naiad
                             {
                                 using (StreamReader reader = File.OpenText(hostsFilename))
                                 {
-                                    for (int j = 0; j < Processes; ++j)
+                                    for (int j = 0; j < processes; ++j)
                                     {
                                         if (reader.EndOfStream)
                                         {
                                             Logging.Error("Error: insufficient number of hosts in the given hosts file, {0}", hostsFilename);
                                             System.Environment.Exit(-1);
                                         }
-                                        Prefixes[j] = reader.ReadLine().Trim();
+                                        prefixes[j] = reader.ReadLine().Trim();
                                     }
                                 }
                             }
@@ -462,8 +458,8 @@ namespace Microsoft.Research.Naiad
                         }
                         else
                         {
-                            Array.Copy(args, i + 1, Prefixes, 0, Processes);
-                            i += 1 + Processes;
+                            Array.Copy(args, i + 1, prefixes, 0, processes);
+                            i += 1 + processes;
                         }
                         hostsSet = true;
                         break;
@@ -480,7 +476,7 @@ namespace Microsoft.Research.Naiad
                             Usage();
                             System.Environment.Exit(-1);
                         }
-                        Prefixes = Enumerable.Range(2101, Processes).Select(x => string.Format("localhost:{0}", x)).ToArray();
+                        prefixes = Enumerable.Range(2101, processes).Select(x => string.Format("localhost:{0}", x)).ToArray();
                         i++;
                         hostsSet = true;
                         break;
@@ -647,9 +643,9 @@ namespace Microsoft.Research.Naiad
                 System.Environment.Exit(-1);
             }
 
-            if (numProcsSet && Processes > 1 && !hostsSet)
+            if (numProcsSet && processes > 1 && !hostsSet)
             {
-                Logging.Error("Error: List of hosts not supplied (use the --hosts option, followed by {0} hostnames)", Processes);
+                Logging.Error("Error: List of hosts not supplied (use the --hosts option, followed by {0} hostnames)", processes);
                 System.Environment.Exit(-1);
             }
 
@@ -660,20 +656,20 @@ namespace Microsoft.Research.Naiad
             }
 
             //TOCHECK: names isn't used: can we delete it?
-            var names = Prefixes.Select(x => x.Split(':')).ToArray();
+            var names = prefixes.Select(x => x.Split(':')).ToArray();
 
             if (!usePPM)
             {
-                IPEndPoint[] endpoints = new IPEndPoint[Processes];
+                IPEndPoint[] endpoints = new IPEndPoint[processes];
 
                 // Check whether we have multiple processes on the same machine (used for affinitizing purposes)
-                string prevHostName = Prefixes[0].Split(':')[0];
+                string prevHostName = prefixes[0].Split(':')[0];
 
                 for (int j = 0; j < endpoints.Length; ++j)
                 {
                     string hostname;
                     int port = 2101;
-                    bool success = ParseName(Prefixes[j], out hostname, ref port);
+                    bool success = ParseName(prefixes[j], out hostname, ref port);
                     if (!success)
                         System.Environment.Exit(-1);
                     if (hostname != prevHostName)
@@ -700,8 +696,6 @@ namespace Microsoft.Research.Naiad
             // Used to set scheduler thread affinity
             config.MultipleLocalProcesses = multipleProcsSingleMachine;
 
-            Configuration.StaticConfiguration = config;
-
             return config;
         }
 
@@ -713,10 +707,8 @@ namespace Microsoft.Research.Naiad
 
             if (splitName.Length == 2 && !int.TryParse(splitName[1], out port))
             {
-                {
-                    Logging.Error("Error: invalid port number ({0})", splitName[1]);
-                    return false;
-                }
+                Logging.Error("Error: invalid port number ({0})", splitName[1]);
+                return false;
             }
 
             return true;
@@ -742,8 +734,7 @@ namespace Microsoft.Research.Naiad
                 System.Environment.Exit(-1);
             }
 
-            IPAddress ipv4Address;
-            ipv4Address = ipAddresses.FirstOrDefault(x => x.AddressFamily == AddressFamily.InterNetwork && !IsAutoConf(x));
+            IPAddress ipv4Address = ipAddresses.FirstOrDefault(x => x.AddressFamily == AddressFamily.InterNetwork && !IsAutoConf(x));
             if (ipv4Address == null)
             {
                 Logging.Error("Error: could not find an IPv4 address for hostname {0}", hostname);
