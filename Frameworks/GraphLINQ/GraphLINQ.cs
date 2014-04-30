@@ -26,6 +26,8 @@ using System.Linq;
 using Microsoft.Research.Naiad.Dataflow;
 using Microsoft.Research.Naiad.Dataflow.Iteration;
 using Microsoft.Research.Naiad.Dataflow.StandardVertices;
+using Microsoft.Research.Naiad.Dataflow.PartitionBy;
+
 using Microsoft.Research.Naiad.Frameworks.Lindi;
 
 namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
@@ -483,17 +485,17 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
         {
             if (nodes == null) throw new ArgumentNullException("nodes");
             if (combiner == null) throw new ArgumentNullException("combiner");
-            return nodes.NewUnaryStage((i, v) => new NodeAggregatorVertex<TValue, TTime>(i, v, combiner), x => x.node.index, x => x.node.index, "Aggregator");
+            return nodes.NewUnaryStage((i, v) => new NodeAggregatorVertex<TValue, TTime>(i, v, combiner, nodes.ForStage.Placement.Count), x => x.node.index, x => x.node.index, "Aggregator");
         }
 
         /// <summary>
-        /// Aggregates the values associated with each node at each worker using the given <paramref name="combiner"/> independently for each time.
+        /// Aggregates the values associated with each node at each process using the given <paramref name="combiner"/> independently for each time.
         /// </summary>
         /// <typeparam name="TValue">The type of value associated with each node.</typeparam>
         /// <typeparam name="TTime">The type of timestamp on each record.</typeparam>
         /// <param name="nodes">The stream of nodes with values.</param>
         /// <param name="combiner">A function from current value and incoming value, to the new value.</param>
-        /// <returns>The stream of aggregated values at each worker for each unique node in <paramref name="nodes"/>.</returns>
+        /// <returns>The stream of aggregated values at each process for each unique node in <paramref name="nodes"/>.</returns>
         /// <remarks>
         /// This method aggregates values in each logical time independently. To aggregate across times consider using <see cref="StateMachine{TValue, TState, TTime}(Stream{NodeWithValue{TValue},TTime},Func{TValue,TState,TState})"/>.
         /// </remarks>
@@ -502,7 +504,12 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
         {
             if (nodes == null) throw new ArgumentNullException("nodes");
             if (combiner == null) throw new ArgumentNullException("combiner");
-            return nodes.NewUnaryStage((i, v) => new NodeAggregatorVertex<TValue, TTime>(i, v, combiner), null, null, "AggregatorLocal");
+
+            var processId = nodes.ForStage.Computation.Controller.Configuration.ProcessID;
+            var workersPerProcess = nodes.ForStage.Placement.Where(x => x.ProcessId == processId).Count();
+
+            return nodes.PartitionBy(x => processId * workersPerProcess + (x.node.index % workersPerProcess))
+                        .NewUnaryStage((i, v) => new NodeAggregatorVertex<TValue, TTime>(i, v, combiner, workersPerProcess), null, null, "AggregatorLocal");
         }
 
         #endregion
@@ -758,14 +765,14 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
             }
         }
 
-        public NodeAggregatorVertex(int index, Stage<TTime> stage, Func<TValue, TValue, TValue> aggregate)
+        public NodeAggregatorVertex(int index, Stage<TTime> stage, Func<TValue, TValue, TValue> aggregate, int parts)
             : base(index, stage)
         {
             this.values = new Dictionary<TTime, TValue[]>();
             this.update = aggregate;
 
-            this.parts = stage.Placement.Count;
-            this.index = this.VertexId;
+            this.parts = parts;
+            this.index = index % parts;
         }
     }
 
