@@ -191,9 +191,9 @@ namespace Microsoft.Research.Naiad.Scheduling
 
         internal void Schedule(WorkItem workItem)
         {
-            Logging.Info("Vertex {2}: Running @ {1}:\t{0}", workItem.Vertex, workItem.Requirement, this.Index);
+            if (Logging.LogLevel <= LoggingLevel.Info) Logging.Info("Vertex {2}: Running @ {1}:\t{0}", workItem.Vertex, workItem.Requirement, this.Index);
             workItem.Run();
-            Logging.Info("Vertex {2}: Finishing @ {1}:\t{0}", workItem.Vertex, workItem.Requirement, this.Index);
+            if (Logging.LogLevel <= LoggingLevel.Info) Logging.Info("Vertex {2}: Finishing @ {1}:\t{0}", workItem.Vertex, workItem.Requirement, this.Index);
         }
 
         internal void Register(Dataflow.Vertex vertex, InternalComputation manager)
