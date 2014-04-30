@@ -42,7 +42,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Azure
             var filename = string.Format(format, controller.Configuration.ProcessID);
 
             var writer = new System.IO.StreamWriter(container.GetBlockBlobReference(filename).OpenWrite());
-            writer.AutoFlush = true;
+            writer.AutoFlush = false;
 
             Console.SetOut(writer);
         }
@@ -58,7 +58,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Azure
             var filename = string.Format(format, controller.Configuration.ProcessID);
 
             var writer = new System.IO.StreamWriter(container.GetBlockBlobReference(filename).OpenWrite());
-            writer.AutoFlush = true;
+            writer.AutoFlush = false;
 
             Console.SetError(writer);
         }
