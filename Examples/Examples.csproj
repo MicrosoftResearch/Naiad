@@ -78,6 +78,7 @@
   <ItemGroup>
     <Compile Include="Azure\ConnectedComponents.cs" />
     <Compile Include="Azure\GraphGenerator.cs" />
+    <Compile Include="Azure\Repartition.cs" />
     <Compile Include="DifferentialDataflow\ConnectedComponents.cs" />
     <Compile Include="DifferentialDataflow\GraphColoring.cs" />
     <Compile Include="DifferentialDataflow\SearchIndex.cs" />

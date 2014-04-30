@@ -77,6 +77,7 @@ namespace Microsoft.Research.Naiad.Examples
             // some Azure examples
             examples.Add("azure-graphgenerator", new Examples.Azure.GraphGenerator());
             examples.Add("azure-connectedcomponents", new Examples.Azure.ConnectedComponents());
+            examples.Add("azure-repartition", new Examples.Azure.Repartition());
 
             // some GraphLINQ examples
             examples.Add("graphlinq-reachability", new Examples.GraphLINQ.Reachability());
