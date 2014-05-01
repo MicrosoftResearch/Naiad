@@ -27,7 +27,6 @@ using Microsoft.Research.Naiad.Scheduling;
 using Microsoft.Research.Naiad.Input;
 using Microsoft.Research.Naiad.Dataflow.StandardVertices;
 
-using Microsoft.WindowsAzure.Storage;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;

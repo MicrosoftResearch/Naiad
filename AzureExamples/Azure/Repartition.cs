@@ -26,7 +26,7 @@ using System.Text;
 using Microsoft.Research.Naiad.Frameworks.Azure;
 using Microsoft.Research.Naiad.Dataflow.PartitionBy;
 
-namespace Microsoft.Research.Naiad.Examples.Azure
+namespace Microsoft.Research.Naiad.AzureExamples
 {
     public class Repartition : Example
     {
@@ -44,8 +44,8 @@ namespace Microsoft.Research.Naiad.Examples.Azure
         {
             using (var computation = NewComputation.FromArgs(ref args))
             {
-                //computation.Controller.SetConsoleOut(computation.DefaultBlobContainer("naiad-outputs"), "out-{0}.txt");
-                //computation.Controller.SetConsoleError(computation.DefaultBlobContainer("naiad-outputs"), "err-{0}.txt");
+                computation.Controller.SetConsoleOut(computation.DefaultBlobContainer("naiad-outputs"), "out-{0}.txt");
+                computation.Controller.SetConsoleError(computation.DefaultBlobContainer("naiad-outputs"), "err-{0}.txt");
 
                 if (args.Length == 4)
                 {

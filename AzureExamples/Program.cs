@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Naiad ver. 0.4
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
@@ -27,7 +27,7 @@ using System.Threading.Tasks;
 using Microsoft.Research.Naiad;
 using Microsoft.Research.Naiad.Diagnostics;
 
-namespace Microsoft.Research.Naiad.Examples
+namespace Microsoft.Research.Naiad.AzureExamples
 {
     /// <summary>
     /// An example runnable as a sample Naiad program.
@@ -58,25 +58,11 @@ namespace Microsoft.Research.Naiad.Examples
             // map from example names to code to run in each case
             var examples = new Dictionary<string, Example>();
 
-            // loading up several examples
-            examples.Add("wordcount", new WordCount.WordCount());
-            examples.Add("lookup", new KeyValueLookup.KeyValueLookup());
-            examples.Add("connectedcomponents", new ConnectedComponents.ConnectedComponents());
-
-            // two examples capable of stressing Naiad's performance
-            examples.Add("benchmark-throughput", new Throughput.Throughput());
-            examples.Add("benchmark-latency", new Latency.Latency());
-
-            // some differential dataflow examples
-            examples.Add("dd-stronglyconnectedcomponents", new DifferentialDataflow.SCC());
-            examples.Add("dd-connectedcomponents", new DifferentialDataflow.ConnectedComponents());
-            examples.Add("dd-wordcount", new DifferentialDataflow.WordCount());
-            examples.Add("dd-searchindex", new DifferentialDataflow.SearchIndex());
-            examples.Add("dd-graphcoloring", new DifferentialDataflow.GraphColoring());
-            
             // some GraphLINQ examples
-            examples.Add("graphlinq-reachability", new Examples.GraphLINQ.Reachability());
-            examples.Add("graphlinq-pagerank", new Examples.GraphLINQ.PageRank());
+            examples.Add("connectedcomponents", new AzureExamples.ConnectedComponents());
+            examples.Add("graphgenerator", new AzureExamples.GraphGenerator());
+            examples.Add("repartition", new AzureExamples.Repartition());
+            examples.Add("graphlinq-pagerank", new AzureExamples.GraphLINQ.PageRank());
 
             // determine which exmample was asked for
             if (args.Length == 0 || !examples.ContainsKey(args[0].ToLower()))
@@ -84,7 +70,7 @@ namespace Microsoft.Research.Naiad.Examples
                 Console.Error.WriteLine("First argument not found in list of examples");
                 Console.Error.WriteLine("Choose from the following exciting options:");
                 foreach (var pair in examples)
-                    Console.Error.WriteLine("\tExamples.exe {0} {1} [naiad options]", pair.Key, pair.Value.Usage);
+                    Console.Error.WriteLine("\tAzureExamples.exe {0} {1} [naiad options]", pair.Key, pair.Value.Usage);
 
                 Console.Error.WriteLine();
                 Configuration.Usage();
@@ -94,7 +80,7 @@ namespace Microsoft.Research.Naiad.Examples
                 var example = args[0].ToLower();
                 if (args.Contains("--help") || args.Contains("/?") || args.Contains("--usage"))
                 {
-                    Console.Error.WriteLine("Usage: Examples.exe {0} {1} [naiad options]", example, examples[example].Usage);
+                    Console.Error.WriteLine("Usage: AzureExamples.exe {0} {1} [naiad options]", example, examples[example].Usage);
                     Configuration.Usage();
                 }
                 else

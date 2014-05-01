@@ -29,7 +29,7 @@ using System.Linq;
 using System.Text;
 using Microsoft.WindowsAzure.Storage;
 
-namespace Microsoft.Research.Naiad.Examples.Azure
+namespace Microsoft.Research.Naiad.AzureExamples
 {
     public struct GraphProperties
     {

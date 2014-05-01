@@ -321,8 +321,8 @@ namespace Microsoft.Research.Naiad
             Console.Error.WriteLine("Runs single-process by default, optionally set -t for number of threads");
             Console.Error.WriteLine("To run multiprocess, specify -p, -n, and -h");
             Console.Error.WriteLine("   Example for 2 machines, M1 and M2, using TCP port 2101:");
-            Console.Error.WriteLine("      M1> NaiadExamples.exe pagerank -p 0 -n 2 -h M1:2101 M2:2101");
-            Console.Error.WriteLine("      M2> NaiadExamples.exe pagerank -p 1 -n 2 -h M1:2101 M2:2101");
+            Console.Error.WriteLine("      M1> NaiadProgram.exe -p 0 -n 2 -h M1:2101 M2:2101");
+            Console.Error.WriteLine("      M2> NaiadProgram.exe -p 1 -n 2 -h M1:2101 M2:2101");
             Console.Error.WriteLine("To run multiprocess on one machine, specify -p, -n and --local for each process");
         }
 

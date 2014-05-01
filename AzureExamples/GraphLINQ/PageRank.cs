@@ -27,24 +27,27 @@ using Microsoft.Research.Naiad;
 using Microsoft.Research.Naiad.Input;
 using Microsoft.Research.Naiad.Frameworks.Lindi;
 using Microsoft.Research.Naiad.Frameworks.GraphLINQ;
+using Microsoft.Research.Naiad.Frameworks.Azure;
 
 using Microsoft.Research.Naiad.Dataflow;
 using Microsoft.Research.Naiad.Dataflow.Iteration;
 using Microsoft.Research.Naiad.Dataflow.PartitionBy;
 
-namespace Microsoft.Research.Naiad.Examples.GraphLINQ
+namespace Microsoft.Research.Naiad.AzureExamples.GraphLINQ
 {
     public class PageRank : Example
     {
         public string Usage
         {
-            get { return "[edgefilenames ...]"; }
+            get { return "[containerName directoryName]"; }
         }
 
         public void Execute(string[] args)
         {
             using (var computation = NewComputation.FromArgs(ref args))
             {
+                computation.Controller.SetConsoleOut(computation.DefaultBlobContainer("naiad-outputs"), "/out-{0}.txt");
+
                 // either read inputs from a file, or generate them randomly.
                 Stream<Edge, Epoch> edges;
                 if (args.Length == 1)
@@ -54,10 +57,13 @@ namespace Microsoft.Research.Naiad.Examples.GraphLINQ
                 }
                 else
                 {
-                    var text = args.Skip(1)
-                                   .AsNaiadStream(computation)
-                                   .Distinct()
-                                   .SelectMany(x => x.ReadLinesOfText());
+                    if (args.Length != 3)
+                    {
+                        Console.Error.WriteLine("must supply containerName and directoryName, or neither.");
+                        System.Environment.Exit(-1);
+                    }
+
+                    var text = computation.ReadTextFromAzureBlobs(computation.DefaultBlobContainer(args[1]), args[2]);
 
                     edges = text.Where(x => !x.StartsWith("#"))
                                 .Select(x => x.Split())
@@ -101,6 +107,8 @@ namespace Microsoft.Research.Naiad.Examples.GraphLINQ
                 // start computation, and block until completion.
                 computation.Activate();
                 computation.Join();
+
+                Console.Out.Close();
             }
         }
         
