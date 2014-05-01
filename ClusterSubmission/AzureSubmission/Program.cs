@@ -37,7 +37,6 @@ namespace Microsoft.Research.Naiad.Cluster.Azure
         private static Flag ShowHelp = Flags.Define("-h,--help", typeof(bool));
 
         private static Flag NumHosts = Flags.Define("-n,--numprocs", 2);
-        private static Flag NumThreads = Flags.Define("-t,--threads", 8);
         
         private static Flag AzureSubscriptionId = Flags.Define("--subscriptionid", typeof(string));
         private static Flag AzureClusterName = Flags.Define("--clustername", typeof(string));
@@ -55,7 +54,6 @@ Runs the given Naiad executable on an HDInsight cluster.
 
 Options:
     -n,--numhosts        Number of Naiad processes (default = 2)
-    -t,--threads         Number of worker threads per Naiad process (default = 8)
     
 Azure options:
     --subscriptionid     Azure subscription ID (default = taken from Powershell settings)
