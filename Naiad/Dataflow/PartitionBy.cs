@@ -60,7 +60,7 @@ namespace Microsoft.Research.Naiad.Dataflow.PartitionBy
         /// <param name="stream">stream</param>
         /// <param name="partitionBy">partitioning function</param>
         /// <returns>a repartitioned stream</returns>
-        public static Stream<TRecord, TTime> AssumePartitionedBy<TRecord, TTime>(Stream<TRecord, TTime> stream, Expression<Func<TRecord, int>> partitionBy)
+        public static Stream<TRecord, TTime> AssumePartitionedBy<TRecord, TTime>(this Stream<TRecord, TTime> stream, Expression<Func<TRecord, int>> partitionBy)
             where TTime : Time<TTime>
         {
             return stream.NewUnaryStage((i, v) => new PartitionByVertex<TRecord, TTime>(i, v, null), null, partitionBy, "PartitionBy");
@@ -74,7 +74,7 @@ namespace Microsoft.Research.Naiad.Dataflow.PartitionBy
         /// <param name="stream">stream</param>
         /// <param name="partitionBy">partitioning function</param>
         /// <returns>a repartitioned stream</returns>
-        public static Stream<TRecord, TTime> AssertPartitionedBy<TRecord, TTime>(Stream<TRecord, TTime> stream, Expression<Func<TRecord, int>> partitionBy)
+        public static Stream<TRecord, TTime> AssertPartitionedBy<TRecord, TTime>(this Stream<TRecord, TTime> stream, Expression<Func<TRecord, int>> partitionBy)
             where TTime : Time<TTime>
         {
             return stream.NewUnaryStage((i, v) => new PartitionByVertex<TRecord, TTime>(i, v, partitionBy), null, partitionBy, "PartitionBy");
