@@ -569,8 +569,8 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
             if (this.messagesFromLocalVertices[from.ThreadIndex].length > 0)
                 this.PostBufferAndPossiblyCutThrough(from);
 
-            // XXX : Assumes placement is the same, which is brittle
-            if (this.VertexId == from.VertexID)
+            // If we are running on the same thread, the flush can be delivered directly.
+            if (this.endpoint.Vertex.Scheduler.Index == from.ThreadIndex)
             {
                 if (this.endpoint.AvailableEntrancy >= 0)
                 {
