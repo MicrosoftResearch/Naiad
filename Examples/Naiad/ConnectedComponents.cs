@@ -70,11 +70,11 @@ namespace Microsoft.Research.Naiad.Examples.ConnectedComponents
         /// <param name="input">input key-value stream</param>
         /// <param name="aggregate">aggregation function</param>
         /// <returns>aggregated key-value pairs</returns>
-        public static Stream<Pair<TKey, TValue>, IterationIn<TTime>> StreamingAggregate<TKey, TValue, TTime>(this Stream<Pair<TKey, TValue>, IterationIn<TTime>> input, Func<TValue, TValue, TValue> aggregate)
+        public static Stream<Pair<TKey, TValue>, TTime> StreamingAggregate<TKey, TValue, TTime>(this Stream<Pair<TKey, TValue>, TTime> input, Func<TValue, TValue, TValue> aggregate)
             where TTime : Time<TTime>
             where TValue : IEquatable<TValue>
         {
-            return Foundry.NewUnaryStage(input, (i, s) => new StreamingAggregateVertex<TKey, TValue, IterationIn<TTime>>(i, s, aggregate), x => x.First.GetHashCode(), x => x.First.GetHashCode(), "StreamingAggregate");
+            return Foundry.NewUnaryStage(input, (i, s) => new StreamingAggregateVertex<TKey, TValue, TTime>(i, s, aggregate), x => x.First.GetHashCode(), x => x.First.GetHashCode(), "StreamingAggregate");
         }
 
         /// <summary>
