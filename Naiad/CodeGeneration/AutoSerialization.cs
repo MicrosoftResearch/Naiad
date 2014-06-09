@@ -1259,8 +1259,6 @@ namespace Microsoft.Research.Naiad.Serialization
                 CodeExpression dest = m.Param("destination", typeof(SubArray<byte>), FieldDirection.Ref);
                 CodeExpression values = m.Param("values", typeof(ArraySegment<>).MakeGenericType(t));
 
-                m.Add(Decl("bytesRemaining", typeof(int), Expr("destination.Array.Length - destination.Count")));
-
                 m.Add(Decl("numWritten", typeof(int), Literal(0)));
 
                 var forLoop = new CodeIterationStatement(Stmt("int i = 0"), Expr("i < values.Count"), Stmt("++i, ++numWritten"));
