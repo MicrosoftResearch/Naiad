@@ -185,7 +185,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Operators
             var oldFound = false;
             var oldValue = default(M);
             var oldEntry = default(S);
-            var oldWeight = 0L;
+            //var oldWeight = 0L;
 
             toSend.Clear();
             outputTrace.EnumerateCollectionAt(keyIndices.output, timeIndex, toSend);
@@ -193,7 +193,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Operators
             {
                 oldFound = true;
                 oldEntry = toSend.Array[i].record;
-                oldWeight = toSend.Array[i].weight;
+                //oldWeight = toSend.Array[i].weight;
                 oldValue = valueSelector(key, value(oldEntry));   // something to be non-maxvalue
             }
 

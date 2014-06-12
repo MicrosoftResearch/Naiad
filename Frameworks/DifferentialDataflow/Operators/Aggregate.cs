@@ -35,7 +35,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Operators
         where K : IEquatable<K>
         where V : IEquatable<V>
     {
-        Func<K, V, R> reducer;
+        private readonly Func<K, V, R> reducer;
 
         protected override void Reduce(K key, UnaryKeyIndices keyIndices, int time)
         {
@@ -47,7 +47,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Operators
                 {
                     var result = reducer(key, collection.Array[i].record);
             
-                    outputTrace.Introduce(ref outputWorkspace, reducer(key, collection.Array[i].record), 1, time);
+                    outputTrace.Introduce(ref outputWorkspace, result, 1, time);
                 }
         }
 

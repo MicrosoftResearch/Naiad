@@ -185,19 +185,14 @@ namespace Microsoft.Research.Naiad.Serialization
                 SubArray<byte> bufferAsSubarray = new SubArray<byte>(this.Buffer, this.currentMessageHeaderOffset);
                 this.currentMessageHeaderOffset = this.producerPointer;
                 int currentMessageLength = ((this.producerPointer - this.validPointer) - MessageHeader.SizeOf);
-                if (false && (currentMessageLength == 0))
-                {
-                    this.producerPointer = this.validPointer; // Undo header writing.
-                }
-                else
-                {
-                    Debug.Assert(this.nextHeader != null);
+      
+                Debug.Assert(this.nextHeader != null);
                     
-                    header.Length = currentMessageLength;
-                    bool success = serializer.Serialize(ref bufferAsSubarray, header); // auto-generated serialization code
-                    Debug.Assert(success);
-                    this.validPointer = this.producerPointer;
-                }
+                header.Length = currentMessageLength;
+                bool success = serializer.Serialize(ref bufferAsSubarray, header); // auto-generated serialization code
+                Debug.Assert(success);
+                this.validPointer = this.producerPointer;
+                
                 this.currentMessageHeaderOffset = NOT_SET;
                 this.nextHeader = null;
             }

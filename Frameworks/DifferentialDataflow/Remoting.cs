@@ -220,9 +220,6 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
         private readonly Func<R, K> keySelector;
         private readonly Func<R, V> valueSelector;
         private readonly SortedList<K, R> collection;
-        private readonly Dictionary<K, R> deletions;
-        private readonly Dictionary<K, R> additions;
-        private readonly List<R> newChangedItems;
 
         /// <summary>
         /// The number of unique keys in the dictionary.
@@ -277,9 +274,6 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
             this.keySelector = keySelector;
             this.valueSelector = valueSelector;
             this.collection = new SortedList<K, R>();
-            this.deletions = new Dictionary<K, R>();
-            this.additions = new Dictionary<K, R>();
-            this.newChangedItems = new List<R>();
             this.buffer = new List<Weighted<R>>();
             this.observedCollectionConverter = observedCollectionConverter;
         }

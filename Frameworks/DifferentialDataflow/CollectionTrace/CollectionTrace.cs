@@ -459,8 +459,6 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.CollectionTra
     internal class CollectionTraceImmutableNoHeap<R> : CollectionTraceCheckpointable<R>
         where R : IEquatable<R>
     {
-        List<Int64> Weights = new List<Int64>();
-
         public void Introduce(ref int keyIndex, R record, long weight, int timeIndex)
         {
             keyIndex += (int) weight;
@@ -521,7 +519,6 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.CollectionTra
 
         public void Release()
         {
-            Weights = null;
         }
 
         public void Compact()

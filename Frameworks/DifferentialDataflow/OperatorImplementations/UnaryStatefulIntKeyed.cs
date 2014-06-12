@@ -257,7 +257,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.OperatorImple
         // expected to populate resultList to match reduction(collection.source)
         protected virtual void Reduce(int index, UnaryKeyIndices keyIndices, int time) 
         {
-            var key = index * this.Stage.Placement.Count + this.VertexId;
+            //var key = index * this.Stage.Placement.Count + this.VertexId;
         }
 
         /* Checkpoint format:

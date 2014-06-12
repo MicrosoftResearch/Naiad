@@ -185,7 +185,7 @@ WSAIoctl(
             // Get the OS thread handle
             this.OSThreadId = Win32.GetCurrentThreadId();
             this.OSThreadHandle = Win32.OpenThread(0x001fffff, false, this.OSThreadId); // THREAD_ALL_ACCESS
-            if (this.OSThreadHandle == null || this.OSThreadHandle.ToInt64() == 0)
+            if (this.OSThreadHandle == IntPtr.Zero || this.OSThreadHandle.ToInt64() == 0)
             {
                 Console.Error.WriteLine("OpenThread error {0}", Win32.GetLastError());
             }
@@ -216,7 +216,7 @@ WSAIoctl(
 
             this.processId = Win32.GetCurrentProcessId();
             this.processHandle = Win32.OpenProcess(0x1F0FFF, false, this.processId);  // PROCESS_ALL_ACCESS
-            if (this.processHandle == null || this.processHandle.ToInt64() == 0)
+            if (this.processHandle == IntPtr.Zero || this.processHandle.ToInt64() == 0)
             {
                 Logging.Error("OpenProcess error {0}", Win32.GetLastError());
             }
@@ -233,7 +233,7 @@ WSAIoctl(
             // Get the OS thread handle
             this.OSThreadId = Win32.GetCurrentThreadId();
             this.OSThreadHandle = Win32.OpenThread(0x001fffff, false, this.OSThreadId); // THREAD_ALL_ACCESS
-            if (this.OSThreadHandle == null || this.OSThreadHandle.ToInt64() == 0)
+            if (this.OSThreadHandle == IntPtr.Zero || this.OSThreadHandle.ToInt64() == 0)
             {
                 Console.Error.WriteLine("OpenThread error {0}", Win32.GetLastError());
             }
@@ -254,7 +254,7 @@ WSAIoctl(
 
             this.processId = Win32.GetCurrentProcessId();
             this.processHandle = Win32.OpenProcess(0x1F0FFF, false, this.processId);  // PROCESS_ALL_ACCESS
-            if (this.processHandle == null || this.processHandle.ToInt64() == 0)
+            if (this.processHandle == IntPtr.Zero || this.processHandle.ToInt64() == 0)
             {
                 Logging.Error("OpenProcess error {0}", Win32.GetLastError());
             }
