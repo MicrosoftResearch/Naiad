@@ -868,6 +868,9 @@ namespace Microsoft.Research.Naiad
             if (this.networkChannel != null)
                 this.networkChannel.Dispose();
 
+            if (this.server != null)
+                this.server.Dispose();
+
             Logging.Stop();
         }
 

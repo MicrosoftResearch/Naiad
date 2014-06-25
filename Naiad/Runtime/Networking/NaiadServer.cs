@@ -25,6 +25,7 @@ using System.Text;
 using System.Net.Sockets;
 using System.Net;
 using System.Diagnostics;
+using System.Threading;
 using Microsoft.Research.Naiad.Dataflow.Channels;
 using System.IO;
 using System.Threading.Tasks;
@@ -65,30 +66,29 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
         {
             public GuardedAction(Action<Socket> a, bool mustGuard)
             {
-                guard = new Task(() => { });
+                Guard = new Task(() => { });
                 if (!mustGuard)
                 {
-                    guard.RunSynchronously();
+                    Guard.RunSynchronously();
                 }
-                action = a;
+                Action = a;
             }
 
-            public Task guard;
-            public Action<Socket> action;
+            public readonly Task Guard;
+            public readonly Action<Socket> Action;
         }
 
         private readonly IPEndPoint endpoint;
         private readonly Socket listeningSocket;
-        private Dictionary<NaiadProtocolOpcode, GuardedAction> serverActions;
-        private Dictionary<int, TcpNetworkChannel> networkChannels;
-        
+        private readonly Dictionary<NaiadProtocolOpcode, GuardedAction> serverActions;
+        private readonly Dictionary<int, TcpNetworkChannel> networkChannels;
+        private readonly Thread servingThread;
+
         public NaiadServer(ref IPEndPoint endpoint)
         {
             this.serverActions = new Dictionary<NaiadProtocolOpcode, GuardedAction>();
             this.state = ServerState.Initalized;
             this.serverActions[NaiadProtocolOpcode.Kill] = new GuardedAction(s => { using (TextWriter writer = new StreamWriter(new NetworkStream(s))) writer.WriteLine("Killed"); s.Close(); System.Environment.Exit(-9); }, false);
-            //this.serverActions[NaiadProtocolOpcode.GetIngressSocket] = s => this.controller.AttachIngressSocketToRemoteCollection(s);
-            //this.serverActions[NaiadProtocolOpcode.GetEgressSocket] = s => this.controller.AttachEgressSocketToRemoteOutput(s);
             this.networkChannels = new Dictionary<int, TcpNetworkChannel>();
             this.serverActions[NaiadProtocolOpcode.PeerConnect] = new GuardedAction(s => { int channelId = ReceiveInt(s); this.networkChannels[channelId].PeerConnect(s); }, true);
 
@@ -96,6 +96,8 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
             
             this.endpoint = endpoint;
             this.listeningSocket = socket;
+
+            this.servingThread = new Thread(this.ThreadStart);
         }
 
         public void RegisterNetworkChannel(TcpNetworkChannel channel)
@@ -105,15 +107,15 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
         }
 
         /// <summary>
-        /// Registers an action that will be called when a connection is made with the given opcode.
+        /// Registers an Action that will be called when a connection is made with the given opcode.
         /// 
-        /// The action receives the socket for the accepted connection, and is responsible for managing that
+        /// The Action receives the socket for the accepted connection, and is responsible for managing that
         /// resource by e.g. closing it.
         /// 
         /// This method must be called before a call to Start();
         /// </summary>
         /// <param name="opcode">The opcode to handle.</param>
-        /// <param name="serverAction">The action to execute when this opcode is received.</param>
+        /// <param name="serverAction">The Action to execute when this opcode is received.</param>
         /// <param name="mustGuard">If true, the execution will be guarded.</param>
         public void RegisterServerAction(NaiadProtocolOpcode opcode, Action<Socket> serverAction, bool mustGuard)
         {
@@ -181,44 +183,67 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
             return socket;
         }
 
+        /// <summary>
+        /// Starts the server accepting connections. To stop the server, call <see cref="Stop"/>.
+        /// </summary>
         public void Start()
         {
             Debug.Assert(this.state == ServerState.Initalized);
+
+            this.servingThread.Start();
+        }
+
+        /// <summary>
+        /// Accept loop thread. Implements protocol operation demuxing, based on a 4-byte opcode, in the first 4 bytes received
+        /// from the accept()'ed socket.
+        /// </summary>
+        private void ThreadStart()
+        {
             this.state = ServerState.Started;
 
             this.listeningSocket.Listen(100);
-            IAsyncResult result = this.listeningSocket.BeginAccept(4, this.AcceptCallback, null);
-            while (result.CompletedSynchronously)
+            while (true)
             {
-                this.AcceptHandler(result);
-                result = this.listeningSocket.BeginAccept(4, this.AcceptCallback, null);
+                Socket acceptedSocket;
+                try
+                {
+                    acceptedSocket = this.listeningSocket.Accept();
+                }
+                catch (ObjectDisposedException)
+                {
+                    break;
+                }
+                catch (SocketException se)
+                {
+                    if (se.SocketErrorCode == SocketError.Interrupted)
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        throw;
+                    }
+                }
+                NaiadProtocolOpcode opcode = (NaiadProtocolOpcode) ReceiveInt(acceptedSocket);
+                GuardedAction acceptAction;
+                if (this.serverActions.TryGetValue(opcode, out acceptAction))
+                {
+                    // Ensures that the Action runs after the Guard task has run.
+                    acceptAction.Guard.ContinueWith(
+                        (task) => AcceptInternal(acceptAction.Action, acceptedSocket, opcode));
+                }
+                else
+                {
+                    Logging.Progress("Invalid/unhandled opcode received: {0}", opcode);
+                    acceptedSocket.Close();
+                }
             }
         }
 
         public void AcceptPeerConnections()
         {
-            this.serverActions[NaiadProtocolOpcode.PeerConnect].guard.RunSynchronously();
-        }
-
-        /// <summary>
-        /// Asynchronous callback used in BeginAccept().
-        /// Implements protocol operation demuxing, based on a 4-byte opcode, in the first 4 bytes received
-        /// from the accept()'ed socket.
-        /// </summary>
-        /// <param name="result"></param>
-        private void AcceptCallback(IAsyncResult result)
-        {
-            if (result.CompletedSynchronously)
-                return;
-
-            this.AcceptHandler(result);
-
-            result = this.listeningSocket.BeginAccept(4, this.AcceptCallback, null);
-            while (result.CompletedSynchronously)
-            {
-                this.AcceptHandler(result);
-                result = this.listeningSocket.BeginAccept(4, this.AcceptCallback, null);
-            }
+            // Allows queued PeerConnect operations to continue.
+            this.serverActions[NaiadProtocolOpcode.PeerConnect].Guard.RunSynchronously();
         }
 
         private void AcceptInternal(Action<Socket> action, Socket peerSocket, NaiadProtocolOpcode opcode)
@@ -235,23 +260,6 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
             }
         }
 
-        private void AcceptHandler(IAsyncResult result)
-        {
-            Debug.Assert(this.state == ServerState.Started);
-            Socket peerSocket;
-            NaiadProtocolOpcode opcode = this.GetOpcode(result, out peerSocket);
-            GuardedAction acceptAction;
-            if (this.serverActions.TryGetValue(opcode, out acceptAction))
-            {
-                acceptAction.guard.ContinueWith((task) => AcceptInternal(acceptAction.action, peerSocket, opcode));
-            }
-            else
-            {
-                Logging.Progress("Invalid/unhandled opcode received: {0}", opcode);
-                peerSocket.Close();
-            }
-        }
-
         private static int ReceiveInt(Socket peerSocket)
         {
             byte[] intBuffer = new byte[4];
@@ -260,28 +268,11 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
             return BitConverter.ToInt32(intBuffer, 0);
         }
 
-        private NaiadProtocolOpcode GetOpcode(IAsyncResult acceptResult, out Socket peerSocket)
-        {
-            byte[] opcodeBuffer;
-            int n;
-            peerSocket = this.listeningSocket.EndAccept(out opcodeBuffer, out n, acceptResult);
-            if (n != 4)
-            {
-                opcodeBuffer = new byte[4];
-                n = peerSocket.Receive(opcodeBuffer);
-                // If the opcode still hasn't shown up, something is wrong
-                if (n != 4)
-                {
-                    return NaiadProtocolOpcode.InvalidOpcode;
-                }
-            }
-            return (NaiadProtocolOpcode)BitConverter.ToInt32(opcodeBuffer, 0);
-        }
-
         public void Stop()
         {
             Debug.Assert(this.state == ServerState.Started);
             this.listeningSocket.Close();
+            this.servingThread.Join();
             this.state = ServerState.Stopped;
         }
 
