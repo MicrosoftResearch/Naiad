@@ -700,7 +700,7 @@ namespace Microsoft.Research.Naiad
 
         public void Dispose()
         {
-            if (!this.isJoined)
+            if (this.activated && !this.isJoined)
             {
                 Logging.Error("Attempted to dispose Computation before joining.");
                 Logging.Error("You must call Computation.Join() before disposing/exiting the using block.");

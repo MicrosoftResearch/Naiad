@@ -749,6 +749,7 @@ namespace Microsoft.Research.Naiad
         private Placement defaultPlacement;
         public Placement DefaultPlacement { get { return this.defaultPlacement; } }
 
+        private bool activated;
 
         /// <summary>
         /// Constructs a controller for a new computation.
@@ -756,6 +757,7 @@ namespace Microsoft.Research.Naiad
         /// <param name="config">Controller configuration</param>
         public BaseController(Configuration config)
         {
+            this.activated = false;
             this.configuration = config;
 
             this.SerializationFormat = SerializationFactory.GetCodeGeneratorForVersion(config.SerializerVersion.First, config.SerializerVersion.Second);
@@ -855,11 +857,11 @@ namespace Microsoft.Research.Naiad
 
         public void Dispose()
         {
-            if (!this.isJoined)
+            if (this.activated && !this.isJoined)
             {
                 Logging.Error("Attempted to dispose controller before joining.");
                 Logging.Error("You must call controller.Join() before disposing/exiting the using block.");
-                System.Environment.Exit(-1);
+                //System.Environment.Exit(-1);
             }
 
             foreach (Scheduler scheduler in this.workerGroup.schedulers)
@@ -887,6 +889,7 @@ namespace Microsoft.Research.Naiad
 
         public void DoStartupBarrier()
         {
+            this.activated = true;
             if (this.networkChannel != null)
             {
                 this.networkChannel.DoStartupBarrier();

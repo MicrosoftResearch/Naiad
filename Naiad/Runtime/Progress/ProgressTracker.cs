@@ -136,7 +136,10 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
 
         public void BlockUntilComplete()
         {
-            this.consumer.FrontierEmpty.WaitOne();
+            // The FrontierEmpty event is signalled on the transition to empty,
+            // so check the length in case the computation has no vertices.
+            if (this.consumer.PCS.Frontier.Length > 0)
+                this.consumer.FrontierEmpty.WaitOne();
         }
 
         public void BroadcastProgressUpdate(Pointstamp time, int update)
