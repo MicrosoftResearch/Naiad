@@ -584,12 +584,20 @@ namespace Microsoft.Research.Naiad
                         input.Join();
                 }
 
-                // wait for all progress updates to drain.
-                // this.ProgressTracker.BlockUntilComplete();
-                this.ShutdownCounter.Wait();
+                // Wait for all progress updates to drain (or an exception to occur).
+                this.ProgressTracker.BlockUntilComplete();
 
+                // The shutdown counter will not be signalled in an exceptional case,
+                // so test the exception here.
                 if (this.exception != null)
+                {
+                    this.currentState = InternalComputationState.Failed;
                     throw new Exception("Error during Naiad execution", this.exception);
+                }
+
+                // We terminated successfully, so wait until all shutdown routines have
+                // finished.
+                this.ShutdownCounter.Wait();
 
                 NotifyOnShutdown();
 
