@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.4
+ * Naiad ver. 0.5
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -29,6 +29,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Remoting.Messaging;
 using System.Text;
 using System.Threading;
 using System.Net;
@@ -36,6 +37,7 @@ using System.Collections.Concurrent;
 using System.Net.Sockets;
 using System.Diagnostics;
 using System.IO;
+using System.Threading.Tasks;
 using Microsoft.Research.Naiad.Utilities;
 using Microsoft.Research.Naiad.Scheduling;
 using Microsoft.Research.Naiad.DataStructures;
@@ -81,7 +83,7 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
         /// Registers the given mailbox to receive messages.
         /// </summary>
         /// <param name="mailbox">The mailbox to which messages with the same channel and destination vertex ID should be sent.</param>
-        void RegisterMailbox(UntypedMailbox mailbox);
+        void RegisterMailbox(Mailbox mailbox);
 
         /// <summary>
         /// Returns the size (in bytes) of a page of serialized data used for sending.
@@ -148,7 +150,7 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
         public readonly int id;
         public int Id { get { return this.id; } }
 
-        private readonly List<List<List<UntypedMailbox>>> graphmailboxes;
+        private readonly List<List<List<Mailbox>>> graphmailboxes;
 
         //private readonly AutoResetEvent sendEvent;
         //private readonly AutoResetEvent[] sendEvents;
@@ -194,7 +196,7 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
             public readonly ConcurrentQueue<BufferSegment> HighPrioritySegmentQueue;
             //public readonly NaiadList<BufferSegment> InflightSegments;
             //public readonly NaiadList<ArraySegment<byte>> InflightArraySegments;
-            public readonly RecvBufferSheaf RecvBufferSheaf;
+            public RecvBufferSheaf RecvBufferSheaf;
             public Thread RecvThread;
             public Thread SendThread;
             //public readonly CircularBuffer RecvBuffer;
@@ -214,6 +216,14 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
             public long RecordsSent;
             public long RecordsRecv;
 
+            public readonly Dictionary<int, BufferSegment> DeferredDisposalSegments;
+
+            public int NextSequenceNumber;
+
+            public int SequenceNumberReceived;
+            public int SequenceNumberToAcknowledge;
+            public int SequenceNumberAcknowledged;
+
             // Trying to be cache-friendly with separate arrays for send/recv threads
             internal long[] sendStatistics;
             internal long[] recvStatistics;
@@ -222,6 +232,8 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
 
             public int ReceivedCheckpointMessages;
             public int LastCheckpointSequenceNumber;
+
+            public bool EverReceivedIncomingConnection;
 
             public ConnectionState(int id, ConnectionStatus status, int recvBufferLength, BufferPool<byte> sendPool)
             {
@@ -249,6 +261,13 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
                 this.sendStatistics = new long[(int)RuntimeStatistic.NUM_STATISTICS];
                 this.recvStatistics = new long[(int)RuntimeStatistic.NUM_STATISTICS];
 
+                this.DeferredDisposalSegments = new Dictionary<int, BufferSegment>();
+                this.NextSequenceNumber = 0;
+
+                this.SequenceNumberReceived = -1;
+                this.SequenceNumberAcknowledged = -1;
+                this.SequenceNumberToAcknowledge = -1;
+
                 this.ReceivedCheckpointMessages = 0;
                 this.LastCheckpointSequenceNumber = -1;
 
@@ -258,6 +277,8 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
                 this.CheckpointResumeEvent = new AutoResetEvent(false);
 
                 this.sequenceNumber = 1;
+
+                this.EverReceivedIncomingConnection = false;
             }
 
             public void Dispose()
@@ -326,7 +347,7 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
 
             this.localProcessID = this.Controller.Configuration.ProcessID;
 
-            this.graphmailboxes = new List<List<List<UntypedMailbox>>>();
+            this.graphmailboxes = new List<List<List<Mailbox>>>();
 
             this.connections = new List<ConnectionState>();
 
@@ -409,7 +430,7 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
 
         private void UdpReceiveThread(IPEndPoint multicastGroupAddress)
         {
-            Tracing.Trace("@UdpReceiveThread");
+            NaiadTracing.Trace.ThreadName("UdpRecvThread[{0}]", multicastGroupAddress.ToString());
             IPEndPoint from = multicastGroupAddress;
             MessageHeader header = default(MessageHeader);
             //int count = 0;
@@ -420,9 +441,7 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
             {
                 byte[] bytes = this.udpClient.Receive(ref from);
 
-                Tracing.Trace("Recv");
-
-                MessageHeader.ReadHeaderFromBuffer(bytes, 0, ref header, this.HeaderSerializer);
+                MessageHeader.ReadHeaderFromBuffer(bytes, 0, ref header);
                 //Console.Error.WriteLine("UdpReceiveThread: got {0} bytes from {1}. Sequence number = {2}, count = {3}", bytes.Length, from, header.SequenceNumber, count++);
 
                 SerializedMessage message = new SerializedMessage(0, header, new RecvBuffer(bytes, MessageHeader.SizeOf, bytes.Length));
@@ -482,15 +501,30 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
             lock (this)
             {
                 this.AllocateConnectionState(processId);
+
                 if (this.connections[processId].RecvSocket != null)
                 {
-                    Logging.Error("Error: already accepted a connection from process {0}", processId);
-                    System.Environment.Exit(-1);
+                    Logging.Error("WARNING: already accepted a connection from process {0}, so shutting down existing recvThread", processId);
+
+                    this.connections[processId].RecvSocket.Close();
+                    this.connections[processId].RecvThread.Join();
+
+                    this.connections[processId].RecvSocket = null;
+                    this.connections[processId].RecvThread = null;
+
+                    //
+                    //System.Environment.Exit(-1);
                 }
-                this.recvConnectionCountdown.Signal();
+
+                if (!this.connections[processId].EverReceivedIncomingConnection)
+                {
+                    this.recvConnectionCountdown.Signal();
+                    this.connections[processId].EverReceivedIncomingConnection = true;
+                }
 
                 this.connections[processId].RecvSocket = recvSocket;
                 this.connections[processId].RecvThread = new Thread(() => this.PerProcessRecvThread(processId));
+                this.connections[processId].RecvBufferSheaf = new RecvBufferSheaf(processId, (1 << 22) / RecvBufferPage.PAGE_SIZE, GlobalBufferPool<byte>.pool);
 #if RECV_HIGH_PRIORITY
                 this.connections[processId].RecvThread.Priority = ThreadPriority.Highest;
 #endif
@@ -520,40 +554,42 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
             this.AddEndPointIncoming(peerID, socket);
         }
 
-        public void RegisterMailbox(UntypedMailbox mailbox)
+        public void RegisterMailbox(Mailbox mailbox)
         {
             while (this.graphmailboxes.Count <= mailbox.GraphId)
                 this.graphmailboxes.Add(null);
             if (this.graphmailboxes[mailbox.GraphId] == null)
-                this.graphmailboxes[mailbox.GraphId] = new List<List<UntypedMailbox>>();
+                this.graphmailboxes[mailbox.GraphId] = new List<List<Mailbox>>();
 
             var mailboxes = this.graphmailboxes[mailbox.GraphId];
-            while (mailboxes.Count <= mailbox.Id)
+            while (mailboxes.Count <= mailbox.ChannelId)
                 mailboxes.Add(null);
-            if (mailboxes[mailbox.Id] == null)
-                mailboxes[mailbox.Id] = new List<UntypedMailbox>();
+            if (mailboxes[mailbox.ChannelId] == null)
+                mailboxes[mailbox.ChannelId] = new List<Mailbox>();
 
-            while (mailboxes[mailbox.Id].Count <= mailbox.VertexId)
-                mailboxes[mailbox.Id].Add(null);
-            mailboxes[mailbox.Id][mailbox.VertexId] = mailbox;
+            while (mailboxes[mailbox.ChannelId].Count <= mailbox.VertexId)
+                mailboxes[mailbox.ChannelId].Add(null);
+            mailboxes[mailbox.ChannelId][mailbox.VertexId] = mailbox;
             //Logging.Info("Registered Mailbox {0} Vertex {1}", mailbox.Id, mailbox.VertexID);
         }
 
         public void AnnounceCheckpoint()
         {
             int seqno = this.GetSequenceNumber(-1);
-            SendBufferPage checkpointPage = SendBufferPage.CreateSpecialPage(MessageHeader.Checkpoint, seqno, this.Controller.SerializationFormat.GetSerializer<MessageHeader>());
+            SendBufferPage checkpointPage = SendBufferPage.CreateSpecialPage(MessageHeader.Checkpoint, seqno);
             BufferSegment checkpointSegment = checkpointPage.Consume();
 
-            for (int i = 0; i < this.connections.Count - 2; ++i)
-                checkpointSegment.Copy();
+            // XXX: Hack due to new sequence numbers.
+
+            //for (int i = 0; i < this.connections.Count - 2; ++i)
+            //    checkpointSegment.Copy();
 
             for (int i = 0; i < this.connections.Count; ++i)
             {
                 if (i != this.localProcessID)
                 {
                     Logging.Info("Sending checkpoint message to process {0}", i);
-                    this.SendBufferSegment(checkpointPage.CurrentMessageHeader, i, checkpointSegment);
+                    this.SendBufferSegment(checkpointPage.CurrentMessageHeader, i, checkpointSegment.DeepCopy());
                 }
             }
         }
@@ -574,37 +610,24 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
                     this.connections[i].CheckpointResumeEvent.Set();
         }
 
-        private NaiadSerialization<MessageHeader> _headerSerializer;
-        private NaiadSerialization<MessageHeader> HeaderSerializer
-        {
-            get
-            {
-                if (this._headerSerializer == null)
-                    this._headerSerializer = this.Controller.SerializationFormat.GetSerializer<MessageHeader>();
-
-                if (this._headerSerializer == null)
-                    throw new Exception();
-
-                return this._headerSerializer;
-            }
-        }
-
         private void AnnounceShutdown()
         {
             Logging.Progress("Announcing shutdown");
             int seqno = this.GetSequenceNumber(-1);
-            SendBufferPage shutdownPage = SendBufferPage.CreateShutdownMessagePage(seqno, this.HeaderSerializer);
+            SendBufferPage shutdownPage = SendBufferPage.CreateShutdownMessagePage(seqno);
             BufferSegment shutdownSegment = shutdownPage.Consume();
 
-            for (int i = 0; i < this.connections.Count - 2; ++i)
-                shutdownSegment.Copy();
+            // XXX: Broadcast hack due to new sequence numbers.
+
+            //for (int i = 0; i < this.connections.Count - 2; ++i)
+            //    shutdownSegment.Copy();
 
             for (int i = 0; i < this.connections.Count; ++i)
             {
                 if (i != this.localProcessID)
                 {
                     Logging.Progress("Sending shutdown message to process {0}", i);
-                    this.SendBufferSegment(shutdownPage.CurrentMessageHeader, i, shutdownSegment);
+                    this.SendBufferSegment(shutdownPage.CurrentMessageHeader, i, shutdownSegment.DeepCopy());
                 }
             }
         }
@@ -624,18 +647,20 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
         private void AnnounceStartup(int barrierId)
         {
             int seqno = this.GetSequenceNumber(-1);
-            SendBufferPage startupPage = SendBufferPage.CreateSpecialPage(MessageHeader.GenerateBarrierMessageHeader(barrierId), seqno, this.HeaderSerializer);
+            SendBufferPage startupPage = SendBufferPage.CreateSpecialPage(MessageHeader.GenerateBarrierMessageHeader(barrierId), seqno);
             BufferSegment startupSegment = startupPage.Consume();
 
-            for (int i = 0; i < this.connections.Count - 2; ++i)
-                startupSegment.Copy();
+            // XXX: Hack due to new sequence numbers.
+
+            //for (int i = 0; i < this.connections.Count - 2; ++i)
+            //    startupSegment.Copy();
 
             for (int i = 0; i < this.connections.Count; ++i)
             {
                 if (i != this.localProcessID)
                 {
                     Logging.Info("Sending startup message to process {0}", i);
-                    this.SendBufferSegment(startupPage.CurrentMessageHeader, i, startupSegment);
+                    this.SendBufferSegment(startupPage.CurrentMessageHeader, i, startupSegment.DeepCopy());
                 }
             }
         }
@@ -680,19 +705,6 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
 
         public void SendBufferSegment(MessageHeader header, int destProcessID, BufferSegment segment, bool HighPriority=false, bool wakeUp=true)
         {
-            if (header.SequenceNumber < 0)  // progress message
-            {
-                //NaiadTracing.Trace.ProgressSend(header);
-                //Tracing.Trace("$SendC {0} {1} {2} {3}", header.SequenceNumber, segment.Length, header.FromVertexID, header.DestVertexID);
-                //Console.Error.WriteLine("$SendC {0} {1} {2} {3}", header.SequenceNumber, segment.Length, header.FromVertexID, header.DestVertexID);
-            }
-            else
-            {
-                //NaiadTracing.Trace.DataSend(header);
-                //Tracing.Trace("$SendD {0} {1} {2} {3}", header.SequenceNumber, segment.Length, header.FromVertexID, header.DestVertexID);
-                //Console.Error.WriteLine("$SendD {0} {1} {2} {3}", header.SequenceNumber, segment.Length, header.FromVertexID, header.DestVertexID);
-            }
-
             if (Controller.Configuration.DontUseHighPriorityQueue)
                 HighPriority = false;
 
@@ -712,18 +724,28 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
 
         private static SocketError SendAllBytes(Socket dest, ArraySegment<byte> segment)
         {
-            SocketError result;
-            Tracing.Trace("[Send");
-            int bytesToSend = segment.Count;
-            int startOffset = segment.Offset;
-            do
+            SocketError result = SocketError.Success;
+            try
             {
-                int bytesSent = dest.Send(segment.Array, startOffset, bytesToSend, SocketFlags.None, out result);
-                startOffset += bytesSent;
-                bytesToSend -= bytesSent;
-            } while (result == SocketError.Success && bytesToSend != 0);
-            Tracing.Trace("]Send");
-            return result;
+
+                NaiadTracing.Trace.RegionStart(NaiadTracingRegion.Send);
+                int bytesToSend = segment.Count;
+                int startOffset = segment.Offset;
+                do
+                {
+                    int bytesSent = dest.Send(segment.Array, startOffset, bytesToSend, SocketFlags.None, out result);
+                    startOffset += bytesSent;
+                    bytesToSend -= bytesSent;
+                } while (result == SocketError.Success && bytesToSend != 0);
+                NaiadTracing.Trace.RegionStop(NaiadTracingRegion.Send);
+                return result;
+            }
+            catch (Exception e)
+            {
+                Logging.Error("WARNING: An exception was raised when sending: {0}", e);
+                NaiadTracing.Trace.SocketError(result);
+                return SocketError.Fault;
+            }
         }
 
         private static SocketError SendAllBytes(Socket dest, byte[] bytes)
@@ -737,7 +759,11 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
             //PinnedThread pin = new PinnedThread(0xC0UL);
             PinnedThread pin = new PinnedThread(destProcessID % 8);
 #endif
-            Tracing.Trace("@SendThread[{0:00}]", destProcessID);
+            NaiadTracing.Trace.ThreadName("SendThread[{0:00}]", destProcessID);
+            bool doneAtLeastOnce = false;
+
+        try_connecting_again:
+
             // Connect to the destination socket.
             while (true) 
             {
@@ -777,7 +803,11 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
 
             this.connections[destProcessID].Status = ConnectionStatus.Idle;
 
-            this.sendConnectionCountdown.Signal(1);
+            if (!doneAtLeastOnce)
+            {
+                this.sendConnectionCountdown.Signal(1);
+                doneAtLeastOnce = true;
+            }
 
             this.startCommunicatingEvent.WaitOne();
             Socket socket;
@@ -811,7 +841,45 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
             sw.Start();
             
 
+            KeyValuePair<int, BufferSegment>[] resendSegments;
+            lock (this.connections[destProcessID].DeferredDisposalSegments)
+            {
+                resendSegments = this.connections[destProcessID].DeferredDisposalSegments.OrderBy(x => x.Key).ToArray();
+            }
+
             bool shuttingDown = false;
+
+            for (int i = 0; i < resendSegments.Length; ++i)
+            {
+                shuttingDown |= (resendSegments[i].Value.Type == SerializedMessageType.Shutdown);
+                ArraySegment<byte> messageArraySegment = resendSegments[i].Value.ToArraySegment();
+
+                MessageHeader header = default(MessageHeader);
+                MessageHeader.ReadHeaderFromBuffer(messageArraySegment.Array, messageArraySegment.Offset, ref header);
+                var channelId = header.ChannelID & 0xFFFF;
+                var dest = header.DestVertexID;
+                // For tracing purposes, if broadcast then replace dest vertex id=-1 with actual dest process id.
+                // This assumes that broadcast is only being used by progress messages, where there is a single
+                // vertex on each machine located on worker 0.
+                if (dest == -1)
+                {
+                    dest = destProcessID;
+                }
+                NaiadTracing.Trace.MsgSend(channelId, header.SequenceNumber, header.Length, header.FromVertexID, dest);
+
+                SocketError errorCode = SendAllBytes(socket, messageArraySegment);
+                if (errorCode != SocketError.Success)
+                {
+                    NaiadTracing.Trace.SocketError(errorCode);
+
+                    Logging.Error("WARNING: Send thread got error from peer {0}: {1}", destProcessID, errorCode);
+                    socket.Close();
+                    goto try_connecting_again;
+
+                    //this.HandleSocketError(destProcessID, errorCode);
+                }
+            }
+
             while (true)
             {
                 BufferSegment seg;
@@ -822,20 +890,47 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
                     Debug.Assert(seg.Length > 0); 
                     
                     length += seg.Length;
-                    shuttingDown = (seg.Type == SerializedMessageType.Shutdown);
+                    shuttingDown |= (seg.Type == SerializedMessageType.Shutdown);
 
+                    // Rewrite the message header to use contiguous per-connection sequence numbers.
+                    ArraySegment<byte> messageArraySegment = seg.ToArraySegment();
+                    MessageHeader header = default(MessageHeader);
+                    MessageHeader.ReadHeaderFromBuffer(messageArraySegment.Array, messageArraySegment.Offset, ref header);
+                    header.SequenceNumber = this.connections[destProcessID].NextSequenceNumber++;
+                    MessageHeader.WriteHeaderToBuffer(messageArraySegment.Array, messageArraySegment.Offset, header);
+
+                    //Logging.Error("Sending message to {0}: sequence number {1}, type {2}", destProcessID, header.SequenceNumber, header.Type);
+
+                    this.DeferDisposalUntilAcknowledged(destProcessID, header.SequenceNumber, seg);
+
+                    var channelId = header.ChannelID & 0xFFFF;
+                    var dest = header.DestVertexID;
+                    // For tracing purposes, if broadcast then replace dest vertex id=-1 with actual dest process id.
+                    // This assumes that broadcast is only being used by progress messages, where there is a single
+                    // vertex on each machine located on worker 0.
+                    if (dest == -1)
+                    {
+                        dest = destProcessID;
+                    }
+                    NaiadTracing.Trace.MsgSend(channelId, header.SequenceNumber, header.Length, header.FromVertexID, dest);
+                    
                     SocketError errorCode = SendAllBytes(socket, seg.ToArraySegment());
                     if (errorCode != SocketError.Success)
                     {
-                        Tracing.Trace("*Socket Error {0}", errorCode);
-                        this.HandleSocketError(destProcessID, errorCode);
+                        NaiadTracing.Trace.SocketError(errorCode);
+
+                        Logging.Error("Send thread got error from peer {0}: {1}", destProcessID, errorCode);
+                        socket.Close();
+                        goto try_connecting_again;
+                        
+                        //this.HandleSocketError(destProcessID, errorCode);
                     }
 
                     this.connections[destProcessID].ProgressSegmentsSent += 1;
                     this.connections[destProcessID].sendStatistics[(int)RuntimeStatistic.TxHighPriorityMessages] += 1;
                     this.connections[destProcessID].sendStatistics[(int)RuntimeStatistic.TxHighPriorityBytes] += seg.Length;
                     
-                    seg.Dispose();
+                    
                 }
 
                 while (this.connections[destProcessID].SegmentQueue.TryDequeue(out seg))
@@ -843,26 +938,74 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
                     Debug.Assert(seg.Length > 0);
 
                     length += seg.Length;
-                    shuttingDown = (seg.Type == SerializedMessageType.Shutdown);
+                    shuttingDown |= (seg.Type == SerializedMessageType.Shutdown);
+
+                    // Rewrite the message header to use contiguous per-connection sequence numbers.
+                    ArraySegment<byte> messageArraySegment = seg.ToArraySegment();
+                    MessageHeader header = default(MessageHeader);
+                    MessageHeader.ReadHeaderFromBuffer(messageArraySegment.Array, messageArraySegment.Offset, ref header);
+                    header.SequenceNumber = this.connections[destProcessID].NextSequenceNumber++;
+                    MessageHeader.WriteHeaderToBuffer(messageArraySegment.Array, messageArraySegment.Offset, header);
+
+                    //Logging.Error("Sending message to {0}: sequence number {1}, type {2}", destProcessID, header.SequenceNumber, header.Type);
+
+                    this.DeferDisposalUntilAcknowledged(destProcessID, header.SequenceNumber, seg);
+
+                    var channelId = header.ChannelID & 0xFFFF;
+                    var dest = header.DestVertexID;
+                    // For tracing purposes, if broadcast then replace dest vertex id=-1 with actual dest process id.
+                    // This assumes that broadcast is only being used by progress messages, where there is a single
+                    // vertex on each machine located on worker 0.
+                    if (dest == -1)
+                    {
+                        dest = destProcessID;
+                    }
+                    NaiadTracing.Trace.MsgSend(channelId, header.SequenceNumber, header.Length, header.FromVertexID, dest);
 
                     SocketError errorCode = SendAllBytes(socket, seg.ToArraySegment());
                     if (errorCode != SocketError.Success)
                     {
-                        Tracing.Trace("*Socket Error {0}", errorCode);
-                        this.HandleSocketError(destProcessID, errorCode);
+                        NaiadTracing.Trace.SocketError(errorCode);
+
+                        Logging.Error("WARNING: Send thread got error from peer {0}: {1}", destProcessID, errorCode);
+                        socket.Close();
+                        goto try_connecting_again;
+
+                        //this.HandleSocketError(destProcessID, errorCode);
                     }
 
                     this.connections[destProcessID].DataSegmentsSent += 1;
                     this.connections[destProcessID].sendStatistics[(int)RuntimeStatistic.TxNormalPriorityMessages] += 1;
                     this.connections[destProcessID].sendStatistics[(int)RuntimeStatistic.TxNormalPriorityBytes] += seg.Length;
-
-                    seg.Dispose();
                 }
 
                 if (shuttingDown)
                     break;
                 if (length == 0)
                 {
+                    int seqNumToAck = this.connections[destProcessID].SequenceNumberToAcknowledge;
+                    if (seqNumToAck > this.connections[destProcessID].SequenceNumberAcknowledged)
+                    {
+                        MessageHeader ackHeader = new MessageHeader(-1, seqNumToAck, -1, -1, 0, SerializedMessageType.Ack);
+                        byte[] ackBuffer = new byte[MessageHeader.SizeOf];
+                        MessageHeader.WriteHeaderToBuffer(ackBuffer, 0, ackHeader);
+
+                        SocketError errorCode = SendAllBytes(socket, ackBuffer);
+                        if (errorCode != SocketError.Success)
+                        {
+                            NaiadTracing.Trace.SocketError(errorCode);
+
+                            Logging.Error("WARNING: Send thread got error from peer {0}: {1}", destProcessID, errorCode);
+                            socket.Close();
+                            goto try_connecting_again;
+
+                            //this.HandleSocketError(destProcessID, errorCode);
+                        }
+
+                        this.connections[destProcessID].SequenceNumberAcknowledged = seqNumToAck;
+                    }
+
+
                     if (this.useBroadcastWakeup)
                     {
                         this.wakeUpEvent.Await(this.connections[destProcessID].SendEvent, wakeupCount + 1);
@@ -894,7 +1037,7 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
 #if RECV_AFFINITY
             PinnedThread pin = new PinnedThread(srcProcessID % 8);
 #endif
-            Tracing.Trace("@RecvThread[{0:00}]", srcProcessID);
+            NaiadTracing.Trace.ThreadName("RecvThread[{0:00}]", srcProcessID);
             Logging.Info("Initializing per-process recv thread for {0}", srcProcessID);
 
             this.startCommunicatingEvent.WaitOne();
@@ -939,33 +1082,88 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
                 
                 recvBytesIn += recvSegment.Count;
 
-                int bytesRecvd = socket.Receive(recvSegment.Array, recvSegment.Offset, recvSegment.Count, SocketFlags.None, out errorCode);
-                
+                int bytesRecvd = 0;
+                try
+                {
+                    bytesRecvd = socket.Receive(recvSegment.Array, recvSegment.Offset, recvSegment.Count,
+                        SocketFlags.None, out errorCode);
+                }
+                catch (Exception e)
+                {
+                    Logging.Error("WARNING: Got exception while receiving from {0}: {1}", srcProcessID, e);
+                    errorCode = SocketError.Fault;
+                }
+
+                if (errorCode != SocketError.Success)
+                {
+                    //Tracing.Trace("*Socket Error {0}", errorCode);
+                    Logging.Error("WARNING: Receive thread got socket error from peer {0}: {1}", srcProcessID, errorCode);
+                    socket.Close();
+
+                    lock (this)
+                    {
+                        this.connections[srcProcessID].RecvThread = null;
+                        this.connections[srcProcessID].RecvSocket = null;
+                        this.connections[srcProcessID].RecvBufferSheaf = null;
+                    }
+
+                    return;
+
+                    //this.HandleSocketError(srcProcessID, errorCode);
+                }
+
                 // If the remote host shuts down the Socket connection with the Shutdown method,
                 // and all available data has been received, the Receive method will complete 
                 // immediately and return zero bytes.
                 if (bytesRecvd == 0)
+                {
+                    Logging.Error("WARNING: Receive thread received no bytes from peer {0}", srcProcessID);
+                    socket.Close();
+
+                    lock (this)
+                    {
+                        this.connections[srcProcessID].RecvThread = null;
+                        this.connections[srcProcessID].RecvSocket = null;
+                        this.connections[srcProcessID].RecvBufferSheaf = null;
+                    }
+
                     return;
+
+
+                    //Debug.Assert(false);
+                    //Logging.Info("Shutting down receive thread due to lack of data - believed to be impossible.");
+
+                    //this.HandleSocketError(srcProcessID, errorCode);
+                    //return;
+                }
+
+                this.connections[srcProcessID].RecvBufferSheaf.OnBytesProduced(bytesRecvd);
 
                 recvBytesOut += bytesRecvd;
                 numRecvs++;
 
                 //Logging.Progress("Received {0} bytes from {1}", bytesRecvd, srcProcessID);
-                if (errorCode != SocketError.Success)
-                {
-                    Tracing.Trace("*Socket Error {0}", errorCode);
 
-                    this.HandleSocketError(srcProcessID, errorCode);
-                }
-                this.connections[srcProcessID].RecvBufferSheaf.OnBytesProduced(bytesRecvd);
-
-                foreach (SerializedMessage message in this.connections[srcProcessID].RecvBufferSheaf.ConsumeMessages(this.HeaderSerializer))
+                foreach (SerializedMessage message in this.connections[srcProcessID].RecvBufferSheaf.ConsumeMessages())
                 {
+                    if (message.Header.SequenceNumber != this.connections[srcProcessID].SequenceNumberReceived + 1 && message.Header.Type != SerializedMessageType.Ack)
+                    {
+                        Logging.Error("Dropping duplicated received message from {0}: sequence number {1}, type {2}", srcProcessID, message.Header.SequenceNumber, message.Header.Type);
+                        message.Dispose();
+                        continue;
+                    }
+                    else
+                    {
+                        //Logging.Error("Receiving message from {0}: sequence number {1}, type {2}", srcProcessID, message.Header.SequenceNumber, message.Header.Type);
+                    }
+
                     message.ConnectionSequenceNumber = nextConnectionSequenceNumber++;
 
                     this.connections[srcProcessID].recvStatistics[(int)RuntimeStatistic.RxNetMessages] += 1;
                     this.connections[srcProcessID].recvStatistics[(int)RuntimeStatistic.RxNetBytes] += message.Header.Length;
 
+                    //Console.WriteLine("Received {1} message: {0}", message.Header.SequenceNumber, message.Type);
+                    
                     switch (message.Type)
                     {
                         case SerializedMessageType.Startup:
@@ -997,12 +1195,23 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
                             bool success = this.AttemptDelivery(message, srcProcessID);
                             Debug.Assert(success);
                             break;
+                        case SerializedMessageType.Ack:
+                            this.HandleAcknowledgement(srcProcessID, message.Header.SequenceNumber);
+                            break;
                         default:
                             Logging.Progress("Received BAD msg type {0} from process {1}! ", message.Type, srcProcessID);
                             Debug.Assert(false);
                             break;
                     }
+
+                    if (message.Header.Type != SerializedMessageType.Ack)
+                    {
+                        this.connections[srcProcessID].SequenceNumberReceived = message.Header.SequenceNumber;
+                    }
                 }
+
+                if (this.connections[srcProcessID].SequenceNumberReceived >= 0)
+                    this.AcknowledgeMessage(srcProcessID, this.connections[srcProcessID].SequenceNumberReceived);
             }
 #if RECV_AFFINITY
             pin.Dispose();
@@ -1034,8 +1243,9 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
             {
                 if (message.Header.ChannelID < 0 || this.localProcessID < 0)    // debug check
                     throw new Exception("This shouldn't happen");
-                    
+
                 // Special-cased logic for the progress channel, where we know that each process uses its process ID as the vertex ID.
+                NaiadTracing.Trace.MsgRecv(channelId, message.Header.SequenceNumber, message.Header.Length, message.Header.FromVertexID, this.localProcessID);
                 try
                 {
                     this.graphmailboxes[graphId][channelId][this.localProcessID].DeliverSerializedMessage(message, new ReturnAddress(peerID, message.Header.FromVertexID));
@@ -1047,7 +1257,6 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
                     Console.Error.WriteLine("{0} mailboxes currently exist", "some");//this.mailboxes.Count);
                     System.Environment.Exit(-1);
                 }
-
                 return true;
             }
             else if (graphId >= this.graphmailboxes.Count ||
@@ -1070,6 +1279,7 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
             }
             else
             {
+                NaiadTracing.Trace.MsgRecv(channelId, message.Header.SequenceNumber, message.Header.Length, message.Header.FromVertexID, message.Header.DestVertexID);
                 this.graphmailboxes[graphId][channelId][message.Header.DestVertexID].DeliverSerializedMessage(message, new ReturnAddress(peerID, message.Header.FromVertexID));
                 return true;
             }
@@ -1142,35 +1352,71 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
             var nmsgs = 0;
             if (segment.Length > 0)
             {
+
                 if (this.Controller.Configuration.Broadcast == Configuration.BroadcastProtocol.UdpOnly || this.Controller.Configuration.Broadcast == Configuration.BroadcastProtocol.TcpUdp)
                 {
                     ArraySegment<byte> array = segment.ToArraySegment();
                     Debug.Assert(array.Offset == 0);
-                    Tracing.Trace("{UdpBroadcast");
-                    this.udpClient.Send(array.Array, array.Count); 
-                    Tracing.Trace("}UdpBroadcast");
+                    NaiadTracing.Trace.RegionStart(NaiadTracingRegion.BroadcastUDP);
+                    this.udpClient.Send(array.Array, array.Count);
+                    NaiadTracing.Trace.RegionStop(NaiadTracingRegion.BroadcastUDP);
                     nmsgs++;
                 }
 
                 if (this.Controller.Configuration.Broadcast == Configuration.BroadcastProtocol.TcpOnly || this.Controller.Configuration.Broadcast == Configuration.BroadcastProtocol.TcpUdp)
                 {
-                    Tracing.Trace("{TcpBroadcast");
+                    NaiadTracing.Trace.RegionStart(NaiadTracingRegion.BroadcastTCP);
                     for (int i = 0; i < this.connections.Count; ++i)
                         if (i != this.localProcessID)
                         {
                             // Increment refcount for each destination process.
-                            segment.Copy();
-                            this.SendBufferSegment(header, i, segment, true, !this.useBroadcastWakeup);
+                            //segment.Copy();
+                            this.SendBufferSegment(header, i, segment.DeepCopy(), true, !this.useBroadcastWakeup);
                             nmsgs++;
                         }
                     if (this.useBroadcastWakeup)
                         this.wakeUpEvent.Advance();
-                    Tracing.Trace("}TcpBroadcast");
+                    NaiadTracing.Trace.RegionStop(NaiadTracingRegion.BroadcastTCP);
                 }
             }
             // Decrement refcount for the initial call to Consume().
             segment.Dispose();
             return nmsgs;
+        }
+
+
+        private Dictionary<int, Dictionary<int, BufferSegment>> deferredDisposalSegments = new Dictionary<int, Dictionary<int, BufferSegment>>(); 
+
+        private void DeferDisposalUntilAcknowledged(int destProcessId, int sequenceNumber, BufferSegment segment)
+        {
+            lock (this.connections[destProcessId].DeferredDisposalSegments)
+            {
+                this.connections[destProcessId].DeferredDisposalSegments.Add(sequenceNumber, segment);
+            }
+        }
+
+        private void AcknowledgeMessage(int fromProcessId, int sequenceNumber)
+        {
+            this.connections[fromProcessId].SequenceNumberToAcknowledge = sequenceNumber;
+            this.connections[fromProcessId].SendEvent.Set();
+        }
+
+        private void HandleAcknowledgement(int fromProcessId, int sequenceNumber)
+        {
+            //Console.WriteLine("Handling ack for {0}", sequenceNumber);
+            lock (this.connections[fromProcessId].DeferredDisposalSegments)
+            {
+                var deferredSegments = this.connections[fromProcessId].DeferredDisposalSegments;
+
+                foreach (var x in deferredSegments.ToArray())
+                {
+                    if (x.Key <= sequenceNumber)
+                    {
+                        deferredSegments.Remove(x.Key);
+                        x.Value.Dispose();
+                    }
+                }
+            }
         }
 
     }

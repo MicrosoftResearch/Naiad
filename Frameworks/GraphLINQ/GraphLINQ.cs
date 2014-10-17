@@ -1,5 +1,5 @@
-﻿/* 
- * Naiad ver. 0.4 
+/* 
+ * Naiad ver. 0.5
  * Copyright (c) Microsoft Corporation 
  * All rights reserved.  
  * 
@@ -390,7 +390,7 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
             if (edges == null) throw new ArgumentNullException("edges");
             var compacted = edges.Compact();    // could be cached and retrieved as needed
 
-            return compacted.NewBinaryStage(nodes, (i, v) => new GraphJoin<TValue, TValue, TTime>(i, v, (x, y) => x.value), null, x => x.node.index, null, "TransmitAlong");
+            return compacted.NewBinaryStage(nodes, (i, s) => new GraphJoinVertex<TValue, TTime>(i, s), null, x => x.node.index, null, "TransmitAlong");
         }
 
 
@@ -417,7 +417,7 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
             if (valueSelector == null) throw new ArgumentNullException("valueSelector");
             var compacted = edges.Compact();    // could be cached and retrieved as needed
 
-            return compacted.NewBinaryStage(nodes, (i, v) => new GraphJoin<TValue, TOutput, TTime>(i, v, valueSelector), null, x => x.node.index, null, "TransmitAlong");
+            return compacted.NewBinaryStage(nodes, (i, v) => new GraphJoinVertex<TValue, TOutput, TTime>(i, v, valueSelector), null, x => x.node.index, null, "TransmitAlong");
         }
 
         /// <summary>
@@ -485,7 +485,19 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
         {
             if (nodes == null) throw new ArgumentNullException("nodes");
             if (combiner == null) throw new ArgumentNullException("combiner");
+
+#if true
+            var stage = Foundry.NewStage(nodes.Context, (i,s) => new NodeAggregatorVertex<TValue, TTime>(i, s, combiner, nodes.ForStage.Placement.Count), "Aggregator");
+
+            Action<NodeWithValue<TValue>[], int[], int> action = (data, dsts, len) => { for (int i = 0; i < len; i++) dsts[i] = data[i].node.index; };
+
+            var input1 = stage.NewInput(nodes, (message, vertex) => vertex.OnReceive(message), x => x.node.index, action);
+            var output = stage.NewOutput(vertex => vertex.Output, x => x.node.index);
+
+            return output;
+#else
             return nodes.NewUnaryStage((i, v) => new NodeAggregatorVertex<TValue, TTime>(i, v, combiner, nodes.ForStage.Placement.Count), x => x.node.index, x => x.node.index, "Aggregator");
+#endif
         }
 
         /// <summary>
@@ -533,7 +545,43 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
         {
             if (nodes == null) throw new ArgumentNullException("nodes");
             if (transitionSelector == null) throw new ArgumentNullException("transitionSelector");
-            return nodes.NewUnaryStage((i, v) => new NodeUnaryStateMachine<TValue, TState, TOutput, TTime>(i, v, transitionSelector, defaultState), x => x.node.index, x => x.node.index, "NodeStateMachine");
+
+            var stage = Foundry.NewStage(nodes.Context, (i, s) => new NodeUnaryStateMachine<TValue, TState, TOutput, TTime>(i, s, transitionSelector, defaultState), "StateMachine");
+
+            Action<NodeWithValue<TValue>[], int[], int> action = (data, dsts, len) => { for (int i = 0; i < len; i++) dsts[i] = data[i].node.index; };
+
+            var input1 = stage.NewInput(nodes, (message, vertex) => vertex.OnReceive(message), x => x.node.index, action);
+            var output = stage.NewOutput(vertex => vertex.Output, x => x.node.index);
+
+            return output;
+        }
+
+        /// <summary>
+        /// Given a stream of values associated with nodes, maintains a state machine for each node,
+        /// and produces a stream of new states on each transition, based on the given <paramref name="transitionSelector"/>.
+        /// </summary>
+        /// <typeparam name="TValue">The type of value associated with each node.</typeparam>
+        /// <typeparam name="TState">The type of state associated with each node.</typeparam>
+        /// <typeparam name="TTime">The type of timestamp on each record.</typeparam>
+        /// <param name="nodes">The stream of nodes with values.</param>
+        /// <param name="transitionSelector">A function from current value and state, to new state.</param>
+        /// <param name="defaultState">The default state associated with a node.</param>
+        /// <returns>The stream of changed states at each node.</returns>
+        public static Stream<NodeWithValue<TState>, TTime> StateMachine<TValue, TState, TTime>(this Stream<NodeWithValue<TValue>, TTime> nodes, Func<TValue, TState, TState> transitionSelector, TState defaultState)
+            where TTime : Time<TTime>
+            where TState : IEquatable<TState>
+        {
+            if (nodes == null) throw new ArgumentNullException("nodes");
+            if (transitionSelector == null) throw new ArgumentNullException("transitionSelector");
+
+            var stage = Foundry.NewStage(nodes.Context, (i, s) => new NodeUnaryStateMachine<TValue, TState, TTime>(i, s, transitionSelector, defaultState), "StateMachine");
+
+            Action<NodeWithValue<TValue>[], int[], int> action = (data, dsts, len) => { for (int i = 0; i < len; i++) dsts[i] = data[i].node.index; };
+
+            var input1 = stage.NewInput(nodes, (message, vertex) => vertex.OnReceive(message), x => x.node.index, action);
+            var output = stage.NewOutput(vertex => vertex.Output, x => x.node.index);
+
+            return output;
         }
 
         /// <summary>
@@ -564,7 +612,7 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
         /// Represents either a value or an invalid value
         /// </summary>
         /// <typeparam name="TElement">element type</typeparam>
-        private struct Option<TElement>
+        internal struct Option<TElement>
         {
             public readonly TElement Value;
             public readonly bool IsValid;
@@ -574,6 +622,12 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
             /// </summary>
             /// <param name="value">value</param>
             public Option(TElement value) { this.Value = value; this.IsValid = true; }
+        }
+
+        internal static Stream<NodeWithValue<TRecord>, TTime> FilterOptions<TRecord, TTime>(this Stream<NodeWithValue<Option<TRecord>>, TTime> stream)
+            where TTime : Time<TTime>
+        {
+            return stream.NewUnaryStage((i, s) => new FilterOptionsVertex<TRecord, TTime>(i, s), x => x.node.index, x => x.node.index, "FilterOptions");
         }
 
         /// <summary>
@@ -595,27 +649,7 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
             return nodes.StateMachine(transitionSelector, default(TState));
         }
 
-        /// <summary>
-        /// Given a stream of values associated with nodes, maintains a state machine for each node,
-        /// and produces a stream of new states on each transition, based on the given <paramref name="transitionSelector"/>.
-        /// </summary>
-        /// <typeparam name="TValue">The type of value associated with each node.</typeparam>
-        /// <typeparam name="TState">The type of state associated with each node.</typeparam>
-        /// <typeparam name="TTime">The type of timestamp on each record.</typeparam>
-        /// <param name="nodes">The stream of nodes with values.</param>
-        /// <param name="transitionSelector">A function from current value and state, to new state.</param>
-        /// <param name="defaultState">The default state associated with a node.</param>
-        /// <returns>The stream of changed states at each node.</returns>
-        public static Stream<NodeWithValue<TState>, TTime> StateMachine<TValue, TState, TTime>(this Stream<NodeWithValue<TValue>, TTime> nodes, Func<TValue, TState, TState> transitionSelector, TState defaultState)
-            where TTime : Time<TTime>
-            where TState : IEquatable<TState>
-        {
-            if (nodes == null) throw new ArgumentNullException("nodes");
-            if (transitionSelector == null) throw new ArgumentNullException("transitionSelector");
-            return nodes.StateMachine((v, s) => { var n = transitionSelector(v, s); return n.PairWith(s.Equals(n) ? new Option<TState>() : new Option<TState>(n)); }, defaultState)
-                         .Where(x => x.value.IsValid)
-                         .Select(x => x.node.WithValue(x.value.Value));
-        }
+
 
         /// <summary>
         /// Given a stream of values associated with nodes, maintains a state machine for each node,
@@ -768,6 +802,8 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
         public NodeAggregatorVertex(int index, Stage<TTime> stage, Func<TValue, TValue, TValue> aggregate, int parts)
             : base(index, stage)
         {
+            this.Entrancy = 5;
+
             this.values = new Dictionary<TTime, TValue[]>();
             this.update = aggregate;
 
@@ -831,10 +867,10 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
         {
             for (int i = 0; i < message.length; i++)
             {
-                var index = message.payload[i].node.index;
-                if (index >= this.state.Length)
+                var localIndex = message.payload[i].node.index / this.parts;
+                if (localIndex >= this.state.Length)
                 {
-                    var newState = new TState[Math.Max(index + 1, 2 * this.state.Length)];
+                    var newState = new TState[Math.Max(localIndex + 1, 2 * this.state.Length)];
 
                     for (int j = 0; j < this.state.Length; j++)
                         newState[j] = this.state[j];
@@ -845,7 +881,7 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
                     this.state = newState;
                 }
 
-                this.state[message.payload[i].node.index / this.parts] = message.payload[i].value;
+                this.state[localIndex] = message.payload[i].value;
             }
         }
 
@@ -940,8 +976,75 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
         }
     }
 
+    // a streaming state machine vertex, responding to incoming values with a state transition and an output message.
+    internal class NodeUnaryStateMachine<TValue, TState, TTime> : UnaryVertex<NodeWithValue<TValue>, NodeWithValue<TState>, TTime>
+        where TTime : Time<TTime>
+        where TState : IEquatable<TState>
+    {
+        private TState[] state;
+        private readonly Func<TValue, TState, TState> transition;
+
+        private readonly int parts;
+        private readonly TState defaultState;
+
+        public override void OnReceive(Message<NodeWithValue<TValue>, TTime> message)
+        {
+            var output = this.Output.GetBufferForTime(message.time);
+            for (int i = 0; i < message.length; i++)
+            {
+                var record = message.payload[i];
+                var localIndex = record.node.index / this.parts;
+
+                if (this.state.Length <= localIndex)
+                {
+                    var newState = new TState[Math.Max(localIndex + 1, 2 * this.state.Length)];
+                    for (int j = 0; j < this.state.Length; j++)
+                        newState[j] = this.state[j];
+
+                    for (int j = this.state.Length; j < newState.Length; j++)
+                        newState[j] = defaultState;
+
+                    this.state = newState;
+                }
+
+                var transitionResult = this.transition(record.value, this.state[localIndex]);
+
+                if (!this.state[localIndex].Equals(transitionResult))
+                {
+                    this.state[localIndex] = transitionResult;
+                    output.Send(record.node.WithValue(transitionResult));
+                }
+            }
+        }
+
+        public NodeUnaryStateMachine(int index, Stage<TTime> vertex, Func<TValue, TState, TState> transition, TState defaultState)
+            : base(index, vertex)
+        {
+            this.state = new TState[] { };
+
+            this.transition = transition;
+
+            this.parts = vertex.Placement.Count;
+            this.defaultState = defaultState;
+        }
+    }
+
+    internal class FilterOptionsVertex<TRecord, TTime> : UnaryVertex<NodeWithValue<ExtensionMethods.Option<TRecord>>, NodeWithValue<TRecord>, TTime>
+        where TTime : Time<TTime>
+    {
+        public override void OnReceive(Message<NodeWithValue<ExtensionMethods.Option<TRecord>>, TTime> message)
+        {
+            var output = this.Output.GetBufferForTime(message.time);
+            for (int i = 0; i < message.length; i++)
+                if (message.payload[i].value.IsValid)
+                    output.Send(message.payload[i].node.WithValue(message.payload[i].value.Value));
+        }
+
+        public FilterOptionsVertex(int index, Stage<TTime> stage) : base(index, stage) { }
+    }
+
     // vertex managing a CompactGraph fragment, processing corresponding values by applying a reducer.
-    internal class GraphJoin<TValue, TOutput, T> : BinaryVertex<CompactGraph, NodeWithValue<TValue>, NodeWithValue<TOutput>, T>
+    internal class GraphJoinVertex<TValue, TOutput, T> : BinaryVertex<CompactGraph, NodeWithValue<TValue>, NodeWithValue<TOutput>, T>
         where T : Time<T>
     {
         private CompactGraph graph;
@@ -994,12 +1097,74 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
             this.toProcess = new List<NodeWithValue<TValue>>();
         }
 
-        public GraphJoin(int index, Stage<T> vertex, Func<NodeWithValue<TValue>, Node, TOutput> valueSelector)
+        public GraphJoinVertex(int index, Stage<T> vertex, Func<NodeWithValue<TValue>, Node, TOutput> valueSelector)
             : base(index, vertex)
         {
             this.graph = new CompactGraph();
             this.toProcess = new List<NodeWithValue<TValue>>();
             this.valueSelector = valueSelector;
+
+            this.Entrancy = 5;
+        }
+    }
+
+    // vertex managing a CompactGraph fragment, processing corresponding values by applying a reducer.
+    internal class GraphJoinVertex<TValue, T> : BinaryVertex<CompactGraph, NodeWithValue<TValue>, NodeWithValue<TValue>, T>
+        where T : Time<T>
+    {
+        private CompactGraph graph;
+
+        private List<NodeWithValue<TValue>> toProcess;
+
+        public override void OnReceive1(Message<CompactGraph, T> message)
+        {
+            for (int i = 0; i < message.length; i++)
+                this.graph = message.payload[i];
+
+            this.NotifyAt(message.time);
+        }
+
+        public override void OnReceive2(Message<NodeWithValue<TValue>, T> message)
+        {
+            if (this.graph.Nodes == null && message.length > 0)
+            {
+                for (int i = 0; i < message.length; i++)
+                    this.toProcess.Add(message.payload[i]);
+            }
+            else
+            {
+                var output = this.Output.GetBufferForTime(message.time);
+                for (int i = 0; i < message.length; i++)
+                {
+                    var record = message.payload[i];
+                    var localName = record.node.index / this.Stage.Placement.Count;
+
+                    if (localName + 1 < this.graph.Nodes.Length)
+                        for (int j = this.graph.Nodes[localName]; j < this.graph.Nodes[localName + 1]; j++)
+                            output.Send(this.graph.Edges[j].WithValue(record.value));
+                }
+            }
+        }
+
+        public override void OnNotify(T time)
+        {
+            var output = this.Output.GetBufferForTime(time);
+            foreach (var record in this.toProcess.AsEnumerable())
+            {
+                var localName = record.node.index / this.Stage.Placement.Count;
+                if (localName + 1 < this.graph.Nodes.Length)
+                    for (int j = this.graph.Nodes[localName]; j < this.graph.Nodes[localName + 1]; j++)
+                        output.Send(this.graph.Edges[j].WithValue(record.value));
+            }
+
+            this.toProcess = new List<NodeWithValue<TValue>>();
+        }
+
+        public GraphJoinVertex(int index, Stage<T> stage)
+            : base(index, stage)
+        {
+            this.graph = new CompactGraph();
+            this.toProcess = new List<NodeWithValue<TValue>>();
 
             this.Entrancy = 5;
         }

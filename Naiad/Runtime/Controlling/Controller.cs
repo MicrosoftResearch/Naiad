@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.4
+ * Naiad ver. 0.5
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -483,7 +483,7 @@ namespace Microsoft.Research.Naiad
 
             public void WakeUp()
             {
-                Tracing.Trace("{WakeUp");
+                NaiadTracing.Trace.RegionStart(NaiadTracingRegion.Wakeup);
                 if (this.useBroadcastWakeup)
                 {
                     this.wakeUpEvent.Advance();
@@ -493,7 +493,7 @@ namespace Microsoft.Research.Naiad
                 foreach (Scheduler scheduler in this.schedulers)
                     scheduler.Signal();
                 }
-                Tracing.Trace("}WakeUp");
+                NaiadTracing.Trace.RegionStop(NaiadTracingRegion.Wakeup);
             }
 
             public void Abort()
@@ -524,7 +524,7 @@ namespace Microsoft.Research.Naiad
             internal void DrainAllQueuedMessages()
             {
                 foreach (Scheduler scheduler in this.schedulers)
-                    scheduler.DrainPostOffice();
+                    scheduler.AcceptWorkItemsFromOthers();
             }
 
             #region Scheduler events
@@ -823,6 +823,9 @@ namespace Microsoft.Research.Naiad
             Logging.Progress("Server GC = {0}", System.Runtime.GCSettings.IsServerGC);
             Logging.Progress("GC settings latencymode={0}", System.Runtime.GCSettings.LatencyMode);
             Logging.Progress("Using CLR {0}", System.Environment.Version);
+
+            NaiadTracing.Trace.ProcessInfo(this.configuration.ProcessID, System.Environment.MachineName);
+            NaiadTracing.Trace.LockInfo(this.GlobalLock, "Controller lock");
             
             if (this.NetworkChannel != null)
                 this.NetworkChannel.StartMessageDelivery();

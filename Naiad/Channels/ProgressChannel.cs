@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.4
+ * Naiad ver. 0.5
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -29,11 +29,10 @@ using Microsoft.Research.Naiad.Serialization;
 using System.Diagnostics;
 
 using Microsoft.Research.Naiad.Dataflow;
+using Microsoft.Research.Naiad.Diagnostics;
 using Microsoft.Research.Naiad.Runtime.Networking;
 using Microsoft.Research.Naiad.Runtime.Controlling;
 using Microsoft.Research.Naiad.Runtime.Progress;
-
-using Microsoft.Research.Naiad.Diagnostics;
 
 namespace Microsoft.Research.Naiad.Dataflow.Channels
 {
@@ -49,7 +48,7 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
 
             public int GraphId { get { return this.graphid; } }
 
-            public int Id { get { return this.id; } }
+            public int ChannelId { get { return this.id; } }
             public int VertexId { get { return this.vertexId; } }
             public int ThreadIndex { get { return this.consumer.scheduler.Index; } }
 
@@ -61,7 +60,7 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
             {
                 lock (this)
                 {
-                    if (message.Header.SequenceNumber == this.nextSequenceNumbers[from.VertexID])
+                    if (true) //(message.Header.SequenceNumber == this.nextSequenceNumbers[from.VertexID])
                     {
                         //Console.Error.WriteLine("Delivering message {0} L = {1} A = {2}", message.Header.SequenceNumber, message.Header.Length, message.Body.Available);
                         //foreach (Pair<Int64, Pointstamp> currentRecord in this.decoder.Elements(message))
@@ -73,10 +72,10 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
                         foreach (var typedMessage in this.decoder.AsTypedMessages(message))
                         {
                             this.consumer.ProcessCountChange(typedMessage);
-                            typedMessage.Release();
+                            typedMessage.Release(AllocationReason.Deserializer);
                         }
 
-                        this.Flush(from);
+                        this.RequestFlush(from);
                     }
                     else
                     {
@@ -97,7 +96,7 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
             }
 
             public void Drain() { }
-            public void Flush(ReturnAddress from) { }
+            public void RequestFlush(ReturnAddress from) { }
 
             public Mailbox(PostOffice postOffice, Runtime.Progress.ProgressUpdateConsumer consumer, int id, int vertexId, int numProducers)
             {
@@ -156,7 +155,7 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
             public void Send(Message<Update, Empty> records)
             {
                 if (this.networkChannel != null)
-                    this.encoder.Write(new ArraySegment<Update>(records.payload, 0, records.length), 0);
+                    this.encoder.Write(new ArraySegment<Update>(records.payload, 0, records.length), this.vertexID);
 
                 this.localMailbox.Send(records, new ReturnAddress());
             }
@@ -220,6 +219,7 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
                 controller.NetworkChannel.RegisterMailbox(this.mailbox);
 
             Logging.Info("Allocated progress channel [{0}]: {1} -> {2}", this.channelID, sendBundle, recvBundle);
+            NaiadTracing.Trace.ChannelInfo(ChannelId, SourceStage.StageId, DestinationStage.StageId, true, true);
         }
 
         public Dataflow.Stage SourceStage       { get { return this.sendBundle.ForStage; } }

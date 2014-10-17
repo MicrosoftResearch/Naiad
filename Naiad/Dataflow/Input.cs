@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.4
+ * Naiad ver. 0.5
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -491,7 +491,8 @@ namespace Microsoft.Research.Naiad.Dataflow
             }
             else
             {
-                Logging.Progress("[{0}] Performing OnRecv", this.Stage.ToString());
+                // XXX : Getting called a lot, resulting in lots of object allocations
+                // Logging.Progress("[{0}] Performing OnRecv", this.Stage.ToString());
 
                 // OnRecv logic.
                 lock (this)
@@ -516,7 +517,6 @@ namespace Microsoft.Research.Naiad.Dataflow
             }
         }
     
-
         public void OnStreamingRecv(S[] batch, int epoch)
         {
             lock (this)     // this is probably already under a lock, but just to be safe...

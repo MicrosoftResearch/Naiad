@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.4
+ * Naiad ver. 0.5
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -27,7 +27,7 @@ using System.Text;
 
 namespace Microsoft.Research.Naiad.Serialization
 {
-    internal interface SerializedMessageSender
+    internal interface SerializedMessageSender : IDisposable
     {
         int SendBufferSegment(MessageHeader hdr, BufferSegment segment);
     }
@@ -38,6 +38,8 @@ namespace Microsoft.Research.Naiad.Serialization
         private int nextPageIndex;
 
         private readonly int pageSize;
+
+        private bool disposed = false;
 
         public int SendBufferSegment(MessageHeader hdr, BufferSegment segment)
         {
@@ -62,6 +64,15 @@ namespace Microsoft.Research.Naiad.Serialization
 
             this.pageSize = pageSize;
         }
+
+        public void Dispose()
+        {
+            if (!this.disposed)
+            {
+                this.stream.Dispose();
+                this.disposed = true;
+            }
+        }
     }
 
     internal class NetworkChannelSerializedMessageSender : SerializedMessageSender
@@ -83,6 +94,8 @@ namespace Microsoft.Research.Naiad.Serialization
             this.networkChannel = networkChannel;
             this.destProcessID = destProcessID;
         }
+
+        public void Dispose() { }
     }
 
 

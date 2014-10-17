@@ -1,5 +1,5 @@
-﻿/*
- * Naiad ver. 0.4
+/*
+ * Naiad ver. 0.5
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -48,8 +48,11 @@ namespace Microsoft.Research.Naiad.Examples
                 int nodeCount = Convert.ToInt32(args[1]);
                 int edgeCount = Convert.ToInt32(args[2]);
 
-                // For Azure storage emulator:
-                string connectionString = "UseDevelopmentStorage=true;";
+                // To write the results to the command line, leave this line
+                string connectionString = null;
+
+                // For Azure storage emulator, uncomment this line
+                // string connectionString = "UseDevelopmentStorage=true;";
                 
                 // To use Windows Azure Storage, uncomment this line, and substitute your account name and key:
                 // string connectionString = "DefaultEndpointsProtocol=https;AccountName=[Account name];AccountKey=[Account key]";

@@ -1,9 +1,9 @@
-﻿<?xml version="1.0"?>
-<package >
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package>
   <metadata>
     <id>Microsoft.Research.Naiad.Lindi</id>
     <title>Naiad - Lindi framework</title>
-    <version>0.4.2-beta</version>
+    <version>0.5.0-beta</version>
     <authors>naiadquestions@microsoft.com</authors>
     <owners>naiadquestions@microsoft.com,Microsoft</owners>
     <licenseUrl>http://www.apache.org/licenses/LICENSE-2.0.html</licenseUrl>
@@ -19,7 +19,7 @@
     </frameworkAssemblies>
     <dependencies>
       <group targetFramework="net40-Client">
-        <dependency id="Microsoft.Research.Naiad" version="0.4.2-beta" />
+        <dependency id="Microsoft.Research.Naiad" version="0.5.0-beta" />
       </group>
     </dependencies>
     <references>
@@ -27,8 +27,11 @@
     </references>
   </metadata>
   <files>
-    <file src="..\..\signed\Microsoft.Research.Naiad.Lindi.dll" target="lib\net40-Client\Microsoft.Research.Naiad.Lindi.dll" />
-    <file src="..\..\signed\Microsoft.Research.Naiad.Lindi.pdb" target="lib\net40-Client\Microsoft.Research.Naiad.Lindi.pdb" />
-    <file src="..\..\signed\Microsoft.Research.Naiad.Lindi.xml" target="lib\net40-Client\Microsoft.Research.Naiad.Lindi.xml" />
+    <file src="bin\Release\Microsoft.Research.Naiad.Lindi.dll" target="lib\net40-Client\Microsoft.Research.Naiad.Lindi.dll" />
+    <!-- <file src="..\..\signed\Microsoft.Research.Naiad.Lindi.dll" target="lib\net40-Client\Microsoft.Research.Naiad.Lindi.dll" /> -->
+    <file src="bin\Release\Microsoft.Research.Naiad.Lindi.pdb" target="lib\net40-Client\Microsoft.Research.Naiad.Lindi.pdb" />
+    <!-- <file src="..\..\signed\Microsoft.Research.Naiad.Lindi.pdb" target="lib\net40-Client\Microsoft.Research.Naiad.Lindi.pdb" /> -->
+    <file src="bin\Release\Microsoft.Research.Naiad.Lindi.xml" target="lib\net40-Client\Microsoft.Research.Naiad.Lindi.xml" />
+    <!-- <file src="..\..\signed\Microsoft.Research.Naiad.Lindi.xml" target="lib\net40-Client\Microsoft.Research.Naiad.Lindi.xml" /> -->
   </files>
 </package>

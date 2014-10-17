@@ -1,5 +1,5 @@
-﻿/*
- * Naiad ver. 0.4
+/*
+ * Naiad ver. 0.5
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -30,7 +30,7 @@ using Microsoft.Research.Peloponnese.ClusterUtils;
 
 namespace Microsoft.Research.Naiad.Cluster
 {
-    public interface PPMSubmission
+    public interface PPMSubmission : IDisposable
     {
         void Submit();
         int Join();
@@ -42,11 +42,18 @@ namespace Microsoft.Research.Naiad.Cluster
         {
             if (stripPath)
             {
-                exeName = Path.GetFileName(args[0]);
+                if (args[0].ToLower().StartsWith("hdfs://"))
+                {
+                    exeName = args[0].Substring(args[0].LastIndexOf('/') + 1);
+                }
+                else
+                {
+                    exeName = Path.GetFileName(args[0]);
+                }
             }
             else
             {
-                exeName = args[0];
+                exeName = Path.GetFullPath(args[0]);
             }
 
             List<string> commandLineArgsList = new List<string>(args.Length);
@@ -60,7 +67,7 @@ namespace Microsoft.Research.Naiad.Cluster
         }
 
         public static XDocument MakePeloponneseConfig(
-            int numberOfProcesses, string type,
+            int numberOfProcesses, int workerMemoryInMB, string type,
             string commandLine, IEnumerable<string> commandLineArgs, bool addRedirects, IEnumerable<XElement> resources)
         {
             XDocument configDoc = new XDocument();
@@ -78,7 +85,7 @@ namespace Microsoft.Research.Naiad.Cluster
             serverElement.Add(prefixElement);
 
             XElement workers = ConfigHelpers.MakeProcessGroup(
-                "Worker", type, -1, numberOfProcesses, true,
+                "Worker", type, 1, numberOfProcesses, workerMemoryInMB, true,
                 commandLine, commandLineArgs, "LOG_DIRS", "stdout.txt", "stderr.txt",
                 resources, null);
             serverElement.Add(workers);

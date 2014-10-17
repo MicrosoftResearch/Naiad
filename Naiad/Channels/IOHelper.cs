@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.4
+ * Naiad ver. 0.5
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -79,6 +79,13 @@ namespace Microsoft.Research.Naiad.Serialization
         protected virtual void OnRelease()
         {
             pool.CheckIn(this.Buffer);
+        }
+
+        public BufferPage Clone()
+        {
+            BufferPage ret = new BufferPage(this.pool, this.Buffer.Length);
+            this.Buffer.CopyTo(ret.Buffer, 0);
+            return ret;
         }
 
     }
@@ -270,7 +277,7 @@ namespace Microsoft.Research.Naiad.Serialization
             return ret;
         }
 
-        public static SendBufferPage CreateSpecialPage(MessageHeader header, int seqno, NaiadSerialization<MessageHeader> serializer)
+        public static SendBufferPage CreateSpecialPage(MessageHeader header, int seqno)
         {
             header.SequenceNumber = seqno;
             SendBufferPage ret = new SendBufferPage(GlobalBufferPool<byte>.pool, MessageHeader.SizeOf);
@@ -278,7 +285,7 @@ namespace Microsoft.Research.Naiad.Serialization
             ret.nextHeader = header;
             Logging.Info("Created page of type {0}", ret.Type.ToString());
             SubArray<byte> bufferAsSubarray = new SubArray<byte>(ret.Buffer, ret.producerPointer);
-            bool success = serializer.Serialize(ref bufferAsSubarray, header);
+            bool success = MessageHeader.Serialization.Serialize(ref bufferAsSubarray, header);
             Debug.Assert(success);
             ret.producerPointer = bufferAsSubarray.Count;
             ret.validPointer = bufferAsSubarray.Count;
@@ -286,11 +293,10 @@ namespace Microsoft.Research.Naiad.Serialization
             return ret;
         }
 
-        public static SendBufferPage CreateShutdownMessagePage(int seqno, NaiadSerialization<MessageHeader> serializer)
+        public static SendBufferPage CreateShutdownMessagePage(int seqno)
         {
-            return CreateSpecialPage(MessageHeader.Shutdown, seqno, serializer);
+            return CreateSpecialPage(MessageHeader.Shutdown, seqno);
         }
-    
 
     }
 
@@ -327,18 +333,18 @@ namespace Microsoft.Research.Naiad.Serialization
             return new ArraySegment<byte>(this.Buffer, this.producePointer, this.Buffer.Length - this.producePointer);
         }
 
-        public unsafe bool ConsumeHeader(out MessageHeader header, NaiadSerialization<MessageHeader> serializer)
+        public unsafe bool ConsumeHeader(out MessageHeader header)
         {
             header = default(MessageHeader);
             if (this.producePointer - this.consumePointer < MessageHeader.SizeOf)
                 return false;
 
-            MessageHeader.ReadHeaderFromBuffer(this.Buffer, this.consumePointer, ref header, serializer);
+            MessageHeader.ReadHeaderFromBuffer(this.Buffer, this.consumePointer, ref header);
             this.consumePointer += MessageHeader.SizeOf;
             return true;
         }
 
-        public unsafe bool ConsumeHeader(RecvBufferPage nextPage, out MessageHeader header, NaiadSerialization<MessageHeader> serializer)
+        public unsafe bool ConsumeHeader(RecvBufferPage nextPage, out MessageHeader header)
         {
             Debug.Assert(nextPage != null);
             header = default(MessageHeader);
@@ -356,7 +362,7 @@ namespace Microsoft.Research.Naiad.Serialization
             this.consumePointer += bytesInThisPage;
             nextPage.consumePointer += bytesInNextPage;
 
-            MessageHeader.ReadHeaderFromBuffer(headerBuffer, 0, ref header, serializer);
+            MessageHeader.ReadHeaderFromBuffer(headerBuffer, 0, ref header);
             return true;
         }
 
@@ -524,7 +530,7 @@ namespace Microsoft.Research.Naiad.Serialization
             this.inUsePages.Clear();
         }
 
-        private bool ConsumeNextHeader(ref MessageHeader header, NaiadSerialization<MessageHeader> headerSerializer)
+        private bool ConsumeNextHeader(ref MessageHeader header)
         {
 
 
@@ -532,7 +538,7 @@ namespace Microsoft.Research.Naiad.Serialization
             {
                 //if (this.partiallyProducedPage != null)
                 //    Console.Error.WriteLine("!!! Next header starts at offset: {0}", this.partiallyProducedPage.consumePointer);
-                if (this.partiallyProducedPage != null && this.partiallyProducedPage.ConsumeHeader(out header, headerSerializer))
+                if (this.partiallyProducedPage != null && this.partiallyProducedPage.ConsumeHeader(out header))
                     return true;
                 else
                     return false;
@@ -544,7 +550,7 @@ namespace Microsoft.Research.Naiad.Serialization
             RecvBufferPage firstPage = firstNode.Value;
 
             //Console.Error.WriteLine("!!! Next header starts at offset: {0}", firstPage.consumePointer);
-            if (firstPage.ConsumeHeader(out header, headerSerializer))
+            if (firstPage.ConsumeHeader(out header))
             {
                 if (firstPage.consumePointer == firstPage.Buffer.Length)
                 {
@@ -574,7 +580,7 @@ namespace Microsoft.Research.Naiad.Serialization
                 return false;
             }
 
-            bool success = firstPage.ConsumeHeader(secondPage, out header, headerSerializer);
+            bool success = firstPage.ConsumeHeader(secondPage, out header);
             if (success)
             {
                 // We've completely consumed the first page, because we had to split onto the second page.
@@ -655,7 +661,7 @@ namespace Microsoft.Research.Naiad.Serialization
         /// Returns a collection of messages that have been produced but not yet consumed.
         /// </summary>
         /// <returns></returns>
-        public IEnumerable<SerializedMessage> ConsumeMessages(NaiadSerialization<MessageHeader> headerSerializer)
+        public IEnumerable<SerializedMessage> ConsumeMessages()
         {
             while (true)
             {
@@ -678,7 +684,7 @@ namespace Microsoft.Research.Naiad.Serialization
                 {
                     if (!this.currentMessageHeaderValid)
                     {
-                        bool success = this.ConsumeNextHeader(ref this.currentMessageHeader, headerSerializer);
+                        bool success = this.ConsumeNextHeader(ref this.currentMessageHeader);
                         if (!success)
                         {
                             this.currentMessageHeaderValid = false;
@@ -758,6 +764,13 @@ namespace Microsoft.Research.Naiad.Serialization
         {
             this.page.Acquire();
         }
+
+        public BufferSegment DeepCopy()
+        {
+            BufferSegment ret = new BufferSegment(this.page.Clone(), this.startOffset, this.Length);
+            ret.Type = this.Type;
+            return ret;
+        }
     }
 
     /// <summary>
@@ -793,7 +806,12 @@ namespace Microsoft.Research.Naiad.Serialization
         /// <summary>
         /// The message indicates that a computation has failed.
         /// </summary>
-        Failure = 6
+        Failure = 6,
+
+        /// <summary>
+        /// The message indicates the range of sequence numbers that have been received by the sender.
+        /// </summary>
+        Ack = 7
     }
 
     /// <summary>
@@ -875,21 +893,75 @@ namespace Microsoft.Research.Naiad.Serialization
             }
         }
 
-        internal static void ReadHeaderFromBuffer(byte[] array, int offset, ref MessageHeader header, NaiadSerialization<MessageHeader> headerSerializer)
+        internal static void ReadHeaderFromBuffer(byte[] array, int offset, ref MessageHeader header)
         {
             RecvBuffer buffer = new RecvBuffer(array, offset, offset + MessageHeader.SizeOf);
-            bool success = headerSerializer.TryDeserialize(ref buffer, out header);
+            bool success = Serialization.TryDeserialize(ref buffer, out header);
             Debug.Assert(success);
             Debug.Assert(Enum.IsDefined(typeof(SerializedMessageType), header.Type));
         }
 
-        internal static void WriteHeaderToBuffer(byte[] array, int offset, MessageHeader header, NaiadSerialization<MessageHeader> headerSerializer)
+        internal static void WriteHeaderToBuffer(byte[] array, int offset, MessageHeader header)
         {
             SubArray<byte> bufferAsSubarray = new SubArray<byte>(array, offset);
-            headerSerializer.Serialize(ref bufferAsSubarray, header);
+            Serialization.Serialize(ref bufferAsSubarray, header);
             Debug.Assert(bufferAsSubarray.Count == offset + MessageHeader.SizeOf);
         }
 
+        private struct Serializer : CustomSerialization<MessageHeader>
+        {
+            public unsafe int TrySerialize(MessageHeader value, byte* buffer, int limit)
+            {
+                if (limit < (6 * sizeof(int)))
+                {
+                    return 0;
+    }
+                int* intBuffer = (int*)buffer;
+                intBuffer[0] = value.ChannelID;
+                intBuffer[1] = value.DestVertexID;
+                intBuffer[2] = value.FromVertexID;
+                intBuffer[3] = value.Length;
+                intBuffer[4] = value.SequenceNumber;
+                intBuffer[5] = (int)value.Type;
+                return 6 * sizeof(int);
+            }
+
+            public unsafe int Deserialize(out MessageHeader value, byte* buffer, int limit)
+            {
+                value = new MessageHeader();
+                if (limit < (6 * sizeof(int)))
+                {
+                    return 0;
+                }
+                int* intBuffer = (int*)buffer;
+                value.ChannelID = intBuffer[0];
+                value.DestVertexID = intBuffer[1];
+                value.FromVertexID = intBuffer[2];
+                value.Length = intBuffer[3];
+                value.SequenceNumber = intBuffer[4];
+                value.Type = (SerializedMessageType) intBuffer[5];
+                return 6 * sizeof(int);
+            }
+        }
+
+
+        private static NaiadSerialization<MessageHeader> _serialization = CustomSerialization.MakeSerializer<MessageHeader, MessageHeader.Serializer>();
+        /// <summary>
+        /// Get the Naiad serializer for the message header
+        /// </summary>
+        public static NaiadSerialization<MessageHeader> Serialization { get { return _serialization;  } }
+
+    }
+
+    /// <summary>
+    /// Denotes a serializer type that can be flushed
+    /// </summary>
+    public interface IFlushable
+    {
+        /// <summary>
+        /// Flush any partially-written output
+        /// </summary>
+        void Flush();
     }
 
     /// <summary>
@@ -971,7 +1043,7 @@ namespace Microsoft.Research.Naiad.Serialization
     /// <summary>
     /// Writes data in the Naiad message format to a <see cref="System.IO.Stream"/>.
     /// </summary>
-    public class NaiadWriter : IDisposable
+    public class NaiadWriter : IDisposable, IFlushable
     {
         private const int PAGE_SIZE = 1 << 14;
 
@@ -987,6 +1059,8 @@ namespace Microsoft.Research.Naiad.Serialization
         private readonly NaiadSerialization<MessageHeader> headerSerializer;
 
         private readonly int versionNumber;
+
+        private bool disposed = false;
 
         /// <summary>
         /// Constructs a new writer targeting the given stream, and using the given serialization format.
@@ -1004,7 +1078,7 @@ namespace Microsoft.Research.Naiad.Serialization
             this.sequenceNumber = 0;
 
             this.serializationFormat = codeGenerator;
-            this.headerSerializer = codeGenerator.GetSerializer<MessageHeader>();
+            this.headerSerializer = MessageHeader.Serialization;
 
             this.versionNumber = (codeGenerator.MajorVersion << 16) + codeGenerator.MinorVersion;
 
@@ -1065,7 +1139,10 @@ namespace Microsoft.Research.Naiad.Serialization
         }
 
 
-        private void Flush()
+        /// <summary>
+        /// Flushes any unwritten data to the underlying stream
+        /// </summary>
+        public void Flush()
         {
             if (this.currentPage != null)
                 this.FlushCurrentPage();
@@ -1076,7 +1153,15 @@ namespace Microsoft.Research.Naiad.Serialization
         /// </summary>
         public void Dispose()
         {
-            this.Flush();
+            if (!this.disposed)
+            {
+                this.Flush();
+
+                foreach (var sender in this.senders)
+                    sender.Dispose();
+
+                this.disposed = true;
+            }
         }
     }
 
@@ -1100,6 +1185,8 @@ namespace Microsoft.Research.Naiad.Serialization
 
         private readonly int versionNumber;
 
+        private bool disposed = false;
+
         /// <summary>
         /// Constructs a new NaiadReader that consumes data from the given stream and uses the given
         /// serialization format.
@@ -1110,7 +1197,7 @@ namespace Microsoft.Research.Naiad.Serialization
         {
             this.SerializationFormat = serializationFormat;
             this.versionNumber = (serializationFormat.MajorVersion << 16) + serializationFormat.MinorVersion;
-            this.headerSerializer = this.SerializationFormat.GetSerializer<MessageHeader>();
+            this.headerSerializer = MessageHeader.Serialization;
 
             this.stream = stream;
             this.buffer = GlobalBufferPool<byte>.pool.CheckOut(PAGE_SIZE);
@@ -1149,7 +1236,7 @@ namespace Microsoft.Research.Naiad.Serialization
             else
             {
                 MessageHeader parsedHeader = default(MessageHeader);
-                MessageHeader.ReadHeaderFromBuffer(this.buffer, 0, ref parsedHeader, this.headerSerializer);
+                MessageHeader.ReadHeaderFromBuffer(this.buffer, 0, ref parsedHeader);
 
                 if (parsedHeader.FromVertexID != this.versionNumber)
                 {
@@ -1207,22 +1294,243 @@ namespace Microsoft.Research.Naiad.Serialization
         /// </summary>
         public void Dispose()
         {
-            GlobalBufferPool<byte>.pool.CheckIn(this.buffer);
+            if (!this.disposed)
+            {
+                GlobalBufferPool<byte>.pool.CheckIn(this.buffer);
+
+                this.stream.Dispose();
+                this.disposed = true;
+            }
         }
     }
+
+    /// <summary>
+    /// Reads elements of a specific type written in the Naiad message format from a <see cref="System.IO.Stream"/>.
+    /// </summary>
+    /// <typeparam name="TElement">type of records to deserialize</typeparam>
+    public class NaiadReader<TElement> : IDisposable
+    {
+        static Dictionary<Pair<int, int>, SerializationFormat> CachedFormats = new Dictionary<Pair<int, int>, SerializationFormat>();
+
+        private const int PAGE_SIZE = 1 << 14;
+
+        private readonly Stream stream;
+        private readonly SerializationFormat SerializationFormat;
+        private readonly NaiadSerialization<TElement> elementSerializer;
+
+        private MessageHeader currentHeader;
+        private RecvBuffer currentPage;
+        private byte[] buffer;
+
+        private bool disposed = false;
+
+        /// <summary>
+        /// Constructs a new NaiadReader that consumes data from the given stream and uses the given
+        /// serialization format.
+        /// </summary>
+        /// <param name="stream">The stream from which data will be read.</param>
+        public NaiadReader(Stream stream)
+        {
+            this.stream = stream;
+            this.buffer = GlobalBufferPool<byte>.pool.CheckOut(PAGE_SIZE);
+
+            bool nextPageAvailable = this.TryGetNextPage();
+            if (!nextPageAvailable)
+                throw new InvalidDataException("Stream does not contain data");
+
+            int majorNumber = this.currentHeader.FromVertexID >> 16;
+            int minorNumber = this.currentHeader.FromVertexID & 0xFFFF;
+            try
+            {
+                lock (CachedFormats)
+                {
+                    var key = majorNumber.PairWith(minorNumber);
+                    if (!CachedFormats.ContainsKey(key))
+                        CachedFormats.Add(key, SerializationFactory.GetCodeGeneratorForVersion(majorNumber, minorNumber));
+                    
+                    this.SerializationFormat = CachedFormats[key];
+                }
+            }
+            catch (InvalidOperationException)
+            {
+                throw new InvalidDataException(
+                        string.Format(
+                            "Cannot deserialize this stream: serialization format version {0}.{1}.",
+                            majorNumber, minorNumber));
+            }
+
+            this.elementSerializer = this.SerializationFormat.GetSerializer<TElement>();
+        }
+        
+        private bool TryGetNextPage()
+        {
+            int bytesRead;
+
+            int bytesToRead = MessageHeader.SizeOf;
+            int offset = 0;
+
+            while (bytesToRead > 0)
+            {
+                bytesRead = this.stream.Read(this.buffer, offset, bytesToRead);
+                
+                // XXX : This means to drop out if zero read at the beginning (indicating end of stream) but we should discover the correct way to identify this.
+                if (bytesRead == 0 && offset == 0)
+                {
+                    return false;
+                }
+
+                offset += bytesRead;
+                bytesToRead -= bytesRead;
+            }
+
+            MessageHeader.ReadHeaderFromBuffer(this.buffer, 0, ref this.currentHeader);
+
+            bytesToRead = this.currentHeader.Length;
+            offset = MessageHeader.SizeOf;
+
+            if (bytesToRead > this.buffer.Length)
+            {
+                GlobalBufferPool<byte>.pool.CheckIn(this.buffer);
+                this.buffer = GlobalBufferPool<byte>.pool.CheckOut(bytesToRead);
+            }
+
+            while (bytesToRead > 0)
+            {
+                bytesRead = this.stream.Read(this.buffer, offset, bytesToRead);
+                // if (bytesRead < parsedHeader.Length)
+                // {
+                //    throw new InvalidDataException(string.Format("Error parsing file: read only {0} bytes when frame length was {1} (bytes)", bytesRead, parsedHeader.Length));
+                // }
+
+                offset += bytesRead;
+                bytesToRead -= bytesRead;
+            }
+            this.currentPage = new RecvBuffer(this.buffer, MessageHeader.SizeOf, MessageHeader.SizeOf + this.currentHeader.Length);
+            return true;
+        }
+
+#if false
+        private bool TryGetNextPage(out RecvBuffer result)
+        {
+            int bytesRead;
+
+            bytesRead = this.stream.Read(this.buffer, 0, MessageHeader.SizeOf);
+            if (bytesRead == 0)
+            {
+                result = default(RecvBuffer);
+                return false;
+            }
+
+            MessageHeader parsedHeader = default(MessageHeader);
+            MessageHeader.ReadHeaderFromBuffer(this.buffer, 0, ref parsedHeader, this.headerSerializer);
+
+            if (parsedHeader.FromVertexID != this.versionNumber)
+            {
+                throw new InvalidDataException(string.Format("Cannot deserialize this file with serializer version {0}.{1} (file uses version {2}.{3})", this.SerializationFormat.MajorVersion, this.SerializationFormat.MinorVersion, parsedHeader.FromVertexID >> 16, parsedHeader.FromVertexID & 0xFFFF));
+            }
+
+            if (parsedHeader.Length > this.buffer.Length)
+            {
+                GlobalBufferPool<byte>.pool.CheckIn(this.buffer);
+                this.buffer = GlobalBufferPool<byte>.pool.CheckOut(parsedHeader.Length);
+            }
+
+            bytesRead = this.stream.Read(this.buffer, 0, parsedHeader.Length);
+            if (bytesRead < parsedHeader.Length)
+            {
+                throw new InvalidDataException(string.Format("Error parsing file: read only {0} bytes when frame length was {1} (bytes)", bytesRead, parsedHeader.Length));
+            }
+
+            result = new RecvBuffer(this.buffer, 0, parsedHeader.Length);
+            return true;
+        }
+#endif
+
+        /// <summary>
+        /// Tries to read an element from the stream.
+        /// </summary>
+        /// <param name="result">The element, if this method returns true.</param>
+        /// <returns>True if an element was successfully read, otherwise false.</returns>
+        public bool TryRead(out TElement result)
+        {
+            if (!this.elementSerializer.TryDeserialize(ref this.currentPage, out result))
+            {
+                bool nextPageAvailable = this.TryGetNextPage();
+                if (!nextPageAvailable)
+                    return false;
+                bool success = this.elementSerializer.TryDeserialize(ref this.currentPage, out result);
+                return success;
+            }
+            else
+            {
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Attempts to deserialize several elements from the target array segment
+        /// </summary>
+        /// <param name="target">Buffer to deserialize from</param>
+        /// <returns>Number of elements deserialized</returns>
+        public int TryReadMany(ArraySegment<TElement> target)
+        {
+            int numRead = this.elementSerializer.TryDeserializeMany(ref this.currentPage, target);
+            if (numRead == 0)
+            {
+                bool nextPageAvailable = this.TryGetNextPage();
+                if (!nextPageAvailable)
+                    return 0;
+                return this.elementSerializer.TryDeserializeMany(ref this.currentPage, target);
+            }
+            else
+            {
+                return numRead;
+            }
+        }
+
+        /// <summary>
+        /// Reads an element from the stream, using a specific deserializer.
+        /// </summary>
+        /// <returns>The element.</returns>
+        public TElement Read()
+        {
+            TElement ret;
+            bool success = this.TryRead(out ret);
+            if (!success)
+            {
+                throw new InvalidOperationException("No more records in stream");
+            }
+            return ret;
+        }
+
+        /// <summary>
+        /// Frees all resources associated with this reader.
+        /// </summary>
+        public void Dispose()
+        {
+            if (!this.disposed)
+            {
+                GlobalBufferPool<byte>.pool.CheckIn(this.buffer);
+
+                stream.Dispose();
+                this.disposed = true;
+            }
+        }
+    }
+
 
     /// <summary>
     /// Writes elements of a specific type in the Naiad message format to a <see cref="System.IO.Stream"/>.
     /// </summary>
     /// <typeparam name="TElement">The type of elements.</typeparam>
-    public class NaiadWriter<TElement> : IDisposable
+    public class NaiadWriter<TElement> : IDisposable, IFlushable
     {
-        private const int PAGE_SIZE = 1 << 14;
+        private const int DEFAULT_PAGE_SIZE = 1 << 14;
 
         private readonly Stream stream;
         private readonly NaiadSerialization<TElement> serializer;
+        private readonly int pageSize;
         private SendBufferPage currentPage;
-        private ManualResetEvent writtenEvent;
         private int sequenceNumber;
 
         private readonly int versionNumber;
@@ -1230,20 +1538,23 @@ namespace Microsoft.Research.Naiad.Serialization
         private readonly SerializationFormat serializationFormat;
         private readonly NaiadSerialization<MessageHeader> headerSerializer;
 
+        private bool disposed = false;
+
         /// <summary>
         /// Constructs a new NaiadWriter that writes to the given stream and uses the given serialization format.
         /// </summary>
         /// <param name="stream">The stream to which data will be written.</param>
         /// <param name="serializationFormat">The serialization format to use.</param>
-        public NaiadWriter(Stream stream, SerializationFormat serializationFormat)
+        /// <param name="blockSize">The block size to use: the serializer buffers up to this block size.</param>
+        public NaiadWriter(Stream stream, SerializationFormat serializationFormat, int blockSize = DEFAULT_PAGE_SIZE)
         {
             this.stream = stream;
+            this.pageSize = blockSize;
             this.currentPage = null;
             this.serializationFormat = serializationFormat;
             this.versionNumber = (serializationFormat.MajorVersion << 16) + serializationFormat.MinorVersion;
             this.serializer = this.serializationFormat.GetSerializer<TElement>();
-            this.headerSerializer = this.serializationFormat.GetSerializer<MessageHeader>();
-            this.writtenEvent = new ManualResetEvent(true);
+            this.headerSerializer = MessageHeader.Serialization;
             this.sequenceNumber = 0;
         }
 
@@ -1255,7 +1566,7 @@ namespace Microsoft.Research.Naiad.Serialization
         {
             if (this.currentPage == null)
             {
-                this.currentPage = new SendBufferPage(GlobalBufferPool<byte>.pool, PAGE_SIZE);
+                this.currentPage = new SendBufferPage(GlobalBufferPool<byte>.pool, this.pageSize);
                 this.currentPage.WriteHeader(new MessageHeader(this.versionNumber, this.sequenceNumber++, NaiadSerializationConstants.CHANNEL_ID, NaiadSerializationConstants.DEST_VERTEX_ID, SerializedMessageType.Data), this.headerSerializer);
             }
 
@@ -1264,7 +1575,7 @@ namespace Microsoft.Research.Naiad.Serialization
                 this.FlushCurrentPage();
 
                 // Allocate new page
-                int size = PAGE_SIZE;
+                int size = this.pageSize;
                 this.currentPage = new SendBufferPage(GlobalBufferPool<byte>.pool, size);
                 this.currentPage.WriteHeader(new MessageHeader(this.versionNumber, this.sequenceNumber++, NaiadSerializationConstants.CHANNEL_ID, NaiadSerializationConstants.DEST_VERTEX_ID, SerializedMessageType.Data), this.headerSerializer);
                 while (!this.currentPage.Write(this.serializer, element))
@@ -1290,18 +1601,30 @@ namespace Microsoft.Research.Naiad.Serialization
             this.currentPage.Release();
             this.currentPage = null;
         }
+
+        /// <summary>
+        /// Flushes any unwritten data to the underlying stream
+        /// </summary>
+        public void Flush()
+        {
+            if (this.currentPage != null)
+            {
+                this.FlushCurrentPage();
+            }
+        }
         
         /// <summary>
         /// Frees all resources associated with this writer.
         /// </summary>
         public void Dispose()
         {
-            if (this.currentPage != null)
+            if (!this.disposed)
             {
-                this.FlushCurrentPage();
-                this.currentPage = null;
+                this.Flush();
+
+                this.stream.Dispose();
+                this.disposed = true;
             }
-            this.writtenEvent.WaitOne();
         }
     }
 
@@ -1325,7 +1648,7 @@ namespace Microsoft.Research.Naiad.Serialization
         
         private NaiadSerialization<S> payloadSerializer;
         private NaiadSerialization<T> timeSerializer;
-        private NaiadSerialization<MessageHeader> headerSerializer;
+        private readonly NaiadSerialization<MessageHeader> headerSerializer;
         private NaiadSerialization<int> intSerializer;
         private SendBufferPage page;
 
@@ -1379,8 +1702,6 @@ namespace Microsoft.Research.Naiad.Serialization
                 this.payloadSerializer = this.SerializationFormat.GetSerializer<S>();
             if (this.timeSerializer == null)
                 this.timeSerializer = this.SerializationFormat.GetSerializer<T>();
-            if (this.headerSerializer == null)
-                this.headerSerializer = this.SerializationFormat.GetSerializer<MessageHeader>();
             if (this.intSerializer == null)
                 this.intSerializer = this.SerializationFormat.GetSerializer<int>();
 
@@ -1543,6 +1864,7 @@ namespace Microsoft.Research.Naiad.Serialization
             this.currentSequenceNumber = 0;
             this.sequenceNumberGenerator = seqNumGen != null ? seqNumGen : () => 0;
 
+            this.headerSerializer = MessageHeader.Serialization;
             this.SerializationFormat = codeGenerator;
         }
     }
@@ -1555,6 +1877,40 @@ namespace Microsoft.Research.Naiad.Serialization
         private NaiadSerialization<Int32> intDeserializer;
 
         private readonly SerializationFormat SerializationFormat;
+
+        public IEnumerable<Message<S, T>> AsTypedMessages(SerializedMessage message, Message<S, T> target)
+        {
+            RecvBuffer messageBody = message.Body;
+            if (this.payloadDeserializer == null)
+                this.payloadDeserializer = this.SerializationFormat.GetSerializer<S>();
+            if (this.timeDeserializer == null)
+                this.timeDeserializer = this.SerializationFormat.GetSerializer<T>();
+            if (this.intDeserializer == null)
+                this.intDeserializer = this.SerializationFormat.GetSerializer<Int32>();
+
+            T time;
+            bool timeSuccess = timeDeserializer.TryDeserialize(ref messageBody, out time);
+            Debug.Assert(timeSuccess);
+            target.time = time;
+
+            int count;
+            bool countSuccess = intDeserializer.TryDeserialize(ref messageBody, out count);
+            Debug.Assert(countSuccess);
+
+            int numReadThisTime;
+            do
+            {
+                numReadThisTime = payloadDeserializer.TryDeserializeMany(ref messageBody,
+                    new ArraySegment<S>(target.payload));
+                target.length = numReadThisTime;
+
+                if (numReadThisTime > 0)
+                {
+                    yield return target;
+                }
+
+            } while (numReadThisTime > 0);
+        }
 
         public IEnumerable<Message<S, T>> AsTypedMessages(SerializedMessage message)
         {
@@ -1575,7 +1931,7 @@ namespace Microsoft.Research.Naiad.Serialization
             Debug.Assert(countSuccess);
 
             var targetMessage = new Message<S, T>(time);
-            targetMessage.Allocate();
+            targetMessage.Allocate(AllocationReason.Deserializer);
 
             S payload;
             while (payloadDeserializer.TryDeserialize(ref messageBody, out payload))
@@ -1587,7 +1943,7 @@ namespace Microsoft.Research.Naiad.Serialization
                     yield return targetMessage;
 
                     targetMessage = new Message<S, T>(time);
-                    targetMessage.Allocate();
+                    targetMessage.Allocate(AllocationReason.Deserializer);
                 }
             }
 
@@ -1598,7 +1954,7 @@ namespace Microsoft.Research.Naiad.Serialization
             }
             else
             {
-                targetMessage.Release();
+                targetMessage.Release(AllocationReason.Deserializer);
             }
 
         }

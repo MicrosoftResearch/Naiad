@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.4
+ * Naiad ver. 0.5
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -44,6 +44,91 @@ namespace Microsoft.Research.Naiad
         public static ThreadLocal<BufferPool<T>> pool = new ThreadLocal<BufferPool<T>>(() => new ThreadLocalBufferPool<T>(16));
     }
 
+    /// <summary>
+    /// Thread-local buffer pool
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    static internal class ThreadLocalMessageBufferPools<T>
+    {
+        /// <summary>
+        /// A buffer pool
+        /// </summary>
+        public static ThreadLocal<BufferPool<T>> pool = new ThreadLocal<BufferPool<T>>(() => new ThreadLocalMessageBufferPool<T>(16));
+    }
+
+
+    /// <summary>
+    /// Enumeration tagging the reason for a byte buffer allocation
+    /// </summary>
+    public enum AllocationReason
+    { 
+        /// <summary>
+        /// Allocation is used in deserialization
+        /// </summary>
+        Deserializer = 0,
+        /// <summary>
+        /// Allocation is used in an output buffer for serialization
+        /// </summary>
+        VertexOutputBuffer = 1,
+        /// <summary>
+        /// Allocation is used in a post office channel send
+        /// </summary>
+        PostOfficeChannel = 2,
+        /// <summary>
+        /// Allocation is used to break a re-entrancy cycle
+        /// </summary>
+        PostOfficeRentrancy = 3
+    }
+
+    static internal class ThreadLocalAllocationCounters<T>
+    {
+        public static ThreadLocal<Dictionary<AllocationReason, Pair<Int64, Int64>>> Counters = new ThreadLocal<Dictionary<AllocationReason, Pair<Int64, Int64>>>(() => new Dictionary<AllocationReason, Pair<Int64, Int64>>());
+
+        public static void Increment(AllocationReason tag)
+        {
+            var dictionary = Counters.Value;
+            if (!dictionary.ContainsKey(tag))
+                dictionary.Add(tag, new Pair<Int64, Int64>(0, 0));
+
+            var pair = dictionary[tag];
+
+            pair.Second++;
+
+            if (Math.Abs(pair.Second) > Math.Abs(pair.First) * 2 || Math.Abs(pair.Second) < Math.Abs(pair.First) / 2)
+            {
+                if (Math.Abs(pair.Second) > 256)
+                {
+                    Console.WriteLine("{0} Allocations; {1}, {2}", pair.Second, tag, typeof(T).GetHashCode());
+                    pair.First = pair.Second;
+                }
+            }
+
+            dictionary[tag] = pair;
+        }
+
+        public static void Decrement(AllocationReason tag)
+        {
+            var dictionary = Counters.Value;
+            if (!dictionary.ContainsKey(tag))
+                dictionary.Add(tag, new Pair<Int64, Int64>(0, 0));
+
+            var pair = dictionary[tag];
+
+            pair.Second--;
+
+            if (Math.Abs(pair.Second) > Math.Abs(pair.First) * 2 || Math.Abs(pair.Second) < Math.Abs(pair.First) / 2)
+            {
+                if (Math.Abs(pair.Second) > 256)
+                {
+                    Console.WriteLine("{0} Allocations; {1}, {2}", pair.Second, tag, typeof(T).GetHashCode());
+                    pair.First = pair.Second;
+                }
+            }
+
+            dictionary[tag] = pair;
+        }
+    }
+
     static internal class BufferPoolUtils
     {
 
@@ -62,9 +147,7 @@ namespace Microsoft.Research.Naiad
     internal interface BufferPool<T>
     {
         T[] CheckOut(int size);
-        T[] CheckOutInitialized(int size);
         void CheckIn(T[] array);
-        T[] Empty { get; }
     }
 
     internal interface NonblockingBufferPool<T> : BufferPool<T>
@@ -140,7 +223,7 @@ namespace Microsoft.Research.Naiad
         // Variables for logging
         public readonly int id; // unique identifier of this buffer pool
         public readonly int typesize;   // size in bytes of T
-        
+
         public int Captured()
         {
             var result = 0;
@@ -177,27 +260,6 @@ namespace Microsoft.Research.Naiad
             }
         }
 
-        public T[] CheckOutInitialized(int size)
-        {
-            size = BufferPoolUtils.Log2(size);
-
-            if (size < stacks.Length && stacks[size].Count > 0)
-            {
-                var array = stacks[size].Pop();
-
-                Array.Clear(array, 0, array.Length);
-
-                return array;
-            }
-            else
-            {
-                return new T[1 << size];
-            }
-        }
-
-        public T[] Empty { get { return this.empty; } }
-        public readonly T[] empty = new T[0];
-
         public void CheckIn(T[] array)
         {
             if (array != null && array.Length > 0)
@@ -225,6 +287,56 @@ namespace Microsoft.Research.Naiad
         }
     }
 
+    internal class ThreadLocalMessageBufferPool<T> : BufferPool<T>
+    {
+        public const int MaximumStackLength = 256;
+
+        protected readonly Stack<T[]> stacks;    // A stack of slabs of arrays to hand out.
+
+        protected static Stack<T[]> GlobalStack = new Stack<T[]>();
+
+        // Variables for logging
+        public readonly int id; // unique identifier of this buffer pool
+        public readonly int typesize;   // size in bytes of T
+
+        public T[] CheckOut(int size)
+        {
+            if (this.stacks.Count == 0)
+            {
+                lock (GlobalStack)
+                {
+                    for (int i = 0; i < 16; i++)
+                        this.stacks.Push(GlobalStack.Count > 0 ? GlobalStack.Pop() : new T[256]);
+                }
+            }
+
+            return this.stacks.Pop();
+        }
+
+        public void CheckIn(T[] array)
+        {
+            if (this.stacks.Count > MaximumStackLength)
+            {
+                lock (GlobalStack)
+                {
+                    for (int i = 0; i < MaximumStackLength / 2; i++)
+                        GlobalStack.Push(this.stacks.Pop());
+                }
+            }
+
+            this.stacks.Push(array);
+        }
+
+        public ThreadLocalMessageBufferPool(int maxsize)
+        {
+            stacks = new Stack<T[]>();
+
+            this.id = this.GetHashCode();
+            this.typesize = ObjectSize.ManagedSize(typeof(T));
+        }
+    }
+
+    
     /// <summary>
     /// Pool with locks for concurrent access.
     /// </summary>
@@ -283,35 +395,6 @@ namespace Microsoft.Research.Naiad
             }
         }
 
-        public T[] CheckOutInitialized(int size)
-        {
-            size = Log2(size);
-
-            if (size < stacks.Length)
-            {
-                T[] array = null;
-                lock (stacks[size])
-                {
-                    if (stacks[size].Count > 0)
-                    {
-                        array = stacks[size].Pop();
-                    }
-                }
-
-                if (array != null)
-                {
-                    Array.Clear(array, 0, array.Length);
-
-                    return array;
-                }
-            }
-
-            return new T[1 << size];
-        }
-
-        public readonly T[] empty = new T[0];
-        public T[] Empty { get { return this.empty; } }
-
         public void CheckIn(T[] array)
         {
             if (array != null && array.Length > 0)
@@ -367,6 +450,8 @@ namespace Microsoft.Research.Naiad
 
         private int capacity;
         private int numAllocated;
+
+        private readonly int numCached = 256;
 
         private readonly Queue<T[]> buffers;
         private readonly Queue<Waiter> waiters;
@@ -428,13 +513,6 @@ namespace Microsoft.Research.Naiad
             }
         }
 
-        public T[] CheckOutInitialized(int size)
-        {
-            T[] ret = this.CheckOut(size);
-            Array.Clear(ret, 0, ret.Length);
-            return ret;
-        }
-
         public void CheckIn(T[] array)
         {
             Debug.Assert(array != null);
@@ -455,7 +533,10 @@ namespace Microsoft.Research.Naiad
             }
             else
             {
-                this.buffers.Enqueue(array);
+                if (this.buffers.Count > this.numCached)
+                    this.buffers.Enqueue(array);
+                else
+                    Interlocked.Decrement(ref this.numAllocated);
             }
 
             this.queuesLock.Exit();
@@ -470,9 +551,6 @@ namespace Microsoft.Research.Naiad
                 //Console.Error.WriteLine("<<< Checkin enqueued");
             }
         }
-
-        public readonly T[] empty = new T[0];
-        public T[] Empty { get { return this.empty; } }
 
         public BoundedBufferPool2(int bufferLength, int capacity)
         {

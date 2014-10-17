@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.4
+ * Naiad ver. 0.5
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -307,9 +307,19 @@ namespace Microsoft.Research.Naiad.Examples.ConnectedComponents
 
                 var random = new Random(0);
                 var processes = computation.Configuration.Processes;
-                var graphFragment = new Pair<int, int>[edgeCount / processes];
-                for (int i = 0; i < graphFragment.Length; i++)
-                    graphFragment[i] = new Pair<int, int>(random.Next(nodeCount), random.Next(nodeCount));
+                var thisProcess = computation.Configuration.ProcessID;
+                var graphFragmentList = new List<Pair<int, int>>();
+                for (int i = 0; i < edgeCount; i++)
+                {
+                    // ensure we generate the same graph no matter how many processes there are
+                    var edge = new Pair<int, int>(random.Next(nodeCount), random.Next(nodeCount));
+                    if ((i % processes) == thisProcess)
+                    {
+                        graphFragmentList.Add(edge);
+                    }
+                }
+                    
+                var graphFragment = graphFragmentList.ToArray();
 
                 #endregion
 
@@ -319,7 +329,7 @@ namespace Microsoft.Research.Naiad.Examples.ConnectedComponents
 
                 // convert array of edges to single-epoch stream.
                 var edges = graphFragment.AsNaiadStream(computation)
-                                         .Synchronize();
+                                         .Synchronize(x => true);
 
                 // symmetrize the graph by adding in transposed edges.
                 edges = edges.Select(x => new Pair<int, int>(x.Second, x.First))

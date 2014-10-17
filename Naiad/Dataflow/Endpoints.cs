@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.4
+ * Naiad ver. 0.5
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -252,10 +252,6 @@ namespace Microsoft.Research.Naiad.Dataflow
 
         public abstract void OnReceive(Message<S, T> message, ReturnAddress from);
 
-        private Queue<Message<S, T>> SpareBuffers; // used for reentrancy.
-
-
-        // private Message<S, T> Buffer;
         private AutoSerializedMessageDecoder<S, T> decoder = null;
 
         public void SerializedMessageReceived(SerializedMessage serializedMessage, ReturnAddress from)
@@ -266,11 +262,16 @@ namespace Microsoft.Research.Naiad.Dataflow
             if (this.loggingEnabled)
                 this.LogMessage(serializedMessage);
 
-            foreach (Message<S, T> message in this.decoder.AsTypedMessages(serializedMessage))
+            Message<S, T> msg = new Message<S, T>();
+            msg.Allocate(AllocationReason.Deserializer);
+            // N.B. At present, AsTypedMessages reuses and yields the same given msg for each batch
+            //      of deserialized messages. As a result, the message passed to OnReceive MUST NOT
+            //      be queued, because its payload will be overwritten by the next batch of messages.
+            foreach (Message<S, T> message in this.decoder.AsTypedMessages(serializedMessage, msg))
             {
                 this.OnReceive(message, from);
-                message.Release();
             }
+            msg.Release(AllocationReason.Deserializer);
         }
 
         protected void LogMessage(Message<S, T> message)
@@ -292,7 +293,7 @@ namespace Microsoft.Research.Naiad.Dataflow
         protected void LogMessage(SerializedMessage message)
         {
             byte[] messageHeaderBuffer = new byte[MessageHeader.SizeOf];
-            MessageHeader.WriteHeaderToBuffer(messageHeaderBuffer, 0, message.Header, this.Vertex.SerializationFormat.GetSerializer<MessageHeader>());
+            MessageHeader.WriteHeaderToBuffer(messageHeaderBuffer, 0, message.Header);
             this.Vertex.LoggingOutput.Write(messageHeaderBuffer, 0, messageHeaderBuffer.Length);
             this.Vertex.LoggingOutput.Write(message.Body.Buffer, message.Body.CurrentPos, message.Body.End - message.Body.CurrentPos);
         }
@@ -300,7 +301,6 @@ namespace Microsoft.Research.Naiad.Dataflow
         public Receiver(Vertex vertex)
         {
             this.vertex = vertex;
-            this.SpareBuffers = new Queue<Message<S, T>>();
         }
     }
 

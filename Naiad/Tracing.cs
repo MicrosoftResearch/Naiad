@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.4
+ * Naiad ver. 0.5
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -21,22 +21,68 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-//using System.Diagnostics.Tracing;
+using System.Diagnostics.Tracing;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
+using Microsoft.Research.Naiad.Dataflow;
 using Microsoft.Research.Naiad.Dataflow.Channels;
 using Microsoft.Research.Naiad.Scheduling;
+using Microsoft.Research.Naiad.Serialization;
+using Microsoft.Research.Naiad.Runtime.Progress;
 
 namespace Microsoft.Research.Naiad.Diagnostics
 {
     /// <summary>
+    /// Enumeration describing which aspect of a Naiad computation a tracing region corresponds to
+    /// </summary>
+    public enum NaiadTracingRegion
+    {
+        /// <summary>
+        /// Region corresponding to a flush
+        /// </summary>
+        Flush, 
+        /// <summary>
+        /// Region corresponding to a send
+        /// </summary>
+        Send,
+        /// <summary>
+        /// Region corresponding to a TCP message broadcast
+        /// </summary>
+        BroadcastTCP,
+        /// <summary>
+        /// Region corresponding to a UDP message broadcast
+        /// </summary>
+        BroadcastUDP,
+        /// <summary>
+        /// Region corresponding to a reachability computation
+        /// </summary>
+        Reachability,
+        /// <summary>
+        /// Region corresponding to codegen
+        /// </summary>
+        Compile,
+        /// <summary>
+        /// Region corresponding to waking up dormant workers
+        /// </summary>
+        Wakeup,
+        /// <summary>
+        /// Region corresponding to setting events to wake up dormant workers
+        /// </summary>
+        SetEvent,
+        /// <summary>
+        /// Unclassifed region
+        /// </summary>
+        Unspecified
+    }
+
+    /// <summary>
     /// ETW provider for Naiad 
+    /// GUID is 0ad7158e-b717-53ae-c71a-6f41ab15fe16
     /// </summary>
     /// 
-#if false
     // Some stuff to remember about the EventSource class:
     //     - Anything returning void will be considered an Event unless given the NonEvent attribute
     //     - Events can only have primitive types as arguments
@@ -44,6 +90,21 @@ namespace Microsoft.Research.Naiad.Diagnostics
     internal class NaiadTracing : EventSource
     {
         public static NaiadTracing Trace = new NaiadTracing();
+
+        public NaiadTracing()
+            : base(true)
+        {
+            Logging.Progress("Naiad provider guid = {0}", this.Guid);
+            Logging.Progress("Naiad provider enabled = {0}", this.IsEnabled());
+
+            this.DumpManifestToFile("naiadprovider.xml");
+        }
+
+        protected override void OnEventCommand(EventCommandEventArgs command)
+        {
+            //Logging.Progress("OnEventCommand: {0} {1}", command.Command, command.Arguments);
+            base.OnEventCommand(command);
+        }
 
         /// <summary>
         /// Identifies the Naiad subsystem the event pertains to
@@ -53,6 +114,8 @@ namespace Microsoft.Research.Naiad.Diagnostics
             public const EventTask Channels = (EventTask)1;
             public const EventTask Scheduling = (EventTask)2;
             public const EventTask Control = (EventTask)3;
+            public const EventTask Locks = (EventTask)4;
+            public const EventTask Graph = (EventTask)5;
         }
 
         /// <summary>
@@ -63,82 +126,50 @@ namespace Microsoft.Research.Naiad.Diagnostics
             public const EventKeywords Debug = (EventKeywords)0x0001;
             public const EventKeywords Measurement = (EventKeywords)0x0002;
             public const EventKeywords Network = (EventKeywords)0x0004;
-            public const EventKeywords Viz = (EventKeywords)0x0008;
+            public const EventKeywords Scheduling = (EventKeywords)0x0008;
+            public const EventKeywords Viz = (EventKeywords)0x0010;
+            public const EventKeywords Locks = (EventKeywords)0x0020;
+            public const EventKeywords GraphMetaData = (EventKeywords)0x0040;
         }
 
         #region Channels
         /// <summary>
-        /// Generates an ETW event for data message send.
+        /// Generates an ETW event for message send.
         /// Does nothing if there is no listener for the Network or Viz keywords of the NaiadTracing provider.
+        /// <param name="channel">Id of the channel the message is sent on</param>
+        /// <param name="seqno">Sequence number in the message header</param>
+        /// <param name="len">Length value in the message header</param>
+        /// <param name="src">Source vertex id</param>
+        /// <param name="dst">Destination vertex id</param>
         /// </summary>
-        /// <param name="msg">Message header with fields correctly populated.</param>
-        [NonEvent]
-        public void DataSend(MessageHeader msg)
+        [Conditional("TRACING_ON")]
+        [Event(104, Task = Tasks.Channels, Opcode = EventOpcode.Send, Keywords = Keywords.Network | Keywords.Viz)]
+        public void MsgSend(int channel, int seqno, int len, int src, int dst)
         {
-            if (Trace.IsEnabled(EventLevel.LogAlways, (Keywords.Network | Keywords.Viz)))
-                DataSend(msg.SequenceNumber, msg.Length, msg.FromVertexID, msg.DestVertexID);
-        }
-
-        [Event(1, Task = Tasks.Channels, Opcode = EventOpcode.Send, Keywords = (Keywords.Network | Keywords.Viz))]
-        private void DataSend(int seqno, int len, int src, int dst)
-        {
-            WriteEvent(1, seqno, len, src, dst);
+            if (Trace.IsEnabled(EventLevel.LogAlways, Keywords.Network | Keywords.Viz))
+            {
+                WriteEvent(104, channel, seqno, len, src, dst);
+            }   
         }
 
         /// <summary>
-        /// Generates an ETW event for data message receive.
+        /// Generates an ETW event for message receive.
         /// Does nothing if there is no listener for the Network or Viz keywords of the NaiadTracing provider.
+        /// <param name="channel">Id of the channel the message is received on</param>
+        /// <param name="seqno">Sequence number in the message header</param>
+        /// <param name="len">Length value in the message header</param>
+        /// <param name="src">Source vertex id</param>
+        /// <param name="dst">Destination vertex id</param>
         /// </summary>
-        /// <param name="msg">Message header with fields correctly populated.</param>
-        [NonEvent]
-        public void DataRecv(MessageHeader msg)
+        [Conditional("TRACING_ON")]
+        [Event(105, Task = Tasks.Channels, Opcode = EventOpcode.Send, Keywords = Keywords.Network | Keywords.Viz)]
+        public void MsgRecv(int channel, int seqno, int len, int src, int dst)
         {
-            if (Trace.IsEnabled(EventLevel.LogAlways, (Keywords.Network | Keywords.Viz)))
-                DataRecv(msg.SequenceNumber, msg.Length, msg.FromVertexID, msg.DestVertexID);
+            if (Trace.IsEnabled(EventLevel.LogAlways, Keywords.Network | Keywords.Viz))
+            {
+                WriteEvent(105, channel, seqno, len, src, dst);
+            }
         }
-
-        [Event(2, Task = Tasks.Channels, Opcode = EventOpcode.Receive, Keywords = (Keywords.Network | Keywords.Viz))]
-        private void DataRecv(int seqno, int len, int src, int dst)
-        {
-            WriteEvent(2, seqno, len, src, dst);
-        }
-
-        /// <summary>
-        /// Generates an ETW event for progress message send.
-        /// Does nothing if there is no listener for the Network or Viz keywords of the NaiadTracing provider.
-        /// </summary>
-        /// <param name="msg">Message header with fields correctly populated.</param>
-        [NonEvent]
-        public void ProgressSend(MessageHeader msg)
-        {
-            if (Trace.IsEnabled(EventLevel.LogAlways, (Keywords.Network | Keywords.Viz)))
-                ProgressSend(msg.SequenceNumber, msg.Length, msg.FromVertexID, msg.DestVertexID);
-        }
-
-        [Event(3, Task = Tasks.Channels, Opcode = EventOpcode.Send, Keywords = (Keywords.Network | Keywords.Viz))]
-        private void ProgressSend(int seqno, int len, int src, int dst)
-        {
-            WriteEvent(3, seqno, len, src, dst);
-        }
-
-        /// <summary>
-        /// Generates an ETW event for progress message receive.
-        /// Does nothing if there is no listener for the Network or Viz keywords of the NaiadTracing provider.
-        /// </summary>
-        /// <param name="msg">Message header with fields correctly populated.</param>
-        [NonEvent]
-        public void ProgressRecv(MessageHeader msg)
-        {
-            if (Trace.IsEnabled(EventLevel.LogAlways, (Keywords.Network | Keywords.Viz)))
-                ProgressRecv(msg.SequenceNumber, msg.Length, msg.FromVertexID, msg.DestVertexID);
-        }
-
-        [Event(4, Task = Tasks.Channels, Opcode = EventOpcode.Receive, Keywords = (Keywords.Network | Keywords.Viz))]
-        private void ProgressRecv(int seqno, int len, int src, int dst)
-        {
-            WriteEvent(4, seqno, len, src, dst);
-        }
-
         #endregion Channels
 
         #region Scheduling
@@ -146,49 +177,49 @@ namespace Microsoft.Research.Naiad.Diagnostics
         /// Generates an ETW event for the scheduling of a work item.
         /// Does nothing if there is no listener for the Viz keyword of the NaiadTracing provider.
         /// </summary>
-        /// <param name="id">Scheduler id</param>
         /// <param name="workitem">Item being scheduled</param>
         [NonEvent]
-        internal void StartSched(int schedulerid, Scheduler.WorkItem workitem)
+        [Conditional("TRACING_ON")]
+        internal void StartSched(Scheduler.WorkItem workitem)
         {
-            if (Trace.IsEnabled(EventLevel.LogAlways, Keywords.Viz))
-                StartSched(schedulerid, workitem.Vertex.Stage.StageId, workitem.Vertex.Stage.Name, workitem.Requirement.Timestamp.ToString());
+            if (Trace.IsEnabled(EventLevel.LogAlways, Keywords.Scheduling | Keywords.Viz))
+                StartSched(workitem.Vertex.Stage.StageId);
         }
 
-        [Event(5, Task = Tasks.Scheduling, Opcode = EventOpcode.Start, Keywords = Keywords.Viz)]
-        internal void StartSched(int schedulerid, int stageid, string stagename, string pointstamp)
+        [Event(200, Task = Tasks.Scheduling, Opcode = EventOpcode.Start, Keywords = Keywords.Scheduling | Keywords.Viz)]
+        private void StartSched(int stageid)
         {
-            WriteEvent(5, schedulerid, stageid, stagename, pointstamp, "<deprecated>");
+            WriteEvent(200, stageid);
         }
 
         /// <summary>
         /// Generates an ETW event for the end of a scheduling period of a work item.
         /// Does nothing if there is no listener for the Viz keyword of the NaiadTracing provider.
         /// </summary>
-        /// <param name="id">Scheduler id</param>
         /// <param name="workitem">Item being descheduled</param>
         [NonEvent]
-        internal void StopSched(int schedulerid, Scheduler.WorkItem workitem)
+        [Conditional("TRACING_ON")]
+        internal void StopSched(Scheduler.WorkItem workitem)
         {
             //Console.WriteLine("]Sched {0} {1}", id, workitem.ToString());
-            if (Trace.IsEnabled(EventLevel.LogAlways, Keywords.Viz))
-                StopSched(schedulerid, workitem.Vertex.Stage.StageId, workitem.Vertex.Stage.Name, workitem.Requirement.Timestamp.ToString());
+            if (Trace.IsEnabled(EventLevel.LogAlways, Keywords.Scheduling | Keywords.Viz))
+                StopSched(workitem.Vertex.Stage.StageId);
             }
 
-        [Event(6, Task = Tasks.Scheduling, Opcode = EventOpcode.Stop, Keywords = Keywords.Viz)]
-        internal void StopSched(int schedulerid, int stageid, string stagename, string pointstamp)
+        [Event(201, Task = Tasks.Scheduling, Opcode = EventOpcode.Stop, Keywords = (Keywords.Scheduling | Keywords.Viz))]
+        private void StopSched(int stageid)
         {
-            WriteEvent(6, schedulerid, stageid, stagename, pointstamp, "<deprecated>");
+            WriteEvent(201, stageid);
         }
 
         #endregion Scheduling
 
-        #region Metadata
-        [Event(7, Task = Tasks.Control, Opcode = EventOpcode.Info, Keywords = Keywords.Viz)]
+        #region Control
+        [Event(300, Task = Tasks.Control, Opcode = EventOpcode.Info, Keywords = Keywords.Viz)]
         public void RefAlignFrontier()
         {
             if (Trace.IsEnabled(EventLevel.LogAlways, Keywords.Viz))
-                WriteEvent(7);
+                WriteEvent(300);
         }
 
         /// <summary>
@@ -197,37 +228,270 @@ namespace Microsoft.Research.Naiad.Diagnostics
         /// </summary>
         /// <param name="frontier">The new PCS frontier</param>
         [NonEvent]
+        [Conditional("TRACING_ON")]
         public void AdvanceFrontier(Pointstamp[] frontier)
         {
             if (Trace.IsEnabled(EventLevel.LogAlways, Keywords.Viz))
                 AdvanceFrontier(frontier.Select(x => x.ToString()).Aggregate((x, y) => x + " " + y));
         }
-
-        [Event(8, Task = Tasks.Control, Opcode = EventOpcode.Info, Keywords = Keywords.Viz)]
+        [Event(301, Task = Tasks.Control, Opcode = EventOpcode.Info, Keywords = Keywords.Viz)]
         private void AdvanceFrontier(string newFrontier)
         {
-            WriteEvent(8, newFrontier);
+            WriteEvent(301, newFrontier);
         }
 
-        #endregion Metadata
+        [NonEvent]
+        [Conditional("TRACING_ON")]
+        public void SocketError(System.Net.Sockets.SocketError err)
+        {
+            if (Trace.IsEnabled(EventLevel.Error, Keywords.Viz | Keywords.Network | Keywords.Debug))
+            {
+                SocketError(Enum.GetName(typeof(System.Net.Sockets.SocketError), err));
+            }
+        }
+        [Event(302, Task = Tasks.Control, Opcode = EventOpcode.Info, Keywords = Keywords.Viz | Keywords.Network | Keywords.Debug)]
+        private void SocketError(string msg)
+        {
+            WriteEvent(302, msg);
+        }
+
+        [NonEvent]
+        [Conditional("TRACING_ON")]
+        public void RegionStart(NaiadTracingRegion region)
+        {
+            if (Trace.IsEnabled(EventLevel.Error, Keywords.Viz | Keywords.Network | Keywords.Debug))
+            {
+                if (!regionInfoEventsPosted)
+                {
+                    RegionInfo();
+                }
+                RegionStart((int)region);
+            }
+        }
+        [Event(303, Task = Tasks.Control, Opcode = EventOpcode.Info, Keywords = Keywords.Viz | Keywords.Debug)]
+        private void RegionStart(int id)
+        {
+            WriteEvent(303, id);
+        }
+
+        [NonEvent]
+        [Conditional("TRACING_ON")]
+        public void RegionStop(NaiadTracingRegion region)
+        {
+            if (Trace.IsEnabled(EventLevel.Error, Keywords.Viz | Keywords.Network | Keywords.Debug))
+            {
+                if (!regionInfoEventsPosted)
+                {
+                    RegionInfo();
+                }
+                RegionStop((int)region);
+            }
+        }
+        [Event(304, Task = Tasks.Control, Opcode = EventOpcode.Info, Keywords = Keywords.Viz | Keywords.Debug)]
+        private void RegionStop(int id)
+        {
+            WriteEvent(304, id);
+        }
+
+
+        private bool regionInfoEventsPosted = false;
+        [Event(305, Task = Tasks.Control, Opcode = EventOpcode.Info, Keywords = Keywords.Viz | Keywords.Debug)]
+        [Conditional("TRACING_ON")]
+        private void RegionInfo()
+        {
+            foreach (var val in Enum.GetValues(typeof(NaiadTracingRegion)))
+            {
+                WriteEvent(305, val, Enum.GetName(typeof(NaiadTracingRegion), val));
+            }
+            regionInfoEventsPosted = true;
+        }
+
+
+        #endregion Control
+
+        #region Graph
+        [Event(500, Task = Tasks.Graph, Opcode = EventOpcode.Info, Keywords = Keywords.Viz | Keywords.GraphMetaData)]
+        [Conditional("TRACING_ON")]
+        public void StageInfo(int id, string name)
+        {
+            if (Trace.IsEnabled(EventLevel.LogAlways, Keywords.Viz | Keywords.GraphMetaData))
+                WriteEvent(500, id, name);
+        }
+
+        /// <summary>
+        /// Posts an event describing the placement of a vertex
+        /// </summary>
+        /// <param name="stageid">Stage id</param>
+        /// <param name="vertexid">Vertex id</param>
+        /// <param name="proc">Naiad process id</param>
+        /// <param name="worker">Worker thread id</param>
+        [Event(501, Task = Tasks.Graph, Opcode = EventOpcode.Info, Keywords = Keywords.Viz | Keywords.GraphMetaData)]
+        [Conditional("TRACING_ON")]
+        public void VertexPlacement(int stageid, int vertexid, int proc, int worker)
+        {
+            if (Trace.IsEnabled(EventLevel.LogAlways, Keywords.Viz | Keywords.GraphMetaData))
+                WriteEvent(501, stageid, vertexid, proc, worker);
+        }
+
+        /// <summary>
+        /// Posts channel info metadata event
+        /// </summary>
+        /// <param name="channel">Channel id</param>
+        /// <param name="src">Source stage id</param>
+        /// <param name="dst">Destination stage id</param>
+        /// <param name="isExchange">True if an exchange channel (otherwise a pipeline channel)</param>
+        /// <param name="isProgress">True if a progress channel (otherwise a data channel)</param>
+        [Event(502, Task = Tasks.Graph, Opcode = EventOpcode.Info, Keywords = Keywords.Viz | Keywords.GraphMetaData)]
+        [Conditional("TRACING_ON")]
+        public void ChannelInfo(int channel, int src, int dst, bool isExchange, bool isProgress)
+        {
+            if (Trace.IsEnabled(EventLevel.LogAlways, Keywords.Viz | Keywords.GraphMetaData))
+                WriteEvent(502, channel, src, dst, isExchange, isProgress);
+        }
+
+        /// <summary>
+        /// Posts a friendly name for the calling thread.
+        /// Note that this tracing event is not conditionally compiled because we want these events to appear
+        /// even when not tracing Naiad specifically.
+        /// </summary>
+        /// <param name="name">Name for this thread (usually to be displayed in a visualization of the trace)</param>
+        /// <param name="args">Any formatting args</param>
+        [NonEvent]
+        public void ThreadName(string name, params object[] args)
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.AppendFormat(name, args);
+            ThreadName(sb.ToString());
+        }
+        [Event(503, Task = Tasks.Graph, Opcode = EventOpcode.Info, Keywords = Keywords.Viz)]
+        private void ThreadName(string name)
+        {
+            WriteEvent(503, name);
+        }
+
+        /// <summary>
+        /// Posts the Naiad process id and the name of the local machine.
+        /// </summary>
+        /// <param name="id">Naiad process id</param>
+        /// <param name="name">Local machine name</param>
+        [Event(504, Task = Tasks.Graph, Opcode = EventOpcode.Info, Keywords = Keywords.Viz | Keywords.GraphMetaData)]
+        [Conditional("TRACING_ON")]
+        public void ProcessInfo(int id, string name)
+        {
+            WriteEvent(504, id, name);
+        }
+        #endregion Graph
+
+        #region Locking
+
+        [NonEvent]
+        [Conditional("TRACE_LOCKS")]
+        public void LockInfo(Object obj, string name)
+        {
+            if (Trace.IsEnabled(EventLevel.Verbose, Keywords.Locks))
+                LockInfo(obj.GetHashCode(), name);
+        }
+        [Event(400, Task = Tasks.Locks, Opcode = EventOpcode.Info, Keywords = Keywords.Locks, Level = EventLevel.Verbose)]
+        private void LockInfo(int id, string name)
+        {
+                WriteEvent(400, id, name);
+        }
+
+        [NonEvent]
+        [Conditional("TRACE_LOCKS")]
+        public void LockAcquire(Object obj)
+        {
+            if (Trace.IsEnabled(EventLevel.Verbose, Keywords.Locks))
+                LockAcquire(obj.GetHashCode());
+        }
+        [Event(401, Task = Tasks.Locks, Opcode = EventOpcode.Info, Keywords = Keywords.Locks, Level = EventLevel.Verbose)]
+        private void LockAcquire(int id)
+        {
+            WriteEvent(401, id);
+        }
+
+        [NonEvent]
+        [Conditional("TRACE_LOCKS")]
+        public void LockHeld(Object obj)
+        {
+            if (Trace.IsEnabled(EventLevel.Verbose, Keywords.Locks))
+                LockHeld(obj.GetHashCode());
+        }
+        [Event(402, Task = Tasks.Locks, Opcode = EventOpcode.Info,
+            Keywords = Keywords.Locks, Level = EventLevel.Verbose)]
+        private void LockHeld(int id)
+        {
+            WriteEvent(402, id);
+        }
+
+        [NonEvent]
+        [Conditional("TRACE_LOCKS")]
+        public void LockRelease(Object obj)
+        {
+            if (Trace.IsEnabled(EventLevel.Verbose, Keywords.Locks))
+                LockRelease(obj.GetHashCode());
+        }
+        [Event(403, Task = Tasks.Locks, Opcode = EventOpcode.Info, Keywords = Keywords.Locks, Level = EventLevel.Verbose)]
+        private void LockRelease(int id)
+        {
+            WriteEvent(403, id);
+        }
+        #endregion
 
         #region Misc utilities
         /// <summary>
-        /// Write the XML manifest of the Naiad ETW provider to a file
+        /// Writes the XML manifest of the Naiad ETW provider to a file.
+        /// This method is not thread-safe, but will catch exceptions and do nothing.
         /// </summary>
         /// <param name="filename">File to write to</param>
         [NonEvent]
         public void DumpManifestToFile(string filename)
         {
-            using (var s = new StreamWriter(File.Open(filename, FileMode.Create)))
+            try
             {
-                s.Write(NaiadTracing.GenerateManifest(typeof(NaiadTracing), "Naiad.dll"));
+                using (var s = new StreamWriter(File.Open(filename, FileMode.Create)))
+                {
+                    s.Write(NaiadTracing.GenerateManifest(typeof(NaiadTracing), "Naiad.dll"));
+                }
+            }
+            catch (Exception e)
+            {
+                Logging.Error("Error dumping ETW provider manifest: {0}", e.Message);
             }
         }
+
+        /// <summary>
+        /// DIY versions of WriteEvent to avoid the slow path.
+        /// See http://msdn.microsoft.com/en-us/library/system.diagnostics.tracing.eventsource.writeeventcore(v=vs.110).aspx.
+        /// </summary>
+        /// <param name="eventId"></param>
+        /// <param name="arg1"></param>
+        /// <param name="arg2"></param>
+        /// <param name="arg3"></param>
+        /// <param name="arg4"></param>
+        /// <param name="arg5"></param>
+        protected unsafe void WriteEvent(int eventId, int arg1, int arg2, int arg3, int arg4, int arg5)
+        {
+               EventSource.EventData* dataDesc = stackalloc EventSource.EventData[1];
+               int* data = stackalloc int[6];
+               data[0] = arg1;
+               data[1] = arg2;
+               data[2] = arg3;
+               data[3] = arg4;
+               data[4] = arg5; 
+               
+               dataDesc[0].DataPointer = (IntPtr)data;
+               dataDesc[0].Size = 4*5;
+               WriteEventCore(eventId, 1, dataDesc);
+        }
+
         #endregion Misc utilities
     }
-#endif
-    public class Tracing
+
+    /// <summary>
+    /// This class containes methods that allow Mark events to be posted in the ETW Kernel Logger session.
+    /// </summary>
+    public class KernelLoggerTracing
     {
         private static object _lock = new object();
         private static bool _inited = false;
@@ -384,7 +648,7 @@ namespace Microsoft.Research.Naiad.Diagnostics
                 }
                 fixed (byte* ptr = buf)
                 {
-                    EtwSetMark(0, ptr, 4 + sb.Length);
+                    EtwSetMark(0, ptr, Math.Min(4 + sb.Length, buf.Length));
                 }
                 sb.Clear();
             }
@@ -395,13 +659,13 @@ namespace Microsoft.Research.Naiad.Diagnostics
                     _initEtwMarks();
                 }
 
-                for (int i = 0; i < msg.Length; i++)
+                for (int i = 0; i < msg.Length && i + 4 < buf.Length; i++)
                 {
-                    buf[i + 4] = (byte)msg[i];
+                    buf[i + 4] = (byte) msg[i];
                 }
                 fixed (byte* ptr = buf)
                 {
-                    EtwSetMark(0, ptr, 4 + msg.Length);
+                    EtwSetMark(0, ptr, Math.Min(4 + msg.Length, buf.Length));
                 }
             }
         }
@@ -410,23 +674,25 @@ namespace Microsoft.Research.Naiad.Diagnostics
         private static ThreadLocal<TracingBuffer> tracingBuffer = new ThreadLocal<TracingBuffer>(() => new TracingBuffer());
 
         /// <summary>
-        /// Writes a freetext trace event using ETW
+        /// Formats and then writes a freetext Mark event into the ETW Kernel Logger trace session.
+        /// This event is expensive and should be used sparingly.
         /// </summary>
         /// <param name="msg">The format string to be logged, as in String.Format</param>
         /// <param name="args">Arguments to be formatted.</param>
         [Conditional("TRACING_ON")]
-        public static void Trace(string msg, params object[] args)
+        public static void PostKernelLoggerMarkEvent(string msg, params object[] args)
         {
             var tb = tracingBuffer.Value;
             tb.Trace(msg, args);
         }
 
         /// <summary>
-        /// Records a tracing message.
+        /// Writes a freetext Mark event into the ETW Kernel Logger trace session.
+        /// This event is expensive and should be used sparingly.
         /// </summary>
         /// <param name="msg">message</param>
         [Conditional("TRACING_ON")]
-        public static void Trace(string msg)
+        public static void PostKernelLoggerMarkEvent(string msg)
         {
             var tb = tracingBuffer.Value;
             tb.Trace(msg);

@@ -1,0 +1,105 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\..\packages\Microsoft.Research.Peloponnese.Hadoop.0.8.1-beta\build\Microsoft.Research.Peloponnese.Hadoop.props" Condition="Exists('..\..\packages\Microsoft.Research.Peloponnese.Hadoop.0.8.1-beta\build\Microsoft.Research.Peloponnese.Hadoop.props')" />
+  <Import Project="..\..\packages\Microsoft.Research.Peloponnese.Shared.0.8.1-beta\build\Microsoft.Research.Peloponnese.Shared.props" Condition="Exists('..\..\packages\Microsoft.Research.Peloponnese.Shared.0.8.1-beta\build\Microsoft.Research.Peloponnese.Shared.props')" />
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{66D2A00E-F889-4B2F-9C40-04A32278FB86}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>HdfsSupport</RootNamespace>
+    <AssemblyName>Microsoft.Research.Naiad.HdfsSupport</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
+    <NuGetPackageImportStamp>caea79ad</NuGetPackageImportStamp>
+    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\</SolutionDir>
+    <RestorePackages>true</RestorePackages>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\x64\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>false</Prefer32Bit>
+    <DocumentationFile>
+    </DocumentationFile>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <OutputPath>bin\x64\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>false</Prefer32Bit>
+    <DocumentationFile>bin\x64\Release\Microsoft.Research.Naiad.HdfsSupport.XML</DocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\..\SharedAssemblyInfo.cs">
+      <Link>Properties\SharedAssemblyInfo.cs</Link>
+    </Compile>
+    <Compile Include="Hdfs.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Naiad\Naiad.csproj">
+      <Project>{a6221415-1283-4c04-8d2c-e25a857e1fe9}</Project>
+      <Name>Naiad</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Lindi\Lindi.csproj">
+      <Project>{bdc6546c-7ba0-472b-b260-0d596b6152e4}</Project>
+      <Name>Lindi</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Storage\Storage.csproj">
+      <Project>{0dca9543-ff9d-48d6-9748-a966dc39c35d}</Project>
+      <Name>Storage</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\WorkGenerator\WorkGenerator.csproj">
+      <Project>{eba3d350-41eb-474c-aed9-9cfd1f809de3}</Project>
+      <Name>WorkGenerator</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
+    <None Include="Microsoft.Research.Naiad.HdfsSupport.nuspec" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('$(SolutionDir)\.nuget\NuGet.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(SolutionDir)\.nuget\NuGet.targets'))" />
+    <Error Condition="!Exists('..\..\packages\Microsoft.Research.Peloponnese.Shared.0.8.1-beta\build\Microsoft.Research.Peloponnese.Shared.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\Microsoft.Research.Peloponnese.Shared.0.8.1-beta\build\Microsoft.Research.Peloponnese.Shared.props'))" />
+    <Error Condition="!Exists('..\..\packages\Microsoft.Research.Peloponnese.Shared.0.8.1-beta\build\Microsoft.Research.Peloponnese.Shared.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\Microsoft.Research.Peloponnese.Shared.0.8.1-beta\build\Microsoft.Research.Peloponnese.Shared.targets'))" />
+    <Error Condition="!Exists('..\..\packages\Microsoft.Research.Peloponnese.Hadoop.0.8.1-beta\build\Microsoft.Research.Peloponnese.Hadoop.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\Microsoft.Research.Peloponnese.Hadoop.0.8.1-beta\build\Microsoft.Research.Peloponnese.Hadoop.props'))" />
+    <Error Condition="!Exists('..\..\packages\Microsoft.Research.Peloponnese.Hadoop.0.8.1-beta\build\Microsoft.Research.Peloponnese.Hadoop.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\packages\Microsoft.Research.Peloponnese.Hadoop.0.8.1-beta\build\Microsoft.Research.Peloponnese.Hadoop.targets'))" />
+  </Target>
+  <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
+  <Import Project="..\..\packages\Microsoft.Research.Peloponnese.Shared.0.8.1-beta\build\Microsoft.Research.Peloponnese.Shared.targets" Condition="Exists('..\..\packages\Microsoft.Research.Peloponnese.Shared.0.8.1-beta\build\Microsoft.Research.Peloponnese.Shared.targets')" />
+  <Import Project="..\..\packages\Microsoft.Research.Peloponnese.Hadoop.0.8.1-beta\build\Microsoft.Research.Peloponnese.Hadoop.targets" Condition="Exists('..\..\packages\Microsoft.Research.Peloponnese.Hadoop.0.8.1-beta\build\Microsoft.Research.Peloponnese.Hadoop.targets')" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

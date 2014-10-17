@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.4
+ * Naiad ver. 0.5
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -45,9 +45,10 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
         private readonly Dictionary<Pointstamp, Int64> outstandingRecords = new Dictionary<Pointstamp, Int64>();
         public void UpdateRecordCounts(Pointstamp time, Int64 delta)
         {
-            Tracing.Trace("(ProdLock");
+            NaiadTracing.Trace.LockAcquire(this);
             lock (this)
             {
+                NaiadTracing.Trace.LockHeld(this);
                 //if (this.Stage.InternalComputation.Controller.Configuration.Impersonation && !this.Stage.InternalComputation.Reachability.NoImpersonation.Contains(time.Location) && this.Stage.InternalComputation.Reachability.Impersonations[time.Location] != null)
                 //{
                 //    foreach (var newVersion in this.Stage.InternalComputation.Reachability.EnumerateImpersonations(time))
@@ -59,7 +60,7 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
 
                 AddToOutstandingRecords(time, delta);
             }
-            Tracing.Trace(")ProdLock");
+            NaiadTracing.Trace.LockRelease(this);
         }
 
         private void AddToOutstandingRecords(Pointstamp time, Int64 delta)
@@ -74,15 +75,17 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
                     outstandingRecords.Remove(time);
             }
         }
-
+        
         /// <summary>
         /// Lock the producer and transmit pointstamp counts to the appropriate consumer(s)
         /// </summary>
         public void Start()
         {
-            Tracing.Trace("(ProdLock");
+            NaiadTracing.Trace.LockAcquire(this);
             lock (this)
             {
+                NaiadTracing.Trace.LockHeld(this);
+
                 // note: FOC may return without sending stuff due to re-entrancy.
                 if (outstandingRecords.Count > 0)
                 {
@@ -90,7 +93,7 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
                     outstandingRecords.Clear();
                 }
             }
-            Tracing.Trace(")ProdLock");
+            NaiadTracing.Trace.LockRelease(this);
         }
 
         public void Checkpoint(NaiadWriter writer)
@@ -107,6 +110,7 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
         {
             this.LocalPCS = new PointstampCountSet(manager.Reachability);
             this.Aggregator = aggregator;
+            NaiadTracing.Trace.LockInfo(this, "Producer lock");
         }
     }
 }

@@ -1,5 +1,5 @@
-﻿/*
- * Naiad ver. 0.4
+/*
+ * Naiad ver. 0.5
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -75,7 +75,7 @@ namespace Microsoft.Research.Naiad
     namespace Diagnostics
     {
         /// <summary>
-        /// The Diagnostics namespace provides classes that support <see cref="Logging"/>, <see cref="Tracing"/>, and observing various events in the Naiad runtime.
+        /// The Diagnostics namespace provides classes that support <see cref="Logging"/>, tracing, and observing various events in the Naiad runtime.
         /// </summary>
         class NamespaceDoc
         {

@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.4
+ * Naiad ver. 0.5
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -114,7 +114,7 @@ namespace Microsoft.Research.Naiad.Scheduling
                         }
                         else
                         {
-                            Tracing.Trace("Await new waitblock");
+                            KernelLoggerTracing.PostKernelLoggerMarkEvent("Await new waitblock");
                             Console.Error.WriteLine("EventCount Await(): NEW WAITBLOCK");
                             this.current = new WaitBlock();
                         }
@@ -216,9 +216,9 @@ namespace Microsoft.Research.Naiad.Scheduling
             // Unblock the waiters
             if (wb != null)
             {
-                Tracing.Trace("{SetEvent");
+                NaiadTracing.Trace.RegionStart(NaiadTracingRegion.SetEvent);
                 wb.ev.Set();
-                Tracing.Trace("}SetEvent");
+                NaiadTracing.Trace.RegionStop(NaiadTracingRegion.SetEvent);
             }
         }
 

@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.4
+ * Naiad ver. 0.5
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -111,7 +111,15 @@ namespace Microsoft.Research.Naiad.Dataflow.Iteration
 
         private void AttachInput(Stream<TRecord, IterationIn<TTime>> stream)
         {
-            stage.InternalComputation.Connect(stream.StageOutput, this.input, this.PartitionedBy, Channel.Flags.None);
+            if (this.PartitionedBy != null)
+            {
+                var compiled = this.PartitionedBy.Compile();
+                Action<TRecord[], int[], int> vectoredPartitioning = (data, dsts, len) => { for (int i = 0; i < len; i++) dsts[i] = compiled(data[i]); };
+
+                stage.InternalComputation.Connect(stream.StageOutput, this.input, vectoredPartitioning, Channel.Flags.None);
+            }
+            else
+                stage.InternalComputation.Connect(stream.StageOutput, this.input, null, Channel.Flags.None);
         }
 
         internal Feedback(ITimeContext<IterationIn<TTime>> context,

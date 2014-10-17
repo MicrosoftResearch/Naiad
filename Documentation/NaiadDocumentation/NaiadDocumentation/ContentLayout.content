@@ -7,11 +7,16 @@
   </Topic>
   <Topic id="450c8ec2-65e4-4396-93e8-634e6a2144f4" visible="True" title="Writing your first Naiad program" />
   <Topic id="b3ff7ae9-7d4a-49b5-89c4-4e8832660d8d" visible="True" title="Running Naiad programs on Microsoft Azure" />
-  <Topic id="1aff01be-2d57-406e-9f1d-b0872c8733e5" visible="True" isSelected="true" title="Implementing a custom Naiad vertex" />
+  <Topic id="1aff01be-2d57-406e-9f1d-b0872c8733e5" visible="True" title="Implementing a custom Naiad vertex" />
   <Topic id="c2a31aaa-d867-4d3b-9315-dbb7c7527659" visible="True" isExpanded="true" title="Version History">
     <HelpKeywords>
       <HelpKeyword index="K" term="version, history" />
     </HelpKeywords>
+    <Topic id="6f949be3-a32e-427f-bdcd-5d9d462eeb42" visible="True" isSelected="true" title="Version 0.5">
+      <HelpKeywords>
+        <HelpKeyword index="K" term="version, 0.5" />
+      </HelpKeywords>
+    </Topic>
     <Topic id="576fa56a-c7d5-4dc9-81bb-6fbd7e312fec" visible="True" title="Version 0.4">
       <HelpKeywords>
         <HelpKeyword index="K" term="version, 0.4" />

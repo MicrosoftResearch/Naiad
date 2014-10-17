@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.4
+ * Naiad ver. 0.5
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -917,12 +917,15 @@ namespace Microsoft.Research.Naiad.Frameworks.Lindi
         /// <typeparam name="TRecord">The type of the input records.</typeparam>
         /// <typeparam name="TTime">The type of timestamp on each record.</typeparam>
         /// <param name="stream">The input stream.</param>
+        /// <param name="predicate">A predicate indicating which times to synchronize in</param>
         /// <returns>The input stream.</returns>
-        public static Stream<TRecord, TTime> Synchronize<TRecord, TTime>(this Stream<TRecord, TTime> stream)
+        public static Stream<TRecord, TTime> Synchronize<TRecord, TTime>(this Stream<TRecord, TTime> stream, Func<TTime, bool> predicate)
             where TTime : Time<TTime>
         {
             if (stream == null) throw new ArgumentNullException("stream");
-            return stream.UnaryExpression(stream.PartitionedBy, x => x, "Delay");
+            if (predicate == null) throw new ArgumentNullException("predicate");
+
+            return stream.NewUnaryStage((i, s) => new SynchronizeVertex<TRecord, TTime>(i, s, predicate), null, stream.PartitionedBy, "Synchronize");
         }
 
         /// <summary>
@@ -1127,6 +1130,51 @@ namespace Microsoft.Research.Naiad.Frameworks.Lindi
             : base(index, stage)
         {
             this.function = function;
+        }
+    }
+
+    internal class SynchronizeVertex<TRecord, TTime> : UnaryVertex<TRecord, TRecord, TTime>
+        where TTime : Time<TTime>
+    {
+        private readonly Func<TTime, bool> Predicate;
+        private readonly Dictionary<TTime, List<TRecord>> Records;
+
+        public override void OnReceive(Message<TRecord, TTime> message)
+        {
+            if (this.Predicate(message.time))
+            {
+                if (!this.Records.ContainsKey(message.time))
+                {
+                    this.Records.Add(message.time, new List<TRecord>());
+                    this.NotifyAt(message.time);
+                }
+
+                var list = this.Records[message.time];
+                for (int i = 0; i < message.length; i++)
+                    list.Add(message.payload[i]);
+            }
+            else
+                this.Output.Send(message);
+        }
+
+        public override void OnNotify(TTime time)
+        {
+            if (this.Records.ContainsKey(time))
+            {
+                var list = this.Records[time];
+                this.Records.Remove(time);
+
+                var output = this.Output.GetBufferForTime(time);
+                for (int i = 0; i < list.Count; i++)
+                    output.Send(list[i]);
+            }
+        }
+
+        public SynchronizeVertex(int index, Stage<TTime> stage, Func<TTime, bool> predicate)
+            : base(index, stage)
+        {
+            this.Predicate = predicate;
+            this.Records = new Dictionary<TTime, List<TRecord>>();
         }
     }
 

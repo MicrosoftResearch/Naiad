@@ -37,6 +37,14 @@
       <DocumentationSource sourceFile="..\..\..\Frameworks\AzureSupport\bin\Release\Microsoft.Research.Naiad.AzureSupport.xml" />
       <DocumentationSource sourceFile="..\..\..\Frameworks\GraphLINQ\bin\Release\Microsoft.Research.Naiad.GraphLINQ.dll" />
       <DocumentationSource sourceFile="..\..\..\Frameworks\GraphLINQ\bin\Release\Microsoft.Research.Naiad.GraphLINQ.xml" />
+      <DocumentationSource sourceFile="..\..\..\Frameworks\WorkGenerator\bin\Release\Microsoft.Research.Naiad.WorkGenerator.dll" />
+      <DocumentationSource sourceFile="..\..\..\Frameworks\WorkGenerator\bin\Release\Microsoft.Research.Naiad.WorkGenerator.xml" />
+      <DocumentationSource sourceFile="..\..\..\Frameworks\Storage\bin\Release\Microsoft.Research.Naiad.Storage.dll" />
+      <DocumentationSource sourceFile="..\..\..\Frameworks\Storage\bin\Release\Microsoft.Research.Naiad.Storage.xml" />
+      <DocumentationSource sourceFile="..\..\..\Frameworks\HdfsSupport\bin\x64\Release\Microsoft.Research.Naiad.HdfsSupport.dll" />
+      <DocumentationSource sourceFile="..\..\..\Frameworks\HdfsSupport\bin\x64\Release\Microsoft.Research.Naiad.HdfsSupport.xml" />
+      <DocumentationSource sourceFile="..\..\..\Frameworks\WebHdfsSupport\bin\Release\Microsoft.Research.Naiad.WebHdfsSupport.dll" />
+      <DocumentationSource sourceFile="..\..\..\Frameworks\WebHdfsSupport\bin\Release\Microsoft.Research.Naiad.WebHdfsSupport.xml" />
     </DocumentationSources>
     <BuildAssemblerVerbosity>OnlyWarningsAndErrors</BuildAssemblerVerbosity>
     <HelpFileFormat>Website</HelpFileFormat>
@@ -88,6 +96,7 @@
   <ItemGroup>
     <None Include="Content\FirstNaiadProgram.aml" />
     <None Include="Content\NaiadOnAzure.aml" />
+    <None Include="Content\VersionHistory\v0.5.aml" />
     <None Include="Content\VersionHistory\v0.1.aml" />
     <None Include="Content\VersionHistory\v0.2.aml" />
     <None Include="Content\VersionHistory\v0.3.aml" />

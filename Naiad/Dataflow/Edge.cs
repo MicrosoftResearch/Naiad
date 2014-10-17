@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.4
+ * Naiad ver. 0.5
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -46,7 +46,7 @@ namespace Microsoft.Research.Naiad.Dataflow
     {
         public readonly StageOutput<R, T> Source;
         public readonly StageInput<R, T> Target;
-        public readonly Expression<Func<R, int>> PartitionFunction;
+        public readonly Action<R[], int[], int> PartitionFunction;
         public readonly Dataflow.Channels.Channel.Flags Flags;
 
         Dataflow.Channels.Cable<R, T> bundle;
@@ -80,13 +80,14 @@ namespace Microsoft.Research.Naiad.Dataflow
             }
             else
             {
-                var compiledKey = PartitionFunction != null ? PartitionFunction.Compile() : (Func<R, int>)null;
-                this.bundle = new PostOfficeChannel<R, T>(Source, Target, compiledKey, controller.NetworkChannel, this.ChannelId, this.Flags);
+                //var compiledKey = PartitionFunction != null ? PartitionFunction.Compile() : (Func<R, int>)null;
+                this.bundle = new PostOfficeChannel<R, T>(Source, Target, PartitionFunction, controller.NetworkChannel, this.ChannelId, this.Flags);
                 Logging.Info("Allocated exchange channel {2}: {0} -> {1}", this.bundle.SourceStage, this.bundle.DestinationStage, this.bundle.ChannelId);
                 this.exchanges = true;
             }
 
             Logging.Info("Allocated {0}", this.bundle);
+            Diagnostics.NaiadTracing.Trace.ChannelInfo(this.ChannelId, this.SourceStage.StageId, this.bundle.DestinationStage.StageId, this.Exchanges, false);
 
             Source.AttachBundleToSender(this.bundle);
             //Target.AttachBundleToReceiver(this.bundle);
@@ -97,10 +98,10 @@ namespace Microsoft.Research.Naiad.Dataflow
             return String.Format("{0} -> {1}", this.SourceStage, this.TargetStage);
         }
 
-        public Edge(StageOutput<R, T> stream, StageInput<R, T> recvPort, Expression<Func<R, int>> partitionFunction, Dataflow.Channels.Channel.Flags flags)
+        public Edge(StageOutput<R, T> stream, StageInput<R, T> recvPort, Action<R[], int[], int> partitionFunction, Dataflow.Channels.Channel.Flags flags)
         {
-            if (recvPort.PartitionedBy != partitionFunction)
-                Logging.Error("Constructing Edge where recvPort.PartitionedBy is incorrect.");
+            //if (recvPort.PartitionedBy != partitionFunction)
+            //    Logging.Error("Constructing Edge where recvPort.PartitionedBy is incorrect.");
 
             this.Source = stream;
             this.Target = recvPort;

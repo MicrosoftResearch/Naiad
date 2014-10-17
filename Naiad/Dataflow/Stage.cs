@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.4
+ * Naiad ver. 0.5
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -101,10 +101,46 @@ namespace Microsoft.Research.Naiad.Dataflow
 
             var result = new StageInput<TRecord, TTime>(this, partitioning);
 
-            this.InternalComputation.Connect(stream.StageOutput, result, partitioning, Channel.Flags.None);
+            if (partitioning != null)
+            {
+                var compiled = partitioning.Compile();
+                Action<TRecord[], int[], int> vectoredPartitioning = (data, dsts, len) => { for (int i = 0; i < len; i++) dsts[i] = compiled(data[i]); };
+
+                this.InternalComputation.Connect(stream.StageOutput, result, vectoredPartitioning, Channel.Flags.None);
+            }
+            else
+                this.InternalComputation.Connect(stream.StageOutput, result, null, Channel.Flags.None);
 
             return result;
         }
+
+        /// <summary>
+        /// Creates a new input for this stage, with the given <paramref name="partitioning"/> requirement.
+        /// </summary>
+        /// <typeparam name="TRecord">The record type.</typeparam>
+        /// <typeparam name="TTime">The time type.</typeparam>
+        /// <param name="stream">The stream from which this input will receive records.</param>
+        /// <param name="partitioning">Function that maps records to integers, implying the requirement that all records
+        /// mapping to the same integer must be processed by the same <see cref="Vertex"/>.</param>
+        /// <param name="vectoredPartitioning">Action that maps an array of records to an array of integers, implying the requirement that all records
+        /// mapping to the same integer must be processed by the same <see cref="Vertex"/>. The third argument is the number of valid records in the input array</param>
+        /// <returns>An object that represents the stage input.</returns>
+        public StageInput<TRecord, TTime> NewInput<TRecord, TTime>(Stream<TRecord, TTime> stream,  Expression<Func<TRecord, int>> partitioning, Action<TRecord[], int[], int> vectoredPartitioning)
+            where TTime : Time<TTime>
+        {
+            if (inputsSealed)
+                throw new Exception("Inputs for a stage may not be added after outputs");
+
+            if (stream == null)
+                throw new ArgumentNullException("stream");
+
+            var result = new StageInput<TRecord, TTime>(this, partitioning);
+
+            this.InternalComputation.Connect(stream.StageOutput, result, vectoredPartitioning, Channel.Flags.None);
+            
+            return result;
+        }
+
 
         internal StageInput<R, T> NewUnconnectedInput<R, T>(Expression<Func<R, int>> partitioning)
             where T : Time<T>
@@ -315,6 +351,25 @@ namespace Microsoft.Research.Naiad.Dataflow
         }
 
         /// <summary>
+        /// Creates a new input from a stream, a VertexInput selector, and partitioning information.
+        /// </summary>
+        /// <typeparam name="TRecord">Record type</typeparam>
+        /// <param name="stream">source stream</param>
+        /// <param name="vertexInput">VertexInput selector</param>
+        /// <param name="partitionedBy">partitioning expression, or null</param>
+        /// <param name="vectoredPartitionedBy">Action that maps an array of records to an array of integers, or none, implying the requirement that all records
+        /// mapping to the same integer must be processed by the same <see cref="Vertex"/>. The third argument is the number of valid records in the input array</param>
+        /// <returns>StageInput</returns>
+        internal StageInput<TRecord, TTime> NewInput<TRecord>(Stream<TRecord, TTime> stream, Func<TVertex, VertexInput<TRecord, TTime>> vertexInput, Expression<Func<TRecord, int>> partitionedBy, Action<TRecord[], int[], int> vectoredPartitionedBy)
+        {
+            var ret = this.NewInput(stream, partitionedBy, vectoredPartitionedBy);
+
+            this.materializeActions.Add(vertex => { ret.Register(vertexInput(vertex)); });
+
+            return ret;
+        }
+
+        /// <summary>
         /// Creates a new input that consumes records from the given stream, partitioned by the given partitioning function,
         /// and delivers them to a vertex through the given onReceive callback.
         /// </summary>
@@ -326,6 +381,22 @@ namespace Microsoft.Research.Naiad.Dataflow
         public StageInput<TRecord, TTime> NewInput<TRecord>(Stream<TRecord, TTime> stream, Action<Message<TRecord, TTime>, TVertex> onReceive, Expression<Func<TRecord, int>> partitionedBy)
         {
             return this.NewInput<TRecord>(stream, s => new ActionReceiver<TRecord, TTime>(s, m => onReceive(m, s)), partitionedBy);
+        }
+
+        /// <summary>
+        /// Creates a new input that consumes records from the given stream, partitioned by the given partitioning function,
+        /// and delivers them to a vertex through the given onReceive callback.
+        /// </summary>
+        /// <typeparam name="TRecord">Record type</typeparam>
+        /// <param name="stream">The stream from which records will be consumed.</param>
+        /// <param name="onReceive">A callback that will be invoked on a message and vertex when that message is to be delivered to that vertex.</param>
+        /// <param name="partitionedBy">A partitioning expression, or <c>null</c> if the records need not be repartitioned.</param>
+        /// <param name="vectoredPartitionedBy">Action that maps an array of records to an array of integers, or none, implying the requirement that all records
+        /// mapping to the same integer must be processed by the same <see cref="Vertex"/>. The third argument is the number of valid records in the input array</param>
+        /// <returns>A handle to the input.</returns>
+        public StageInput<TRecord, TTime> NewInput<TRecord>(Stream<TRecord, TTime> stream, Action<Message<TRecord, TTime>, TVertex> onReceive, Expression<Func<TRecord, int>> partitionedBy, Action<TRecord[], int[], int> vectoredPartitionedBy)
+        {
+            return this.NewInput<TRecord>(stream, s => new ActionReceiver<TRecord, TTime>(s, m => onReceive(m, s)), partitionedBy, vectoredPartitionedBy);
         }
 
         /// <summary>
@@ -417,9 +488,11 @@ namespace Microsoft.Research.Naiad.Dataflow
                 return; // progress stages get re-materialized because it is a pain not to.
 
             materialized = true;
+            Diagnostics.NaiadTracing.Trace.StageInfo(this.StageId, this.Name);
 
             foreach (var loc in Placement)
             {
+                Diagnostics.NaiadTracing.Trace.VertexPlacement(this.StageId, loc.VertexId, loc.ProcessId, loc.ThreadId);
                 if (loc.ProcessId == this.InternalComputation.Controller.Configuration.ProcessID)
                 {
                     var vertex = this.factory(loc.VertexId, this);

@@ -1,9 +1,9 @@
-﻿<?xml version="1.0"?>
-<package >
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package>
   <metadata>
     <id>Microsoft.Research.Naiad.Sample</id>
     <title>Naiad - Sample graph analysis program</title>
-    <version>0.4.2-beta</version>
+    <version>0.5.0-beta</version>
     <authors>naiadquestions@microsoft.com</authors>
     <owners>naiadquestions@microsoft.com,Microsoft</owners>
     <licenseUrl>http://www.apache.org/licenses/LICENSE-2.0.html</licenseUrl>
@@ -19,13 +19,12 @@
     </frameworkAssemblies>
     <dependencies>
       <group targetFramework="net40-Client">
-        <dependency id="Microsoft.Research.Naiad" version="0.4.2-beta" />
-        <dependency id="Microsoft.Research.Naiad.DifferentialDataflow" version="0.4.2-beta" />
-        <dependency id="Microsoft.Research.Naiad.AzureSupport" version="0.4.2-beta" />
+        <dependency id="Microsoft.Research.Naiad" version="0.5.0-beta" />
+        <dependency id="Microsoft.Research.Naiad.DifferentialDataflow" version="0.5.0-beta" />
+        <dependency id="Microsoft.Research.Naiad.AzureSupport" version="0.5.0-beta" />
       </group>
     </dependencies>
-    <references>
-    </references>
+    <references></references>
   </metadata>
   <files>
     <file src="Program.cs" target="content\Program.cs" />

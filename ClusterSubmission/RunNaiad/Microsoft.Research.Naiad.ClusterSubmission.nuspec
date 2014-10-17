@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/01/nuspec.xsd">
+  <metadata minClientVersion="2.5">
+    <id>Microsoft.Research.Naiad.ClusterSubmission</id>
+    <version>0.5.0-beta</version>
+    <title>Naiad - cluster submission tool</title>
+    <authors>naiadquestions@microsoft.com</authors>
+    <owners>naiadquestions@microsoft.com,Microsoft</owners>
+    <licenseUrl>http://www.apache.org/licenses/LICENSE-2.0.html</licenseUrl>
+    <projectUrl>http://research.microsoft.com/naiad/</projectUrl>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <description>
+      Launcher for submitting Naiad programs to clusters including YARN and Azure HDInsight.
+    </description>
+    <copyright>Microsoft Corporation</copyright>
+    <language>en-US</language>
+    <dependencies>
+      <group targetFramework=".NETFramework4.5">
+        <dependency id="Microsoft.Research.Peloponnese.Client" version="0.8.1-beta" />
+      </group>
+    </dependencies>
+    <frameworkAssemblies>
+      <frameworkAssembly assemblyName="System" targetFramework=".NETFramework4.5" />
+      <frameworkAssembly assemblyName="System.Configuration" targetFramework=".NETFramework4.5" />
+      <frameworkAssembly assemblyName="System.Core" targetFramework=".NETFramework4.5" />
+      <frameworkAssembly assemblyName="System.Web" targetFramework=".NETFramework4.5" />
+      <frameworkAssembly assemblyName="System.Xml" targetFramework=".NETFramework4.5" />
+      <frameworkAssembly assemblyName="System.Xml.Linq" targetFramework=".NETFramework4.5" />
+    </frameworkAssemblies>
+    <references>
+      <reference file="RunNaiad.exe" />
+    </references>
+  </metadata>
+  <files>
+    <!-- <file src="..\..\signed\Microsoft.Research.Naiad.Cluster.dll" target="lib\net45\Microsoft.Research.Naiad.Cluster.dll" /> -->
+    <file src="bin\x64\Release\Microsoft.Research.Naiad.Cluster.dll" target="lib\net45\Microsoft.Research.Naiad.Cluster.dll" />
+    <file src="bin\x64\Release\Microsoft.Research.Naiad.Cluster.pdb" target="lib\net45\Microsoft.Research.Naiad.Cluster.pdb" />
+    <!-- <file src="..\..\signed\RunNaiad.exe" target="lib\net45\RunNaiad.exe" /> -->
+    <file src="bin\x64\Release\RunNaiad.exe" target="lib\net45\RunNaiad.exe" />
+    <file src="bin\x64\Release\RunNaiad.pdb" target="lib\net45\RunNaiad.pdb" />
+    <file src="bin\x64\Release\RunNaiad.exe.config" target="lib\net45\RunNaiad.exe.config" />
+  </files>
+</package>

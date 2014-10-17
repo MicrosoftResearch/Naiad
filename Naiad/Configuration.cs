@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.4
+ * Naiad ver. 0.5
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -268,12 +268,12 @@ namespace Microsoft.Research.Naiad
         /// Version information about serialization format
         /// </summary>
         internal Pair<int, int> SerializerVersion { get { return this.serializerVersion; } set { this.serializerVersion = value; } }
-        private Pair<int, int> serializerVersion = new Pair<int, int>(1, 0);
+        private Pair<int, int> serializerVersion = new Pair<int, int>(2, 2);
 
         /// <summary>
         /// Uses a new code generation technique to generate more efficient code for serialization.
         /// </summary>
-        public bool UseInlineSerialization { get { return this.serializerVersion.First == 2; } set { this.SerializerVersion = new Pair<int, int>(2, 0); } }
+        public bool UseInlineSerialization { get { return this.serializerVersion.First == 2; } set { if (value) this.SerializerVersion = new Pair<int, int>(2, 1); else this.SerializerVersion = new Pair<int, int>(1, 0); } }
 
         /// <summary>
         /// The address and port to be used for sending or receiving broadcast control messages.

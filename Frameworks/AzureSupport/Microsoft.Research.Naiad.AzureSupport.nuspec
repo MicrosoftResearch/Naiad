@@ -1,9 +1,9 @@
-﻿<?xml version="1.0"?>
-<package >
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package>
   <metadata>
     <id>Microsoft.Research.Naiad.AzureSupport</id>
     <title>Naiad - Windows Azure Storage support</title>
-    <version>0.4.2-beta</version>
+    <version>0.5.0-beta</version>
     <authors>naiadquestions@microsoft.com</authors>
     <owners>naiadquestions@microsoft.com,Microsoft</owners>
     <licenseUrl>http://www.apache.org/licenses/LICENSE-2.0.html</licenseUrl>
@@ -19,23 +19,27 @@
     </frameworkAssemblies>
     <dependencies>
       <group targetFramework="net40-Client">
-        <dependency id="Microsoft.Research.Naiad" version="0.4.2-beta" />
-        <dependency id="Microsoft.Research.Naiad.Lindi" version="0.4.2-beta" />
-        <dependency id="WindowsAzure.Storage" version="3.1.0.1" />
-        <dependency id="Microsoft.Data.Services.Client" version="5.6.1" />
-        <dependency id="Microsoft.Data.Edm" version="5.6.1" />
-        <dependency id="Microsoft.Data.OData" version="5.6.1" />
-        <dependency id="Newtonsoft.Json" version="6.0.2" />
-        <dependency id="Rx-Core" version="2.2.2" />
-      </group> 
+        <dependency id="Microsoft.Research.Naiad" version="0.5.0-beta" />
+        <dependency id="Microsoft.Research.Naiad.Lindi" version="0.5.0-beta" />
+        <dependency id="Microsoft.Research.Naiad.Storage" version="0.5.0-beta" />
+        <dependency id="WindowsAzure.Storage" version="4.3.0" />
+        <dependency id="Microsoft.Data.Services.Client" version="5.6.2" />
+        <dependency id="Microsoft.Data.Edm" version="5.6.2" />
+        <dependency id="Microsoft.Data.OData" version="5.6.2" />
+        <dependency id="Newtonsoft.Json" version="6.0.5" />
+        <dependency id="Rx-Core" version="2.2.5" />
+      </group>
     </dependencies>
     <references>
       <reference file="Microsoft.Research.Naiad.AzureSupport.dll" />
     </references>
   </metadata>
   <files>
-    <file src="..\..\signed\Microsoft.Research.Naiad.AzureSupport.dll" target="lib\net40-Client\Microsoft.Research.Naiad.AzureSupport.dll" />
-    <file src="..\..\signed\Microsoft.Research.Naiad.AzureSupport.pdb" target="lib\net40-Client\Microsoft.Research.Naiad.AzureSupport.pdb" />
-    <file src="..\..\signed\Microsoft.Research.Naiad.AzureSupport.xml" target="lib\net40-Client\Microsoft.Research.Naiad.AzureSupport.xml" />
+    <file src="bin\Release\Microsoft.Research.Naiad.AzureSupport.dll" target="lib\net40-Client\Microsoft.Research.Naiad.AzureSupport.dll" />
+    <!-- <file src="..\..\signed\Microsoft.Research.Naiad.AzureSupport.dll" target="lib\net40-Client\Microsoft.Research.Naiad.AzureSupport.dll" /> -->
+    <file src="bin\Release\Microsoft.Research.Naiad.AzureSupport.pdb" target="lib\net40-Client\Microsoft.Research.Naiad.AzureSupport.pdb" />
+    <!-- <file src="..\..\signed\Microsoft.Research.Naiad.AzureSupport.pdb" target="lib\net40-Client\Microsoft.Research.Naiad.AzureSupport.pdb" /> -->
+    <file src="bin\Release\Microsoft.Research.Naiad.AzureSupport.xml" target="lib\net40-Client\Microsoft.Research.Naiad.AzureSupport.xml" />
+    <!-- <file src="..\..\signed\Microsoft.Research.Naiad.AzureSupport.xml" target="lib\net40-Client\Microsoft.Research.Naiad.AzureSupport.xml" /> -->
   </files>
 </package>

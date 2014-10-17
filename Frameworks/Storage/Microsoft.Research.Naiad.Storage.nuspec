@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package>
+  <metadata>
+    <id>Microsoft.Research.Naiad.Storage</id>
+    <title>Naiad - Shared Storage support</title>
+    <version>0.5.0-beta</version>
+    <authors>naiadquestions@microsoft.com</authors>
+    <owners>naiadquestions@microsoft.com,Microsoft</owners>
+    <licenseUrl>http://www.apache.org/licenses/LICENSE-2.0.html</licenseUrl>
+    <projectUrl>http://research.microsoft.com/naiad/</projectUrl>
+    <!--<iconUrl>http://ICON_URL_HERE_OR_DELETE_THIS_LINE</iconUrl>-->
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <description>Provides convenient access to Windows Azure Storage APIs from Naiad programs.</description>
+    <copyright>Microsoft Corporation</copyright>
+    <language>en-US</language>
+    <frameworkAssemblies>
+      <frameworkAssembly assemblyName="System" targetFramework="net40-Client" />
+      <frameworkAssembly assemblyName="System.Core" targetFramework="net40-Client" />
+    </frameworkAssemblies>
+    <dependencies>
+      <group targetFramework="net40-Client">
+        <dependency id="Microsoft.Research.Naiad" version="0.5.0-beta" />
+        <dependency id="Microsoft.Research.Naiad.Lindi" version="0.5.0-beta" />
+        <dependency id="Microsoft.Research.Naiad.WorkGenerator" version="0.5.0-beta" />
+        <dependency id="Microsoft.Research.Peloponnese.Shared" version="0.8.1-beta" />
+        <dependency id="Microsoft.Hadoop.Avro" version="1.3.2.1" />
+        <dependency id="Newtonsoft.Json" version="6.0.5" />
+        <dependency id="Rx-Core" version="2.2.5" />
+      </group>
+    </dependencies>
+    <references>
+      <reference file="Microsoft.Research.Naiad.Storage.dll" />
+    </references>
+  </metadata>
+  <files>
+    <file src="bin\Release\Microsoft.Research.Naiad.Storage.dll" target="lib\net40-Client\Microsoft.Research.Naiad.Storage.dll" />
+    <!-- <file src="..\..\signed\Microsoft.Research.Naiad.Storage.dll" target="lib\net40-Client\Microsoft.Research.Naiad.Storage.dll" /> -->
+    <file src="bin\Release\Microsoft.Research.Naiad.Storage.pdb" target="lib\net40-Client\Microsoft.Research.Naiad.Storage.pdb" />
+    <!-- <file src="..\..\signed\Microsoft.Research.Naiad.Storage.pdb" target="lib\net40-Client\Microsoft.Research.Naiad.Storage.pdb" /> -->
+    <file src="bin\Release\Microsoft.Research.Naiad.Storage.xml" target="lib\net40-Client\Microsoft.Research.Naiad.Storage.xml" />
+    <!-- <file src="..\..\signed\Microsoft.Research.Naiad.Storage.xml" target="lib\net40-Client\Microsoft.Research.Naiad.Storage.xml" /> -->
+  </files>
+</package>

@@ -1,5 +1,5 @@
-﻿/*
- * Naiad ver. 0.4
+/*
+ * Naiad ver. 0.5
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -36,6 +36,8 @@ using Microsoft.Research.Naiad.Dataflow.PartitionBy;
 using Microsoft.Research.Naiad.Dataflow.Channels;
 using Microsoft.Research.Naiad.Serialization;
 using Microsoft.Research.Naiad.Input;
+
+using Microsoft.Research.Naiad.Frameworks.Storage;
 
 namespace Microsoft.Research.Naiad.Frameworks.Azure
 {
@@ -143,7 +145,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Azure
         /// <returns>Naiad stream containing the records extracted from files in the Azure directory</returns>
         public static Stream<TRecord, Epoch> ReadBinaryFromAzureBlobs<TRecord>(this Computation manager, CloudBlobContainer container, string prefix)
         {
-            return manager.ReadFromAzureBlobs<TRecord>(container, prefix, stream => GetNaiadReaderEnumerable<TRecord>(stream, manager.Controller.SerializationFormat));
+            return manager.ReadFromAzureBlobs<TRecord>(container, prefix, stream => Utils.GetNaiadReaderEnumerable<TRecord>(stream));
         }
 
         /// <summary>
@@ -188,37 +190,6 @@ namespace Microsoft.Research.Naiad.Frameworks.Azure
             return tables.AsNaiadStream(manager).SelectMany(x => x.ExecuteQuery(query));
         }
 
-        /// <summary>
-        /// Enumerates lines of text from a stream
-        /// </summary>
-        /// <param name="stream">source stream</param>
-        /// <returns>Each line of text in the source stream</returns>
-        internal static IEnumerable<string> ReadLines(this System.IO.Stream stream)
-        {
-            using (var reader = new System.IO.StreamReader(stream))
-            {
-                while (!reader.EndOfStream)
-                    yield return reader.ReadLine();
-            }
-        }
-
-        /// <summary>
-        /// Enumerates records from a stream in the Naiad serialization format.
-        /// </summary>
-        /// <typeparam name="TRecord">Type of record in the stream</typeparam>
-        /// <param name="stream">A stream containing records serialized in the Naiad messaging format</param>
-        /// <param name="codeGenerator">code generator</param>
-        /// <returns>An enumeration of records in the stream</returns>
-        internal static IEnumerable<TRecord> GetNaiadReaderEnumerable<TRecord>(System.IO.Stream stream, SerializationFormat codeGenerator)
-        {
-            NaiadReader reader = new NaiadReader(stream, codeGenerator);
-            NaiadSerialization<TRecord> deserializer = codeGenerator.GetSerializer<TRecord>();
-            TRecord nextElement;
-            while (reader.TryRead<TRecord>(deserializer, out nextElement))
-                yield return nextElement;
-        }
-
-
         #endregion
 
         #region Azure file-writing extension methods
@@ -243,7 +214,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Azure
                 lock (writers)
                 {
                     if (!writers.ContainsKey(workerid))
-                        writers.Add(workerid, writer(container.GetBlockBlobReference(string.Format(format, workerid)).OpenWrite()));
+                        writers.Add(workerid, writer(container.GetBlockBlobReference(string.Format(format, source.ForStage.Computation.Controller.Configuration.ProcessID, workerid)).OpenWrite()));
 
                     observer = writers[workerid];
                 }
@@ -275,24 +246,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Azure
         /// <returns>Subscription corresponding to the Azure writer</returns>
         public static Subscription WriteBinaryToAzureBlobs<TRecord>(this Stream<TRecord, Epoch> source, CloudBlobContainer container, string format)
         {
-            return source.WriteToAzureBlobs(container, format, stream => GetNaiadWriterObserver<TRecord>(stream, source.ForStage.Computation.Controller.SerializationFormat));
-        }
-
-        /// <summary>
-        /// Returns an record observer that writes records to the given stream in the Naiad message format.
-        /// </summary>
-        /// <typeparam name="TRecord">Type of records to be written</typeparam>
-        /// <param name="stream">Target I/O stream</param>
-        /// <param name="codeGenerator">code generator</param>
-        /// <returns>A record observer that writes records to the given stream.</returns>
-        internal static IObserver<TRecord> GetNaiadWriterObserver<TRecord>(System.IO.Stream stream, SerializationFormat codeGenerator)
-        {
-            NaiadWriter<TRecord> writer = new NaiadWriter<TRecord>(stream, codeGenerator);
-            return Observer.Create<TRecord>(r => 
-            {
-                writer.Write(r);
-            },
-            () => writer.Dispose());
+            return source.WriteToAzureBlobs(container, format, stream => Utils.GetNaiadWriterObserver<TRecord>(stream, source.ForStage.Computation.Controller.SerializationFormat));
         }
 
         /// <summary>

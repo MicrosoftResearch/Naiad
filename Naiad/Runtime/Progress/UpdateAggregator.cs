@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.4
+ * Naiad ver. 0.5
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -57,9 +57,10 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
 
         internal void OnRecv(Dictionary<Pointstamp, Int64> deltas)
         {
-            Tracing.Trace("(AggLock");
+            NaiadTracing.Trace.LockAcquire(this.Lock);
             lock(this.Lock)
             {
+                NaiadTracing.Trace.LockHeld(this.Lock);
                 foreach (var pair in deltas)
                 {             
                     if (!BufferedUpdates.ContainsKey(pair.Key))
@@ -71,7 +72,7 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
                         BufferedUpdates.Remove(pair.Key);
                 }
             }
-            Tracing.Trace(")AggLock");
+            NaiadTracing.Trace.LockRelease(this.Lock);
 
             ConsiderFlushingBufferedUpdates();
         }
@@ -83,9 +84,10 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
             var mustFlushBuffer = false;
 
             // consult the buffered updates under a lock.
-            Tracing.Trace("(AggLock");
+            NaiadTracing.Trace.LockAcquire(this.Lock);
             lock (this.Lock)
             {
+                NaiadTracing.Trace.LockHeld(this.Lock);
                 if (this.BufferedUpdates.Count > 0)
                 {
                     var frontier = this.Stage.InternalComputation.ProgressTracker.GetInfoForWorker(0).PointstampCountSet.Frontier;
@@ -104,7 +106,7 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
                     }
                 }
             }
-            Tracing.Trace(")AggLock");
+            NaiadTracing.Trace.LockRelease(this.Lock);
 
             if (mustFlushBuffer)
             {
@@ -112,18 +114,21 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
                 Dictionary<Pointstamp, Int64> FreshBufferedUpdates = new Dictionary<Pointstamp, long>();
 
                 // we don't want to get stuck behind a centralizer -> consumer on the same process.
-                Tracing.Trace("(GlobalLock");
+                NaiadTracing.Trace.LockAcquire(this.scheduler.Controller.GlobalLock);
                 lock (this.scheduler.Controller.GlobalLock)
                 {
+                    NaiadTracing.Trace.LockHeld(this.scheduler.Controller.GlobalLock);
+
                     // get exclusive access and swap the update buffer.
-                    Tracing.Trace("(AggLock"); 
+                    NaiadTracing.Trace.LockAcquire(this.Lock);
                     lock (this.Lock)
                     {
+                        NaiadTracing.Trace.LockHeld(this.Lock);
                         PrivateBufferedUpdates = this.BufferedUpdates;
                         this.BufferedUpdates = FreshBufferedUpdates;
                     }
-                    Tracing.Trace(")AggLock");
-
+                    NaiadTracing.Trace.LockRelease(this.Lock);
+                    
                     // update Notifications count to include shipped values.
                     foreach (var pair in PrivateBufferedUpdates)
                     {
@@ -155,7 +160,7 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
                     PrivateBufferedUpdates.Clear();
                     this.Output.Flush();
                 }
-                Tracing.Trace(")GlobalLock");
+                NaiadTracing.Trace.LockRelease(this.scheduler.Controller.GlobalLock);
             }
         }
 
@@ -163,6 +168,7 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
             : base(index, stage)
         {
             this.Output = new VertexOutputBuffer<Update, Empty>(this);
+            NaiadTracing.Trace.LockInfo(this.Lock, "Aggregator Lock");
         }
     }
 }

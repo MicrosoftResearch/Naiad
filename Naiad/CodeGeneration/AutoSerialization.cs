@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.4
+ * Naiad ver. 0.5
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -17,15 +17,17 @@
  * See the Apache Version 2.0 License for specific language governing
  * permissions and limitations under the License.
  */
-
+//#define FIXED_STRING_SERIALIZATION
 using System;
 using System.CodeDom;
 using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -67,6 +69,15 @@ namespace Microsoft.Research.Naiad.Serialization
         /// <param name="value">The deserialized element, if the method returns true.</param>
         /// <returns>True if deserialization was successful, otherwise false.</returns>
         bool TryDeserialize(ref RecvBuffer source, out TElement value);
+
+        /// <summary>
+        /// Attempts to deserialize several elements from the given source buffer into the given contiguous
+        /// array segment.
+        /// </summary>
+        /// <param name="source">The source buffer.</param>
+        /// <param name="target">An array segment to be populated with the deserialized elements.</param>
+        /// <returns>The count of elements successfully deserialized.</returns>
+        int TryDeserializeMany(ref RecvBuffer source, ArraySegment<TElement> target);
     }
 
     /// <summary>
@@ -82,6 +93,18 @@ namespace Microsoft.Research.Naiad.Serialization
         NaiadSerialization<TElement> GetSerializer<TElement>();
 
         /// <summary>
+        /// Returns a serializer and deserializer for a particular element type, using a specific
+        /// minor version of the serialization format.
+        /// 
+        /// N.B. The minor version must be less than or equal to the <see cref="MinorVersion"/> of
+        ///      this object.
+        /// </summary>
+        /// <typeparam name="TElement">The type of elements to be serialized and/or deserialized.</typeparam>
+        /// <param name="minorVersion">The minor version of the serialization format to use.</param>
+        /// <returns>A serializer and deserializer.</returns>
+        NaiadSerialization<TElement> GetSerializationForMinorVersion<TElement>(int minorVersion); 
+
+        /// <summary>
         /// The major version of the serialization format. Different major versions may not be compatible with each other.
         /// </summary>
         int MajorVersion { get; }
@@ -91,6 +114,216 @@ namespace Microsoft.Research.Naiad.Serialization
         /// backwards compatibility with all serializers of the same major version and earlier minor versions.
         /// </summary>
         int MinorVersion { get; }
+
+        /// <summary>
+        /// Registers the methods of <typeparamref name="TSerializer"/> type as custom serialization and deserialization methods
+        /// for elements of type <typeparamref name="TElement"/>.
+        /// </summary>
+        /// <remarks>This must be invoked before the first <see cref="Computation"/> is activated.</remarks>
+        /// <typeparam name="TElement">The type of element to be serialized or deserialized.</typeparam>
+        /// <typeparam name="TSerializer">The type of the custom serializer.</typeparam>
+        void RegisterCustomSerialization<TElement, TSerializer>()
+            where TSerializer : CustomSerialization<TElement>, new();
+    }
+
+    /// <summary>
+    /// Encapsulates the custom code for serializing and deserializing objects of
+    /// type <typeparamref name="TElement"/>.
+    /// </summary>
+    /// <remarks>Implementations of this interface should have a no-argument constructor,
+    /// because the serialization code generator will attempt to instantiate serializers using the no-argument
+    /// constructor. A type constraint on <see cref="SerializationFormat.RegisterCustomSerialization{TElement,TSerializer}"/>
+    /// ensures that this is the case for all registered serializers.</remarks>
+    /// <example>
+    /// public unsafe class IntSerializer : CustomSerialization&lt;int&gt;
+    /// {
+    ///     public unsafe int TrySerialize(int value, byte* buffer, int limit)
+    ///     {
+    ///         if (limit &lt; 4)
+    ///             return -1;
+    ///         *(int*)buffer = value;
+    ///         return 4;
+    ///     }
+    ///     
+    ///     public unsafe int Deserialize(out int value, byte* buffer, int limit)
+    ///     {
+    ///         value = *(int*)buffer;
+    ///         return 4;
+    ///     }
+    /// }
+    /// 
+    /// // Generated serialization code:
+    /// byte* currentPosition = ...;
+    /// int bytesRemaining = ...;
+    /// int toSerialize = ...;
+    /// 
+    /// IntSerializer serializer = new IntSerializer();
+    /// int bytesWritten = serializer.TrySerialize(value, currentPosition, bytesRemaining);
+    /// if (bytesWritten &lt;= 0)
+    ///     return false;
+    /// else
+    ///     currentPosition += bytesWritten;
+    /// 
+    /// // Generated deserialization code:
+    /// byte* currentPosition = ...;
+    /// int bytesRemaining = ...;
+    /// int toDeserialize;
+    /// 
+    /// IntSerializer deserializer = new IntSerializer();
+    /// int bytesRead = deserializer.Deserialize(out toDeserialize, currentPosition, bytesRemaining);
+    /// currentPosition += bytesRead;
+    /// bytesRemaining -= bytesRead;
+    /// </example>
+    /// <typeparam name="TElement">The type of element to be serialized or deserialized.</typeparam>
+    /// <seealso cref="Microsoft.Research.Naiad.Serialization.SerializationFormat.RegisterCustomSerialization{TElement,TSerializer}"/>
+    public interface CustomSerialization<TElement>
+    {
+        /// <summary>
+        /// Attempts to serialize the given <paramref name="value"/> into the given
+        /// <paramref name="buffer"/> with <paramref name="limit"/> bytes remaining.
+        /// </summary>
+        /// <param name="value">The value to be serialized.</param>
+        /// <param name="buffer">The target buffer.</param>
+        /// <param name="limit">The number of bytes remaining in <paramref name="buffer"/>.</param>
+        /// <returns>If serialization was successful, returns the number of bytes written.
+        /// If serialization was unsuccessful, returns a value less than or equal to 0.</returns>
+        unsafe int TrySerialize(TElement value, byte* buffer, int limit);
+
+        /// <summary>
+        /// Deserializes into <paramref name="value"/> the next element from the given
+        /// <paramref name="buffer"/>.
+        /// </summary>
+        /// <param name="value">Will be set to the deserialized value.</param>
+        /// <param name="buffer">The source buffer.</param>
+        /// <param name="limit">The number of bytes remaining in <paramref name="buffer"/>.</param>
+        /// <returns>The number of bytes read.</returns>
+        unsafe int Deserialize(out TElement value, byte* buffer, int limit);
+    }
+
+    internal class CustomSerializationWrapper<TElement, TCustomSerialization> : NaiadSerialization<TElement>
+        where TCustomSerialization : CustomSerialization<TElement>
+    {
+        private readonly TCustomSerialization innerSerializer;
+
+        public CustomSerializationWrapper(TCustomSerialization innerSerializer)
+        {
+            this.innerSerializer = innerSerializer;
+        }
+
+        public unsafe bool Serialize(ref SubArray<byte> destination, TElement value)
+        {
+            int bytesRemaining = destination.Array.Length - destination.Count;
+            if (bytesRemaining <= 0)
+            {
+                return false;
+            }
+            fixed (byte* destinationPtr = &destination.Array[destination.Count])
+            {
+                int bytesWritten = this.innerSerializer.TrySerialize(value, destinationPtr, bytesRemaining);
+                if (bytesWritten <= 0)
+                {
+                    return false;
+                }
+
+                destination.Count += bytesWritten;
+            }
+            return true;
+        }
+
+        public unsafe int TrySerializeMany(ref SubArray<byte> destination, ArraySegment<TElement> values)
+        {
+            int bytesRemaining = destination.Array.Length - destination.Count;
+            if (bytesRemaining <= 0)
+            {
+                return 0;
+            }
+            fixed (byte* destinationPtr = &destination.Array[destination.Count])
+            {
+                int totalBytesWritten = 0;
+                for (int i = 0; i < values.Count; ++i)
+                {
+                    int bytesWritten = this.innerSerializer.TrySerialize(values.Array[values.Offset + i], destinationPtr + totalBytesWritten, bytesRemaining - totalBytesWritten);
+                    if (bytesWritten <= 0)
+                    {
+                        destination.Count += totalBytesWritten;
+                        return i;
+                    }
+                    totalBytesWritten += bytesWritten;
+                }
+                destination.Count += totalBytesWritten;
+                return values.Count;
+            }
+        }
+
+        public unsafe bool TryDeserialize(ref RecvBuffer source, out TElement value)
+        {
+            int bytesRemaining = source.End - source.CurrentPos;
+            if (bytesRemaining <= 0)
+            {
+                value = default(TElement);
+                return false;
+            }
+            fixed (byte* sourcePtr = &source.Buffer[source.CurrentPos])
+            {
+                int bytesRead = this.innerSerializer.Deserialize(out value, sourcePtr, bytesRemaining);
+                source.CurrentPos += bytesRead;
+                return true;
+            }
+        }
+
+        public unsafe int TryDeserializeMany(ref RecvBuffer source, ArraySegment<TElement> target)
+        {
+            int bytesRemaining = source.End - source.CurrentPos;
+            if (bytesRemaining <= 0)
+            {
+                return 0;
+            }
+            fixed (byte* sourcePtr = &source.Buffer[source.CurrentPos])
+            {
+                int totalBytesRead = 0;
+                for (int i = 0; i < target.Count; ++i)
+                {
+                    int bytesRead = this.innerSerializer.Deserialize(out target.Array[target.Offset + i], sourcePtr, bytesRemaining - totalBytesRead);
+                    if (bytesRead <= 0)
+                    {
+                        source.CurrentPos += totalBytesRead;
+                        return i;
+                    }
+                    totalBytesRead += bytesRead;
+                }
+                source.CurrentPos += totalBytesRead;
+                return target.Count;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Static factory class for making custom serializers
+    /// </summary>
+    public static class CustomSerialization
+    {
+        /// <summary>
+        /// Make a Naiad serializer for a given type and custom serializer type with an argument-less constructor
+        /// </summary>
+        /// <typeparam name="TElement">Record type to serialize</typeparam>
+        /// <typeparam name="TCustomSerialization">Custom serializer type</typeparam>
+        /// <returns>Naiad serializer</returns>
+        public static NaiadSerialization<TElement> MakeSerializer<TElement, TCustomSerialization>() where TCustomSerialization : CustomSerialization<TElement>, new()
+        {
+            return new CustomSerializationWrapper<TElement, TCustomSerialization>(new TCustomSerialization());
+        }
+
+        /// <summary>
+        /// Make a Naiad serializer for a given type and custom serializer
+        /// </summary>
+        /// <typeparam name="TElement">Record type to serialize</typeparam>
+        /// <typeparam name="TCustomSerialization">Custom serializer type</typeparam>
+        /// <param name="instance">Custom serializer</param>
+        /// <returns>Naiad serializer</returns>
+        public static NaiadSerialization<TElement> MakeSerializer<TElement, TCustomSerialization>(TCustomSerialization instance) where TCustomSerialization : CustomSerialization<TElement>
+        {
+            return new CustomSerializationWrapper<TElement, TCustomSerialization>(instance);
+        }
     }
 
     internal abstract class BaseSerializationCodeGenerator : SerializationFormat
@@ -98,46 +331,74 @@ namespace Microsoft.Research.Naiad.Serialization
         public abstract int MajorVersion { get; }
         public abstract int MinorVersion { get; }
 
-        private readonly Dictionary<Type, object> serializerCache;
+        private readonly Dictionary<Pair<Type, int>, object> serializerCache;
 
-        public NaiadSerialization<T> GetSerializer<T>()
+        private readonly Dictionary<Type, Type> customSerializationMapping;
+
+        public NaiadSerialization<T> GetSerializationForMinorVersion<T>(int minorVersion)
         {
+            if (minorVersion > this.MinorVersion)
+                throw new ArgumentOutOfRangeException("minorVersion", minorVersion, string.Format("Cannot generate serializer for version {0}.{1} (highest supported is {0}.{2})", this.MajorVersion, minorVersion, this.MinorVersion));
+            
             lock (this)
             {
                 Type t = typeof(T);
                 object serializer;
 
-                if (!this.serializerCache.TryGetValue(t, out serializer))
+                if (!this.serializerCache.TryGetValue(t.PairWith(minorVersion), out serializer))
                 {
-                    AutoSerialization.SerializationCodeGeneratorForType gen = this.GetCodeGeneratorForType(t);
+                    AutoSerialization.SerializationCodeGeneratorForType gen = this.GetCodeGeneratorForType(t, minorVersion);
                     serializer = gen.GenerateSerializer<T>();
-                    this.serializerCache[t] = serializer;
+                    this.serializerCache[t.PairWith(minorVersion)] = serializer;
                 }
 
                 return (NaiadSerialization<T>)serializer;
             }
+
+        }
+
+        public NaiadSerialization<T> GetSerializer<T>()
+        {
+            return this.GetSerializationForMinorVersion<T>(this.MinorVersion);
+        }
+
+        internal bool HasCustomSerialization(Type t)
+        {
+            return this.customSerializationMapping.ContainsKey(t);
+        }
+
+        internal Type GetCustomSerializationType(Type t)
+        {
+            return this.customSerializationMapping[t];
+        }
+
+        public void RegisterCustomSerialization<TElement, TSerializer>()
+            where TSerializer : CustomSerialization<TElement>, new()
+        {
+            this.customSerializationMapping[typeof(TElement)] = typeof(TSerializer);
         }
 
         protected BaseSerializationCodeGenerator()
         {
-            this.serializerCache = new Dictionary<Type, object>();
+            this.serializerCache = new Dictionary<Pair<Type, int>, object>();
+            this.customSerializationMapping = new Dictionary<Type, Type>();
         }
 
-        protected abstract AutoSerialization.SerializationCodeGeneratorForType GetCodeGeneratorForType(Type t);
+        protected abstract AutoSerialization.SerializationCodeGeneratorForType GetCodeGeneratorForType(Type t, int minorVersion);
     }
 
     internal static class SerializationFactory
     {
         public static SerializationFormat GetCodeGeneratorForVersion(int majorVersion, int minorVersion)
         {
-            if (minorVersion != 0)
-                throw new InvalidOperationException(string.Format("No code generator available for version {0}.{1}", majorVersion, minorVersion));
+            //if (minorVersion != 0)
+            //    throw new InvalidOperationException(string.Format("No code generator available for version {0}.{1}", majorVersion, minorVersion));
             switch (majorVersion)
             {
                 case 1:
                     return new LegacySerializationCodeGenerator();
                 case 2:
-                    return new InlineSerializationCodeGenerator();
+                    return new InlineSerializationCodeGenerator(minorVersion);
                 default:
                     throw new InvalidOperationException(string.Format("No code generator available for version {0}.{1}", majorVersion, minorVersion));
             }
@@ -156,7 +417,7 @@ namespace Microsoft.Research.Naiad.Serialization
             get { return 0; }
         }
 
-        protected override AutoSerialization.SerializationCodeGeneratorForType GetCodeGeneratorForType(Type t)
+        protected override AutoSerialization.SerializationCodeGeneratorForType GetCodeGeneratorForType(Type t, int minorVersion)
         {
             return new AutoSerialization.NaiadSerializationCodeGenerator(t);
         }
@@ -169,14 +430,19 @@ namespace Microsoft.Research.Naiad.Serialization
             get { return 2; }
         }
 
-        public override int MinorVersion
+        private readonly int minorVersion;
+        public override int MinorVersion { get { return this.minorVersion; }}
+   
+        protected override AutoSerialization.SerializationCodeGeneratorForType GetCodeGeneratorForType(Type t, int minorVersion)
         {
-            get { return 0; }
+            return new AutoSerialization.InlineNaiadSerializationCodeGenerator(this, t, minorVersion);
         }
 
-        protected override AutoSerialization.SerializationCodeGeneratorForType GetCodeGeneratorForType(Type t)
+        public InlineSerializationCodeGenerator(int minorVersion)
         {
-            return new AutoSerialization.InlineNaiadSerializationCodeGenerator(t);
+            if (minorVersion > 2)
+                throw new ArgumentOutOfRangeException("minorVersion", minorVersion, string.Format("Minor version {0} not supported", minorVersion));
+            this.minorVersion = minorVersion;
         }
     }
 
@@ -347,10 +613,20 @@ namespace Microsoft.Research.Naiad.Serialization
 
             public abstract CodeCompileUnit GenerateCompileUnit();
 
+            private static void AddAssemblyToCollection(Dictionary<string,string> assemblies, string assemblyLocation)
+            {
+                string fileName = Path.GetFileName(assemblyLocation);
+                if (!assemblies.ContainsKey(fileName))
+                {
+                    assemblies.Add(fileName, assemblyLocation);
+                }
+            }
+
             public NaiadSerialization<T> GenerateSerializer<T>()
             {
 
-                Tracing.Trace("[Compile");
+                NaiadTracing.Trace.RegionStart(NaiadTracingRegion.Compile);
+
                 using (var codeProvider = new CSharpCodeProvider())
                 {
                     using (var sourceStream = new StringWriter())
@@ -378,26 +654,36 @@ namespace Microsoft.Research.Naiad.Serialization
                         Logging.Info("Compiling codegen for {0}", this.Type.FullName);
 
                         var compilerOpts = new CompilerParameters();
-                        compilerOpts.GenerateInMemory = false;
 #if DEBUG
-                        compilerOpts.CompilerOptions = "/debug /unsafe";
+                        compilerOpts.CompilerOptions = "/debug /unsafe"; 
 #else
                         compilerOpts.CompilerOptions = "/optimize+ /unsafe";
                         compilerOpts.TreatWarningsAsErrors = false;
 #endif
                         compilerOpts.IncludeDebugInformation = true;
 
-                        compilerOpts.ReferencedAssemblies.Add("System.dll");
-                        compilerOpts.ReferencedAssemblies.Add("System.Core.dll");
+                        Dictionary<string, string> assemblies = new Dictionary<string, string>();
 
-                        compilerOpts.ReferencedAssemblies.AddRange(this.referencedAssemblyLocations.ToArray());
-                        compilerOpts.ReferencedAssemblies.Add(typeof(AutoSerialization).Assembly.Location);
+                        foreach (string location in this.referencedAssemblyLocations)
+                        {
+                            AddAssemblyToCollection(assemblies, location);
+                        }
+                        AddAssemblyToCollection(assemblies, typeof(AutoSerialization).Assembly.Location);
+                        AddAssemblyToCollection(assemblies, "System.dll");
+                        AddAssemblyToCollection(assemblies, "System.Core.dll");
+
+                        foreach (string location in assemblies.Values)
+                        {
+                            compilerOpts.ReferencedAssemblies.Add(location);
+                        }
 
                         compilerOpts.GenerateInMemory = false; //default
 
                         compilerOpts.TempFiles = new TempFileCollection(_compileCache.ObjectDir, true);
                         compilerOpts.IncludeDebugInformation = true;
                         compilerOpts.TempFiles.KeepFiles = true;
+
+                        //Console.WriteLine("Serialization classes for {0} written to {1}", typeof(T), compilerOpts.TempFiles.BasePath);
 
                         var res = codeProvider.CompileAssemblyFromSource(compilerOpts, new string[] { sourceData });
 
@@ -414,7 +700,7 @@ namespace Microsoft.Research.Naiad.Serialization
                         _compileCache.Store(sourceData, res.PathToAssembly);
 
                         //_compileCache.Unlock();
-                        Tracing.Trace("]Compile");
+                        NaiadTracing.Trace.RegionStop(NaiadTracingRegion.Compile);
 
                         return (NaiadSerialization<T>)res.CompiledAssembly.CreateInstance(String.Format("Microsoft.Research.Naiad.Serialization.AutoGenerated.{0}", this.GeneratedClassName));
                     }
@@ -430,28 +716,29 @@ namespace Microsoft.Research.Naiad.Serialization
             if (t == typeof(int)) { return sizeof(int); }
             if (t == typeof(long)) { return sizeof(long); }
             if (t == typeof(short)) { return sizeof(short); }
+            if (t == typeof(char)) { return sizeof(char); }
             if (t == typeof(double)) { return sizeof(double); }
             if (t == typeof(float)) { return sizeof(float); }
             if (t == typeof(Enum)) { return sizeof(int); }
             if (t == typeof(byte)) { return sizeof(byte); }
             if (t == typeof(uint)) { return sizeof(uint); }
             if (t == typeof(ulong)) { return sizeof(ulong); }
-            if (IsNaiadable(t))
-            {
-                int length = 0;
-                foreach (FieldInfo field in t.GetFields())
-                {
-                    Console.Error.WriteLine("Type {0} has field {1}", t, field.FieldType);
+            //if (IsNaiadable(t))
+            //{
+            //    int length = 0;
+            //    foreach (FieldInfo field in t.GetFields())
+            //    {
+            //        //Console.Error.WriteLine("Type {0} has field {1}", t, field.FieldType);
 
-                    int fieldLength = TypeSize(field.FieldType);
-                    if (fieldLength <= 0)
-                        return -1;
-                    length += fieldLength;
-                }
+            //        int fieldLength = TypeSize(field.FieldType);
+            //        if (fieldLength <= 0)
+            //            return -1;
+            //        length += fieldLength;
+            //    }
                 
-                return length;
-            }
-            throw new NotImplementedException("TypeSize called on unknown type " + t);
+            //    return length;
+            //}
+            throw new NotImplementedException("Serialization not supported for type " + t);
         }
 
         private static CodeExpression Compare(CodeExpression left, CodeBinaryOperatorType comp, CodeExpression right)
@@ -588,12 +875,6 @@ namespace Microsoft.Research.Naiad.Serialization
                        : new CodeVariableDeclarationStatement(type, name);
         }
 
-        private static bool IsNaiadable(Type t)
-        {
-            Type naiadableT = typeof(IEquatable<>).MakeGenericType(t);
-            return naiadableT.IsAssignableFrom(t);
-        }
-
         private static bool IsPrimitive(Type t)
         {
             if (t.IsArray)
@@ -638,7 +919,15 @@ namespace Microsoft.Research.Naiad.Serialization
 
         private static CodeStatement LogIt(CodeExpression e)
         {
+            //return new CodeExpressionStatement(new CodeMethodInvokeExpression(new CodeMethodReferenceExpression(new CodeTypeReferenceExpression(typeof(Console)), "WriteLine"), e)); //Stmt("");
             return Stmt("");
+        }
+
+        private static CodeStatement WriteLine(CodeExpression formatString, params CodeExpression[] args)
+        {
+
+            return new CodeExpressionStatement(new CodeMethodInvokeExpression(new CodeTypeReferenceExpression(typeof (Console)), "WriteLine",
+                new CodeExpression[] {formatString}.Concat(args).ToArray()));
         }
 
         private static CodeStatement[] Bail()
@@ -721,9 +1010,15 @@ namespace Microsoft.Research.Naiad.Serialization
         {
             private readonly CodeTypeDeclaration classDecl;
 
-            public InlineNaiadSerializationCodeGenerator(Type t) 
+            private readonly BaseSerializationCodeGenerator format;
+
+            private readonly int minorVersion;
+
+            public InlineNaiadSerializationCodeGenerator(BaseSerializationCodeGenerator format, Type t, int minorVersion) 
                 : base(t, BadClassChars.Replace(FileNameForType(t), "_"))
             {
+                this.format = format;
+                this.minorVersion = minorVersion;
                 this.classDecl = new CodeTypeDeclaration(GeneratedClassName);
                 this.GenerateCode();
             }
@@ -747,6 +1042,7 @@ namespace Microsoft.Research.Naiad.Serialization
                 classDecl.Members.Add(this.GenerateSerializeMethod());
                 classDecl.Members.Add(this.GenerateTryDeserializeMethod());
                 classDecl.Members.Add(this.GenerateTrySerializeManyMethod());
+                classDecl.Members.Add(this.GenerateTryDeserializeManyMethod());
                 classDecl.BaseTypes.Add(
                     new CodeTypeReference(typeof(NaiadSerialization<>).MakeGenericType(this.Type)));
             }
@@ -755,6 +1051,211 @@ namespace Microsoft.Research.Naiad.Serialization
             private string GenerateTempVariableName(string template)
             {
                 return string.Format("__{0}_{1}", template, this.tempVariableCount++);
+            }
+
+            private CodeStatement GenerateSpaceCheck(CodeExpression bytesRemaining, CodeExpression targetSize,
+                CodeExpression failureReturnExpression)
+            {
+                return If(new CodeBinaryOperatorExpression(bytesRemaining, CodeBinaryOperatorType.LessThan, targetSize), Return(failureReturnExpression));
+            }
+
+            public CodeMemberMethod GenerateTryDeserializeManyMethod()
+            {
+                var m = new MethodHelper("TryDeserializeMany", typeof(int),
+                    MemberAttributes.Final | MemberAttributes.Public);
+                m.Param("source", typeof(RecvBuffer), FieldDirection.Ref);
+                m.Param("target", typeof(ArraySegment<>).MakeGenericType(this.Type));
+
+                m.Add(Decl("bytesRemaining", typeof(int), Expr("source.End - source.CurrentPos")));
+
+                m.Add(If(new CodeBinaryOperatorExpression(Var("bytesRemaining"), CodeBinaryOperatorType.ValueEquality, new CodePrimitiveExpression(0)), Return(new CodePrimitiveExpression(0))));
+
+                m.Add(new CodeSnippetStatement("unsafe { fixed (byte* sourcePtr = &source.Buffer[source.CurrentPos]) {"));
+
+                m.Add(Decl("currentPosition", typeof(byte*), Expr("sourcePtr")));
+
+                var forLoop = new CodeIterationStatement(Stmt("int i = 0"), Expr("i < target.Count"), Stmt("++i"));
+
+                forLoop.Statements.Add(
+                    If(
+                        new CodeBinaryOperatorExpression(Var("bytesRemaining"), CodeBinaryOperatorType.ValueEquality,
+                            new CodePrimitiveExpression(0)), new CodeStatement[] { Assign(Expr("source.CurrentPos"), Expr("source.End")), Return("i") }));
+
+                forLoop.Statements.AddRange(this.GenerateDeserializeInstructions(new CodeVariableReferenceExpression("currentPosition"), new CodeVariableReferenceExpression("bytesRemaining"), Expr("target.Array[i + target.Offset]"), this.Type).ToArray());
+
+                m.Add(Assign(Expr("source.CurrentPos"), Expr("source.End - bytesRemaining")));
+
+                //forLoop.Statements.Add(Stmt("bool success = this.Serialize(ref destination, values.Array[i + values.Offset]);"));
+                //forLoop.Statements.Add(Stmt("if (!success) break;"));
+
+                m.Add(forLoop);
+
+                m.Add(new CodeSnippetStatement("} }"));
+
+                m.Add(Assign(Expr("source.CurrentPos"), Expr("source.End - bytesRemaining")));
+
+                m.Return("target.Count");
+                return m.Code;
+
+
+#if false
+                return null;
+
+
+                m.Param("source", typeof(RecvBuffer), FieldDirection.Ref);
+                m.Param("value", this.Type, FieldDirection.Out);
+
+                m.Add(Decl("bytesRemaining", typeof(int), Expr("source.End - source.CurrentPos")));
+
+                m.Add(If(new CodeBinaryOperatorExpression(Var("bytesRemaining"), CodeBinaryOperatorType.ValueEquality, new CodePrimitiveExpression(0)), new CodeStatement[] { 
+                Assign(Expr("value"), new CodeDefaultValueExpression(new CodeTypeReference(this.Type))), Return(new CodePrimitiveExpression(false)) }));
+
+                m.Add(new CodeSnippetStatement("unsafe { fixed (byte* sourcePtr = &source.Buffer[source.CurrentPos]) {"));
+
+                m.Add(Decl("currentPosition", typeof(byte*), Expr("sourcePtr")));
+
+                m.AddAll(this.GenerateDeserializeInstructions(new CodeVariableReferenceExpression("currentPosition"), new CodeVariableReferenceExpression("bytesRemaining"), Expr("value"), this.Type));
+
+                m.Add(new CodeSnippetStatement("} }"));
+
+                m.Add(Assign(Expr("source.CurrentPos"), Expr("source.End - bytesRemaining")));
+
+                m.Return("true");
+                return m.Code;
+
+
+                var m = new MethodHelper("TrySerializeMany", typeof(int), MemberAttributes.Final | MemberAttributes.Public);
+                CodeExpression dest = m.Param("destination", typeof(SubArray<byte>), FieldDirection.Ref);
+                CodeExpression values = m.Param("values", typeof(ArraySegment<>).MakeGenericType(this.Type));
+
+                m.Add(Decl("bytesRemaining", typeof(int), Expr("destination.Array.Length - destination.Count")));
+
+                // Must test for emptiness before taking the fixed pointer, because it performs a bounds check.
+                m.Add(If(new CodeBinaryOperatorExpression(Var("bytesRemaining"), CodeBinaryOperatorType.LessThanOrEqual, new CodePrimitiveExpression(0)), Return(new CodePrimitiveExpression(0))));
+
+                m.Add(Decl("numWritten", typeof(int), Literal(0)));
+
+                m.Add(new CodeSnippetStatement("unsafe { fixed (byte* destinationPtr = &destination.Array[destination.Count]) {"));
+
+                m.Add(Decl("currentPosition", typeof(byte*), Expr("destinationPtr")));
+
+                var forLoop = new CodeIterationStatement(Stmt("int i = 0"), Expr("i < values.Count"), Stmt("++i, ++numWritten"));
+
+                forLoop.Statements.Add(Decl("value", this.Type, Expr("values.Array[i + values.Offset]")));
+
+                forLoop.Statements.AddRange(this.GenerateSerializeInstructions(new CodeVariableReferenceExpression("currentPosition"), new CodeVariableReferenceExpression("bytesRemaining"), Expr("value"), this.Type, Expr("numWritten")).ToArray());
+
+                forLoop.Statements.Add(Stmt("destination.Count = destination.Array.Length - bytesRemaining;"));
+
+                //forLoop.Statements.Add(Stmt("bool success = this.Serialize(ref destination, values.Array[i + values.Offset]);"));
+                //forLoop.Statements.Add(Stmt("if (!success) break;"));
+
+                m.Add(forLoop);
+
+                m.Add(new CodeSnippetStatement("} }"));
+
+                m.Return(Expr("numWritten"));
+
+                return m.Code;
+
+#endif
+            }
+
+            private IEnumerable<CodeStatement> GenerateStringSerializeInstructions(
+                CodeVariableReferenceExpression currentPosition, CodeVariableReferenceExpression bytesRemaining,
+                CodeExpression toSerialize, CodeExpression failureReturnExpression)
+            {
+                CodeExpression length = new CodeFieldReferenceExpression(toSerialize, "Length");
+                CodeExpression lengthBytes = BinOp(BinOp(length, CodeBinaryOperatorType.Multiply, Expr("sizeof(char)")) , CodeBinaryOperatorType.Add, Expr("sizeof(int)"));
+
+                List<CodeStatement> nullStringStmts = new List<CodeStatement>();
+
+                foreach (CodeStatement stmt in this.GeneratePrimitiveSerializeInstructions(currentPosition, bytesRemaining, new CodePrimitiveExpression(NULL_ARRAY_MARKER), typeof(int), failureReturnExpression))
+                    nullStringStmts.Add(stmt);
+
+                List<CodeStatement> stringStmts = new List<CodeStatement>();
+
+                CodeExpression totalLengthInBytes = BinOp(Expr("sizeof(int)"), CodeBinaryOperatorType.Add, BinOp(length, CodeBinaryOperatorType.Multiply, Expr("sizeof(char)")));
+
+                stringStmts.Add(GenerateSpaceCheck(bytesRemaining, totalLengthInBytes, failureReturnExpression));
+
+                foreach (CodeStatement stmt in this.GeneratePrimitiveSerializeInstructionsWithoutCheck(currentPosition, length, typeof(int)))
+                    stringStmts.Add(stmt);
+
+#if FIXED_STRING_SERIALIZATION
+                // Insert a fixed block to manipulate the string pointer directly.
+                string stringPtrVar = this.GenerateTempVariableName("strPtr");
+                string stringAliasVar = this.GenerateTempVariableName("strAlias");
+                string sourceCharPtr = this.GenerateTempVariableName("sourceCharPtr");
+
+                stringStmts.Add(Decl(stringAliasVar, typeof(string), toSerialize));
+
+                stringStmts.Add(Stmt(string.Format("fixed (char* {0} = {1})", stringPtrVar, stringAliasVar) + 
+                    "{"));
+
+                stringStmts.Add(Decl(sourceCharPtr, typeof(char*), Var(stringPtrVar)));
+#endif
+
+                string iterationVar = this.GenerateTempVariableName("iteration");
+
+                CodeIterationStatement loop = new CodeIterationStatement(Decl(iterationVar, typeof(int), new CodePrimitiveExpression(0)), new CodeBinaryOperatorExpression(Var(iterationVar), CodeBinaryOperatorType.LessThan, length), Assign(Var(iterationVar), new CodeBinaryOperatorExpression(Var(iterationVar), CodeBinaryOperatorType.Add, new CodePrimitiveExpression(1))));
+
+#if FIXED_STRING_SERIALIZATION
+                loop.Statements.Add(Stmt(string.Format("*(char*)currentPosition = *{0}++;", sourceCharPtr)));
+                loop.Statements.Add(Stmt("currentPosition += sizeof(char);"));
+                stringStmts.Add(loop);
+#else
+                loop.Statements.Add(
+                    new CodeAssignStatement(Expr(string.Format("*(((char*)currentPosition) + {0})", iterationVar)),
+                        new CodeArrayIndexerExpression(toSerialize, Var(iterationVar))));
+                stringStmts.Add(loop);
+                stringStmts.Add(Assign(currentPosition, new CodeBinaryOperatorExpression(currentPosition, CodeBinaryOperatorType.Add, BinOp(length, CodeBinaryOperatorType.Multiply, Expr("sizeof(char)")))));
+#endif
+                
+                stringStmts.Add(Assign(bytesRemaining, new CodeBinaryOperatorExpression(bytesRemaining, CodeBinaryOperatorType.Subtract, totalLengthInBytes)));
+
+#if FIXED_STRING_SERIALIZATION
+                stringStmts.Add(Stmt("}"));
+#endif
+                    
+                yield return
+                    IfElse(BinOp(toSerialize, CodeBinaryOperatorType.ValueEquality, new CodePrimitiveExpression(null)),
+                        nullStringStmts.ToArray(), stringStmts.ToArray());
+            }
+
+            private IEnumerable<CodeStatement> GenerateStringDeserializeInstructions(CodeVariableReferenceExpression currentPosition, CodeVariableReferenceExpression bytesRemaining, CodeExpression toDeserialize)
+            {
+                string lengthVar = this.GenerateTempVariableName("length");
+                yield return Decl(lengthVar, typeof(int));
+
+                // Count n, followed by n elements.
+                foreach (CodeStatement stmt in this.GeneratePrimitiveDeserializeInstructions(currentPosition, bytesRemaining, Var(lengthVar), typeof(int)))
+                    yield return stmt;
+                
+                List<CodeStatement> nullStringStmts = new List<CodeStatement>();
+
+                nullStringStmts.Add(Assign(toDeserialize, new CodePrimitiveExpression(null)));
+
+                List<CodeStatement> stringStmts = new List<CodeStatement>();
+
+                stringStmts.Add(Assign(toDeserialize,
+                    new CodeObjectCreateExpression(typeof(string), new CodeCastExpression(typeof(char*), currentPosition), Expr("0"), Var(lengthVar))));
+
+                stringStmts.Add(Assign(currentPosition, new CodeBinaryOperatorExpression(currentPosition, CodeBinaryOperatorType.Add, BinOp(Var(lengthVar), CodeBinaryOperatorType.Multiply, Expr("sizeof(char)")))));
+                stringStmts.Add(Assign(bytesRemaining, new CodeBinaryOperatorExpression(bytesRemaining, CodeBinaryOperatorType.Subtract, BinOp(Var(lengthVar), CodeBinaryOperatorType.Multiply, Expr("sizeof(char)")))));
+
+                yield return IfElse(new CodeBinaryOperatorExpression(Var(lengthVar), CodeBinaryOperatorType.ValueEquality, new CodePrimitiveExpression(NULL_ARRAY_MARKER)),
+                    nullStringStmts.ToArray(), stringStmts.ToArray());
+            }
+
+            private IEnumerable<CodeStatement> GeneratePrimitiveSerializeInstructionsWithoutCheck(CodeVariableReferenceExpression currentPosition, CodeExpression toSerialize, Type t)
+            {
+                Debug.Assert(t.IsPrimitive && !t.IsArray);
+                CodeExpression size = Expr(string.Format("sizeof({0})", t.FullName));
+
+                yield return Assign(Expr(string.Format("*({0}*)currentPosition", t.FullName)), toSerialize);
+                yield return Assign(currentPosition, new CodeBinaryOperatorExpression(currentPosition, CodeBinaryOperatorType.Add, size));
+                
             }
 
             private IEnumerable<CodeStatement> GeneratePrimitiveSerializeInstructions(CodeVariableReferenceExpression currentPosition, CodeVariableReferenceExpression bytesRemaining, CodeExpression toSerialize, Type t, CodeExpression failureReturnExpression)
@@ -794,6 +1295,112 @@ namespace Microsoft.Research.Naiad.Serialization
                 yield return Assign(toDeserialize, new CodeCastExpression(t, Expr("*(int*)currentPosition")));
                 yield return Assign(currentPosition, new CodeBinaryOperatorExpression(currentPosition, CodeBinaryOperatorType.Add, size));
                 yield return Assign(bytesRemaining, new CodeBinaryOperatorExpression(bytesRemaining, CodeBinaryOperatorType.Subtract, size));
+
+            }
+
+            private IEnumerable<CodeStatement> GenerateCustomSerializeInstructions(
+                CodeVariableReferenceExpression currentPosition, CodeVariableReferenceExpression bytesRemaining,
+                CodeExpression toSerialize, Type t, CodeExpression failureReturnExpression)
+            {
+                string serializerName = this.GenerateTempVariableName("customSerializer");
+                Type customSerializerType = this.format.GetCustomSerializationType(t);
+                this.AddReferencedAssembly(customSerializerType.Assembly);
+
+                yield return
+                    Decl(serializerName, customSerializerType, new CodeObjectCreateExpression(customSerializerType));
+
+                string byteCounterName = this.GenerateTempVariableName("bytesWritten");
+                yield return
+                    Decl(byteCounterName, typeof (int),
+                        Invoke(Expr(serializerName), "TrySerialize", toSerialize, currentPosition, bytesRemaining));
+
+                yield return
+                    If(BinOp(Expr(byteCounterName), CodeBinaryOperatorType.LessThanOrEqual, Expr("0")),
+                        Return(failureReturnExpression));
+
+                yield return Assign(currentPosition, new CodeBinaryOperatorExpression(currentPosition, CodeBinaryOperatorType.Add, Expr(byteCounterName)));
+                yield return Assign(bytesRemaining, new CodeBinaryOperatorExpression(bytesRemaining, CodeBinaryOperatorType.Subtract, Expr(byteCounterName)));
+
+                //yield return Stmt("Foo;");
+
+            }
+
+            private IEnumerable<CodeStatement> GenerateCustomDeserializeInstructions(
+                CodeVariableReferenceExpression currentPosition, CodeVariableReferenceExpression bytesRemaining,
+                CodeExpression toDeserialize, Type t)
+            {
+                string serializerName = this.GenerateTempVariableName("customSerializer");
+                Type customSerializerType = this.format.GetCustomSerializationType(t);
+                this.AddReferencedAssembly(customSerializerType.Assembly);
+
+                yield return
+                    Decl(serializerName, customSerializerType, new CodeObjectCreateExpression(customSerializerType));
+
+                string byteCounterName = this.GenerateTempVariableName("bytesConsumed");
+
+                yield return
+                    Decl(byteCounterName, typeof(int),
+                        Invoke(Expr(serializerName), "Deserialize", Out(toDeserialize), currentPosition, bytesRemaining));
+
+                yield return Assign(currentPosition, new CodeBinaryOperatorExpression(currentPosition, CodeBinaryOperatorType.Add, Expr(byteCounterName)));
+                yield return Assign(bytesRemaining, new CodeBinaryOperatorExpression(bytesRemaining, CodeBinaryOperatorType.Subtract, Expr(byteCounterName)));
+            }
+
+            private static bool IsTupleType(Type t)
+            {
+                return t.Assembly.Equals(typeof (System.Tuple<>).Assembly)
+                       && t.Namespace != null
+                       && t.Namespace.Equals(typeof (System.Tuple<>).Namespace)
+                       && t.Name.StartsWith("Tuple`");
+            }
+
+            private IEnumerable<CodeStatement> GenerateTupleSerializeInstructions(
+                CodeVariableReferenceExpression currentPosition, CodeVariableReferenceExpression bytesRemaining,
+                CodeExpression toSerialize, Type t, CodeExpression failureReturnExpression)
+            {
+                Type[] genericArgs = t.GetGenericArguments();
+                
+                Debug.Assert(genericArgs.Length <= 8);
+
+                for (int i = 0; i < genericArgs.Length; ++i)
+                {
+                    string itemName = i < 7 ? string.Format("Item{0}", i + 1) : "Rest";
+                    foreach (var stmt in  this.GenerateSerializeInstructions(currentPosition, bytesRemaining,
+                        new CodePropertyReferenceExpression(toSerialize, itemName), genericArgs[i],
+                        failureReturnExpression))
+                        yield return stmt;
+                }
+
+            }
+
+            private IEnumerable<CodeStatement> GenerateTupleDeserializeInstructions(
+                CodeVariableReferenceExpression currentPosition, CodeVariableReferenceExpression bytesRemaining,
+                CodeExpression toDeserialize, Type t)
+            {
+                Type[] genericArgs = t.GetGenericArguments();
+
+                Debug.Assert(genericArgs.Length <= 8);
+
+                CodeExpression[] tupleCreateArgs = new CodeExpression[genericArgs.Length];
+
+                for (int i = 0; i < genericArgs.Length; ++i)
+                {
+                    string tempItemName = this.GenerateTempVariableName("tupleItem");
+                    yield return Decl(tempItemName, genericArgs[i]);
+
+                    var tempItem = Var(tempItemName);
+
+                    tupleCreateArgs[i] = tempItem;
+
+                    foreach (
+                        var stmt in
+                            this.GenerateDeserializeInstructions(currentPosition, bytesRemaining, tempItem,
+                                genericArgs[i]))
+                        yield return stmt;
+
+                }
+
+                yield return Assign(toDeserialize, new CodeObjectCreateExpression(t, tupleCreateArgs));
 
             }
 
@@ -881,6 +1488,8 @@ namespace Microsoft.Research.Naiad.Serialization
             {
                 Debug.Assert(t.IsValueType && t.GetFields().All(x => x.IsPublic && !x.IsInitOnly));
 
+                
+
                 foreach (var field in t.GetFields().Where(f => !f.IsStatic).OrderBy(f => f.Name))
                 {
                     foreach (CodeStatement stmt in this.GenerateSerializeInstructions(currentPosition, bytesRemaining, new CodeFieldReferenceExpression(toSerialize, field.Name), field.FieldType, failureReturnExpression))
@@ -923,75 +1532,117 @@ namespace Microsoft.Research.Naiad.Serialization
                 Debug.Assert(t.IsSerializable);
 
                 this.AddAssembliesForGenericParameters(t);
-                
+
+                List<CodeStatement> nullObjectStmts = new List<CodeStatement>();
+
+                foreach (CodeStatement stmt in this.GeneratePrimitiveSerializeInstructions(currentPosition, bytesRemaining, new CodePrimitiveExpression(NULL_ARRAY_MARKER), typeof(int), failureReturnExpression))
+                    nullObjectStmts.Add(stmt);
+
+                List<CodeStatement> objectStmts = new List<CodeStatement>();
+
                 string tempBufferVar = this.GenerateTempVariableName("tempBuffer");
                 string formatterVar = this.GenerateTempVariableName("formatter");
                 string memoryStreamVar = this.GenerateTempVariableName("memoryStream");
 
-                yield return Decl(tempBufferVar, typeof(byte[]));
+                objectStmts.Add(Decl(tempBufferVar, typeof(byte[])));
                 
-                yield return new CodeSnippetStatement(string.Format("using (System.IO.MemoryStream {0} = new System.IO.MemoryStream()) {{", memoryStreamVar));
+                objectStmts.Add(new CodeSnippetStatement(string.Format("using (System.IO.MemoryStream {0} = new System.IO.MemoryStream()) {{", memoryStreamVar)));
 
-                yield return Decl(formatterVar, typeof(BinaryFormatter), new CodeObjectCreateExpression(typeof(BinaryFormatter)));
+                objectStmts.Add(Decl(formatterVar, typeof(BinaryFormatter), new CodeObjectCreateExpression(typeof(BinaryFormatter))));
                 
-                yield return new CodeExpressionStatement(new CodeMethodInvokeExpression(Var(formatterVar), "Serialize", Var(memoryStreamVar), toSerialize));
+                objectStmts.Add(new CodeExpressionStatement(new CodeMethodInvokeExpression(Var(formatterVar), "Serialize", Var(memoryStreamVar), toSerialize)));
 
-                yield return Assign(Var(tempBufferVar), new CodeMethodInvokeExpression(Var(memoryStreamVar), "ToArray"));
+                objectStmts.Add(Assign(Var(tempBufferVar), new CodeMethodInvokeExpression(Var(memoryStreamVar), "ToArray")));
 
-                yield return new CodeSnippetStatement("}");
+                objectStmts.Add(new CodeSnippetStatement("}"));
 
                 foreach (CodeStatement stmt in this.GenerateArraySerializeInstructions(currentPosition, bytesRemaining, Var(tempBufferVar), typeof(byte[]), failureReturnExpression))
-                    yield return stmt;
+                    objectStmts.Add(stmt);
 
+                if (this.minorVersion >= 2)
+                {
+                    yield return
+                        IfElse(BinOp(toSerialize, CodeBinaryOperatorType.ValueEquality, new CodePrimitiveExpression(null)),
+                            nullObjectStmts.ToArray(), objectStmts.ToArray());
+                }
+                else
+                {
+                    foreach (var stmt in objectStmts)
+                        yield return stmt;
+                }
             }
 
             private IEnumerable<CodeStatement> GenerateDotnetBinaryDeserializeInstructions(CodeVariableReferenceExpression currentPosition, CodeVariableReferenceExpression bytesRemaining, CodeExpression toDeserialize, Type t)
             {
                 Debug.Assert(t.IsSerializable);
 
+                List<CodeStatement> objectStmts = new List<CodeStatement>();
+
                 string tempBufferVar = this.GenerateTempVariableName("tempBuffer");
                 string formatterVar = this.GenerateTempVariableName("formatter");
                 string memoryStreamVar = this.GenerateTempVariableName("memoryStream");
 
-                yield return Decl(tempBufferVar, typeof(byte[]));
+                objectStmts.Add(Decl(tempBufferVar, typeof(byte[])));
 
                 foreach (CodeStatement stmt in this.GenerateArrayDeserializeInstructions(currentPosition, bytesRemaining, Var(tempBufferVar), typeof(byte[])))
+                    objectStmts.Add(stmt);
+
+                objectStmts.Add(IfElse(new CodeBinaryOperatorExpression(Var(tempBufferVar), CodeBinaryOperatorType.ValueEquality, Expr("null")),
+                    new CodeStatement[] { Assign(toDeserialize, Expr("null")) },
+                    new CodeStatement[] {
+                        new CodeSnippetStatement(string.Format("using (System.IO.MemoryStream {0} = new System.IO.MemoryStream({1})) {{", memoryStreamVar, tempBufferVar)),
+                        Decl(formatterVar, typeof(BinaryFormatter), new CodeObjectCreateExpression(typeof(BinaryFormatter))),
+                        Assign(toDeserialize, new CodeCastExpression(t, new CodeMethodInvokeExpression(Var(formatterVar), "Deserialize", Var(memoryStreamVar)))),
+                        new CodeSnippetStatement("}")
+                    }));
+
+                foreach (var stmt in objectStmts)
                     yield return stmt;
-
-                yield return new CodeSnippetStatement(string.Format("using (System.IO.MemoryStream {0} = new System.IO.MemoryStream({1})) {{", memoryStreamVar, tempBufferVar));
-
-                yield return Decl(formatterVar, typeof(BinaryFormatter), new CodeObjectCreateExpression(typeof(BinaryFormatter)));
-
-                yield return Assign(toDeserialize, new CodeCastExpression(t, new CodeMethodInvokeExpression(Var(formatterVar), "Deserialize", Var(memoryStreamVar))));
-
-                yield return new CodeSnippetStatement("}");
-
             }
 
             private IEnumerable<CodeStatement> GenerateSerializeInstructions(CodeVariableReferenceExpression currentPosition, CodeVariableReferenceExpression bytesRemaining, CodeExpression toSerialize, Type t, CodeExpression failureReturnExpression)
             {
                 this.AddReferencedAssembly(t.Assembly);
-                if (t.IsArray)
-                    return GenerateArraySerializeInstructions(currentPosition, bytesRemaining, toSerialize, t, failureReturnExpression);
+                if (this.minorVersion >= 1 && this.format.HasCustomSerialization(t))
+                    return GenerateCustomSerializeInstructions(currentPosition, bytesRemaining, toSerialize, t, failureReturnExpression);
+                else if (this.minorVersion >= 1 && t == typeof (string))
+                    return GenerateStringSerializeInstructions(currentPosition, bytesRemaining, toSerialize, failureReturnExpression);
+                else if (this.minorVersion >= 1 && IsTupleType(t))
+                    return GenerateTupleSerializeInstructions(currentPosition, bytesRemaining, toSerialize, t, failureReturnExpression);
+                else if (t.IsArray)
+                    return GenerateArraySerializeInstructions(currentPosition, bytesRemaining, toSerialize, t,
+                        failureReturnExpression);
                 else if (t.IsEnum)
-                    return GenerateEnumSerializeInstructions(currentPosition, bytesRemaining, toSerialize, t, failureReturnExpression);
+                    return GenerateEnumSerializeInstructions(currentPosition, bytesRemaining, toSerialize, t,
+                        failureReturnExpression);
                 else if (t.IsPrimitive)
-                    return GeneratePrimitiveSerializeInstructions(currentPosition, bytesRemaining, toSerialize, t, failureReturnExpression);
+                    return GeneratePrimitiveSerializeInstructions(currentPosition, bytesRemaining, toSerialize, t,
+                        failureReturnExpression);
                 else if (t.IsValueType && t.GetFields().All(x => x.IsPublic && !x.IsInitOnly))
-                    return GenerateLegacyStructSerializeInstructions(currentPosition, bytesRemaining, toSerialize, t, failureReturnExpression);
+                    return GenerateLegacyStructSerializeInstructions(currentPosition, bytesRemaining, toSerialize, t,
+                        failureReturnExpression);
                 else if (t.IsSerializable)
-                    return GenerateDotnetBinarySerializeInstructions(currentPosition, bytesRemaining, toSerialize, t, failureReturnExpression);
+                    return GenerateDotnetBinarySerializeInstructions(currentPosition, bytesRemaining, toSerialize, t,
+                        failureReturnExpression);
                 else
                 {
                     Logging.Error("Cannot generate serializer for type: {0}", t.FullName);
-                    throw new NotImplementedException(string.Format("Cannot generate serializer for type: {0}", t.FullName));
+                    throw new NotImplementedException(string.Format("Cannot generate serializer for type: {0}",
+                        t.FullName));
                 }
             }
 
             private IEnumerable<CodeStatement> GenerateDeserializeInstructions(CodeVariableReferenceExpression currentPosition, CodeVariableReferenceExpression bytesRemaining, CodeExpression toDeserialize, Type t)
             {
                 this.AddReferencedAssembly(t.Assembly);
-                if (t.IsArray)
+
+                if (this.minorVersion >= 1 && this.format.HasCustomSerialization(t))
+                    return GenerateCustomDeserializeInstructions(currentPosition, bytesRemaining, toDeserialize, t);
+                else if (this.minorVersion >= 1 && t == typeof(string))
+                    return GenerateStringDeserializeInstructions(currentPosition, bytesRemaining, toDeserialize);
+                else if (this.minorVersion >= 1 && IsTupleType(t))
+                    return GenerateTupleDeserializeInstructions(currentPosition, bytesRemaining, toDeserialize, t);
+                else if (t.IsArray)
                     return GenerateArrayDeserializeInstructions(currentPosition, bytesRemaining, toDeserialize, t);
                 else if (t.IsEnum)
                     return GenerateEnumDeserializeInstructions(currentPosition, bytesRemaining, toDeserialize, t);
@@ -1004,7 +1655,8 @@ namespace Microsoft.Research.Naiad.Serialization
                 else
                 {
                     Logging.Error("Cannot generate serializer for type: {0}", t.FullName);
-                    throw new NotImplementedException(string.Format("Cannot generate serializer for type: {0}", t.FullName));
+                    throw new NotImplementedException(string.Format("Cannot generate serializer for type: {0}",
+                        t.FullName));
                 }
             }
 
@@ -1169,11 +1821,13 @@ namespace Microsoft.Research.Naiad.Serialization
                 classDecl.Members.Add(GenerateSerializeMethod(t));
                 classDecl.Members.Add(GenerateTrySerializeManyMethod(t));
                 classDecl.Members.Add(GenerateTryDeserializeMethod(t));
+                classDecl.Members.Add(GenerateTryDeserializeManyMethod(t));
                 classDecl.BaseTypes.Add(
                     new CodeTypeReference(typeof(NaiadSerialization<>).MakeGenericType(t)));
 
                 GeneratedTypes.Add(t);
             }
+
 
             private CodeStatement[] CallBuiltinSerialize(CodeExpression dest, Type t, CodeExpression value)
             {
@@ -1463,6 +2117,28 @@ namespace Microsoft.Research.Naiad.Serialization
                 m.Return("true");
                 return m.Code;
             }
+
+            public CodeMemberMethod GenerateTryDeserializeManyMethod(Type t)
+            {
+                var m = new MethodHelper("TryDeserializeMany", typeof(int),
+                    MemberAttributes.Final | MemberAttributes.Public);
+                m.Param("source", typeof(RecvBuffer), FieldDirection.Ref);
+                m.Param("target", typeof(ArraySegment<>).MakeGenericType(t));
+
+                m.Add(Decl("numRead", typeof(int), Literal(0)));
+
+                var forLoop = new CodeIterationStatement(Stmt("int i = 0"), Expr("i < target.Count"), Stmt("++i, ++numRead"));
+
+                forLoop.Statements.Add(Stmt("bool success = this.TryDeserialize(ref source, out target.Array[i + target.Offset]);"));
+                forLoop.Statements.Add(Stmt("if (!success) break;"));
+
+                m.Add(forLoop);
+
+                m.Return(Expr("numRead"));
+
+                return m.Code;
+            }
+
         }
 
         #endregion

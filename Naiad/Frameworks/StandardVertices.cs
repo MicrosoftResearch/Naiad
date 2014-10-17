@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.4
+ * Naiad ver. 0.5
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -123,11 +123,13 @@ namespace Microsoft.Research.Naiad.Dataflow
             System.Diagnostics.Debug.Assert(this.AvailableEntrancy >= -1);
             if (this.decoder == null) this.decoder = new AutoSerializedMessageDecoder<TRecord, TTime>(this.Vertex.SerializationFormat);
 
-            foreach (Message<TRecord, TTime> message in this.decoder.AsTypedMessages(serializedMessage))
+            Message<TRecord, TTime> msg = new Message<TRecord, TTime>();
+            msg.Allocate(AllocationReason.Deserializer);
+            foreach (Message<TRecord, TTime> message in this.decoder.AsTypedMessages(serializedMessage, msg))
             {
                 this.OnReceive(message, sender);
-                message.Release();
             }
+            msg.Release(AllocationReason.Deserializer);
         }
 
         /// <summary>
@@ -194,30 +196,8 @@ namespace Microsoft.Research.Naiad.Dataflow
 
         private bool MustFlushChannels;
 
-#if false
-        #region logging
-        /// <summary>
-        /// Indicates logging enabled
-        /// </summary>
-        public bool LoggingEnabled { get { return this.loggingEnabled; } set { this.loggingEnabled = value; } }
-        private bool loggingEnabled = false;
-
-        private void LogMessage(Message<TRecord, TTime> message)
-        {
-            var encoder = new AutoSerializedMessageEncoder<TRecord, TTime>(this.Vertex.VertexId, 0, DummyBufferPool<byte>.Pool, this.Vertex.Stage.InternalComputation.Controller.Configuration.SendPageSize, this.Vertex.SerializationFormat);
-            encoder.CompletedMessage += (o, a) =>
-            {
-                ArraySegment<byte> messageSegment = a.Segment.ToArraySegment();
-                this.Vertex.LoggingOutput.Write(messageSegment.Array, messageSegment.Offset, messageSegment.Count);
-            };
-
-            for (int i = 0; i < message.length; ++i)
-                encoder.Write(message.payload[i].PairWith(message.time));
-
-            encoder.Flush();
-        }
-        #endregion
-#endif
+        private readonly Queue<TTime> TimesToFlush = new Queue<TTime>();
+        private readonly Queue<VertexOutputBufferPerTime<TRecord, TTime>> SpareBuffers = new Queue<VertexOutputBufferPerTime<TRecord, TTime>>();
 
         /// <summary>
         /// Adds a recipient for records handled by this buffer.
@@ -244,17 +224,15 @@ namespace Microsoft.Research.Naiad.Dataflow
         /// </summary>
         public void Flush()
         {
-            if (this.Buffers.Count > 0)
-            {
-                while (this.Buffers.Count > 0)
-                {
-                    var key = this.Buffers.Keys.First();
+            while (this.TimesToFlush.Count > 0)
+            { 
+                var time = this.TimesToFlush.Dequeue();
+                
+                var buffer = this.Buffers[time];
+                this.Buffers.Remove(time);
 
-                    var buffer = this.Buffers[key];
-                    this.Buffers.Remove(key);
-
-                    buffer.SendBuffer();
-                }
+                buffer.SendBufferNoReallocate();
+                this.SpareBuffers.Enqueue(buffer);
             }
 
             if (this.MustFlushChannels)
@@ -273,8 +251,20 @@ namespace Microsoft.Research.Naiad.Dataflow
         public VertexOutputBufferPerTime<TRecord, TTime> GetBufferForTime(TTime time)
         {
             if (!this.Buffers.ContainsKey(time))
-                this.Buffers.Add(time, new VertexOutputBufferPerTime<TRecord, TTime>(this, time));
+            {
+                if (this.SpareBuffers.Count > 0)
+                { 
+                    var buffer = this.SpareBuffers.Dequeue();
+                    buffer.ReinitializeFor(time);
+                    this.Buffers.Add(time, buffer);
+                }
+                else
+                {
+                    this.Buffers.Add(time, new VertexOutputBufferPerTime<TRecord, TTime>(this, time));
+                }
 
+                this.TimesToFlush.Enqueue(time);
+            }
             return this.Buffers[time];
         }
 
@@ -309,7 +299,7 @@ namespace Microsoft.Research.Naiad.Dataflow
         where TTime : Time<TTime>
     {
         private readonly VertexOutputBuffer<TRecord, TTime> parent;
-        private readonly TTime Time;
+        private TTime Time;
 
         private Message<TRecord, TTime> Buffer;
 
@@ -317,7 +307,7 @@ namespace Microsoft.Research.Naiad.Dataflow
         /// Sends the given record.
         /// </summary>
         /// <param name="record">The record.</param>
-        // [System.Runtime.CompilerServices.MethodImplAttribute(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        [System.Runtime.CompilerServices.MethodImplAttribute(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         public void Send(TRecord record)
         {
             this.Buffer.payload[Buffer.length++] = record;
@@ -332,13 +322,33 @@ namespace Microsoft.Research.Naiad.Dataflow
                 var temp = Buffer;
 
                 this.Buffer = new Message<TRecord, TTime>();
-                this.Buffer.Allocate();
+                this.Buffer.Allocate(AllocationReason.VertexOutputBuffer);
                 this.Buffer.time = this.Time;
 
                 parent.Send(temp);
 
-                temp.Release();
+                temp.Release(AllocationReason.VertexOutputBuffer);
             }
+        }
+
+
+        internal void SendBufferNoReallocate()
+        {
+            if (Buffer.length > 0)
+                parent.Send(Buffer);
+
+            Buffer.Release(AllocationReason.VertexOutputBuffer);
+        }
+
+        internal void ReinitializeFor(TTime time)
+        {
+            this.Time = time;
+
+            if (!this.Buffer.Unallocated)
+                Console.WriteLine("!!!!!!!!!!!!!!!!");
+
+            this.Buffer = new Message<TRecord, TTime>(time);
+            this.Buffer.Allocate(AllocationReason.VertexOutputBuffer);
         }
 
         /// <summary>
@@ -352,7 +362,7 @@ namespace Microsoft.Research.Naiad.Dataflow
             this.Time = time;
 
             this.Buffer = new Message<TRecord, TTime>(time);
-            this.Buffer.Allocate();
+            this.Buffer.Allocate(AllocationReason.VertexOutputBuffer);
         }
     }
 }
@@ -412,7 +422,7 @@ namespace Microsoft.Research.Naiad.Dataflow.StandardVertices
         /// <summary>
         /// Manages the list of intended recipients, and the buffering and sending of output.
         /// </summary>
-        protected readonly VertexOutputBuffer<TOutput, TTime> Output;
+        public readonly VertexOutputBuffer<TOutput, TTime> Output;
 
         /// <summary>
         /// A programmer-supplied action to be performed on each message receipt.
@@ -432,6 +442,26 @@ namespace Microsoft.Research.Naiad.Dataflow.StandardVertices
         public static Stream<TOutput, TTime> MakeStage(Stream<TInput, TTime> stream, Func<int, Stage<TTime>, UnaryVertex<TInput, TOutput, TTime>> factory, Expression<Func<TInput, int>> inputPartitionBy, Expression<Func<TOutput, int>> outputPartitionBy, string name)
         {
             var stage = Foundry.NewStage(stream.Context, factory, name);
+
+            var input1 = stage.NewInput(stream, (message, vertex) => vertex.OnReceive(message), inputPartitionBy);
+            var output = stage.NewOutput(vertex => vertex.Output, outputPartitionBy);
+
+            return output;
+        }
+
+        /// <summary>
+        /// Factory to produce a stage consisting of these vertices.
+        /// </summary>
+        /// <param name="placement">Placement to use for vertices in the stage</param>
+        /// <param name="stream">Source data stream</param>
+        /// <param name="factory">Function from index and stage to a UnaryVertex</param>
+        /// <param name="inputPartitionBy">input partitioning requirement</param>
+        /// <param name="outputPartitionBy">output partitioning guarantee</param>
+        /// <param name="name">console-friendly name</param>
+        /// <returns>stream of records from the vertices</returns>
+        public static Stream<TOutput, TTime> MakeStage(Placement placement, Stream<TInput, TTime> stream, Func<int, Stage<TTime>, UnaryVertex<TInput, TOutput, TTime>> factory, Expression<Func<TInput, int>> inputPartitionBy, Expression<Func<TOutput, int>> outputPartitionBy, string name)
+        {
+            var stage = Foundry.NewStage(placement, stream.Context, factory, name);
 
             var input1 = stage.NewInput(stream, (message, vertex) => vertex.OnReceive(message), inputPartitionBy);
             var output = stage.NewOutput(vertex => vertex.Output, outputPartitionBy);
@@ -492,6 +522,30 @@ namespace Microsoft.Research.Naiad.Dataflow.StandardVertices
         public static Stream<TOutput, TTime> MakeStage(Stream<TInput1, TTime> stream1, Stream<TInput2, TTime> stream2, Func<int, Stage<TTime>, BinaryVertex<TInput1, TInput2, TOutput, TTime>> factory, Expression<Func<TInput1, int>> input1PartitionBy, Expression<Func<TInput2, int>> input2PartitionBy, Expression<Func<TOutput, int>> outputPartitionBy, string name)
         {
             var stage = Foundry.NewStage(stream1.Context, factory, name);
+
+            var input1 = stage.NewInput(stream1, (message, vertex) => vertex.OnReceive1(message), input1PartitionBy);
+            var input2 = stage.NewInput(stream2, (message, vertex) => vertex.OnReceive2(message), input2PartitionBy);
+
+            var output = stage.NewOutput(vertex => vertex.Output, outputPartitionBy);
+
+            return output;
+        }
+
+        /// <summary>
+        /// Creates a new stream from the output of a stage of BinaryVertex objects.
+        /// </summary>
+        /// <param name="placement">Placement to use for vertices in the stage</param>
+        /// <param name="stream1">first input stream</param>
+        /// <param name="stream2">second input stream</param>
+        /// <param name="factory">factory from index and stage to BinaryVertex</param>
+        /// <param name="input1PartitionBy">first input partitioning requirement</param>
+        /// <param name="input2PartitionBy">second input partitioning requirement</param>
+        /// <param name="outputPartitionBy">output partitioning guarantee</param>
+        /// <param name="name">friendly name</param>
+        /// <returns>the output stream of the corresponding binary stage.</returns>
+        public static Stream<TOutput, TTime> MakeStage(Placement placement, Stream<TInput1, TTime> stream1, Stream<TInput2, TTime> stream2, Func<int, Stage<TTime>, BinaryVertex<TInput1, TInput2, TOutput, TTime>> factory, Expression<Func<TInput1, int>> input1PartitionBy, Expression<Func<TInput2, int>> input2PartitionBy, Expression<Func<TOutput, int>> outputPartitionBy, string name)
+        {
+            var stage = Foundry.NewStage(placement, stream1.Context, factory, name);
 
             var input1 = stage.NewInput(stream1, (message, vertex) => vertex.OnReceive1(message), input1PartitionBy);
             var input2 = stage.NewInput(stream2, (message, vertex) => vertex.OnReceive2(message), input2PartitionBy);

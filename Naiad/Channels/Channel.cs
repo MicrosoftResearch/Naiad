@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.4
+ * Naiad ver. 0.5
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -41,7 +41,6 @@ namespace Microsoft.Research.Naiad.Dataflow
         where TTime : Time<TTime>
     {
         private const int DEFAULT_MESSAGE_LENGTH = 256;
-        internal static TRecord[] Empty = new TRecord[] { };
 
         /// <summary>
         /// Payload of typed records
@@ -61,34 +60,38 @@ namespace Microsoft.Research.Naiad.Dataflow
         /// <summary>
         /// Tests whether the message points at valid data or not
         /// </summary>
-        public bool Unallocated { get { return this.payload == null || this.payload == Message<TRecord,TTime>.Empty; } }
+        public bool Unallocated { get { return this.payload == null; } }
 
         /// <summary>
         /// Causes an unallocated message to point at empty valid data
         /// </summary>
-        public void Allocate()
+        /// <param name="tag">indication of why the allocation was done, for tracing reasons</param>
+        public void Allocate(AllocationReason tag)
         {
-            if (!this.Unallocated)
-                throw new Exception("Attempting to allocate an already allocated message.");
+            Debug.Assert(this.Unallocated);
 
             // acquire from a shared queue.
-            this.payload = ThreadLocalBufferPools<TRecord>.pool.Value.CheckOut(DEFAULT_MESSAGE_LENGTH);                
+            this.payload = ThreadLocalMessageBufferPools<TRecord>.pool.Value.CheckOut(DEFAULT_MESSAGE_LENGTH);
+            
+            //ThreadLocalAllocationCounters<TRecord>.Increment(tag); 
         }
 
         /// <summary>
         /// Releases the memory held by an allocated message back to a pool. Only call when no other references to the message are held.
         /// </summary>
-        public void Release()
+        /// <param name="tag">indication of why the release was done, for tracing reasons</param>
+        public void Release(AllocationReason tag)
         {
-            if (this.Unallocated)
-                throw new Exception("Attempting to release an unallocated message.");
+            Debug.Assert(!this.Unallocated);
 
             Array.Clear(this.payload, 0, this.length);
 
             // return to a shared queue.
-            ThreadLocalBufferPools<TRecord>.pool.Value.CheckIn(this.payload);
+            ThreadLocalMessageBufferPools<TRecord>.pool.Value.CheckIn(this.payload);
             
-            this.payload = Message<TRecord, TTime>.Empty;
+            //ThreadLocalAllocationCounters<TRecord>.Decrement(tag);
+
+            this.payload = null;
             this.length = 0;
         }
 
@@ -98,7 +101,7 @@ namespace Microsoft.Research.Naiad.Dataflow
         /// <param name="time"></param>
         internal Message(TTime time)
         {
-            this.payload = Message<TRecord, TTime>.Empty;
+            this.payload = null;
             this.length = 0;
             this.time = time;
         }
@@ -140,7 +143,7 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
             SpillOnRecv = 0x4
         }
 
-        internal static bool Pipelineable<S, T>(StageOutput<S, T> sender, StageInput<S, T> receiver, Expression<Func<S, int>> key)
+        internal static bool Pipelineable<S, T>(StageOutput<S, T> sender, StageInput<S, T> receiver, Action<S[], int[], int> key)
             where T : Time<T>
         {
             return sender.ForStage.Placement.Equals(receiver.ForStage.Placement) && key == null;

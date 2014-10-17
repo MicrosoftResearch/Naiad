@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.4
+ * Naiad ver. 0.5
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -294,6 +294,9 @@ namespace Microsoft.Research.Naiad.Input
         private readonly List<Pair<int, TRecord[]>>[] FrozenStates;
         private readonly bool[] Completed;
 
+        private int OutstandingRegistrations;
+        private bool Sealed;
+
         private void OnRecv(Message<TRecord, Epoch> message, int fromWorker)
         {
             lock (this)
@@ -313,19 +316,23 @@ namespace Microsoft.Research.Naiad.Input
         {
             lock (this)
             {
+                var array = new TRecord[] { };
+
                 if (this.StatesByWorker[fromWorker].ContainsKey(epoch))
                 {
-                    var array = this.StatesByWorker[fromWorker][epoch].ToArray();
-
-                    foreach (var source in this.TargetSources)
-                    {
-                        source.OnRecv(array, epoch, fromWorker);
-                        source.OnNotify(epoch, fromWorker);
-                    }
-
-                    this.FrozenStates[fromWorker].Add(new Pair<int, TRecord[]>(epoch, array));
+                    array = this.StatesByWorker[fromWorker][epoch].ToArray();
                     this.StatesByWorker[fromWorker].Remove(epoch);
                 }
+
+                foreach (var source in this.TargetSources)
+                {
+                    source.OnRecv(array, epoch, fromWorker);
+                    source.OnNotify(epoch, fromWorker);
+                }
+
+                // stash the data if the sink is not yet sealed, as we might need to replay it for a new source.
+                if (this.FrozenStates[fromWorker] != null)
+                    this.FrozenStates[fromWorker].Add(new Pair<int, TRecord[]>(epoch, array));
             }
         }
 
@@ -346,13 +353,50 @@ namespace Microsoft.Research.Naiad.Input
         /// <returns>data source</returns>
         public InterGraphDataSource<TRecord> NewDataSource()
         {
-            return new InterGraphDataSource<TRecord>(this);
+            lock (this)
+            {
+                if (this.Sealed)
+                    throw new Exception("Cannot create a new data source from a sealed data sink");
+                else
+                {
+                    this.OutstandingRegistrations++;
+                    return new InterGraphDataSource<TRecord>(this);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Mark the collection as not accepting any more data sources
+        /// </summary>
+        public void Seal()
+        {
+            lock (this)
+            {
+                if (!this.Sealed )
+                {
+                    this.Sealed = true;
+                    this.TestForCleanup();
+                }
+            }
+        }
+
+        private void TestForCleanup()
+        {
+            lock (this)
+            {
+                if (this.Sealed && this.OutstandingRegistrations == 0)
+                {
+                    for (int i = 0; i < this.FrozenStates.Length; i++)
+                        this.FrozenStates[i] = null;                    
+                }
+            }
         }
 
         internal void Register(InterGraphDataSource<TRecord> source)
         {
             lock (this)
             {
+                this.OutstandingRegistrations--;
                 this.TargetSources.Add(source);
 
                 for (int i = 0; i < this.FrozenStates.Length; i++)
@@ -366,6 +410,8 @@ namespace Microsoft.Research.Naiad.Input
                     if (this.Completed[i])
                         source.OnCompleted(i);
                 }
+
+                this.TestForCleanup();
             }
         }
 
@@ -393,7 +439,9 @@ namespace Microsoft.Research.Naiad.Input
 
             var placement = stream.StageOutput.ForStage.Placement;
 
-            stream.Subscribe((msg, i) => { this.OnRecv(msg, placement[i].ThreadId); }, (epoch, i) => { this.OnNotify(epoch.epoch, placement[i].ThreadId); }, i => this.OnCompleted(placement[i].ThreadId));
+            stream.Subscribe((message, workerId) => { this.OnRecv(message, workerId); }, 
+                             (epoch, workerId) => { this.OnNotify(epoch.epoch, workerId); }, 
+                             workerId => this.OnCompleted(workerId));
         }
     }
 

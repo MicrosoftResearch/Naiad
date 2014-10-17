@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.4
+ * Naiad ver. 0.5
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -40,7 +40,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
     /// The Differential Dataflow operators are defined in terms of <see cref="Collection{TRecord,TTime}"/> objects, each of which wraps
     /// a Naiad stream and allows it to be interpreted with multiset semantics.
     /// 
-    /// The <see cref="IncrementalCollection{TRecord}"/> class is the Differential Dataflow&#x2013;specific wrapper for the Naiad
+    /// The <see cref="InputCollection{TRecord}"/> class is the Differential Dataflow&#x2013;specific wrapper for the Naiad
     /// <see cref="Microsoft.Research.Naiad.Input.BatchedDataSource{TRecord}"/> class.
     /// </remarks>
     /// <example>

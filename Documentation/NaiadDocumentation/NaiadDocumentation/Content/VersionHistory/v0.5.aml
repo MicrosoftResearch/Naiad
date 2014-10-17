@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<topic id="6f949be3-a32e-427f-bdcd-5d9d462eeb42" revisionNumber="1">
+  <developerConceptualDocument xmlns="http://ddue.schemas.microsoft.com/authoring/2003/5" xmlns:xlink="http://www.w3.org/1999/xlink">
+
+    <summary>
+      <para>
+        An update release of Naiad, version 0.5 includes support for reading and writing Hdfs files using either the Java-based
+        protocol or REST-based WebHdfs, as well as bug fixes.
+      </para>
+    </summary>
+
+    <introduction>
+      <para>
+        Version 0.5 was released on October 17th, 2014
+      </para>
+    </introduction>
+
+    <section>
+      <title>Changes in This Release</title>
+      <content>
+
+        <list class="bullet">
+          <listItem>
+            <para>Frameworks for reading and writing data in Hdfs.</para>
+          </listItem>
+        </list>
+
+      </content>
+    </section>
+
+    <relatedTopics>
+      <link xlink:href="c2a31aaa-d867-4d3b-9315-dbb7c7527659" />
+    </relatedTopics>
+
+  </developerConceptualDocument>
+</topic>

@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.4
+ * Naiad ver. 0.5
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -93,13 +93,14 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
         internal void InjectElement(Pointstamp time, Int64 update)
         {
             // by directly modifying the PCS, we don't risk sending anything from centralizer. Used only for initializing inputs.
-            Tracing.Trace("(PCSLock");
+            NaiadTracing.Trace.LockAcquire(this.PCS);
             Monitor.Enter(this.PCS);
+            NaiadTracing.Trace.LockHeld(this.PCS);
 
             var progressChanged = PCS.UpdatePointstampCount(time, update);
 
             Monitor.Exit(this.PCS);
-            Tracing.Trace(")PCSLock");
+            NaiadTracing.Trace.LockRelease(this.PCS);
         }
 
         public readonly PointstampCountSet PCS;
@@ -110,15 +111,16 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
         public void ProcessCountChange(Pointstamp time, Int64 weight)
         {
             // the PCS should not be touched outside this lock, other than by capturing PCS.Frontier.
-            Tracing.Trace("(PCSLock");
+            NaiadTracing.Trace.LockAcquire(this.PCS);
             Monitor.Enter(this.PCS);
+            NaiadTracing.Trace.LockHeld(this.PCS);
 
             var oldFrontier = PCS.Frontier;
             var frontierChanged = PCS.UpdatePointstampCount(time, weight);
             var newFrontier = PCS.Frontier;
 
             Monitor.Exit(this.PCS);
-            Tracing.Trace(")PCSLock");
+            NaiadTracing.Trace.LockRelease(this.PCS);
 
             if (frontierChanged)
             {
@@ -132,12 +134,13 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
                 // no elements means done.
                 if (newFrontier.Length == 0)
                 {
-                    Tracing.Trace("Frontier advanced to <empty>");
+                    //Tracing.Trace("Frontier advanced to <empty>");
+                    NaiadTracing.Trace.RefAlignFrontier();
                     this.FrontierEmpty.Set();
                 }
                 else
                 {
-                    Tracing.Trace("Frontier advanced to " + string.Join(" ", newFrontier.Select(x => x.ToString())));
+                    NaiadTracing.Trace.AdvanceFrontier(newFrontier);
                 }
 
                 // Wake up schedulers to run shutdown actions for the graph.
@@ -148,8 +151,9 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
         public void ProcessCountChange(Message<Update, Empty> updates)
         {
             // the PCS should not be touched outside this lock, other than by capturing PCS.Frontier.
-            Tracing.Trace("(PCSLock");
+            NaiadTracing.Trace.LockAcquire(this.PCS);
             Monitor.Enter(this.PCS);
+            NaiadTracing.Trace.LockHeld(this.PCS);
 
             var oldFrontier = PCS.Frontier;
 
@@ -160,7 +164,7 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
             var newFrontier = PCS.Frontier;
 
             Monitor.Exit(this.PCS);
-            Tracing.Trace(")PCSLock");
+            NaiadTracing.Trace.LockRelease(this.PCS);
 
             if (frontierChanged)
             {
@@ -174,12 +178,13 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
                 // no elements means done.
                 if (newFrontier.Length == 0)
                 {
-                    Tracing.Trace("Frontier advanced to <empty>");
+                    //Tracing.Trace("Frontier advanced to <empty>");
+                    NaiadTracing.Trace.RefAlignFrontier();
                     this.FrontierEmpty.Set();
                 }
                 else
                 {
-                    Tracing.Trace("Frontier advanced to " + string.Join(" ", newFrontier.Select(x => x.ToString())));
+                    NaiadTracing.Trace.AdvanceFrontier(newFrontier);
                 }
 
                 // Wake up schedulers to run shutdown actions for the graph.
@@ -250,13 +255,14 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
         internal void InjectElement(Pointstamp time, Int64 update)
         {
             // by directly modifying the PCS, we don't risk sending anything from the centralizer. Used only for initializing inputs.
-            Tracing.Trace("(PCSLock");
+            NaiadTracing.Trace.LockAcquire(this.PCS);
             Monitor.Enter(this.PCS);
+            NaiadTracing.Trace.LockHeld(this.PCS);
 
             var frontierChanged = PCS.UpdatePointstampCount(time, update);
 
             Monitor.Exit(this.PCS);
-            Tracing.Trace(")PCSLock");
+            NaiadTracing.Trace.LockRelease(this.PCS);
         }
 
         public readonly PointstampCountSet PCS;
@@ -269,26 +275,29 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
         public void ProcessCountChange(Message<Update, Empty> updates)
         {
             // the PCS should not be touched outside this lock, other than by capturing PCS.Frontier.
-            Tracing.Trace("(PCSLock");
+            NaiadTracing.Trace.LockAcquire(this.PCS);
             Monitor.Enter(this.PCS);
+            NaiadTracing.Trace.LockHeld(this.PCS);
 
             var oldfrontier = PCS.Frontier;
 
             var frontierChanged = false;
             for (int i = 0; i < updates.length; i++)
-                frontierChanged = PCS.UpdatePointstampCount(updates.payload[i].Pointstamp, updates.payload[i].Delta) || frontierChanged; ;
+                frontierChanged = PCS.UpdatePointstampCount(updates.payload[i].Pointstamp, updates.payload[i].Delta) || frontierChanged;
 
             var newfrontier = PCS.Frontier;
 
             Monitor.Exit(this.PCS);
-            Tracing.Trace(")PCSLock");
+            NaiadTracing.Trace.LockRelease(this.PCS);
 
             if (frontierChanged)
             {
                 // get an exclusive lock, as this.Output.Send is not threadsafe.
-                Tracing.Trace("(GlobalLock");
+                NaiadTracing.Trace.LockAcquire(this.scheduler.Controller.GlobalLock);
                 lock (this.scheduler.Controller.GlobalLock)
                 {
+                    NaiadTracing.Trace.LockHeld(this.scheduler.Controller.GlobalLock);
+
                     var output = this.Output.GetBufferForTime(new Empty());
                     foreach (var pointstamp in newfrontier.Except(oldfrontier))
                         output.Send(new Update(pointstamp, +1));
@@ -298,7 +307,7 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
 
                     this.Output.Flush();
                 }
-                Tracing.Trace(")GlobalLock");
+                NaiadTracing.Trace.LockRelease(this.scheduler.Controller.GlobalLock);
 
                 if (this.OnFrontierChanged != null)
                     this.OnFrontierChanged(this, new FrontierChangedEventArgs(newfrontier));
@@ -320,6 +329,7 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
             this.Output = new VertexOutputBuffer<Update, Empty>(this);
 
             this.PCS = new PointstampCountSet(this.Stage.InternalComputation.Reachability);
+            NaiadTracing.Trace.LockInfo(this.PCS, "PCS lock");
         }
 
         internal override void PerformAction(Scheduler.WorkItem workItem) { throw new NotImplementedException(); }

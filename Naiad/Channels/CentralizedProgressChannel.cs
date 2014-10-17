@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.4
+ * Naiad ver. 0.5
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -48,7 +48,7 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
             private readonly int vertexId;
             private readonly int graphId;
 
-            public int Id { get { return this.id; } }
+            public int ChannelId { get { return this.id; } }
             public int VertexId { get { return this.vertexId; } }
             public int GraphId { get { return this.graphId; } }
 
@@ -61,10 +61,10 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
                 foreach (var typedMessage in this.decoder.AsTypedMessages(message))
                 {
                     this.consumer.ProcessCountChange(typedMessage);
-                    typedMessage.Release();
+                    typedMessage.Release(AllocationReason.Deserializer);
                 }
 
-                this.Flush(from);
+                this.RequestFlush(from);
             }
 
             internal long recordsReceived = 0;
@@ -76,7 +76,7 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
                 this.consumer.ProcessCountChange(message);
             }
 
-            public void Flush(ReturnAddress from)
+            public void RequestFlush(ReturnAddress from)
             {
             }
 
@@ -148,7 +148,7 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
                 {
                     //for (int i = 0; i < records.length; i++)
                     //    this.encoder.Write(records.payload[i].PairWith(records.time));
-                    this.encoder.Write(new ArraySegment<Update>(records.payload, 0, records.length), 0);
+                    this.encoder.Write(new ArraySegment<Update>(records.payload, 0, records.length), this.vertexID);
                 }
                 else
                     this.localMailbox.Send(records, new ReturnAddress());
@@ -246,6 +246,7 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
                 }
             }
             Logging.Info("Allocated CentralizedProgressChannel [{0}]: {1} -> {2}", this.channelID, sendBundle, recvBundle);
+            NaiadTracing.Trace.ChannelInfo(ChannelId, SourceStage.StageId, DestinationStage.StageId, true, true);
         }
 
         public Dataflow.Stage SourceStage

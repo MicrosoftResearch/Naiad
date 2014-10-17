@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.4
+ * Naiad ver. 0.5
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -161,16 +161,24 @@ namespace Microsoft.Research.Naiad.Dataflow
         /// <summary>
         /// Placement with one vertex
         /// </summary>
-        internal class SingleVertex : Placement
+        public class SingleVertex : Placement
         {
             private readonly VertexLocation location;
 
             /// <summary>
             /// Constructor
             /// </summary>
+            public SingleVertex()
+            {
+                this.location = new VertexLocation(0, 0, 0);
+            }
+
+            /// <summary>
+            /// Constructor
+            /// </summary>
             /// <param name="processId">process identifier for the vertex</param>
             /// <param name="threadId">thread identifier for the vertex</param>
-            public SingleVertex(int processId, int threadId)
+            internal SingleVertex(int processId, int threadId)
             {
                 this.location = new VertexLocation(0, processId, threadId);
             }
@@ -190,7 +198,7 @@ namespace Microsoft.Research.Naiad.Dataflow
             /// <summary>
             /// Enumerator
             /// </summary>
-            /// <returns></returns>
+            /// <returns>an enumeration of the Placement's locations</returns>
             public override IEnumerator<VertexLocation> GetEnumerator()
             {
                 yield return this.location;
@@ -199,8 +207,8 @@ namespace Microsoft.Research.Naiad.Dataflow
             /// <summary>
             /// Test equality with another SingleVertexPlacement
             /// </summary>
-            /// <param name="that"></param>
-            /// <returns></returns>
+            /// <param name="that">placement to compare to</param>
+            /// <returns>true if the placements are equal</returns>
             public override bool Equals(Placement that)
             {
                 SingleVertex other = that as SingleVertex;

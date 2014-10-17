@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.4
+ * Naiad ver. 0.5
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -181,6 +181,7 @@ namespace Microsoft.Research.Naiad
 
         /// <summary>
         /// Blocks until all subscriptions have processed all inputs up to the supplied epoch.
+        /// If the computation has no subscriptions, no synchronization occurs.
         /// </summary>
         /// <param name="epoch">The epoch.</param>
         /// <remarks>
@@ -317,8 +318,8 @@ namespace Microsoft.Research.Naiad
         void Activate();
         void MaterializeAll(); // used by Controller.Restore(); perhaps can hide.
 
-        void Connect<S, T>(Dataflow.StageOutput<S, T> stream, Dataflow.StageInput<S, T> recvPort, Expression<Func<S, int>> key, Channel.Flags flags) where T : Time<T>;
-        void Connect<S, T>(Dataflow.StageOutput<S, T> stream, Dataflow.StageInput<S, T> recvPort, Expression<Func<S, int>> key) where T : Time<T>;
+        void Connect<S, T>(Dataflow.StageOutput<S, T> stream, Dataflow.StageInput<S, T> recvPort, Action<S[], int[], int> key, Channel.Flags flags) where T : Time<T>;
+        void Connect<S, T>(Dataflow.StageOutput<S, T> stream, Dataflow.StageInput<S, T> recvPort, Action<S[], int[], int> key) where T : Time<T>;
         void Connect<S, T>(Dataflow.StageOutput<S, T> stream, Dataflow.StageInput<S, T> recvPort) where T : Time<T>;
 
         Computation ExternalComputation { get; }
@@ -349,7 +350,7 @@ namespace Microsoft.Research.Naiad
                 if (this.Controller.NetworkChannel != null)
                 {
                     MessageHeader header = MessageHeader.GraphFailure(this.index);
-                    SendBufferPage page = SendBufferPage.CreateSpecialPage(header, 0, this.SerializationFormat.GetSerializer<MessageHeader>());
+                    SendBufferPage page = SendBufferPage.CreateSpecialPage(header, 0);
                     BufferSegment segment = page.Consume();
 
                     Logging.Error("Broadcasting graph failure message");
@@ -358,6 +359,7 @@ namespace Microsoft.Research.Naiad
                 }
 
                 this.ProgressTracker.Cancel();
+
             }
         }
 
@@ -513,12 +515,12 @@ namespace Microsoft.Research.Naiad
         }
 
 
-        public void Connect<S, T>(Dataflow.StageOutput<S, T> stream, Dataflow.StageInput<S, T> recvPort, Expression<Func<S, int>> key, Channel.Flags flags)
+        public void Connect<S, T>(Dataflow.StageOutput<S, T> stream, Dataflow.StageInput<S, T> recvPort, Action<S[], int[], int> key, Channel.Flags flags)
             where T : Time<T>
         {
             stream.ForStage.Targets.Add(new Dataflow.Edge<S, T>(stream, recvPort, key, flags));
         }
-        public void Connect<S, T>(Dataflow.StageOutput<S, T> stream, Dataflow.StageInput<S, T> recvPort, Expression<Func<S, int>> key)
+        public void Connect<S, T>(Dataflow.StageOutput<S, T> stream, Dataflow.StageInput<S, T> recvPort, Action<S[], int[], int> key)
             where T : Time<T>
         {
             this.Connect(stream, recvPort, key, Channel.Flags.None);
@@ -615,7 +617,7 @@ namespace Microsoft.Research.Naiad
             this.defaultPlacement = this.controller.DefaultPlacement;
             this.index = index;
 
-            this.ShutdownCounter = new CountdownEvent(defaultPlacement.Where(x => x.ProcessId == controller.Configuration.ProcessID).Count());
+            this.ShutdownCounter = new CountdownEvent(controller.Workers.Count);
 
             this.contextManager = new Microsoft.Research.Naiad.Dataflow.TimeContextManager(this);
 
@@ -637,9 +639,12 @@ namespace Microsoft.Research.Naiad
             {
                 if (!input.IsCompleted && input.CurrentEpoch <= epoch)
                 {
-                    Logging.Error("Syncing at epoch ({0}) that is in the future of {1}", epoch, input);
+                    Logging.Debug("Syncing at epoch ({0}) in the future of {1}.", epoch, input);
                 }
             }
+
+            if (this.outputs.Count == 0)
+                Logging.Debug("Syncing a computation with no subscriptions; no synchronization performed.");
 
             foreach (var subscription in this.Outputs)
                 subscription.Sync(epoch);

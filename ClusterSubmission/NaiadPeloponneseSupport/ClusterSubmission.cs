@@ -1,5 +1,5 @@
-﻿/*
- * Naiad ver. 0.4
+/*
+ * Naiad ver. 0.5
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -28,24 +28,20 @@ using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
 
-using Microsoft.Research.Peloponnese.Storage;
 using Microsoft.Research.Peloponnese.ClusterUtils;
 
 namespace Microsoft.Research.Naiad.Cluster
 {
     public class ClusterSubmission : PPMSubmission
     {
-        private readonly IDfsClient dfsClient;
         private readonly ClusterClient clusterClient;
-        private readonly string exeDirectory;
         private readonly XDocument launcherConfig;
         private static string[] FrameworkAssemblyNames = { "System", "System.Core", "mscorlib", "System.Xml" };
 
         private ClusterJob clusterJob;
 
-        protected ClusterSubmission(IDfsClient dfs, ClusterClient cluster, int numberOfProcesses, string[] args)
+        protected ClusterSubmission(ClusterClient cluster, Uri stagingRoot, string queueName, int amMemoryInMB, int numberOfProcesses, int workerMemoryInMB, string[] args)
         {
-            this.dfsClient = dfs;
             this.clusterClient = cluster;
 
             string commandLine;
@@ -55,106 +51,69 @@ namespace Microsoft.Research.Naiad.Cluster
             string ppmHome = ConfigHelpers.GetPPMHome(null);
 
             string exePath = args[0];
-            this.exeDirectory = Path.GetDirectoryName(exePath);
 
-            string jobStaging = dfs.Combine("staging", Environment.UserName, "naiadJob");
+            this.clusterClient.DfsClient.EnsureDirectory(stagingRoot, true);
 
-            XElement ppmResources = ConfigHelpers.MakePeloponneseResourceGroup(this.dfsClient, ppmHome);
-            XElement frameworkResources;
-            XElement jobResources;
-            MakeJobResourceGroups(exePath, jobStaging, out frameworkResources, out jobResources);
+            Uri jobStaging = this.clusterClient.DfsClient.Combine(stagingRoot, Environment.UserName, "naiadJob");
 
-            XElement[] workerResources = { ppmResources, frameworkResources, jobResources };
+            XElement ppmWorkerResources = ConfigHelpers.MakePeloponneseWorkerResourceGroup(this.clusterClient.DfsClient, stagingRoot, ppmHome);
+            XElement[] workerResources = { ppmWorkerResources };
+            workerResources = workerResources.Concat(MakeJobResourceGroups(exePath, stagingRoot, jobStaging)).ToArray();
 
-            XDocument config = Helpers.MakePeloponneseConfig(numberOfProcesses, "yarn", commandLine, commandLineArgs, false, workerResources);
+            XElement ppmResources = ConfigHelpers.MakePeloponneseResourceGroup(this.clusterClient.DfsClient, stagingRoot, ppmHome);
+            XDocument config = Helpers.MakePeloponneseConfig(numberOfProcesses, workerMemoryInMB, "yarn", commandLine, commandLineArgs, false, workerResources);
 
             string configName = "config.xml";
 
-            XElement configResources = ConfigHelpers.MakeConfigResourceGroup(this.dfsClient, jobStaging, config, configName);
+            XElement configResources = ConfigHelpers.MakeConfigResourceGroup(
+                this.clusterClient.DfsClient, jobStaging, config, configName);
 
             XElement[] launcherResources = { ppmResources, configResources };
 
-            this.launcherConfig = ConfigHelpers.MakeLauncherConfig("Naiad: " + commandLine, configName, launcherResources, this.clusterClient.JobDirectoryTemplate.Replace("_BASELOCATION_", "naiad-jobs"));
+            this.launcherConfig = ConfigHelpers.MakeLauncherConfig(
+                "Naiad: " + commandLine, configName, queueName, amMemoryInMB, launcherResources,
+                this.clusterClient.JobDirectoryTemplate.AbsoluteUri.Replace("_BASELOCATION_", "naiad-jobs"));
         }
 
-        private Assembly DependencyResolveEventHandler(object sender, ResolveEventArgs args)
+        public void Dispose()
         {
-            string leafName = args.Name.Substring(0, args.Name.IndexOf(","));
-            string assemblyPath = Path.Combine(this.exeDirectory, leafName);
-
-            string dll = assemblyPath + ".dll";
-            if (File.Exists(dll))
-            {
-                return Assembly.LoadFrom(dll);
-            }
-
-            string exe = assemblyPath + ".exe";
-            if (File.Exists(exe))
-            {
-                return Assembly.LoadFrom(exe);
-            }
-
-            throw new ApplicationException("Can't find assembly " + args.ToString());
+            this.clusterClient.Dispose();
         }
 
-        /// <summary>
-        /// Returns the locations of non-framework assemblies on which the assembly with the given filename depends.
-        /// </summary>
-        /// <param name="source">The filename of the assembly</param>
-        /// <returns>An array of filenames for non-framework assemblies on which the given assembly depends</returns>
-        private string[] Dependencies(string assemblyFilename)
+        private XElement[] MakeJobResourceGroups(string exeName, Uri stagingRoot, Uri jobStaging)
         {
-            Assembly assembly = Assembly.LoadFrom(assemblyFilename);
-            AppDomain.CurrentDomain. AssemblyResolve += new ResolveEventHandler(DependencyResolveEventHandler);
-            return GetDependenciesInternal(assembly).ToArray();
-        }
-
-        public static IEnumerable<string> GetDependenciesInternal(Assembly source)
-        {
-            AppDomainSetup setup = new AppDomainSetup();
-            setup.ApplicationBase = Path.GetDirectoryName(source.Location);
-
-            AppDomain dependencyDomain = AppDomain.CreateDomain("DependencyLister", null, setup);
-
-            DependencyLister.Lister lister = (DependencyLister.Lister) dependencyDomain.CreateInstanceFromAndUnwrap(typeof(Microsoft.Research.Naiad.Cluster.DependencyLister.Lister).Assembly.Location, "Microsoft.Research.Naiad.Cluster.DependencyLister.Lister");
-             
-            List<string> ret = lister.ListDependencies(source.Location).ToList();
-
-            AppDomain.Unload(dependencyDomain);
-            
-            return ret;
-        }
-
-        private void MakeJobResourceGroups(string exeName, string jobStaging, out XElement frameworkGroup, out XElement jobGroup)
-        {
-            string[] naiadComponentsArray =
+            if (exeName.ToLower().StartsWith("hdfs://"))
             {
-                "Naiad.dll",
-                "Naiad.pdb"
-            };
-            HashSet<string> naiadComponents = new HashSet<string>();
-            foreach (string c in naiadComponentsArray)
-            {
-                naiadComponents.Add(c);
+                Uri exeDirectory = new Uri(exeName.Substring(0, exeName.LastIndexOf('/')));
+                return new XElement[] { ConfigHelpers.MakeRemoteResourceGroup(this.clusterClient.DfsClient, exeDirectory, false) };
             }
-
-            string[] dependencies = Dependencies(exeName);
-
-            if (File.Exists(exeName + ".config"))
+            else
             {
-                dependencies = dependencies.Concat(new[] { exeName + ".config" }).ToArray();
+                IEnumerable<string> dependencies = Microsoft.Research.Peloponnese.Shared.DependencyLister.Lister.ListDependencies(exeName);
+
+                if (File.Exists(exeName + ".config"))
+                {
+                    dependencies = dependencies.Concat(new[] { exeName + ".config" }).ToArray();
+                }
+
+                IEnumerable<string> peloponneseDependencies = dependencies.Where(x => Path.GetFileName(x).StartsWith("Microsoft.Research.Peloponnese"));
+                XElement peloponneseGroup = ConfigHelpers.MakeResourceGroup(this.clusterClient.DfsClient, this.clusterClient.DfsClient.Combine(stagingRoot, "peloponnese"), true, peloponneseDependencies);
+
+                IEnumerable<string> naiadDependencies = dependencies.Where(x => Path.GetFileName(x).StartsWith("Microsoft.Research.Naiad"));
+                XElement naiadGroup = ConfigHelpers.MakeResourceGroup(this.clusterClient.DfsClient, this.clusterClient.DfsClient.Combine(stagingRoot, "naiad"), true, naiadDependencies);
+
+                IEnumerable<string> jobDependencies = dependencies.Where(x => !Path.GetFileName(x).StartsWith("Microsoft.Research.Naiad") && !Path.GetFileName(x).StartsWith("Microsoft.Research.Peloponnese"));
+                XElement jobGroup = ConfigHelpers.MakeResourceGroup(this.clusterClient.DfsClient, jobStaging, false, jobDependencies);
+
+                return new XElement[] { peloponneseGroup, naiadGroup, jobGroup };
             }
-
-            IEnumerable<string> frameworkDependencies = dependencies.Where(x => naiadComponents.Contains(Path.GetFileName(x)));
-            frameworkGroup = ConfigHelpers.MakeResourceGroup(dfsClient, dfsClient.Combine("staging", "naiad"), true, frameworkDependencies);
-
-            IEnumerable<string> jobDependencies = dependencies.Where(x => !naiadComponents.Contains(Path.GetFileName(x)));
-            jobGroup = ConfigHelpers.MakeResourceGroup(dfsClient, jobStaging, false, jobDependencies);
         }
 
         public void Submit()
         {
-            this.clusterJob = this.clusterClient.Submit(this.launcherConfig, this.clusterClient.JobDirectoryTemplate.Replace("_BASELOCATION_", "naiad-jobs"));
+            this.clusterJob = this.clusterClient.Submit(
+                this.launcherConfig,
+                new Uri(this.clusterClient.JobDirectoryTemplate.AbsoluteUri.Replace("_BASELOCATION_", "naiad-jobs")));
         }
 
         public int Join()
@@ -171,6 +130,7 @@ namespace Microsoft.Research.Naiad.Cluster
                 return 1;
             }
         }
-    }
 
+        public ClusterJob ClusterJob { get { return this.clusterJob; } }
+    }
 }
