@@ -1,81 +1,98 @@
 <?xml version="1.0" encoding="utf-8"?>
-<shfbBuild product="Sandcastle Help File Builder" version="2014.2.15.0 Beta" projectFile="C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\NaiadDocumentation.shfbproj" started="4/21/2014 5:25:41 PM">
+<shfbBuild product="Sandcastle Help File Builder" version="2014.5.31.0" projectFile="C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\NaiadDocumentation.shfbproj" started="10/17/2014 3:19:42 PM">
 <buildStep step="Initializing">
 Finding tools...
 The Sandcastle tools are located in &#39;C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\&#39;
-Locating components...
+Locating components in the following folder(s):
+   C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation
 Using presentation style &#39;VS2010&#39; located in &#39;C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010&#39;
 </buildStep>
 <buildStep step="ValidatingDocumentationSources">
 Validating and copying documentation source information
-Source: C:\gits\naiad\Naiad\bin\Release\Microsoft.Research.Naiad.dll
-    Found assembly &#39;C:\gits\naiad\Naiad\bin\Release\Microsoft.Research.Naiad.dll&#39;
-Source: C:\gits\naiad\Naiad\bin\Release\Microsoft.Research.Naiad.xml
-Source: C:\gits\naiad\Frameworks\Lindi\bin\Release\Microsoft.Research.Naiad.Lindi.dll
-    Found assembly &#39;C:\gits\naiad\Frameworks\Lindi\bin\Release\Microsoft.Research.Naiad.Lindi.dll&#39;
-Source: C:\gits\naiad\Frameworks\Lindi\bin\Release\Microsoft.Research.Naiad.Lindi.xml
-Source: C:\gits\naiad\Frameworks\DifferentialDataflow\bin\Release\Microsoft.Research.Naiad.DifferentialDataflow.dll
-    Found assembly &#39;C:\gits\naiad\Frameworks\DifferentialDataflow\bin\Release\Microsoft.Research.Naiad.DifferentialDataflow.dll&#39;
-Source: C:\gits\naiad\Frameworks\DifferentialDataflow\bin\Release\Microsoft.Research.Naiad.DifferentialDataflow.xml
-Source: C:\gits\naiad\Frameworks\AzureSupport\bin\Release\Microsoft.Research.Naiad.AzureSupport.dll
-    Found assembly &#39;C:\gits\naiad\Frameworks\AzureSupport\bin\Release\Microsoft.Research.Naiad.AzureSupport.dll&#39;
-Source: C:\gits\naiad\Frameworks\AzureSupport\bin\Release\Microsoft.Research.Naiad.AzureSupport.xml
-Source: C:\gits\naiad\Frameworks\GraphLINQ\bin\Release\Microsoft.Research.Naiad.GraphLINQ.dll
-    Found assembly &#39;C:\gits\naiad\Frameworks\GraphLINQ\bin\Release\Microsoft.Research.Naiad.GraphLINQ.dll&#39;
-Source: C:\gits\naiad\Frameworks\GraphLINQ\bin\Release\Microsoft.Research.Naiad.GraphLINQ.xml
+Source: C:\src\naiad-pages\Naiad\bin\Release\Microsoft.Research.Naiad.dll
+    Found assembly &#39;C:\src\naiad-pages\Naiad\bin\Release\Microsoft.Research.Naiad.dll&#39;
+Source: C:\src\naiad-pages\Naiad\bin\Release\Microsoft.Research.Naiad.xml
+Source: C:\src\naiad-pages\Frameworks\Lindi\bin\Release\Microsoft.Research.Naiad.Lindi.dll
+    Found assembly &#39;C:\src\naiad-pages\Frameworks\Lindi\bin\Release\Microsoft.Research.Naiad.Lindi.dll&#39;
+Source: C:\src\naiad-pages\Frameworks\Lindi\bin\Release\Microsoft.Research.Naiad.Lindi.xml
+Source: C:\src\naiad-pages\Frameworks\DifferentialDataflow\bin\Release\Microsoft.Research.Naiad.DifferentialDataflow.dll
+    Found assembly &#39;C:\src\naiad-pages\Frameworks\DifferentialDataflow\bin\Release\Microsoft.Research.Naiad.DifferentialDataflow.dll&#39;
+Source: C:\src\naiad-pages\Frameworks\DifferentialDataflow\bin\Release\Microsoft.Research.Naiad.DifferentialDataflow.xml
+Source: C:\src\naiad-pages\Frameworks\AzureSupport\bin\Release\Microsoft.Research.Naiad.AzureSupport.dll
+    Found assembly &#39;C:\src\naiad-pages\Frameworks\AzureSupport\bin\Release\Microsoft.Research.Naiad.AzureSupport.dll&#39;
+Source: C:\src\naiad-pages\Frameworks\AzureSupport\bin\Release\Microsoft.Research.Naiad.AzureSupport.xml
+Source: C:\src\naiad-pages\Frameworks\GraphLINQ\bin\Release\Microsoft.Research.Naiad.GraphLINQ.dll
+    Found assembly &#39;C:\src\naiad-pages\Frameworks\GraphLINQ\bin\Release\Microsoft.Research.Naiad.GraphLINQ.dll&#39;
+Source: C:\src\naiad-pages\Frameworks\GraphLINQ\bin\Release\Microsoft.Research.Naiad.GraphLINQ.xml
+Source: C:\src\naiad-pages\Frameworks\WorkGenerator\bin\Release\Microsoft.Research.Naiad.WorkGenerator.dll
+    Found assembly &#39;C:\src\naiad-pages\Frameworks\WorkGenerator\bin\Release\Microsoft.Research.Naiad.WorkGenerator.dll&#39;
+Source: C:\src\naiad-pages\Frameworks\WorkGenerator\bin\Release\Microsoft.Research.Naiad.WorkGenerator.xml
+Source: C:\src\naiad-pages\Frameworks\Storage\bin\Release\Microsoft.Research.Naiad.Storage.dll
+    Found assembly &#39;C:\src\naiad-pages\Frameworks\Storage\bin\Release\Microsoft.Research.Naiad.Storage.dll&#39;
+Source: C:\src\naiad-pages\Frameworks\Storage\bin\Release\Microsoft.Research.Naiad.Storage.xml
+Source: C:\src\naiad-pages\Frameworks\HdfsSupport\bin\x64\Release\Microsoft.Research.Naiad.HdfsSupport.dll
+    Found assembly &#39;C:\src\naiad-pages\Frameworks\HdfsSupport\bin\x64\Release\Microsoft.Research.Naiad.HdfsSupport.dll&#39;
+Source: C:\src\naiad-pages\Frameworks\HdfsSupport\bin\x64\Release\Microsoft.Research.Naiad.HdfsSupport.xml
+Source: C:\src\naiad-pages\Frameworks\WebHdfsSupport\bin\Release\Microsoft.Research.Naiad.WebHdfsSupport.dll
+    Found assembly &#39;C:\src\naiad-pages\Frameworks\WebHdfsSupport\bin\Release\Microsoft.Research.Naiad.WebHdfsSupport.dll&#39;
+Source: C:\src\naiad-pages\Frameworks\WebHdfsSupport\bin\Release\Microsoft.Research.Naiad.WebHdfsSupport.xml
 
 Copying XML comments files
-    C:\gits\naiad\Naiad\bin\Release\Microsoft.Research.Naiad.XML -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Microsoft.Research.Naiad.XML
-    C:\gits\naiad\Frameworks\Lindi\bin\Release\Microsoft.Research.Naiad.Lindi.XML -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Microsoft.Research.Naiad.Lindi.XML
-    C:\gits\naiad\Frameworks\DifferentialDataflow\bin\Release\Microsoft.Research.Naiad.DifferentialDataflow.XML -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Microsoft.Research.Naiad.DifferentialDataflow.XML
-    C:\gits\naiad\Frameworks\AzureSupport\bin\Release\Microsoft.Research.Naiad.AzureSupport.XML -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Microsoft.Research.Naiad.AzureSupport.XML
-    C:\gits\naiad\Frameworks\GraphLINQ\bin\Release\Microsoft.Research.Naiad.GraphLINQ.XML -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Microsoft.Research.Naiad.GraphLINQ.XML
+    C:\src\naiad-pages\Naiad\bin\Release\Microsoft.Research.Naiad.xml -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Microsoft.Research.Naiad.xml
+    C:\src\naiad-pages\Frameworks\Lindi\bin\Release\Microsoft.Research.Naiad.Lindi.xml -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Microsoft.Research.Naiad.Lindi.xml
+    C:\src\naiad-pages\Frameworks\DifferentialDataflow\bin\Release\Microsoft.Research.Naiad.DifferentialDataflow.xml -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Microsoft.Research.Naiad.DifferentialDataflow.xml
+    C:\src\naiad-pages\Frameworks\AzureSupport\bin\Release\Microsoft.Research.Naiad.AzureSupport.XML -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Microsoft.Research.Naiad.AzureSupport.XML
+    C:\src\naiad-pages\Frameworks\GraphLINQ\bin\Release\Microsoft.Research.Naiad.GraphLINQ.xml -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Microsoft.Research.Naiad.GraphLINQ.xml
+    C:\src\naiad-pages\Frameworks\WorkGenerator\bin\Release\Microsoft.Research.Naiad.WorkGenerator.XML -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Microsoft.Research.Naiad.WorkGenerator.XML
+    C:\src\naiad-pages\Frameworks\Storage\bin\Release\Microsoft.Research.Naiad.Storage.XML -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Microsoft.Research.Naiad.Storage.XML
+    C:\src\naiad-pages\Frameworks\HdfsSupport\bin\x64\Release\Microsoft.Research.Naiad.HdfsSupport.XML -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Microsoft.Research.Naiad.HdfsSupport.XML
+    C:\src\naiad-pages\Frameworks\WebHdfsSupport\bin\Release\Microsoft.Research.Naiad.WebHdfsSupport.XML -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Microsoft.Research.Naiad.WebHdfsSupport.XML
 </buildStep>
 <buildStep step="GenerateSharedContent">
 Generating shared content files (en-US, English (United States))...
-    Last step completed in 00:00:00.0100
+    Last step completed in 00:00:00.0323
 </buildStep>
 <buildStep step="GenerateApiFilter">
 Generating API filter for MRefBuilder...
-    Last step completed in 00:00:00.0300
+    Last step completed in 00:00:00.0323
 </buildStep>
 <buildStep step="GenerateReflectionInfo">
 Generating reflection information...
 [C:\Program Files (x86)\MSBuild\12.0\bin\MSBuild.exe]
-Build started 4/21/2014 5:25:42 PM.
-Project &quot;C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\GenerateRefInfo.proj&quot; on node 1 (default targets).
+Build started 10/17/2014 3:19:44 PM.
+Project &quot;C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\GenerateRefInfo.proj&quot; on node 1 (default targets).
 PrepareForBuild:
   Creating directory &quot;obj\Debug\&quot;.
 GenerateRefInfo:
-  MRefBuilder (v2014.1.26.0)
+  MRefBuilder (v2014.5.31.0)
   Copyright c 2006-2014, Microsoft Corporation, All Rights Reserved.
   Portions Copyright c 2006-2014, Eric Woodruff, All Rights Reserved.
-  Loaded 5 assemblies for reflection and 1 dependency assemblies.
-  Wrote information on 14 namespaces, 101 types, and 570 members
+  Loaded 9 assemblies for reflection and 1 dependency assemblies.
+  Wrote information on 19 namespaces, 130 types, and 726 members
   Copying file from &quot;reflection.org&quot; to &quot;reflection.all&quot;.
-  XslTransform (v2014.1.26.0)
+  XslTransform (v2014.5.31.0)
   Copyright c 2006-2014, Microsoft Corporation, All Rights Reserved.
   Portions Copyright c 2006-2014, Eric Woodruff, All Rights Reserved.
   Applying XSL transformation &#39;C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\ProductionTransforms\MergeDuplicates.xsl&#39;.
-Done Building Project &quot;C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\GenerateRefInfo.proj&quot; (default targets).
+Done Building Project &quot;C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\GenerateRefInfo.proj&quot; (default targets).
 
 Build succeeded.
 
-Time Elapsed 00:00:01.06
-    Last step completed in 00:00:01.1781
+Time Elapsed 00:00:01.20
+    Last step completed in 00:00:01.3339
 </buildStep>
 <buildStep step="TransformReflectionInfo">
 Transforming reflection output...
 [C:\Program Files (x86)\MSBuild\12.0\bin\MSBuild.exe]
-Build started 4/21/2014 5:25:44 PM.
-Project &quot;C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\TransformManifest.proj&quot; on node 1 (default targets).
+Build started 10/17/2014 3:19:45 PM.
+Project &quot;C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\TransformManifest.proj&quot; on node 1 (default targets).
 TransformManifest:
-  XslTransform (v2014.1.26.0)
+  XslTransform (v2014.5.31.0)
   Copyright c 2006-2014, Microsoft Corporation, All Rights Reserved.
   Portions Copyright c 2006-2014, Eric Woodruff, All Rights Reserved.
   Applying XSL transformation &#39;C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\\ProductionTransforms\ApplyVSDocModel.xsl&#39;.
   Copying file from &quot;reflection.xml&quot; to &quot;reflection.nofilenames&quot;.
-  XslTransform (v2014.1.26.0)
+  XslTransform (v2014.5.31.0)
   Copyright c 2006-2014, Microsoft Corporation, All Rights Reserved.
   Portions Copyright c 2006-2014, Eric Woodruff, All Rights Reserved.
   Applying XSL transformation &#39;C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\ProductionTransforms\AddFilenames.xsl&#39;.
@@ -85,6 +102,8 @@ TransformManifest:
     Unique name M_Microsoft_Research_Naiad_SubscribeExtensionMethods_Subscribe__1_3 generated for M:Microsoft.Research.Naiad.SubscribeExtensionMethods.Subscribe``1(Microsoft.Research.Naiad.Stream{``0,Microsoft.Research.Naiad.Dataflow.Epoch},System.Action{System.Int32,System.Collections.Generic.IEnumerable{``0}})
     Unique name M_Microsoft_Research_Naiad_SubscribeExtensionMethods_Subscribe__1_4 generated for M:Microsoft.Research.Naiad.SubscribeExtensionMethods.Subscribe``1(Microsoft.Research.Naiad.Stream{``0,Microsoft.Research.Naiad.Dataflow.Epoch},System.Action{System.Int32,System.Int32,System.Collections.Generic.IEnumerable{``0}})
     Unique name M_Microsoft_Research_Naiad_Dataflow_ReturnAddress__ctor_1 generated for M:Microsoft.Research.Naiad.Dataflow.ReturnAddress.#ctor(System.Int32,System.Int32,System.Int32)
+    Unique name M_Microsoft_Research_Naiad_Dataflow_Stage_NewInput__2_1 generated for M:Microsoft.Research.Naiad.Dataflow.Stage.NewInput``2(Microsoft.Research.Naiad.Stream{``0,``1},System.Linq.Expressions.Expression{System.Func{``0,System.Int32}},System.Action{``0[],System.Int32[],System.Int32})
+    Unique name M_Microsoft_Research_Naiad_Dataflow_Stage_2_NewInput__1_1 generated for M:Microsoft.Research.Naiad.Dataflow.Stage`2.NewInput``1(Microsoft.Research.Naiad.Stream{``0,`1},System.Action{Microsoft.Research.Naiad.Dataflow.Message{``0,`1},`0},System.Linq.Expressions.Expression{System.Func{``0,System.Int32}},System.Action{``0[],System.Int32[],System.Int32})
     Unique name M_Microsoft_Research_Naiad_Dataflow_Stage_2_NewOutput__1_1 generated for M:Microsoft.Research.Naiad.Dataflow.Stage`2.NewOutput``1(System.Func{`0,Microsoft.Research.Naiad.Dataflow.VertexOutput{``0,`1}},System.Linq.Expressions.Expression{System.Func{``0,System.Int32}})
     Unique name M_Microsoft_Research_Naiad_Dataflow_Vertex_1_NotifyAt_1 generated for M:Microsoft.Research.Naiad.Dataflow.Vertex`1.NotifyAt(`0,`0)
     Unique name M_Microsoft_Research_Naiad_Dataflow_Iteration_LoopContext_1_Delay__1_1 generated for M:Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext`1.Delay``1(System.Int32)
@@ -92,9 +111,11 @@ TransformManifest:
     Unique name M_Microsoft_Research_Naiad_Dataflow_Iteration_LoopContext_1_Delay__1_3 generated for M:Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext`1.Delay``1(System.Linq.Expressions.Expression{System.Func{``0,System.Int32}},System.Int32)
     Unique name M_Microsoft_Research_Naiad_Dataflow_Iteration_LoopContext_1_EnterLoop__1_1 generated for M:Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext`1.EnterLoop``1(Microsoft.Research.Naiad.Stream{``0,`0},System.Func{``0,System.Int32})
     Unique name M_Microsoft_Research_Naiad_Dataflow_Iteration_LoopContext_1_ExitLoop__1_1 generated for M:Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext`1.ExitLoop``1(Microsoft.Research.Naiad.Stream{``0,Microsoft.Research.Naiad.Dataflow.IterationIn{`0}},System.Int32)
+    Unique name M_Microsoft_Research_Naiad_Dataflow_StandardVertices_BinaryVertex_4_MakeStage_1 generated for M:Microsoft.Research.Naiad.Dataflow.StandardVertices.BinaryVertex`4.MakeStage(Microsoft.Research.Naiad.Stream{`0,`3},Microsoft.Research.Naiad.Stream{`1,`3},System.Func{System.Int32,Microsoft.Research.Naiad.Dataflow.Stage{`3},Microsoft.Research.Naiad.Dataflow.StandardVertices.BinaryVertex{`0,`1,`2,`3}},System.Linq.Expressions.Expression{System.Func{`0,System.Int32}},System.Linq.Expressions.Expression{System.Func{`1,System.Int32}},System.Linq.Expressions.Expression{System.Func{`2,System.Int32}},System.String)
     Unique name M_Microsoft_Research_Naiad_Dataflow_StandardVertices_Foundry_NewStage__2_1 generated for M:Microsoft.Research.Naiad.Dataflow.StandardVertices.Foundry.NewStage``2(Microsoft.Research.Naiad.Dataflow.TimeContext{``1},System.Func{System.Int32,Microsoft.Research.Naiad.Dataflow.Stage{``1},``0},System.String)
+    Unique name M_Microsoft_Research_Naiad_Dataflow_StandardVertices_UnaryVertex_3_MakeStage_1 generated for M:Microsoft.Research.Naiad.Dataflow.StandardVertices.UnaryVertex`3.MakeStage(Microsoft.Research.Naiad.Stream{`0,`2},System.Func{System.Int32,Microsoft.Research.Naiad.Dataflow.Stage{`2},Microsoft.Research.Naiad.Dataflow.StandardVertices.UnaryVertex{`0,`1,`2}},System.Linq.Expressions.Expression{System.Func{`0,System.Int32}},System.Linq.Expressions.Expression{System.Func{`1,System.Int32}},System.String)
+    Unique name M_Microsoft_Research_Naiad_Diagnostics_KernelLoggerTracing_PostKernelLoggerMarkEvent_1 generated for M:Microsoft.Research.Naiad.Diagnostics.KernelLoggerTracing.PostKernelLoggerMarkEvent(System.String,System.Object[])
     Unique name M_Microsoft_Research_Naiad_Diagnostics_Logging_Assert_1 generated for M:Microsoft.Research.Naiad.Diagnostics.Logging.Assert(System.Boolean,System.String,System.Object[])
-    Unique name M_Microsoft_Research_Naiad_Diagnostics_Tracing_Trace_1 generated for M:Microsoft.Research.Naiad.Diagnostics.Tracing.Trace(System.String,System.Object[])
     Unique name M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_CoGroupBy__5_1 generated for M:Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Collection`2.CoGroupBy``5(Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Collection{``3,`1},System.Linq.Expressions.Expression{System.Func{`0,``0}},System.Linq.Expressions.Expression{System.Func{``3,``0}},System.Linq.Expressions.Expression{System.Func{`0,``1}},System.Linq.Expressions.Expression{System.Func{``3,``2}},System.Linq.Expressions.Expression{System.Func{``0,System.Collections.Generic.IEnumerable{``1},System.Collections.Generic.IEnumerable{``2},System.Collections.Generic.IEnumerable{``4}}})
     Unique name M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_CoGroupBy__3_1 generated for M:Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Collection`2.CoGroupBy``3(Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Collection{``1,`1},System.Linq.Expressions.Expression{System.Func{`0,``0}},System.Linq.Expressions.Expression{System.Func{``1,``0}},System.Linq.Expressions.Expression{System.Func{``0,System.Collections.Generic.IEnumerable{`0},System.Collections.Generic.IEnumerable{``1},System.Collections.Generic.IEnumerable{``2}}})
     Unique name M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_Collection_2_EnterLoop_1 generated for M:Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Collection`2.EnterLoop(Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext{`1},System.Func{`0,System.Int32})
@@ -113,13 +134,23 @@ TransformManifest:
     Unique name M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_ExtensionMethods_OnNext__1_4 generated for M:Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.ExtensionMethods.OnNext``1(Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.InputCollection{``0},``0,System.Int32)
     Unique name M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_ExtensionMethods_SlidingWindow__1_1 generated for M:Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.ExtensionMethods.SlidingWindow``1(Microsoft.Research.Naiad.Stream{``0,Microsoft.Research.Naiad.Dataflow.Epoch},System.Int32)
     Unique name M_Microsoft_Research_Naiad_Frameworks_DifferentialDataflow_InputCollection_1_OnCompleted_1 generated for M:Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.InputCollection`1.OnCompleted(System.Collections.Generic.IEnumerable{Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Weighted{`0}})
+    Unique name M_Microsoft_Research_Naiad_Frameworks_GraphLINQ_ExtensionMethods_RenameUsing__2_1 generated for M:Microsoft.Research.Naiad.Frameworks.GraphLINQ.ExtensionMethods.RenameUsing``2(Microsoft.Research.Naiad.Stream{``0,Microsoft.Research.Naiad.Dataflow.Epoch},Microsoft.Research.Naiad.Stream{Microsoft.Research.Naiad.Frameworks.GraphLINQ.NodeWithValue{``1},Microsoft.Research.Naiad.Dataflow.Epoch},System.Func{``0,``1})
+    Unique name M_Microsoft_Research_Naiad_Frameworks_GraphLINQ_ExtensionMethods_RenameUsing__2_2 generated for M:Microsoft.Research.Naiad.Frameworks.GraphLINQ.ExtensionMethods.RenameUsing``2(Microsoft.Research.Naiad.Stream{``0,Microsoft.Research.Naiad.Dataflow.IterationIn{Microsoft.Research.Naiad.Dataflow.Epoch}},Microsoft.Research.Naiad.Frameworks.GraphLINQ.AutoRenamer{``1},System.Func{``0,``1})
     Unique name M_Microsoft_Research_Naiad_Frameworks_GraphLINQ_ExtensionMethods_StateMachine__4_1 generated for M:Microsoft.Research.Naiad.Frameworks.GraphLINQ.ExtensionMethods.StateMachine``4(Microsoft.Research.Naiad.Stream{Microsoft.Research.Naiad.Frameworks.GraphLINQ.NodeWithValue{``0},``3},System.Func{``0,``1,Microsoft.Research.Naiad.Pair{``1,``2}})
     Unique name M_Microsoft_Research_Naiad_Frameworks_GraphLINQ_ExtensionMethods_StateMachine__4_2 generated for M:Microsoft.Research.Naiad.Frameworks.GraphLINQ.ExtensionMethods.StateMachine``4(Microsoft.Research.Naiad.Stream{Microsoft.Research.Naiad.Frameworks.GraphLINQ.NodeWithValue{``0},``3},System.Func{``0,``1,Microsoft.Research.Naiad.Pair{``1,``2}},``1)
     Unique name M_Microsoft_Research_Naiad_Frameworks_GraphLINQ_ExtensionMethods_StateMachine__3_1 generated for M:Microsoft.Research.Naiad.Frameworks.GraphLINQ.ExtensionMethods.StateMachine``3(Microsoft.Research.Naiad.Stream{Microsoft.Research.Naiad.Frameworks.GraphLINQ.NodeWithValue{``0},``2},System.Func{``0,``1,``1},``1)
     Unique name M_Microsoft_Research_Naiad_Frameworks_Lindi_ExtensionMethods_Aggregate__3_1 generated for M:Microsoft.Research.Naiad.Frameworks.Lindi.ExtensionMethods.Aggregate``3(Microsoft.Research.Naiad.Stream{Microsoft.Research.Naiad.Pair{``0,``1},``2},System.Func{``1,``1,``1},System.Boolean)
     Unique name M_Microsoft_Research_Naiad_Frameworks_Lindi_ExtensionMethods_Aggregate__5_1 generated for M:Microsoft.Research.Naiad.Frameworks.Lindi.ExtensionMethods.Aggregate``5(Microsoft.Research.Naiad.Stream{``0,``4},System.Func{``0,``1},System.Func{``0,``2},System.Func{``2,``2,``2},System.Func{``1,``2,``3},System.Boolean)
-    Unique name M_Microsoft_Research_Naiad_Frameworks_Lindi_NonStandardExtensionMethods_Iterate__2_1 generated for M:Microsoft.Research.Naiad.Frameworks.Lindi.NonStandardExtensionMethods.Iterate``2(Microsoft.Research.Naiad.Stream{``0,``1},System.Func{Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext{``1},Microsoft.Research.Naiad.Stream{``0,Microsoft.Research.Naiad.Dataflow.IterationIn{``1}},Microsoft.Research.Naiad.Stream{``0,Microsoft.Research.Naiad.Dataflow.IterationIn{``1}}},System.Linq.Expressions.Expression{System.Func{``0,System.Int32}},System.Int32,System.String)
-    Unique name M_Microsoft_Research_Naiad_Frameworks_Lindi_NonStandardExtensionMethods_IterateAndAccumulate__2_1 generated for M:Microsoft.Research.Naiad.Frameworks.Lindi.NonStandardExtensionMethods.IterateAndAccumulate``2(Microsoft.Research.Naiad.Stream{``0,``1},System.Func{Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext{``1},Microsoft.Research.Naiad.Stream{``0,Microsoft.Research.Naiad.Dataflow.IterationIn{``1}},Microsoft.Research.Naiad.Stream{``0,Microsoft.Research.Naiad.Dataflow.IterationIn{``1}}},System.Linq.Expressions.Expression{System.Func{``0,System.Int32}},System.Int32,System.String)
+    Unique name M_Microsoft_Research_Naiad_Frameworks_Lindi_NonStandardExtensionMethods_Iterate__2_1 generated for M:Microsoft.Research.Naiad.Frameworks.Lindi.NonStandardExtensionMethods.Iterate``2(Microsoft.Research.Naiad.Stream{``0,``1},System.Func{Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext{``1},Microsoft.Research.Naiad.Stream{``0,Microsoft.Research.Naiad.Dataflow.IterationIn{``1}},Microsoft.Research.Naiad.Stream{``0,Microsoft.Research.Naiad.Dataflow.IterationIn{``1}}},System.Int32,System.String)
+    Unique name M_Microsoft_Research_Naiad_Frameworks_Lindi_NonStandardExtensionMethods_Iterate__2_2 generated for M:Microsoft.Research.Naiad.Frameworks.Lindi.NonStandardExtensionMethods.Iterate``2(Microsoft.Research.Naiad.Stream{``0,``1},System.Func{Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext{``1},Microsoft.Research.Naiad.Stream{``0,Microsoft.Research.Naiad.Dataflow.IterationIn{``1}},Microsoft.Research.Naiad.Stream{``0,Microsoft.Research.Naiad.Dataflow.IterationIn{``1}}},System.Linq.Expressions.Expression{System.Func{``0,System.Int32}},System.Int32,System.String)
+    Unique name M_Microsoft_Research_Naiad_Frameworks_Lindi_NonStandardExtensionMethods_IterateAndAccumulate__2_1 generated for M:Microsoft.Research.Naiad.Frameworks.Lindi.NonStandardExtensionMethods.IterateAndAccumulate``2(Microsoft.Research.Naiad.Stream{``0,``1},System.Func{Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext{``1},Microsoft.Research.Naiad.Stream{``0,Microsoft.Research.Naiad.Dataflow.IterationIn{``1}},Microsoft.Research.Naiad.Stream{``0,Microsoft.Research.Naiad.Dataflow.IterationIn{``1}}},System.Int32,System.String)
+    Unique name M_Microsoft_Research_Naiad_Frameworks_Lindi_NonStandardExtensionMethods_IterateAndAccumulate__2_2 generated for M:Microsoft.Research.Naiad.Frameworks.Lindi.NonStandardExtensionMethods.IterateAndAccumulate``2(Microsoft.Research.Naiad.Stream{``0,``1},System.Func{Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext{``1},Microsoft.Research.Naiad.Stream{``0,Microsoft.Research.Naiad.Dataflow.IterationIn{``1}},Microsoft.Research.Naiad.Stream{``0,Microsoft.Research.Naiad.Dataflow.IterationIn{``1}}},System.Linq.Expressions.Expression{System.Func{``0,System.Int32}},System.Int32,System.String)
+    Unique name M_Microsoft_Research_Naiad_Frameworks_WebHdfs_ExtensionMethods_FromWebHdfs__2_1 generated for M:Microsoft.Research.Naiad.Frameworks.WebHdfs.ExtensionMethods.FromWebHdfs``2(Microsoft.Research.Naiad.Stream{System.Uri,``1},System.Func{System.IO.Stream,System.Collections.Generic.IEnumerable{System.ArraySegment{``0}}},System.String,System.Int32)
+    Unique name M_Microsoft_Research_Naiad_Frameworks_WebHdfs_ExtensionMethods_FromWebHdfsBinary__2_1 generated for M:Microsoft.Research.Naiad.Frameworks.WebHdfs.ExtensionMethods.FromWebHdfsBinary``2(Microsoft.Research.Naiad.Stream{System.Uri,``1},System.String,System.Int32)
+    Unique name M_Microsoft_Research_Naiad_Frameworks_WebHdfs_ExtensionMethods_FromWebHdfsText__1_1 generated for M:Microsoft.Research.Naiad.Frameworks.WebHdfs.ExtensionMethods.FromWebHdfsText``1(Microsoft.Research.Naiad.Stream{System.Uri,``0},System.String,System.Int32)
+    Unique name M_Microsoft_Research_Naiad_Frameworks_WebHdfs_ExtensionMethods_ReadWebHdfsBinaryCollection__1_1 generated for M:Microsoft.Research.Naiad.Frameworks.WebHdfs.ExtensionMethods.ReadWebHdfsBinaryCollection``1(Microsoft.Research.Naiad.Computation,System.Uri,System.String,System.Int32)
+    Unique name M_Microsoft_Research_Naiad_Frameworks_WebHdfs_ExtensionMethods_ReadWebHdfsCollection__1_1 generated for M:Microsoft.Research.Naiad.Frameworks.WebHdfs.ExtensionMethods.ReadWebHdfsCollection``1(Microsoft.Research.Naiad.Computation,System.Uri,System.Func{System.IO.Stream,System.Collections.Generic.IEnumerable{System.ArraySegment{``0}}},System.String,System.Int32)
+    Unique name M_Microsoft_Research_Naiad_Frameworks_WebHdfs_ExtensionMethods_ReadWebHdfsTextCollection_1 generated for M:Microsoft.Research.Naiad.Frameworks.WebHdfs.ExtensionMethods.ReadWebHdfsTextCollection(Microsoft.Research.Naiad.Computation,System.Uri,System.String,System.Int32)
     Unique name M_Microsoft_Research_Naiad_Input_BatchedDataSource_1_OnCompleted_1 generated for M:Microsoft.Research.Naiad.Input.BatchedDataSource`1.OnCompleted(System.Collections.Generic.IEnumerable{`0})
     Unique name M_Microsoft_Research_Naiad_Input_BatchedDataSource_1_OnCompleted_2 generated for M:Microsoft.Research.Naiad.Input.BatchedDataSource`1.OnCompleted(`0)
     Unique name M_Microsoft_Research_Naiad_Input_BatchedDataSource_1_OnNext_1 generated for M:Microsoft.Research.Naiad.Input.BatchedDataSource`1.OnNext(System.Collections.Generic.IEnumerable{`0})
@@ -128,6 +159,7 @@ TransformManifest:
     Unique name M_Microsoft_Research_Naiad_Input_ConstantDataSource_1__ctor_2 generated for M:Microsoft.Research.Naiad.Input.ConstantDataSource`1.#ctor(`0)
     Unique name M_Microsoft_Research_Naiad_Input_DataSourceExtensionMethods_AsNaiadStream__1_1 generated for M:Microsoft.Research.Naiad.Input.DataSourceExtensionMethods.AsNaiadStream``1(System.IObservable{System.Collections.Generic.IEnumerable{``0}},Microsoft.Research.Naiad.Computation)
     Unique name M_Microsoft_Research_Naiad_Serialization_CheckpointRestoreExtensionMethods_Checkpoint__1_1 generated for M:Microsoft.Research.Naiad.Serialization.CheckpointRestoreExtensionMethods.Checkpoint``1(``0[],System.Int32,Microsoft.Research.Naiad.Serialization.NaiadWriter)
+    Unique name M_Microsoft_Research_Naiad_Serialization_CustomSerialization_MakeSerializer__2_1 generated for M:Microsoft.Research.Naiad.Serialization.CustomSerialization.MakeSerializer``2(``1)
     Unique name M_Microsoft_Research_Naiad_Serialization_Deserializers_TryDeserialize_1 generated for M:Microsoft.Research.Naiad.Serialization.Deserializers.TryDeserialize(Microsoft.Research.Naiad.Serialization.RecvBuffer@,System.Byte@)
     Unique name M_Microsoft_Research_Naiad_Serialization_Deserializers_TryDeserialize_2 generated for M:Microsoft.Research.Naiad.Serialization.Deserializers.TryDeserialize(Microsoft.Research.Naiad.Serialization.RecvBuffer@,System.Byte[]@)
     Unique name M_Microsoft_Research_Naiad_Serialization_Deserializers_TryDeserialize_3 generated for M:Microsoft.Research.Naiad.Serialization.Deserializers.TryDeserialize(Microsoft.Research.Naiad.Serialization.RecvBuffer@,System.Char@)
@@ -156,20 +188,20 @@ TransformManifest:
     Unique name M_Microsoft_Research_Naiad_Serialization_Serializers_Serialize_11 generated for M:Microsoft.Research.Naiad.Serialization.Serializers.Serialize(Microsoft.Research.Naiad.Serialization.SubArray{System.Byte},System.UInt32)
     Unique name M_Microsoft_Research_Naiad_Serialization_Serializers_Serialize_12 generated for M:Microsoft.Research.Naiad.Serialization.Serializers.Serialize(Microsoft.Research.Naiad.Serialization.SubArray{System.Byte},System.UInt64)
     Unique name M_Microsoft_Research_Naiad_Serialization_SubArray_1__ctor_1 generated for M:Microsoft.Research.Naiad.Serialization.SubArray`1.#ctor(`0[],System.Int32)
-  XslTransform (v2014.1.26.0)
+  XslTransform (v2014.5.31.0)
   Copyright c 2006-2014, Microsoft Corporation, All Rights Reserved.
   Portions Copyright c 2006-2014, Eric Woodruff, All Rights Reserved.
   Applying XSL transformation &#39;C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\ProductionTransforms\ReflectionToManifest.xsl&#39;.
-Done Building Project &quot;C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\TransformManifest.proj&quot; (default targets).
+Done Building Project &quot;C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\TransformManifest.proj&quot; (default targets).
 
 Build succeeded.
 
-Time Elapsed 00:00:01.42
-    Last step completed in 00:00:01.5981
+Time Elapsed 00:00:01.26
+    Last step completed in 00:00:01.3938
 </buildStep>
 <buildStep step="GenerateNamespaceSummaries">
 Generating namespace summary information...
-    Last step completed in 00:00:00.7014
+    Last step completed in 00:00:00.1266
 </buildStep>
 <buildStep step="CopyConceptualContent">
 Copying conceptual content...
@@ -178,268 +210,243 @@ Checking for other token files...
 Checking for code snippets files...
 Copying images and creating the media map file...
 Generating conceptual topic files
-    Parsing topic file &#39;C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Content\Welcome.aml&#39;
-    C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Content\Welcome.aml -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\ddueXml\2a378dc0-df87-470e-9d7c-450ef7248667.xml
-    Parsing topic file &#39;C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Content\FirstNaiadProgram.aml&#39;
-    C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Content\FirstNaiadProgram.aml -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\ddueXml\450c8ec2-65e4-4396-93e8-634e6a2144f4.xml
-    Parsing topic file &#39;C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Content\NaiadOnAzure.aml&#39;
-    C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Content\NaiadOnAzure.aml -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\ddueXml\b3ff7ae9-7d4a-49b5-89c4-4e8832660d8d.xml
-    Parsing topic file &#39;C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Content\Writing a custom Naiad vertex.aml&#39;
-    C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Content\Writing a custom Naiad vertex.aml -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\ddueXml\1aff01be-2d57-406e-9f1d-b0872c8733e5.xml
-    Parsing topic file &#39;C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Content\VersionHistory\VersionHistory.aml&#39;
-    C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Content\VersionHistory\VersionHistory.aml -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\ddueXml\c2a31aaa-d867-4d3b-9315-dbb7c7527659.xml
-    Parsing topic file &#39;C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Content\VersionHistory\v0.4.aml&#39;
-    C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Content\VersionHistory\v0.4.aml -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\ddueXml\576fa56a-c7d5-4dc9-81bb-6fbd7e312fec.xml
-    Parsing topic file &#39;C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Content\VersionHistory\v0.2.aml&#39;
-    C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Content\VersionHistory\v0.2.aml -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\ddueXml\4306361f-4369-4b46-9c0d-464ccb176161.xml
-    Parsing topic file &#39;C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Content\VersionHistory\v0.3.aml&#39;
-    C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Content\VersionHistory\v0.3.aml -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\ddueXml\6163523e-3519-436b-a09a-0c71d98f6f25.xml
-    Parsing topic file &#39;C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Content\VersionHistory\v0.1.aml&#39;
-    C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Content\VersionHistory\v0.1.aml -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\ddueXml\9ab3eec5-5f40-421a-92aa-2e9d4cab33bf.xml
-    Last step completed in 00:00:00.3220
+    Parsing topic file &#39;C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Content\Welcome.aml&#39;
+    C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Content\Welcome.aml -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\ddueXml\2a378dc0-df87-470e-9d7c-450ef7248667.xml
+    Parsing topic file &#39;C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Content\FirstNaiadProgram.aml&#39;
+    C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Content\FirstNaiadProgram.aml -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\ddueXml\450c8ec2-65e4-4396-93e8-634e6a2144f4.xml
+    Parsing topic file &#39;C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Content\NaiadOnAzure.aml&#39;
+    C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Content\NaiadOnAzure.aml -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\ddueXml\b3ff7ae9-7d4a-49b5-89c4-4e8832660d8d.xml
+    Parsing topic file &#39;C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Content\Writing a custom Naiad vertex.aml&#39;
+    C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Content\Writing a custom Naiad vertex.aml -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\ddueXml\1aff01be-2d57-406e-9f1d-b0872c8733e5.xml
+    Parsing topic file &#39;C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Content\VersionHistory\VersionHistory.aml&#39;
+    C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Content\VersionHistory\VersionHistory.aml -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\ddueXml\c2a31aaa-d867-4d3b-9315-dbb7c7527659.xml
+    Parsing topic file &#39;C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Content\VersionHistory\v0.5.aml&#39;
+    C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Content\VersionHistory\v0.5.aml -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\ddueXml\6f949be3-a32e-427f-bdcd-5d9d462eeb42.xml
+    Parsing topic file &#39;C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Content\VersionHistory\v0.4.aml&#39;
+    C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Content\VersionHistory\v0.4.aml -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\ddueXml\576fa56a-c7d5-4dc9-81bb-6fbd7e312fec.xml
+    Parsing topic file &#39;C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Content\VersionHistory\v0.2.aml&#39;
+    C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Content\VersionHistory\v0.2.aml -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\ddueXml\4306361f-4369-4b46-9c0d-464ccb176161.xml
+    Parsing topic file &#39;C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Content\VersionHistory\v0.3.aml&#39;
+    C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Content\VersionHistory\v0.3.aml -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\ddueXml\6163523e-3519-436b-a09a-0c71d98f6f25.xml
+    Parsing topic file &#39;C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Content\VersionHistory\v0.1.aml&#39;
+    C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Content\VersionHistory\v0.1.aml -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\ddueXml\9ab3eec5-5f40-421a-92aa-2e9d4cab33bf.xml
+    Last step completed in 00:00:00.1293
 </buildStep>
 <buildStep step="CreateConceptualTopicConfigs">
 Creating conceptual topic configuration files...
     Companion files
     _ContentMetadata_.xml
     ConceptualManifest.xml
-    Last step completed in 00:00:00.0255
+    Last step completed in 00:00:00.0343
 </buildStep>
 <buildStep step="CopyAdditionalContent">
 Copying additional content files...
-C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\icons\Help.png -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\Help.png
+C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\icons\Help.png -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\Help.png
     Last step completed in 00:00:00.0070
 </buildStep>
 <buildStep step="MergeTablesOfContents">
 Merging conceptual and additional tables of contents...
-    Last step completed in 00:00:00.0005
+    Last step completed in 00:00:00.0030
 </buildStep>
 <buildStep step="GenerateIntermediateTableOfContents">
 Generating intermediate table of contents file...
 [C:\Program Files (x86)\MSBuild\12.0\bin\MSBuild.exe]
-Build started 4/21/2014 5:25:46 PM.
-Project &quot;C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\GenerateIntermediateTOC.proj&quot; on node 1 (default targets).
+Build started 10/17/2014 3:19:47 PM.
+Project &quot;C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\GenerateIntermediateTOC.proj&quot; on node 1 (default targets).
 GenerateIntermediateTOC:
-  XslTransform (v2014.1.26.0)
+  XslTransform (v2014.5.31.0)
   Copyright c 2006-2014, Microsoft Corporation, All Rights Reserved.
   Portions Copyright c 2006-2014, Eric Woodruff, All Rights Reserved.
   Applying XSL transformation &#39;C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\\ProductionTransforms\CreateVSToc.xsl&#39;.
-Done Building Project &quot;C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\GenerateIntermediateTOC.proj&quot; (default targets).
+Done Building Project &quot;C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\GenerateIntermediateTOC.proj&quot; (default targets).
 
 Build succeeded.
 
-Time Elapsed 00:00:00.16
+Time Elapsed 00:00:00.14
 Generating conceptual content intermediate TOC file...
-    Last step completed in 00:00:00.2699
+    Last step completed in 00:00:00.2434
 </buildStep>
 <buildStep step="CreateBuildAssemblerConfigs">
 Creating Sandcastle configuration files...
     sandcastle.config
     conceptual.config
-    Last step completed in 00:00:00.1850
+    Last step completed in 00:00:00.2732
 </buildStep>
 <buildStep step="MergeCustomConfigs">
 Merging custom build component configurations
-C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\sandcastle.config
-C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\conceptual.config
+C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\sandcastle.config
+C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\conceptual.config
     Removing unused ExampleComponent.
-    Last step completed in 00:00:00.3450
+    Last step completed in 00:00:00.0741
 </buildStep>
 <buildStep step="BuildConceptualTopics">
 Building conceptual help topics...
 [C:\Program Files (x86)\MSBuild\12.0\bin\MSBuild.exe]
-Build started 4/21/2014 5:25:47 PM.
-Project &quot;C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildConceptualTopics.proj&quot; on node 1 (default targets).
+Build started 10/17/2014 3:19:47 PM.
+Project &quot;C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildConceptualTopics.proj&quot; on node 1 (default targets).
 BuildConceptualTopics:
-  BuildAssembler (v2014.1.26.0)
+  BuildAssembler (v2014.5.31.0)
   Copyright c 2006-2014, Microsoft Corporation, All Rights Reserved.
   Portions Copyright c 2006-2014, Eric Woodruff, All Rights Reserved.
   Loading configuration...
   Processing topics...
-  Processed 9 topic(s)
+  Processed 10 topic(s)
   CopyFromIndexComponent: &quot;metadata&quot; in-memory cache entries used: 1 of 15.
-Done Building Project &quot;C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildConceptualTopics.proj&quot; (default targets).
+Done Building Project &quot;C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildConceptualTopics.proj&quot; (default targets).
 
 Build succeeded.
 
-Time Elapsed 00:00:06.40
-    Last step completed in 00:00:07.0073
+Time Elapsed 00:00:05.07
+    Last step completed in 00:00:05.2752
 </buildStep>
 <buildStep step="BuildReferenceTopics">
 Building reference help topics...
 [C:\Program Files (x86)\MSBuild\12.0\bin\MSBuild.exe]
-Build started 4/21/2014 5:25:54 PM.
-Project &quot;C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj&quot; on node 1 (default targets).
+Build started 10/17/2014 3:19:53 PM.
+Project &quot;C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj&quot; on node 1 (default targets).
 BuildReferenceTopics:
-  BuildAssembler (v2014.1.26.0)
+  BuildAssembler (v2014.5.31.0)
   Copyright c 2006-2014, Microsoft Corporation, All Rights Reserved.
   Portions Copyright c 2006-2014, Eric Woodruff, All Rights Reserved.
   Loading configuration...
   Processing topics...
-BuildAssembler : warning : ResolveReferenceLinksComponent: [T:Microsoft.Research.Naiad.Computation] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.CloudStorageAccount&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [T:Microsoft.Research.Naiad.Computation] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [Methods.T:Microsoft.Research.Naiad.Computation] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.CloudStorageAccount&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [Methods.T:Microsoft.Research.Naiad.Computation] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [T:Microsoft.Research.Naiad.OneOffComputation] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.CloudStorageAccount&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [T:Microsoft.Research.Naiad.OneOffComputation] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [Methods.T:Microsoft.Research.Naiad.OneOffComputation] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.CloudStorageAccount&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [Methods.T:Microsoft.Research.Naiad.OneOffComputation] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Azure.ConsoleExtensionMethods.SetConsoleError(Microsoft.Research.Naiad.Controller,Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer,System.String)] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Azure.ConsoleExtensionMethods.SetConsoleOut(Microsoft.Research.Naiad.Controller,Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer,System.String)] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [T:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.CloudStorageAccount&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [T:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [Methods.T:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.CloudStorageAccount&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [Methods.T:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods.DefaultAccount(Microsoft.Research.Naiad.Computation)] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.CloudStorageAccount&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods.DefaultAccount(Microsoft.Research.Naiad.Computation)] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.CloudStorageAccount&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods.DefaultAccount(Microsoft.Research.Naiad.Computation)] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.CloudStorageAccount&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods.DefaultBlobContainer(Microsoft.Research.Naiad.Computation,System.String)] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods.DefaultBlobContainer(Microsoft.Research.Naiad.Computation,System.String)] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods.ReadBinaryFromAzureBlobs``1(Microsoft.Research.Naiad.Computation,Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer,System.String)] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods.ReadCustomBinaryFromAzureBlobs``1(Microsoft.Research.Naiad.Computation,Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer,System.String,System.Func{System.IO.BinaryReader,System.Collections.Generic.IEnumerable{``0}})] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods.ReadFromAzureBlobs``1(Microsoft.Research.Naiad.Computation,Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer,System.String,System.Func{System.IO.Stream,System.Collections.Generic.IEnumerable{``0}})] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods.ReadFromAzureTable``1(Microsoft.Research.Naiad.Computation,Microsoft.WindowsAzure.Storage.Table.CloudTable,Microsoft.WindowsAzure.Storage.Table.TableQuery{``0})] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Table.CloudTable&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods.ReadFromAzureTable``1(Microsoft.Research.Naiad.Computation,Microsoft.WindowsAzure.Storage.Table.CloudTable,Microsoft.WindowsAzure.Storage.Table.TableQuery{``0})] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Table.TableQuery`1&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods.ReadTextFromAzureBlobs(Microsoft.Research.Naiad.Computation,Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer,System.String)] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods.WriteBinaryToAzureBlobs``1(Microsoft.Research.Naiad.Stream{``0,Microsoft.Research.Naiad.Dataflow.Epoch},Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer,System.String)] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods.WriteCustomBinaryToAzureBlobs``1(Microsoft.Research.Naiad.Stream{``0,Microsoft.Research.Naiad.Dataflow.Epoch},Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer,System.String,System.Action{System.IO.BinaryWriter,``0})] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods.WriteTextToAzureBlobs(Microsoft.Research.Naiad.Stream{System.String,Microsoft.Research.Naiad.Dataflow.Epoch},Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer,System.String)] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods.WriteTextToAzureBlobs``1(Microsoft.Research.Naiad.Stream{``0,Microsoft.Research.Naiad.Dataflow.Epoch},Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer,System.String)] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods.WriteToAzureBlobs``1(Microsoft.Research.Naiad.Stream{``0,Microsoft.Research.Naiad.Dataflow.Epoch},Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer,System.String,System.Func{Microsoft.WindowsAzure.Storage.Blob.CloudBlobStream,System.IObserver{``0}})] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Azure.ExtensionMethods.WriteToAzureBlobs``1(Microsoft.Research.Naiad.Stream{``0,Microsoft.Research.Naiad.Dataflow.Epoch},Microsoft.WindowsAzure.Storage.Blob.CloudBlobContainer,System.String,System.Func{Microsoft.WindowsAzure.Storage.Blob.CloudBlobStream,System.IObserver{``0}})] Unknown reference link target &#39;T:Microsoft.WindowsAzure.Storage.Blob.CloudBlobStream&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-BuildAssembler : warning : ResolveReferenceLinksComponent: [N:Microsoft.Research.Naiad.Frameworks.DifferentialDataflow] Unknown reference link target &#39;T:Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.IncrementalCollection`1&#39;. [C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
-  Processed 864 topic(s)
-  32 warning(s)
-  CopyFromIndexComponent: &quot;reflection&quot; in-memory cache entries used: 9 of 15.
-  CopyFromIndexComponent: &quot;comments&quot; in-memory cache entries used: 5 of 30.
-Done Building Project &quot;C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj&quot; (default targets).
+BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Storage.Dfs.DfsBaseCoordinator`1.#ctor(Microsoft.Research.Peloponnese.Shared.HdfsClientBase)] MSDN URL not found for target &#39;T:Microsoft.Research.Peloponnese.Shared.HdfsClientBase&#39;. [C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
+BuildAssembler : warning : ResolveReferenceLinksComponent: [F:Microsoft.Research.Naiad.Frameworks.Storage.Dfs.DfsBaseCoordinator`1.client] MSDN URL not found for target &#39;T:Microsoft.Research.Peloponnese.Shared.HdfsClientBase&#39;. [C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
+BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Storage.Dfs.DfsBaseCoordinator`1.EnumerateFileWork(Microsoft.Research.Peloponnese.Shared.HdfsFile)] MSDN URL not found for target &#39;T:Microsoft.Research.Peloponnese.Shared.HdfsFile&#39;. [C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
+BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Storage.Dfs.DfsBlockCoordinator`1.#ctor(Microsoft.Research.Peloponnese.Shared.HdfsClientBase)] MSDN URL not found for target &#39;T:Microsoft.Research.Peloponnese.Shared.HdfsClientBase&#39;. [C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
+BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Storage.Dfs.DfsBlockCoordinator`1.EnumerateFileWork(Microsoft.Research.Peloponnese.Shared.HdfsFile)] MSDN URL not found for target &#39;T:Microsoft.Research.Peloponnese.Shared.HdfsFile&#39;. [C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
+BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Storage.Dfs.DfsBlockCoordinator`1.MakeBaseMatches(Microsoft.Research.Peloponnese.Shared.HdfsFile,System.Collections.Generic.IEnumerable{System.Net.IPEndPoint[]})] MSDN URL not found for target &#39;T:Microsoft.Research.Peloponnese.Shared.HdfsFile&#39;. [C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
+BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Storage.Dfs.DfsBlockWorker`2.#ctor(System.Int32,System.Action{`0,System.IO.Stream},System.Func{`0,System.IO.Stream,System.Collections.Generic.IEnumerable{System.ArraySegment{`1}}},Microsoft.Research.Peloponnese.Shared.HdfsClientBase)] MSDN URL not found for target &#39;T:Microsoft.Research.Peloponnese.Shared.HdfsClientBase&#39;. [C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
+BuildAssembler : warning : ResolveReferenceLinksComponent: [F:Microsoft.Research.Naiad.Frameworks.Storage.Dfs.DfsBlockWorker`2.client] MSDN URL not found for target &#39;T:Microsoft.Research.Peloponnese.Shared.HdfsClientBase&#39;. [C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
+BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Storage.Dfs.DfsFileCoordinator.#ctor(Microsoft.Research.Peloponnese.Shared.HdfsClientBase)] MSDN URL not found for target &#39;T:Microsoft.Research.Peloponnese.Shared.HdfsClientBase&#39;. [C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
+BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Storage.Dfs.DfsFileCoordinator.EnumerateFileWork(Microsoft.Research.Peloponnese.Shared.HdfsFile)] MSDN URL not found for target &#39;T:Microsoft.Research.Peloponnese.Shared.HdfsFile&#39;. [C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
+BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Storage.Dfs.DfsFileWorker`1.#ctor(Microsoft.Research.Peloponnese.Shared.HdfsClientBase,System.Func{System.IO.Stream,System.Collections.Generic.IEnumerable{System.ArraySegment{`0}}})] MSDN URL not found for target &#39;T:Microsoft.Research.Peloponnese.Shared.HdfsClientBase&#39;. [C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
+BuildAssembler : warning : ResolveReferenceLinksComponent: [F:Microsoft.Research.Naiad.Frameworks.Storage.Dfs.DfsFileWorker`1.client] MSDN URL not found for target &#39;T:Microsoft.Research.Peloponnese.Shared.HdfsClientBase&#39;. [C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
+BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Storage.Dfs.DfsTextCoordinator.#ctor(Microsoft.Research.Peloponnese.Shared.HdfsClientBase)] MSDN URL not found for target &#39;T:Microsoft.Research.Peloponnese.Shared.HdfsClientBase&#39;. [C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
+BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Storage.Dfs.DfsTextCoordinator.MakeBaseMatches(Microsoft.Research.Peloponnese.Shared.HdfsFile,System.Collections.Generic.IEnumerable{System.Net.IPEndPoint[]})] MSDN URL not found for target &#39;T:Microsoft.Research.Peloponnese.Shared.HdfsFile&#39;. [C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
+BuildAssembler : warning : ResolveReferenceLinksComponent: [M:Microsoft.Research.Naiad.Frameworks.Storage.Dfs.DfsTextWorker.#ctor(Microsoft.Research.Peloponnese.Shared.HdfsClientBase,System.Int32)] MSDN URL not found for target &#39;T:Microsoft.Research.Peloponnese.Shared.HdfsClientBase&#39;. [C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj]
+  Processed 1094 topic(s)
+  15 warning(s)
+  CopyFromIndexComponent: &quot;reflection&quot; in-memory cache entries used: 10 of 15.
+  CopyFromIndexComponent: &quot;comments&quot; in-memory cache entries used: 9 of 30.
+Done Building Project &quot;C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\BuildReferenceTopics.proj&quot; (default targets).
 
 Build succeeded.
 
-Time Elapsed 00:00:36.90
-    Last step completed in 00:00:37.0155
+Time Elapsed 00:00:30.24
+    Last step completed in 00:00:30.3633
 </buildStep>
 <buildStep step="CombiningIntermediateTocFiles">
 Combining conceptual and API intermediate TOC files...
 
 Clearing any prior web output
-    Ignoring folder &#39;C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\html&#39;: The process cannot access the file &#39;M_Microsoft_Research_Naiad_Dataflow_VertexInputBuffer_2_SerializedMessageReceived.htm&#39; because it is being used by another process.
-    Last step completed in 00:00:00.3847
+    Last step completed in 00:00:00.0170
 </buildStep>
 <buildStep step="ExtractingHtmlInfo">
 Extracting HTML info for HTML Help 1 and/or website...
 [C:\Program Files (x86)\MSBuild\12.0\bin\MSBuild.exe]
-Sandcastle Help File Builder, version 2014.2.15.0 Beta
+Sandcastle Help File Builder, version 2014.5.31.0
 Copyright c 2006-2014, Eric Woodruff, All Rights Reserved
 E-Mail: Eric@EWoodruff.us
 
 Using LCID &#39;1033&#39;, code page &#39;65001&#39;, encoding charset &#39;UTF-8&#39;.
 
-Processing website files in C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website
-Processed 873 HTML files
+Processing website files in C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website
+Processed 1104 HTML files
 Sorting keywords and generating See Also indices
-Saving website keyword index to C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\WebKI.xml
-Saving website table of contents to C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\WebTOC.xml
-    Last step completed in 00:00:08.1345
+Saving website keyword index to C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\WebKI.xml
+Saving website table of contents to C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\WebTOC.xml
+    Last step completed in 00:00:08.3099
 </buildStep>
 <buildStep step="CopyStandardHelpContent">
 Copying standard help content...
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\1_404_bullet.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\1_404_bullet.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\2_404_bullet.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\2_404_bullet.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\alert_caution.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\alert_caution.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\alert_note.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\alert_note.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\alert_security.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\alert_security.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\CFW.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\CFW.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\close.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\close.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\favicon.ico -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\favicon.ico
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\footer_slice.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\footer_slice.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\info_icon.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\info_icon.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\note.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\note.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\online_icon.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\online_icon.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\open.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\open.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\pencil.GIF -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\pencil.GIF
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\privclass.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\privclass.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\privdelegate.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\privdelegate.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\privenumeration.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\privenumeration.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\privevent.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\privevent.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\privextension.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\privextension.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\privfield.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\privfield.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\privinterface.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\privinterface.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\privmethod.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\privmethod.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\privproperty.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\privproperty.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\privstructure.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\privstructure.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\protclass.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\protclass.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\protdelegate.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\protdelegate.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\protenumeration.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\protenumeration.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\protevent.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\protevent.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\protextension.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\protextension.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\protfield.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\protfield.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\protinterface.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\protinterface.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\protmethod.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\protmethod.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\protoperator.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\protoperator.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\protproperty.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\protproperty.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\protstructure.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\protstructure.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\pubclass.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\pubclass.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\pubdelegate.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\pubdelegate.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\pubenumeration.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\pubenumeration.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\pubevent.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\pubevent.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\pubextension.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\pubextension.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\pubfield.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\pubfield.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\pubinterface.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\pubinterface.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\pubmethod.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\pubmethod.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\puboperator.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\puboperator.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\pubproperty.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\pubproperty.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\pubstructure.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\pubstructure.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\search.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\search.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\search_bk.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\search_bk.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\security.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\security.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\slMobile.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\slMobile.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\static.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\static.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\tabLeftBG.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\tabLeftBG.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\tabRightBG.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\tabRightBG.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\ui_om_collapse.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\ui_om_collapse.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\ui_om_expand.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\ui_om_expand.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\xna.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\xna.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\scripts\branding.js -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\scripts\branding.js
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\styles\branding-cs-CZ.css -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\styles\branding-cs-CZ.css
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\styles\branding-de-DE.css -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\styles\branding-de-DE.css
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\styles\branding-en-US.css -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\styles\branding-en-US.css
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\styles\branding-es-ES.css -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\styles\branding-es-ES.css
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\styles\branding-fr-FR.css -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\styles\branding-fr-FR.css
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\styles\branding-it-IT.css -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\styles\branding-it-IT.css
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\styles\branding-ja-JP.css -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\styles\branding-ja-JP.css
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\styles\branding-ko-KR.css -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\styles\branding-ko-KR.css
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\styles\branding-pl-PL.css -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\styles\branding-pl-PL.css
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\styles\branding-pt-BR.css -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\styles\branding-pt-BR.css
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\styles\branding-ru-RU.css -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\styles\branding-ru-RU.css
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\styles\branding-tr-TR.css -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\styles\branding-tr-TR.css
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\styles\branding-zh-CN.css -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\styles\branding-zh-CN.css
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\styles\branding-zh-TW.css -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\styles\branding-zh-TW.css
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\styles\branding.css -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\styles\branding.css
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\\Web\CloseSearch.png -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\.\CloseSearch.png
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\\Web\CollapseAll.png -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\.\CollapseAll.png
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\\Web\Collapsed.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\.\Collapsed.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\\Web\Expanded.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\.\Expanded.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\\Web\favicon.ico -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\.\favicon.ico
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\\Web\FillNode.aspx -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\.\FillNode.aspx
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\\Web\FillNode.php -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\.\FillNode.php
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\\Web\Index.aspx -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\.\Index.aspx
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\\Web\Index.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\.\Index.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\\Web\index.html -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\.\index.html
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\\Web\index.php -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\.\index.php
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\\Web\Item.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\.\Item.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\\Web\LoadIndexKeywords.aspx -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\.\LoadIndexKeywords.aspx
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\\Web\LoadIndexKeywords.php -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\.\LoadIndexKeywords.php
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\\Web\Search.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\.\Search.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\\Web\SearchHelp.aspx -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\.\SearchHelp.aspx
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\\Web\SearchHelp.inc.php -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\.\SearchHelp.inc.php
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\\Web\SearchHelp.php -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\.\SearchHelp.php
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\\Web\Splitter.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\.\Splitter.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\\Web\SyncTOC.gif -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\.\SyncTOC.gif
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\\Web\TOC.css -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\.\TOC.css
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\\Web\TOC.js -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\.\TOC.js
-C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\\Web\Web.Config -&gt; C:\gits\naiad\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\.\Web.Config
-    Last step completed in 00:00:00.5551
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\alert_caution.gif -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\alert_caution.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\alert_note.gif -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\alert_note.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\alert_security.gif -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\alert_security.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\CFW.gif -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\CFW.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\CodeExample.png -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\CodeExample.png
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\favicon.ico -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\favicon.ico
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\footer_slice.gif -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\footer_slice.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\privclass.gif -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\privclass.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\privdelegate.gif -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\privdelegate.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\privenumeration.gif -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\privenumeration.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\privevent.gif -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\privevent.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\privextension.gif -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\privextension.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\privfield.gif -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\privfield.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\privinterface.gif -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\privinterface.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\privmethod.gif -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\privmethod.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\privproperty.gif -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\privproperty.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\privstructure.gif -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\privstructure.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\protclass.gif -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\protclass.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\protdelegate.gif -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\protdelegate.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\protenumeration.gif -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\protenumeration.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\protevent.gif -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\protevent.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\protextension.gif -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\protextension.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\protfield.gif -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\protfield.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\protinterface.gif -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\protinterface.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\protmethod.gif -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\protmethod.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\protoperator.gif -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\protoperator.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\protproperty.gif -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\protproperty.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\protstructure.gif -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\protstructure.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\pubclass.gif -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\pubclass.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\pubdelegate.gif -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\pubdelegate.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\pubenumeration.gif -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\pubenumeration.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\pubevent.gif -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\pubevent.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\pubextension.gif -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\pubextension.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\pubfield.gif -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\pubfield.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\pubinterface.gif -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\pubinterface.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\pubmethod.gif -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\pubmethod.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\puboperator.gif -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\puboperator.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\pubproperty.gif -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\pubproperty.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\pubstructure.gif -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\pubstructure.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\slMobile.gif -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\slMobile.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\static.gif -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\static.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\tabLeftBG.gif -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\tabLeftBG.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\tabRightBG.gif -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\tabRightBG.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\icons\xna.gif -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\icons\xna.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\scripts\branding.js -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\scripts\branding.js
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\styles\branding-cs-CZ.css -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\styles\branding-cs-CZ.css
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\styles\branding-de-DE.css -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\styles\branding-de-DE.css
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\styles\branding-en-US.css -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\styles\branding-en-US.css
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\styles\branding-es-ES.css -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\styles\branding-es-ES.css
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\styles\branding-fr-FR.css -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\styles\branding-fr-FR.css
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\styles\branding-Help1.css -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\styles\branding-Help1.css
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\styles\branding-Help2.css -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\styles\branding-Help2.css
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\styles\branding-HelpViewer.css -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\styles\branding-HelpViewer.css
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\styles\branding-it-IT.css -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\styles\branding-it-IT.css
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\styles\branding-ja-JP.css -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\styles\branding-ja-JP.css
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\styles\branding-ko-KR.css -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\styles\branding-ko-KR.css
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\styles\branding-pl-PL.css -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\styles\branding-pl-PL.css
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\styles\branding-pt-BR.css -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\styles\branding-pt-BR.css
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\styles\branding-ru-RU.css -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\styles\branding-ru-RU.css
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\styles\branding-tr-TR.css -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\styles\branding-tr-TR.css
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\styles\branding-zh-CN.css -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\styles\branding-zh-CN.css
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\styles\branding-zh-TW.css -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\styles\branding-zh-TW.css
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\styles\branding.css -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\styles\branding.css
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\..\LegacyWeb\CloseSearch.png -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\CloseSearch.png
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\..\LegacyWeb\CollapseAll.png -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\CollapseAll.png
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\..\LegacyWeb\Collapsed.gif -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\Collapsed.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\..\LegacyWeb\Expanded.gif -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\Expanded.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\..\LegacyWeb\favicon.ico -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\favicon.ico
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\..\LegacyWeb\FillNode.aspx -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\FillNode.aspx
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\..\LegacyWeb\FillNode.php -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\FillNode.php
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\..\LegacyWeb\Index.aspx -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\Index.aspx
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\..\LegacyWeb\Index.gif -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\Index.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\..\LegacyWeb\index.html -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\index.html
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\..\LegacyWeb\index.php -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\index.php
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\..\LegacyWeb\Item.gif -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\Item.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\..\LegacyWeb\LoadIndexKeywords.aspx -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\LoadIndexKeywords.aspx
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\..\LegacyWeb\LoadIndexKeywords.php -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\LoadIndexKeywords.php
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\..\LegacyWeb\Search.gif -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\Search.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\..\LegacyWeb\SearchHelp.aspx -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\SearchHelp.aspx
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\..\LegacyWeb\SearchHelp.inc.php -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\SearchHelp.inc.php
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\..\LegacyWeb\SearchHelp.php -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\SearchHelp.php
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\..\LegacyWeb\Splitter.gif -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\Splitter.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\..\LegacyWeb\SyncTOC.gif -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\SyncTOC.gif
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\..\LegacyWeb\TOC.css -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\TOC.css
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\..\LegacyWeb\TOC.js -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\TOC.js
+C:\Program Files (x86)\EWSoftware\Sandcastle Help File Builder\PresentationStyles\VS2010\..\LegacyWeb\Web.Config -&gt; C:\src\naiad-pages\Documentation\NaiadDocumentation\NaiadDocumentation\Help\Working\Output\Website\Web.Config
+    Last step completed in 00:00:00.5427
 </buildStep>
 <buildStep step="GenerateHelpFormatTableOfContents">
 Generating website table of contents file...
@@ -448,7 +455,7 @@ Generating website table of contents file...
 <buildStep step="GenerateFullTextIndex">
 Generating full-text index for the website...
 
-    Last step completed in 00:00:03.8820
+    Last step completed in 00:00:02.4115
 </buildStep>
 <buildStep step="CopyingWebsiteFiles">
 Copying website files to output folder...
@@ -462,16 +469,19 @@ Copied 600 files
 Copied 700 files
 Copied 800 files
 Copied 900 files
-Copied 997 files for the website content
-    Last step completed in 00:00:01.2811
+Copied 1000 files
+Copied 1100 files
+Copied 1200 files
+Copied 1219 files for the website content
+    Last step completed in 00:00:01.3026
 </buildStep>
 <buildStep step="CleanIntermediates">
 Removing intermediate files...
-    Last step completed in 00:00:00.3411
+    Last step completed in 00:00:00.4675
 </buildStep>
 <buildStep step="Completed">
 
-Build completed successfully at 04/21/2014 05:26 PM.  Total time: 00:01:04.5570
+Build completed successfully at 10/17/2014 03:20 PM.  Total time: 00:00:53.4947
 
 </buildStep>
 </shfbBuild>

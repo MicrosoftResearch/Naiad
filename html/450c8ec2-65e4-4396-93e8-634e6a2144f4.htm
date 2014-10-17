@@ -1,13 +1,6 @@
-﻿<html xmlns:MSHelp="http://msdn.microsoft.com/mshelp" xmlns:mshelp="http://msdn.microsoft.com/mshelp"><head><link rel="SHORTCUT ICON" href="./../icons/favicon.ico" /><style type="text/css">.OH_CodeSnippetContainerTabLeftActive, .OH_CodeSnippetContainerTabLeft,.OH_CodeSnippetContainerTabLeftDisabled { }.OH_CodeSnippetContainerTabRightActive, .OH_CodeSnippetContainerTabRight,.OH_CodeSnippetContainerTabRightDisabled { }.OH_footer { }</style><link rel="stylesheet" type="text/css" href="./../styles/branding.css" /><link rel="stylesheet" type="text/css" href="./../styles/branding-en-US.css" /><style type="text/css">
-			body
-			{
-			border-left:5px solid #e6e6e6;
-			overflow-x:scroll;
-			overflow-y:scroll;
-			}
-		</style><script src="./../scripts/branding.js" type="text/javascript"><!----></script><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Writing your first Naiad program</title><meta name="Language" content="en-us" /><meta name="Microsoft.Help.Id" content="450c8ec2-65e4-4396-93e8-634e6a2144f4" /><meta name="Description" content="Here we will dive into writing a first Naiad program: one that simply accepts strings read from the console and writes them back to the console." /><meta name="Microsoft.Help.ContentType" content="How To" /><meta name="BrandingAware" content="'true'" /><link type="text/css" rel="stylesheet" href="./../styles/highlight.css" /><script type="text/javascript" src="../scripts/highlight.js"><!----></script><meta name="SelfBranded" content="true" /></head><body onload="onLoad()" class="primary-mtps-offline-document"><div class="OH_outerDiv"><div class="OH_outerContent"><table class="TitleTable"><tr><td class="OH_tdLogoColumn"><img src="./../icons/Help.png" /></td><td class="OH_tdTitleColumn">Writing your first Naiad program</td><td class="OH_tdRunningTitleColumn">Naiad Help</td></tr></table><div id="mainSection"><div id="mainBody"><span class="introStyle"></span><p style="color: #dc143c; font-size: 8.5pt; font-weight: bold;">[This is preliminary documentation and is subject to change.]</p><div class="introduction"><p>
+﻿<html><head><meta http-equiv="X-UA-Compatible" content="IE=edge" /><link rel="shortcut icon" href="../icons/favicon.ico" /><style type="text/css">.OH_CodeSnippetContainerTabLeftActive, .OH_CodeSnippetContainerTabLeft,.OH_CodeSnippetContainerTabLeftDisabled { }.OH_CodeSnippetContainerTabRightActive, .OH_CodeSnippetContainerTabRight,.OH_CodeSnippetContainerTabRightDisabled { }.OH_footer { }</style><link rel="stylesheet" type="text/css" href="../styles/branding.css" /><link rel="stylesheet" type="text/css" href="../styles/branding-en-US.css" /><script type="text/javascript" src="../scripts/branding.js"> </script><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Writing your first Naiad program</title><meta name="Language" content="en-us" /><meta name="Microsoft.Help.Id" content="450c8ec2-65e4-4396-93e8-634e6a2144f4" /><meta name="Description" content="Here we will dive into writing a first Naiad program: one that simply accepts strings read from the console and writes them back to the console." /><meta name="Microsoft.Help.ContentType" content="How To" /><meta name="BrandingAware" content="true" /><link type="text/css" rel="stylesheet" href="../styles/highlight.css" /><script type="text/javascript" src="../scripts/highlight.js"> </script></head><body onload="OnLoad('cs')"><input type="hidden" id="userDataCache" class="userDataStyle" /><div class="OH_outerDiv"><div class="OH_outerContent"><table class="TitleTable"><tr><td class="OH_tdLogoColumn"><img src="../icons/Help.png" /></td><td class="OH_tdTitleColumn">Writing your first Naiad program</td><td class="OH_tdRunningTitleColumn">Naiad Help</td></tr></table><div id="mainSection"><div id="mainBody"><span class="introStyle"></span><p style="color: #dc143c; font-size: 8.5pt; font-weight: bold;">[This is preliminary documentation and is subject to change.]</p><div class="introduction"><p>
         Here we will dive into writing a first Naiad program: one that simply accepts strings read from the console and writes them back to the console.
-      </p></div><div class="OH_CollapsibleAreaRegion"><div class="OH_regiontitle">Prerequisites</div><div class="OH_CollapsibleArea_HrDiv"><hr class="OH_CollapsibleArea_Hr" /></div></div><div class="OH_clear"></div><p>
+      </p></div><div class="OH_CollapsibleAreaRegion"><div class="OH_regiontitle">Prerequisites</div><div class="OH_CollapsibleArea_HrDiv"><hr class="OH_CollapsibleArea_Hr" /></div></div><div class="OH_clear"> </div><p>
           For concreteness, this tutorial will assume that you are using Visual Studio 2013, but similar steps apply
           for other development environments.
         </p><h3 class="procedureSubHeading">Create a new C# project with a Naiad reference</h3><div class="subSection"><ol><li><p>
@@ -16,16 +9,15 @@
               Add a reference to your project (for example, using the Solution Explorer pane) to Microsoft.Research.Naiad.dll.
             </p><p>To use NuGet, select "Manage NuGet Packages...", and install the "Naiad - Core" package.</p><p>If you are using a locally-built copy of the Naiad sources, add a reference by browsing to the locally-built copy of Microsoft.Research.Naiad.dll</p></li><li><p>
               Add the following statements at the top of <span class="code">Program.cs</span>.
-            </p><div id="ID0EBABCAAAAA" class="OH_CodeSnippetContainer"><div class="OH_CodeSnippetContainerTabs" id="ID0EBABCAAAAA_tabs"></div><div id="ID0EBABCAAAAA_codecollection" class="OH_CodeSnippetContainerCodeCollection"><div class="OH_CodeSnippetToolBar"><div class="OH_CodeSnippetToolBarText"><a id="ID0EBABCAAAAA_ViewColorized" href="#" onclick="javascript:ExchangeTitleContent('ID0EBABCAAAAA','4')" title="View Colorized" style="display: none">View Colorized</a><a id="ID0EBABCAAAAA_copycode" href="#" onclick="javascript:CopyToClipboard('ID0EBABCAAAAA','4')" title="Copy to Clipboard">Copy to Clipboard</a><a id="ID0EBABCAAAAA_PrintText" class="OH_PrintText" href="#" onclick="javascript:Print('ID0EBABCAAAAA','4')" title="Print">Print</a></div></div><div id="ID0EBABCAAAAA_code_Div1" class="OH_CodeSnippetContainerCode" style="display: block"><pre><span class="highlight-keyword">using</span> Microsoft.Research.Naiad;
-<span class="highlight-keyword">using</span> Microsoft.Research.Naiad.Input;</pre></div><div id="ID0EBABCAAAAA_code_Plain_Div1" class="OH_CodeSnippetContainerCode" style="display: none"><pre>using Microsoft.Research.Naiad;
-using Microsoft.Research.Naiad.Input;</pre></div></div></div><script>addSpecificTextLanguageTagSet('ID0EBABCAAAAA');</script><p>
+            </p><div class="OH_CodeSnippetContainer"><div class="OH_CodeSnippetContainerCodeCollection"><div class="OH_CodeSnippetToolBar"><div class="OH_CodeSnippetToolBarText"><a id="ID0EABAABCAAA_copyCode" href="#" onclick="javascript:CopyToClipboard('ID0EABAABCAAA');return false;" title="Copy">Copy</a></div></div><div id="ID0EABAABCAAA_code_Div1" class="OH_CodeSnippetContainerCode" style="display: block"><pre xml:space="preserve"><span class="highlight-keyword">using</span> Microsoft.Research.Naiad;
+<span class="highlight-keyword">using</span> Microsoft.Research.Naiad.Input;</pre></div></div></div><script type="text/javascript">AddLanguageTabSet("ID0EABAABCAAA");</script><p>
               These namespaces contain important classes and methods for initializing and using Naiad, as well as providing input to Naiad computations.
             </p></li></ol><p>
             At this point we have an empty program and are ready to start using Naiad. We'll next walk through the steps needed for a program to start using Naiad.
           </p></div><h3 class="procedureSubHeading">
         Writing a Naiad program to receive and display lines of text
       </h3><div class="subSection"><ol><li><p>
-              The first step in any Naiad program is to create a <span sdata="cer" target="T:Microsoft.Research.Naiad.Computation"><a href="T_Microsoft_Research_Naiad_Computation.htm" target="">Computation</a></span>.
+              The first step in any Naiad program is to create a <a href="T_Microsoft_Research_Naiad_Computation.htm">Computation</a>.
               This can be done several ways, but the simplest is to use the <span class="code">NewComputation.FromArgs()</span> method, 
               which extracts Naiad-specific arguments from the command-line and returns a computation.
               The computation implements <span class="code">IDisposable</span>, and should be used inside a <span class="code">using</span> block.
@@ -48,25 +40,23 @@ using Microsoft.Research.Naiad.Input;</pre></div></div></div><script>addSpecific
               Once we have finished producing input for the computation we close the data source.
               This indicates to Naiad that no more data is expected, and it can start to cleanly shut down the parts of the computation with no further work.
             </p></li><li><p>
-              Before exiting the <span class="code">using</span> block we call <span sdata="cer" target="M:Microsoft.Research.Naiad.Computation.Join"><a href="M_Microsoft_Research_Naiad_Computation_Join.htm" target="">Join<span id="ID0EAADAACAAAAAA"> </span><script type="text/javascript">
-					addToLanSpecTextIdSet("ID0EAADAACAAAAAA?vb=|cpp=()|cs=()|fs=()|nu=()");
-				</script></a></span> on the computation to block until all work has completed.
+              Before exiting the <span class="code">using</span> block we call <a href="M_Microsoft_Research_Naiad_Computation_Join.htm">Join<span id="LST282F75EE_0"></span><script type="text/javascript">AddLanguageSpecificTextSet("LST282F75EE_0?cs=()|vb=|cpp=()|nu=()|fs=()");</script></a> on the computation to block until all work has completed.
               It is an error to exit a using block (or otherwise dispose of a computation) without first calling <span class="code">Join</span>.
             </p></li></ol><p>
             The full program we have assembled reads as follows:
-          </p><div id="ID0EAAAAAAA" class="OH_CodeSnippetContainer"><div class="OH_CodeSnippetContainerTabs" id="ID0EAAAAAAA_tabs"></div><div id="ID0EAAAAAAA_codecollection" class="OH_CodeSnippetContainerCodeCollection"><div class="OH_CodeSnippetToolBar"><div class="OH_CodeSnippetToolBarText"><a id="ID0EAAAAAAA_ViewColorized" href="#" onclick="javascript:ExchangeTitleContent('ID0EAAAAAAA','4')" title="View Colorized" style="display: none">View Colorized</a><a id="ID0EAAAAAAA_copycode" href="#" onclick="javascript:CopyToClipboard('ID0EAAAAAAA','4')" title="Copy to Clipboard">Copy to Clipboard</a><a id="ID0EAAAAAAA_PrintText" class="OH_PrintText" href="#" onclick="javascript:Print('ID0EAAAAAAA','4')" title="Print">Print</a></div></div><div id="ID0EAAAAAAA_code_Div1" class="OH_CodeSnippetContainerCode" style="display: block"><pre><span class="highlight-keyword">static</span> <span class="highlight-keyword">void</span> Main(<span class="highlight-keyword">string</span>[] args)
+          </p><div class="OH_CodeSnippetContainer"><div class="OH_CodeSnippetContainerCodeCollection"><div class="OH_CodeSnippetToolBar"><div class="OH_CodeSnippetToolBarText"><a id="ID0EAAAABAAA_copyCode" href="#" onclick="javascript:CopyToClipboard('ID0EAAAABAAA');return false;" title="Copy">Copy</a></div></div><div id="ID0EAAAABAAA_code_Div1" class="OH_CodeSnippetContainerCode" style="display: block"><pre xml:space="preserve"><span class="highlight-keyword">static</span> <span class="highlight-keyword">void</span> Main(<span class="highlight-keyword">string</span>[] args)
 {
-  <span class="highlight-comment">// 1. allocate a new dataflow computation.</span> 
-  <span class="highlight-keyword">using</span> (<span class="highlight-keyword">var</span> computation = NewComputation.FromArgs(<span class="highlight-keyword">ref</span> args))
+  <span class="highlight-comment">// 1. allocate a new dataflow computation.</span>
+  <span class="highlight-keyword">using</span> (<span class="highlight-keyword">var</span> computation = NewComputation.FromArgs(<span class="highlight-keyword">ref</span> args))
   {
-    <span class="highlight-comment">// 2. define an object which accepts input strings.</span> 
-    <span class="highlight-keyword">var</span> source = <span class="highlight-keyword">new</span> BatchedDataSource&lt;<span class="highlight-keyword">string</span>&gt;();
+    <span class="highlight-comment">// 2. define an object which accepts input strings.</span>
+    <span class="highlight-keyword">var</span> source = <span class="highlight-keyword">new</span> BatchedDataSource&lt;<span class="highlight-keyword">string</span>&gt;();
 
-    <span class="highlight-comment">// 3. convert the data source into a Naiad stream of strings.</span> 
-    <span class="highlight-keyword">var</span> input = computation.NewInput(source);
+    <span class="highlight-comment">// 3. convert the data source into a Naiad stream of strings.</span>
+    <span class="highlight-keyword">var</span> input = computation.NewInput(source);
 
-    <span class="highlight-comment">// 4.request a notification for each batch of strings received.</span> 
-    <span class="highlight-keyword">var</span> output = input.Subscribe(x =&gt;
+    <span class="highlight-comment">// 4.request a notification for each batch of strings received.</span>
+    <span class="highlight-keyword">var</span> output = input.Subscribe(x =&gt;
                  {
                    <span class="highlight-keyword">foreach</span> (<span class="highlight-keyword">var</span> line <span class="highlight-keyword">in</span> x)
                      Console.WriteLine(line);
@@ -75,8 +65,8 @@ using Microsoft.Research.Naiad.Input;</pre></div></div></div><script>addSpecific
     <span class="highlight-comment">// 5. start the computation, fixing the structure of the dataflow graph.</span>
     computation.Activate();
 
-    <span class="highlight-comment">// 6. read inputs from the console as long as the user supplies them.</span> 
-    <span class="highlight-keyword">for</span> (<span class="highlight-keyword">var</span> l = Console.ReadLine(); l.Length &gt; <span class="highlight-number">0</span>; l = Console.ReadLine())
+    <span class="highlight-comment">// 6. read inputs from the console as long as the user supplies them.</span>
+    <span class="highlight-keyword">for</span> (<span class="highlight-keyword">var</span> l = Console.ReadLine(); l.Length &gt; <span class="highlight-number">0</span>; l = Console.ReadLine())
       source.OnNext(l.Split());
 
     <span class="highlight-comment">// 7. signal that the source is now complete.</span>
@@ -85,35 +75,10 @@ using Microsoft.Research.Naiad.Input;</pre></div></div></div><script>addSpecific
     <span class="highlight-comment">// 8. block until all work is finished.</span>
     computation.Join();
   }
-}</pre></div><div id="ID0EAAAAAAA_code_Plain_Div1" class="OH_CodeSnippetContainerCode" style="display: none"><pre>static void Main(string[] args)
-{
-  // 1. allocate a new dataflow computation. 
-  using (var computation = NewComputation.FromArgs(ref args))
-  {
-    // 2. define an object which accepts input strings. 
-    var source = new BatchedDataSource&lt;string&gt;();
-
-    // 3. convert the data source into a Naiad stream of strings. 
-    var input = computation.NewInput(source);
-
-    // 4.request a notification for each batch of strings received. 
-    var output = input.Subscribe(x =&gt;
-                 {
-                   foreach (var line in x)
-                     Console.WriteLine(line);
-                 });
-
-    // 5. start the computation, fixing the structure of the dataflow graph.
-    computation.Activate();
-
-    // 6. read inputs from the console as long as the user supplies them. 
-    for (var l = Console.ReadLine(); l.Length &gt; 0; l = Console.ReadLine())
-      source.OnNext(l.Split());
-
-    // 7. signal that the source is now complete.
-    source.OnCompleted();
-
-    // 8. block until all work is finished.
-    computation.Join();
-  }
-}</pre></div></div></div><script>addSpecificTextLanguageTagSet('ID0EAAAAAAA');</script></div></div></div></div></div><div id="OH_footer" class="OH_footer"><p /><div class="OH_feedbacklink"><a href="mailto:naiadquestions@microsoft.com?subject=Naiad+Help+Writing+your+first+Naiad+program+100+EN-US&amp;body=Your%20feedback%20is%20used%20to%20improve%20the%20documentation%20and%20the%20product.%20Your%20e-mail%20address%20will%20not%20be%20used%20for%20any%20other%20purpose%20and%20is%20disposed%20of%20after%20the%20issue%20you%20report%20is%20resolved.%20While%20working%20to%20resolve%20the%20issue%20that%20you%20report%2c%20you%20may%20be%20contacted%20via%20e-mail%20to%20get%20further%20details%20or%20clarification%20on%20the%20feedback%20you%20sent.%20After%20the%20issue%20you%20report%20has%20been%20addressed%2c%20you%20may%20receive%20an%20e-mail%20to%20let%20you%20know%20that%20your%20feedback%20has%20been%20addressed.">Send Feedback</a> on this topic to naiadquestions@microsoft.com.</div></div></body></html>
+}</pre></div></div></div><script type="text/javascript">AddLanguageTabSet("ID0EAAAABAAA");</script></div></div></div></div></div><div id="OH_footer" class="OH_footer"><div class="OH_feedbacklink">Send comments on this topic to
+        <a id="HT_MailLink" href="mailto:naiadquestions%40microsoft.com?Subject=Naiad Help">naiadquestions@microsoft.com</a></div><script type="text/javascript">
+        var HT_mailLink = document.getElementById("HT_MailLink");
+        var HT_mailLinkText = HT_mailLink.innerHTML;
+        HT_mailLink.href += ": " + document.title + "\u0026body=" + encodeURIComponent("Your feedback is used to improve the documentation and the product. Your e-mail address will not be used for any other purpose and is disposed of after the issue you report is resolved. While working to resolve the issue that you report, you may be contacted via e-mail to get further details or clarification on the feedback you sent. After the issue you report has been addressed, you may receive an e-mail to let you know that your feedback has been addressed.");
+        HT_mailLink.innerHTML = HT_mailLinkText;
+        </script></div></body></html>
