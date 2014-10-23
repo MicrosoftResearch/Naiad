@@ -233,6 +233,7 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
                 var newMessage = new Message<S, T>(records.time);
                 newMessage.Allocate(AllocationReason.PostOfficeRentrancy);
                 Array.Copy(records.payload, newMessage.payload, records.length);
+                newMessage.length = records.length;
 
                 this.delayedWork.Enqueue(newMessage);
             }
