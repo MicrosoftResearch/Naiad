@@ -126,23 +126,23 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
                         NaiadTracing.Trace.LockHeld(this.Lock);
                         PrivateBufferedUpdates = this.BufferedUpdates;
                         this.BufferedUpdates = FreshBufferedUpdates;
-                    }
-                    NaiadTracing.Trace.LockRelease(this.Lock);
-                    
-                    // update Notifications count to include shipped values.
-                    foreach (var pair in PrivateBufferedUpdates)
-                    {
-                        if (this.Stage.InternalComputation.Reachability.Graph[pair.Key.Location].IsStage)
-                        {
-                            long prev = 0;
-                            this.Notifications.TryGetValue(pair.Key, out prev);
 
-                            if (prev + pair.Value != 0)
-                                this.Notifications[pair.Key] = prev + pair.Value;
-                            else
-                                this.Notifications.Remove(pair.Key);
+                        // update Notifications count to include shipped values.
+                        foreach (var pair in PrivateBufferedUpdates)
+                        {
+                            if (this.Stage.InternalComputation.Reachability.Graph[pair.Key.Location].IsStage)
+                            {
+                                long prev = 0;
+                                this.Notifications.TryGetValue(pair.Key, out prev);
+
+                                if (prev + pair.Value != 0)
+                                    this.Notifications[pair.Key] = prev + pair.Value;
+                                else
+                                    this.Notifications.Remove(pair.Key);
+                            }
                         }
                     }
+                    NaiadTracing.Trace.LockRelease(this.Lock);
 
                     var output = this.Output.GetBufferForTime(new Empty());
 
