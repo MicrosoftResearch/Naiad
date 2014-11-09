@@ -18,6 +18,11 @@
  * permissions and limitations under the License.
  */
 
+#if true
+using System;
+using Microsoft.Research.Naiad.Scheduling;
+using Microsoft.Research.Naiad.Runtime.Progress;
+#else
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -32,6 +37,7 @@ using Microsoft.Research.Naiad.Dataflow.Channels;
 using Microsoft.Research.Naiad.Scheduling;
 using Microsoft.Research.Naiad.Serialization;
 using Microsoft.Research.Naiad.Runtime.Progress;
+#endif
 
 namespace Microsoft.Research.Naiad.Diagnostics
 {
@@ -78,6 +84,49 @@ namespace Microsoft.Research.Naiad.Diagnostics
         Unspecified
     }
 
+#if true
+    internal class NaiadTracing
+    {
+        public static NaiadTracing Trace = new NaiadTracing();
+
+        public void RegionStart(NaiadTracingRegion region) { }
+        public void RegionStop(NaiadTracingRegion region) { }
+
+        public void ChannelInfo(int channel, int src, int dst, bool isExchange, bool isProgress) { }
+        public void ProcessInfo(int id, string name) { }
+        public void StageInfo(int id, string name) { }
+        public void VertexPlacement(int stageid, int vertexid, int proc, int worker) { }
+
+        public void LockInfo(Object obj, string name) { }
+        public void LockAcquire(Object obj) { }
+        public void LockHeld(Object obj) { }
+        public void LockRelease(Object obj) { }
+
+        public void ThreadName(string name, params object[] args) { }
+        public void SocketError(System.Net.Sockets.SocketError err) { }
+        public void MsgSend(int channel, int seqno, int len, int src, int dst) { }
+        public void MsgRecv(int channel, int seqno, int len, int src, int dst) { }
+        internal void StartSched(Scheduler.WorkItem workitem) { }
+        internal void StopSched(Scheduler.WorkItem workitem) { }
+
+        public void RefAlignFrontier() { }
+        public void AdvanceFrontier(Pointstamp[] frontier) { }
+    }
+
+    /// <summary>
+    /// This class containes methods that allow Mark events to be posted in the ETW Kernel Logger session.
+    /// </summary>
+    public class KernelLoggerTracing
+    {
+        /// <summary>
+        /// Formats and then writes a freetext Mark event into the ETW Kernel Logger trace session.
+        /// This event is expensive and should be used sparingly.
+        /// </summary>
+        /// <param name="msg">The format string to be logged, as in String.Format</param>
+        /// <param name="args">Arguments to be formatted.</param>
+        public static void PostKernelLoggerMarkEvent(string msg, params object[] args) { }
+    }
+#else
     /// <summary>
     /// ETW provider for Naiad 
     /// GUID is 0ad7158e-b717-53ae-c71a-6f41ab15fe16
@@ -698,4 +747,5 @@ namespace Microsoft.Research.Naiad.Diagnostics
             tb.Trace(msg);
         }
     }
+#endif
 }
