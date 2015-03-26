@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.5
+ * Naiad ver. 0.6
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -202,6 +202,40 @@ namespace Microsoft.Research.Naiad
         /// </summary>
         public bool DistributedProgressTracker { get { return this.distributedProgressTracker; } set { this.distributedProgressTracker = value; } }
 
+        private Func<string, Runtime.FaultTolerance.IStreamSequence> checkpointingStreamFactory = null;
+
+        /// <summary>
+        /// Set this to non-null to enable checkpointing and logging to the specified directory
+        /// </summary>
+        public Func<string, Runtime.FaultTolerance.IStreamSequence> CheckpointingFactory {
+            get { return this.checkpointingStreamFactory; }
+            set {
+                this.checkpointingStreamFactory = value;
+                if (this.deadlockTimeout == Timeout.Infinite)
+                {
+                    this.deadlockTimeout = 1000;
+                }
+            }
+        }
+        internal bool LoggingEnabled { get { return this.checkpointingStreamFactory != null; } }
+
+        private int defaultCheckpointInterval = 30000;
+        /// <summary>
+        /// The number of milliseconds between checkpoints for default vertices
+        /// </summary>
+        public int DefaultCheckpointInterval
+        {
+            get { return this.defaultCheckpointInterval; }
+            set { this.defaultCheckpointInterval = value; }
+        }
+
+        private int maxLatticeInternCount = int.MaxValue;
+        /// <summary>
+        /// If a differential dataflow lattice intern table gets more than this many values in it, the state of the
+        /// operator will be fully rewritten and the lattice intern table will be compacted
+        /// </summary>
+        public int MaxLatticeInternStaleTimes { get { return this.maxLatticeInternCount; } set { this.maxLatticeInternCount = value; } }
+
         internal bool Impersonation { get { return this.impersonation; } set { this.impersonation = value; } }
         private bool impersonation = false;
 
@@ -228,33 +262,6 @@ namespace Microsoft.Research.Naiad
         /// If true, don't use the high priority queue for progress traffic
         /// </summary>
         internal bool DontUseHighPriorityQueue { get { return this.nothighpriorityqueue; } set { this.nothighpriorityqueue = value; } }
-        
-        private bool domainReporting = false;
-        /// <summary>
-        /// Enables a reporting graph manager. In the future this is intended to be used for logging messages that
-        /// are aggregated according to real time, though for now it is mostly vestigial. Calling Log(string) on the
-        /// reporter at a vertex will only deliver the messages to a central location if domain reporting is enabled.
-        /// Messages are all written to a file called rtdomain.txt at the root vertex's computer.
-        /// </summary>
-        internal bool DomainReporting { get { return this.domainReporting; } set { this.domainReporting = value; } }
-
-        private bool inlineReporting = false;
-        /// <summary>
-        /// Enables inline reporting in the user graph domain. This is used for logging messages that are aggregated
-        /// according to logical times, e.g. to discover the number of messages written by a stage during a particular
-        /// loop iteration, or epoch. Calling Log(string,time) on the reporter at a vertex will only deliver the messages
-        /// to a central location if domain reporting is enabled. Messages are all written to a file called rtinline.txt
-        /// at the root vertex's computer.
-        /// </summary>
-        internal bool InlineReporting { get { return this.inlineReporting; } set { this.inlineReporting = value; } }
-
-        private bool aggregateReporting = false;
-        /// <summary>
-        /// Enables aggregation in inline reporting in the graph manager domain. Calling LogAggregate(...) on the reporter at a
-        /// vertex will only aggregate and log messages if both InlineReporting and AggregateReporting are true. Aggregates
-        /// are written to the rtinline.txt file at the root vertex's computer.
-        /// </summary>
-        internal bool AggregateReporting { get { return this.aggregateReporting; } set { this.aggregateReporting = value; } }
         
         private BroadcastProtocol broadcast = BroadcastProtocol.TcpOnly;
         /// <summary>
@@ -354,7 +361,7 @@ namespace Microsoft.Research.Naiad
             List<string> strippedArgs = new List<string>();
 
             // Defaults
-            string[] prefixes = new string[] { "localhost:2101" };
+            string[] prefixes = new string[] { "localhost:2102" };
 
             bool procIDSet = false;
             bool numProcsSet = false;
@@ -523,18 +530,6 @@ namespace Microsoft.Research.Naiad
                         break;
                     case "--nothighpriorityqueue":
                         config.DontUseHighPriorityQueue = true;
-                        i++;
-                        break;
-                    case "--domainreporting":
-                        config.DomainReporting = true;
-                        i++;
-                        break;
-                    case "--inlinereporting":
-                        config.InlineReporting = true;
-                        i++;
-                        break;
-                    case "--aggregatereporting":
-                        config.AggregateReporting = true;
                         i++;
                         break;
                     case "--broadcastprotocol":

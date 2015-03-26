@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.5
+ * Naiad ver. 0.6
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -283,6 +283,22 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.CollectionTra
                 throw new NotImplementedException();
         }
 
+        public long CountDifferenceAt(int keyIndex, int timeIndex)
+        {
+            var ol = new OffsetLength(keyIndex);
+            var handle = increments.Dereference(ol);
+
+            var accum = new CollectionTraceWithAggregationIncrement<S>();
+
+            for (int i = 0; i < handle.Length && !handle.Array[handle.Offset + i].IsEmpty(isZero); i++)
+            {
+                if (handle.Array[handle.Offset + i].TimeIndex == timeIndex)
+                    accum.Add(handle.Array[handle.Offset + i], axpy);
+            }
+
+            return (accum.IsEmpty(isZero)) ? 0L : 1L;
+        }
+
         HashSet<int> hashSet = new HashSet<int>();
         public void EnumerateTimes(int keyIndex, NaiadList<int> timelist)
         {
@@ -335,6 +351,44 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.CollectionTra
 
         public bool IsZero(ref int keyIndex) { return keyIndex == 0; }
 
+        public void RemoveStateInTimes(ref int offsetLength, Func<int, bool> keepTime)
+        {
+            var ol = new OffsetLength(offsetLength);
+
+            if (!ol.IsEmpty)
+            {
+                var handle = increments.Dereference(ol);
+
+                for (int i = 0; i < handle.Length; i++)
+                {
+                    if (handle.Array[handle.Offset + i].Weight != 0)
+                    {
+                        if (!keepTime(handle.Array[handle.Offset + i].TimeIndex))
+                        {
+                            handle.Array[handle.Offset + i] = new CollectionTraceWithAggregationIncrement<S>();
+                        }
+                    }
+                }
+
+                var position = 0;
+                for (int i = 0; i < handle.Length; i++)
+                    if (!handle.Array[handle.Offset + i].IsEmpty(isZero))
+                    {
+                        var temp = handle.Array[handle.Offset + i];
+                        handle.Array[handle.Offset + i] = new CollectionTraceWithAggregationIncrement<S>();
+                        handle.Array[handle.Offset + (position++)] = temp;
+                    }
+
+                if (handle.Array[handle.Offset].IsEmpty(isZero))
+                    increments.Release(ref ol);
+
+
+                offsetLength = ol.offsetLength;
+            }
+
+            ReleaseCache();
+        }
+
         public void EnsureStateIsCurrentWRTAdvancedTimes(ref int offsetLength)
         {
             var ol = new OffsetLength(offsetLength);
@@ -374,6 +428,32 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.CollectionTra
 
                 offsetLength = ol.offsetLength;
             }
+        }
+
+        public void TransferTimesToNewInternTable(int offsetLength, Func<int, int> transferTime)
+        {
+            var ol = new OffsetLength(offsetLength);
+
+            if (!ol.IsEmpty)
+            {
+                var handle = increments.Dereference(ol);
+
+                for (int i = 0; i < handle.Length; i++)
+                {
+                    if (handle.Array[handle.Offset + i].Weight != 0)
+                    {
+                        handle.Array[handle.Offset + i].TimeIndex = transferTime(handle.Array[handle.Offset + i].TimeIndex);
+                    }
+                }
+            }
+        }
+
+        public void InstallNewUpdateFunction(Func<int, int, bool> newLessThan, Func<int, int> newUpdateTime)
+        {
+            this.ReleaseCache();
+
+            this.TimeLessThan = newLessThan;
+            this.UpdateTime = newUpdateTime;
         }
 
         public void Release() { }

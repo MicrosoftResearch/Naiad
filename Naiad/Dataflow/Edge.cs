@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.5
+ * Naiad ver. 0.6
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -26,7 +26,7 @@ using System.Linq.Expressions;
 using System.Text;
 
 using Microsoft.Research.Naiad.Dataflow.Channels;
-
+using Microsoft.Research.Naiad.Runtime.FaultTolerance;
 using Microsoft.Research.Naiad.Diagnostics;
 
 namespace Microsoft.Research.Naiad.Dataflow
@@ -34,22 +34,26 @@ namespace Microsoft.Research.Naiad.Dataflow
     internal interface Edge
     {
         void Materialize();
+        void ReMaterializeForRollback(Dictionary<int, Vertex> newSourceVertices, Dictionary<int, Vertex> newTargetVertices);
         int ChannelId { get; }
 
         Stage SourceStage { get; }
         Stage TargetStage { get; }
         bool Exchanges { get; }
+
+        void EnableReceiveLogging();
     }
 
-    internal class Edge<R,T> : Edge
+    internal class Edge<TSender, R, T> : Edge
         where T : Time<T>
+        where TSender : Time<TSender>
     {
-        public readonly StageOutput<R, T> Source;
+        public readonly FullyTypedStageOutput<TSender, R, T> Source;
         public readonly StageInput<R, T> Target;
         public readonly Action<R[], int[], int> PartitionFunction;
         public readonly Dataflow.Channels.Channel.Flags Flags;
 
-        Dataflow.Channels.Cable<R, T> bundle;
+        Dataflow.Channels.Cable<TSender, R, T> bundle;
         //public Dataflow.Channels.ChannelBundle Bundle { get { return this.bundle; } }
 
         readonly int channelId;
@@ -75,14 +79,14 @@ namespace Microsoft.Research.Naiad.Dataflow
             // if direct pipelining is possible, do that
             if (Channel.Pipelineable(Source, Target, PartitionFunction) || Channel.PartitionedEquivalently(Source, Target))
             {
-                this.bundle = new Dataflow.Channels.PipelineChannel<R, T>(Source, Target, this.ChannelId);
+                this.bundle = new Dataflow.Channels.PipelineChannel<TSender, R, T>(Source, Target, this);
                 this.exchanges = false;
             }
             else
             {
                 //var compiledKey = PartitionFunction != null ? PartitionFunction.Compile() : (Func<R, int>)null;
-                this.bundle = new PostOfficeChannel<R, T>(Source, Target, PartitionFunction, controller.NetworkChannel, this.ChannelId, this.Flags);
-                Logging.Info("Allocated exchange channel {2}: {0} -> {1}", this.bundle.SourceStage, this.bundle.DestinationStage, this.bundle.ChannelId);
+                this.bundle = new PostOfficeChannel<TSender, R, T>(Source, Target, PartitionFunction, controller.NetworkChannel, this, this.Flags);
+                Logging.Info("Allocated exchange channel {2}: {0} -> {1}", this.bundle.SourceStage, this.bundle.DestinationStage, this.bundle.Edge.ChannelId);
                 this.exchanges = true;
             }
 
@@ -93,12 +97,28 @@ namespace Microsoft.Research.Naiad.Dataflow
             //Target.AttachBundleToReceiver(this.bundle);
         }
 
+        public void ReMaterializeForRollback(Dictionary<int, Vertex> newSourceVertices, Dictionary<int, Vertex> newTargetVertices)
+        {
+            this.bundle.ReMaterializeForRollback(newSourceVertices, newTargetVertices);
+            Source.ReAttachBundleForRollback(this.bundle, newSourceVertices);
+        }
+
         public override string ToString()
         {
             return String.Format("{0} -> {1}", this.SourceStage, this.TargetStage);
         }
 
-        public Edge(StageOutput<R, T> stream, StageInput<R, T> recvPort, Action<R[], int[], int> partitionFunction, Dataflow.Channels.Channel.Flags flags)
+        public void EnableReceiveLogging()
+        {
+            if (this.TargetStage.CheckpointType == CheckpointType.None)
+            {
+                return;
+            }
+
+            this.bundle.EnableReceiveLogging();
+        }
+
+        public Edge(FullyTypedStageOutput<TSender, R, T> stream, StageInput<R, T> recvPort, Action<R[], int[], int> partitionFunction, Dataflow.Channels.Channel.Flags flags)
         {
             //if (recvPort.PartitionedBy != partitionFunction)
             //    Logging.Error("Constructing Edge where recvPort.PartitionedBy is incorrect.");
@@ -110,7 +130,14 @@ namespace Microsoft.Research.Naiad.Dataflow
 
             this.channelId = stream.ForStage.InternalComputation.Register(this);
 
+            stream.OutputChannels.Add(this);
+
             this.exchanges = !(Channel.Pipelineable(Source, Target, PartitionFunction) || Channel.PartitionedEquivalently(Source, Target));
+        }
+
+        public Edge(int channelId)
+        {
+            this.channelId = channelId;
         }
     }
 }

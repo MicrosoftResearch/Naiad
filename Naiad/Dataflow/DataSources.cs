@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.5
+ * Naiad ver. 0.6
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.Research.Naiad.Diagnostics;
@@ -49,13 +50,24 @@ namespace Microsoft.Research.Naiad.Input
     /// Represents a typed external input of <typeparamref name="TRecord"/> records.
     /// </summary>
     /// <typeparam name="TRecord">The type of records that this data source provides.</typeparam>
-    public interface DataSource<TRecord> : DataSource
+    /// <typeparam name="TTime">The time type of records that this data source provides.</typeparam>
+    public interface DataSource<TRecord, TTime> : DataSource where TTime : Time<TTime>
     {
         /// <summary>
         /// Called with a sequence of streaming inputs to attach to the data source.
         /// </summary>
         /// <param name="inputs">A sequence of streaming inputs, one per local worker.</param>
-        void RegisterInputs(IEnumerable<StreamingInput<TRecord>> inputs);
+        void RegisterInputs(IEnumerable<StreamingInput<TRecord, TTime>> inputs);
+
+        /// <summary>
+        /// Prevent any inputs being sent to the computation during rollback
+        /// </summary>
+        void BlockExternalCalls();
+
+        /// <summary>
+        /// Release the source to start sending inputs again after rollback
+        /// </summary>
+        void ReleaseExternalCalls();
     }
 
     /// <summary>
@@ -97,21 +109,43 @@ namespace Microsoft.Research.Naiad.Input
     /// A default DataSource implementation, recording per-vertex inputs.
     /// </summary>
     /// <typeparam name="TRecord">record type</typeparam>
-    public class BaseDataSource<TRecord> : DataSource<TRecord>
+    /// <typeparam name="TTime">time type</typeparam>
+    public class BaseDataSource<TRecord, TTime> : DataSource<TRecord, TTime> where TTime : Time<TTime>
     {
+        internal ManualResetEventSlim block = new ManualResetEventSlim(true);
+
+        /// <summary>
+        /// Prevent any inputs being sent to the computation during rollback
+        /// </summary>
+        public void BlockExternalCalls()
+        {
+            lock (this)
+            {
+                block.Reset();
+            }
+        }
+
+        /// <summary>
+        /// Release the source to start sending inputs again after rollback
+        /// </summary>
+        public void ReleaseExternalCalls()
+        {
+            block.Set();
+        }
+
         /// <summary>
         /// StreamingInputs corresponding to local workers.
         /// </summary>
-        protected StreamingInput<TRecord>[] inputsByWorker;
+        protected StreamingInput<TRecord, TTime>[] inputsByWorker;
 
         /// <summary>
         /// Registers StreamingInputs with the DataSource.
         /// </summary>
         /// <param name="inputs">streaming inputs</param>
-        public void RegisterInputs(IEnumerable<StreamingInput<TRecord>> inputs)
+        public void RegisterInputs(IEnumerable<StreamingInput<TRecord, TTime>> inputs)
         {
             var inputsAsArray = inputs.ToArray();
-            this.inputsByWorker = new StreamingInput<TRecord>[inputsAsArray.Length];
+            this.inputsByWorker = new StreamingInput<TRecord, TTime>[inputsAsArray.Length];
             for (int i = 0; i < inputsAsArray.Length; ++i)
                 this.inputsByWorker[inputsAsArray[i].WorkerId] = inputsAsArray[i];
         }
@@ -131,7 +165,7 @@ namespace Microsoft.Research.Naiad.Input
     /// A DataSource with fixed contents, produced in the first epoch.
     /// </summary>
     /// <typeparam name="TRecord">record type</typeparam>
-    public class ConstantDataSource<TRecord> : BaseDataSource<TRecord>
+    public class ConstantDataSource<TRecord> : BaseDataSource<TRecord, Epoch>
     {
         private IEnumerable<TRecord> contents;
 
@@ -157,7 +191,7 @@ namespace Microsoft.Research.Naiad.Input
         /// </summary>
         public override void Activate()
         {
-            var currentBuffer = new TRecord[1024];
+            var currentBuffer = new TRecord[4098];
             var currentCursor = 0;
             var currentWorker = 0;
 
@@ -169,7 +203,7 @@ namespace Microsoft.Research.Naiad.Input
 
                     if (currentCursor == currentBuffer.Length)
                     {
-                        this.inputsByWorker[currentWorker].OnStreamingRecv(currentBuffer, 0);
+                        this.inputsByWorker[currentWorker].OnStreamingRecv(currentBuffer, new Epoch(0));
 
                         currentBuffer = new TRecord[currentBuffer.Length];
                         currentCursor = 0;
@@ -178,7 +212,7 @@ namespace Microsoft.Research.Naiad.Input
                 }
 
                 if (currentCursor > 0)
-                    this.inputsByWorker[currentWorker].OnStreamingRecv(currentBuffer.Take(currentCursor).ToArray(), 0);
+                    this.inputsByWorker[currentWorker].OnStreamingRecv(currentBuffer.Take(currentCursor).ToArray(), new Epoch(0));
 
                 for (int i = 0; i < this.inputsByWorker.Length; i++)
                     this.inputsByWorker[i].OnCompleted();
@@ -189,7 +223,7 @@ namespace Microsoft.Research.Naiad.Input
     /// <summary>
     /// DataSource for reading from the Console.
     /// </summary>
-    internal class ConsoleDataSource : BaseDataSource<string>
+    internal class ConsoleDataSource : BaseDataSource<string, Epoch>
     {
         /// <summary>
         /// Consumes lines from the console
@@ -211,15 +245,21 @@ namespace Microsoft.Research.Naiad.Input
                 }
                 else if (parts[0].StartsWith("!"))
                 {
-                    int notifyEpoch = int.Parse(parts[0].Substring(1));
-                    for (int j = 0; j < this.inputsByWorker.Length; ++j)
-                        this.inputsByWorker[j].OnStreamingNotify(notifyEpoch);
+                    lock (this)
+                    {
+                        int notifyEpoch = int.Parse(parts[0].Substring(1));
+                        for (int j = 0; j < this.inputsByWorker.Length; ++j)
+                            this.inputsByWorker[j].OnStreamingNotify(new Epoch(notifyEpoch));
+                    }
                 }
                 else
                 {
-                    int recvEpoch = int.Parse(parts[0]);
-                    Random rand = new Random();
-                    this.inputsByWorker[rand.Next(this.inputsByWorker.Length)].OnStreamingRecv(new string[] { parts[1] }, recvEpoch);
+                    lock (this)
+                    {
+                        int recvEpoch = int.Parse(parts[0]);
+                        Random rand = new Random();
+                        this.inputsByWorker[rand.Next(this.inputsByWorker.Length)].OnStreamingRecv(new string[] { parts[1] }, new Epoch(recvEpoch));
+                    }
                 }
             }
         }
@@ -231,7 +271,7 @@ namespace Microsoft.Research.Naiad.Input
     /// Data source from another graph manager.
     /// </summary>
     /// <typeparam name="TRecord">record type</typeparam>
-    public class InterGraphDataSource<TRecord> : BaseDataSource<TRecord>
+    public class InterGraphDataSource<TRecord> : BaseDataSource<TRecord, Epoch>
     {
         private readonly InterGraphDataSink<TRecord> Sink;
 
@@ -251,7 +291,10 @@ namespace Microsoft.Research.Naiad.Input
         /// <param name="fromWorker">worker</param>
         public void OnRecv(TRecord[] message, int epoch, int fromWorker)
         {
-            this.inputsByWorker[fromWorker].OnStreamingRecv(message, epoch);
+            lock (this)
+            {
+                this.inputsByWorker[fromWorker].OnStreamingRecv(message, new Epoch(epoch));
+            }
         }
 
         /// <summary>
@@ -261,7 +304,10 @@ namespace Microsoft.Research.Naiad.Input
         /// <param name="fromWorker">worker</param>
         public void OnNotify(int epoch, int fromWorker)
         {
-            this.inputsByWorker[fromWorker].OnStreamingNotify(epoch);
+            lock (this)
+            {
+                this.inputsByWorker[fromWorker].OnStreamingNotify(new Epoch(epoch));
+            }
         }
 
         /// <summary>
@@ -423,7 +469,7 @@ namespace Microsoft.Research.Naiad.Input
         {
             this.TargetSources = new List<InterGraphDataSource<TRecord>>();
 
-            var workers = stream.Context.Context.Manager.InternalComputation.Controller.Workers.Count;
+            var workers = stream.ForStage.InternalComputation.Controller.Workers.Count;
 
             this.StatesByWorker = new Dictionary<int,List<TRecord>>[workers];
             for (int i = 0; i < this.StatesByWorker.Length; i++)
@@ -452,7 +498,7 @@ namespace Microsoft.Research.Naiad.Input
     /// DataSource supporting manual epoch-at-a-time data introduction.
     /// </summary>
     /// <typeparam name="TRecord">record type</typeparam>
-    public class BatchedDataSource<TRecord> : BaseDataSource<TRecord>, IObserver<IEnumerable<TRecord>>, IObserver<TRecord>
+    public class BatchedDataSource<TRecord> : BaseDataSource<TRecord, Epoch>, IObserver<IEnumerable<TRecord>>, IObserver<TRecord>
     {
         private int currentEpoch = 0;
         private bool completed = false;
@@ -477,8 +523,8 @@ namespace Microsoft.Research.Naiad.Input
                     Array.Copy(array, arrayCursor, chunk, 0, toEat);
                     arrayCursor += toEat;
 
-                    this.inputsByWorker[i].OnStreamingRecv(chunk, this.currentEpoch);
-                    this.inputsByWorker[i].OnStreamingNotify(this.currentEpoch);
+                    this.inputsByWorker[i].OnStreamingRecv(chunk, new Epoch(this.currentEpoch));
+                    this.inputsByWorker[i].OnStreamingNotify(new Epoch(this.currentEpoch));
                 }
                 ++this.currentEpoch;
             }
@@ -522,7 +568,451 @@ namespace Microsoft.Research.Naiad.Input
                     Array.Copy(array, arrayCursor, chunk, 0, toEat);
                     arrayCursor += toEat;
 
-                    this.inputsByWorker[i].OnStreamingRecv(chunk, this.currentEpoch);
+                    this.inputsByWorker[i].OnStreamingRecv(chunk, new Epoch(this.currentEpoch));
+                    this.inputsByWorker[i].OnCompleted();
+                }
+                ++this.currentEpoch;
+            }
+
+            this.completed = true;
+        }
+
+        /// <summary>
+        /// Introduces a single record for the final epoch.
+        /// </summary>
+        /// <param name="record">record</param>
+        public void OnCompleted(TRecord record)
+        {
+            this.OnCompleted(new TRecord[] { record });
+        }
+
+        /// <summary>
+        /// Introduces no data for the final epoch.
+        /// </summary>
+        public void OnCompleted()
+        {
+            lock (this)
+            {
+                for (int i = 0; i < this.inputsByWorker.Length; i++)
+                    this.inputsByWorker[i].OnCompleted();
+
+                this.completed = true;
+            }
+        }
+
+        /// <summary>
+        /// Does nothing except test if OnCompleted has been called.
+        /// </summary>
+        public override void Join()
+        {
+            if (!this.completed)
+                Logging.Error("BatchedDataSource.Join() called before BatchedDataSource.OnCompleted()");
+        }
+
+        /// <summary>
+        /// Re-throws the exception.
+        /// </summary>
+        /// <param name="exception">exception</param>
+        public void OnError(System.Exception exception) { throw exception; }
+    }
+
+    /// <summary>
+    /// DataSource supporting data introduction in sub batches.
+    /// </summary>
+    /// <typeparam name="TRecord">record type</typeparam>
+    /// <typeparam name="TTime">time type of the outer batch</typeparam>
+    public class SubBatchDataSource<TRecord, TTime> : BaseDataSource<TRecord, IterationIn<TTime>>, IObserver<IEnumerable<TRecord>>, IObserver<TRecord> where TTime : Time<TTime>
+    {
+        private TTime outerBatch;
+        private int currentSubBatch = 0;
+        private bool completed = false;
+
+        /// <summary>
+        /// Marks the current inner batch complete
+        /// </summary>
+        /// <returns>the time of the completed batch    </returns>
+        public IterationIn<TTime> CompleteInnerBatch()
+        {
+            if (this.inputsByWorker == null)
+                throw new InvalidOperationException("Cannot ingest data before the source has been connected.");
+
+            IterationIn<TTime> completedBatch;
+
+            lock (this)
+            {
+                this.block.Wait();
+
+                if (this.currentSubBatch == int.MaxValue)
+                {
+                    throw new ApplicationException("Must have a current valid inner batch");
+                }
+
+                IterationIn<TTime> currentTime = new IterationIn<TTime>(this.outerBatch, this.currentSubBatch);
+                for (int i = 0; i < this.inputsByWorker.Length; i++)
+                {
+                    this.inputsByWorker[i].OnStreamingNotify(currentTime);
+                }
+
+                completedBatch = currentTime;
+
+                ++this.currentSubBatch;
+            }
+
+            return completedBatch;
+        }
+
+        /// <summary>
+        /// Marks the current outer batch complete
+        /// </summary>
+        /// <returns>the time of the completed batch</returns>
+        public TTime CompleteOuterBatch()
+        {
+            if (this.inputsByWorker == null)
+                throw new InvalidOperationException("Cannot ingest data before the source has been connected.");
+
+            TTime outerBatch;
+
+            lock (this)
+            {
+                this.block.Wait();
+
+                if (this.currentSubBatch == int.MaxValue)
+                {
+                    return this.outerBatch;
+                }
+
+                this.currentSubBatch = int.MaxValue;
+
+                IterationIn<TTime> currentTime = new IterationIn<TTime>(this.outerBatch, int.MaxValue);
+                for (int i = 0; i < this.inputsByWorker.Length; i++)
+                {
+                    this.inputsByWorker[i].OnStreamingNotify(currentTime);
+                }
+
+                outerBatch = this.outerBatch;
+
+                currentTime = this.inputsByWorker[0].IncrementOuter(currentTime);
+                this.outerBatch = currentTime.outerTime;
+                this.currentSubBatch = currentTime.iteration;
+            }
+
+            return outerBatch;
+        }
+
+        /// <summary>
+        /// Marks an arbitrary outer batch complete
+        /// </summary>
+        /// <param name="outerBatch">the batch to mark complete</param>
+        public void CompleteOuterBatch(TTime outerBatch)
+        {
+            if (this.inputsByWorker == null)
+                throw new InvalidOperationException("Cannot ingest data before the source has been connected.");
+
+            lock (this)
+            {
+                this.block.Wait();
+
+                if (this.currentSubBatch == int.MaxValue)
+                {
+                    return;
+                }
+
+                this.outerBatch = outerBatch;
+                this.currentSubBatch = int.MaxValue;
+
+                IterationIn<TTime> currentTime = new IterationIn<TTime>(this.outerBatch, this.currentSubBatch);
+                for (int i = 0; i < this.inputsByWorker.Length; i++)
+                {
+                    this.inputsByWorker[i].OnStreamingNotify(currentTime);
+                }
+
+                currentTime = this.inputsByWorker[0].IncrementOuter(currentTime);
+                this.outerBatch = currentTime.outerTime;
+                this.currentSubBatch = currentTime.iteration;
+            }
+        }
+
+        /// <summary>
+        /// Marks an arbitrary outer batch the next one to begin
+        /// </summary>
+        /// <param name="outerBatch">the batch to start</param>
+        public void StartOuterBatch(TTime outerBatch)
+        {
+            if (this.inputsByWorker == null)
+                throw new InvalidOperationException("Cannot ingest data before the source has been connected.");
+
+            lock (this)
+            {
+                this.block.Wait();
+
+                this.outerBatch = outerBatch;
+                this.currentSubBatch = 0;
+
+                IterationIn<TTime> currentTime = new IterationIn<TTime>(this.outerBatch, this.currentSubBatch);
+                for (int i = 0; i < this.inputsByWorker.Length; i++)
+                {
+                    this.inputsByWorker[i].OnStreamingNotify(currentTime);
+                }
+
+                ++this.currentSubBatch;
+            }
+        }
+
+        /// <summary>
+        /// Advance the outer batch: future sub-batches will be within this new batch
+        /// </summary>
+        /// <param name="outerBatch">time of the outer batch</param>
+        public void SetOuterBatch(TTime outerBatch)
+        {
+            if (!this.outerBatch.Equals(default(TTime)) && outerBatch.LessThan(this.outerBatch))
+            {
+                throw new ApplicationException("Batches can't go back in time");
+            }
+
+            this.outerBatch = outerBatch;
+            this.currentSubBatch = 0;
+        }
+
+        /// <summary>
+        /// Introduces a batch of data for the next epoch.
+        /// </summary>
+        /// <param name="batch">records</param>
+        public void OnNext(IEnumerable<TRecord> batch)
+        {
+            if (this.inputsByWorker == null)
+                throw new InvalidOperationException("Cannot ingest data before the source has been connected.");
+
+            var array = batch == null ? new TRecord[] { } : batch.ToArray();
+            lock (this)
+            {
+                this.block.Wait();
+
+                if (this.currentSubBatch == int.MaxValue)
+                {
+                    throw new InvalidOperationException("Cannot add data after closing the current outer batch");
+                }
+
+                IterationIn<TTime> currentTime = new IterationIn<TTime>(this.outerBatch, this.currentSubBatch);
+                var arrayCursor = 0;
+                for (int i = 0; i < this.inputsByWorker.Length; i++)
+                {
+                    var toEat = (array.Length / this.inputsByWorker.Length) + ((i < (array.Length % this.inputsByWorker.Length)) ? 1 : 0);
+                    var chunk = new TRecord[toEat];
+
+                    Array.Copy(array, arrayCursor, chunk, 0, toEat);
+                    arrayCursor += toEat;
+
+                    this.inputsByWorker[i].OnStreamingRecv(chunk, currentTime);
+                    this.inputsByWorker[i].OnStreamingNotify(currentTime);
+                }
+                ++this.currentSubBatch;
+            }
+        }
+
+        /// <summary>
+        /// Introduces a single record for the next epoch.
+        /// </summary>
+        /// <param name="record">record</param>
+        public void OnNext(TRecord record)
+        {
+            this.OnNext(new TRecord[] { record });
+        }
+
+        /// <summary>
+        /// Introduces no data for the next epcoh.
+        /// </summary>
+        public void OnNext()
+        {
+            this.OnNext(null);
+        }
+
+        /// <summary>
+        /// Introduces a batch of data for the final epoch.
+        /// </summary>
+        /// <param name="batch">records</param>
+        public void OnCompleted(IEnumerable<TRecord> batch)
+        {
+            if (this.inputsByWorker == null)
+                throw new InvalidOperationException("Cannot ingest data before the source has been connected.");
+
+            var array = batch == null ? new TRecord[] { } : batch.ToArray();
+            lock (this)
+            {
+                this.block.Wait();
+
+                IterationIn<TTime> currentTime = new IterationIn<TTime>(this.outerBatch, this.currentSubBatch);
+                var arrayCursor = 0;
+                for (int i = 0; i < this.inputsByWorker.Length; i++)
+                {
+                    var toEat = (array.Length / this.inputsByWorker.Length) + ((i < (array.Length % this.inputsByWorker.Length)) ? 1 : 0);
+                    var chunk = new TRecord[toEat];
+
+                    if (toEat > 0 && this.currentSubBatch == int.MaxValue)
+                    {
+                        throw new InvalidOperationException("Cannot add data after closing the current outer batch");
+                    }
+
+                    Array.Copy(array, arrayCursor, chunk, 0, toEat);
+                    arrayCursor += toEat;
+
+                    if (toEat > 0)
+                    {
+                        this.inputsByWorker[i].OnStreamingRecv(chunk, currentTime);
+                    }
+                    this.inputsByWorker[i].OnCompleted();
+                }
+                ++this.currentSubBatch;
+            }
+
+            this.completed = true;
+        }
+
+        /// <summary>
+        /// Introduces a single record for the final epoch.
+        /// </summary>
+        /// <param name="record">record</param>
+        public void OnCompleted(TRecord record)
+        {
+            this.OnCompleted(new TRecord[] { record });
+        }
+
+        /// <summary>
+        /// Introduces no data for the final epoch.
+        /// </summary>
+        public void OnCompleted()
+        {
+            lock (this)
+            {
+                for (int i = 0; i < this.inputsByWorker.Length; i++)
+                    this.inputsByWorker[i].OnCompleted();
+
+                this.completed = true;
+            }
+        }
+
+        /// <summary>
+        /// Does nothing except test if OnCompleted has been called.
+        /// </summary>
+        public override void Join()
+        {
+            if (!this.completed)
+                Logging.Error("BatchedDataSource.Join() called before BatchedDataSource.OnCompleted()");
+        }
+
+        /// <summary>
+        /// Re-throws the exception.
+        /// </summary>
+        /// <param name="exception">exception</param>
+        public void OnError(System.Exception exception) { throw exception; }
+    }
+
+    /// <summary>
+    /// DataSource supporting streaming data introduction.
+    /// </summary>
+    /// <typeparam name="TRecord">record type</typeparam>
+    public class StreamingDataSource<TRecord> : BaseDataSource<TRecord, Epoch>, IObserver<IEnumerable<TRecord>>, IObserver<TRecord>
+    {
+        private int currentEpoch = 0;
+        private bool completed = false;
+
+        /// <summary>
+        /// Introduces a batch of data for the next epoch.
+        /// </summary>
+        /// <param name="batch">records</param>
+        public void OnNext(IEnumerable<TRecord> batch)
+        {
+            this.OnNext(batch, -1);
+        }
+
+        internal void OnNext(IEnumerable<TRecord> batch, int fromThreadIndex)
+        {
+            if (this.inputsByWorker == null)
+                throw new InvalidOperationException("Cannot ingest data before the source has been connected.");
+
+            StreamingInput<TRecord, Epoch>[] localInputs = this.inputsByWorker.Where(i => i.WorkerId == fromThreadIndex).ToArray();
+            if (localInputs.Length == 0)
+            {
+                localInputs = this.inputsByWorker;
+            }
+            else
+            {
+                if (localInputs.Length != 1)
+                {
+                    throw new ApplicationException("strange input workers");
+                }
+            }
+
+            var array = batch == null ? new TRecord[] { } : batch.ToArray();
+            lock (this)
+            {
+                var arrayCursor = 0;
+                for (int i = 0; i < localInputs.Length; i++)
+                {
+                    var toEat = (array.Length / localInputs.Length) + ((i < (array.Length % localInputs.Length)) ? 1 : 0);
+                    var chunk = new TRecord[toEat];
+
+                    Array.Copy(array, arrayCursor, chunk, 0, toEat);
+                    arrayCursor += toEat;
+
+                    localInputs[i].OnStreamingRecv(chunk, new Epoch(this.currentEpoch), fromThreadIndex);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Introduces a single record for the next epoch.
+        /// </summary>
+        /// <param name="record">record</param>
+        public void OnNext(TRecord record)
+        {
+            this.OnNext(new TRecord[] { record });
+        }
+
+        /// <summary>
+        /// Introduces no data for the next epcoh.
+        /// </summary>
+        public void OnNext()
+        {
+            this.OnNext(null);
+        }
+
+        /// <summary>
+        /// Advances the input epoch
+        /// </summary>
+        public void AdvanceEpoch()
+        {
+            lock (this)
+            {
+                for (int i = 0; i < this.inputsByWorker.Length; i++)
+                {
+                    this.inputsByWorker[i].OnStreamingNotify(new Epoch(this.currentEpoch));
+                }
+                ++this.currentEpoch;
+            }
+        }
+
+        /// <summary>
+        /// Introduces a batch of data for the final epoch.
+        /// </summary>
+        /// <param name="batch">records</param>
+        public void OnCompleted(IEnumerable<TRecord> batch)
+        {
+            if (this.inputsByWorker == null)
+                throw new InvalidOperationException("Cannot ingest data before the source has been connected.");
+
+            var array = batch == null ? new TRecord[] { } : batch.ToArray();
+            lock (this)
+            {
+                var arrayCursor = 0;
+                for (int i = 0; i < this.inputsByWorker.Length; i++)
+                {
+                    var toEat = (array.Length / this.inputsByWorker.Length) + ((i < (array.Length % this.inputsByWorker.Length)) ? 1 : 0);
+                    var chunk = new TRecord[toEat];
+
+                    Array.Copy(array, arrayCursor, chunk, 0, toEat);
+                    arrayCursor += toEat;
+
+                    this.inputsByWorker[i].OnStreamingRecv(chunk, new Epoch(this.currentEpoch));
                     this.inputsByWorker[i].OnCompleted();
                 }
                 ++this.currentEpoch;

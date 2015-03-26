@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.5
+ * Naiad ver. 0.6
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -32,6 +32,7 @@ using Microsoft.Research.Naiad.Serialization;
 using Microsoft.Research.Naiad;
 using Microsoft.Research.Naiad.Dataflow;
 using Microsoft.Research.Naiad.Dataflow.StandardVertices;
+using Microsoft.Research.Naiad.Runtime.Progress;
 
 namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Operators
 {

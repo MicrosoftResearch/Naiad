@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.5
+ * Naiad ver. 0.6
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -48,7 +48,7 @@ namespace Microsoft.Research.Naiad.Examples.Latency
 
         public static Stream<int, IterationIn<Epoch>> MakeStage(Stream<int, IterationIn<Epoch>> ingress, Stream<int, IterationIn<Epoch>> feedbackOutput, int iterations)
         {
-            var stage = new Stage<Barrier, IterationIn<Epoch>>(ingress.Context, (i, s) => new Barrier(i, s, iterations), "Barrier");
+            var stage = Foundry.NewStage<Barrier, IterationIn<Epoch>>(ingress.Context, (i, s) => new Barrier(i, s, iterations), "Barrier");
             stage.NewInput(ingress, (message, vertex) => { }, null);
             stage.NewInput(feedbackOutput, (message, vertex) => { }, null);
             
@@ -79,7 +79,7 @@ namespace Microsoft.Research.Naiad.Examples.Latency
                 // first construct a simple graph with a feedback loop.
                 var inputStream = (new int[] { }).AsNaiadStream(computation);
 
-                var loopContext = new LoopContext<Epoch>(inputStream.Context, "loop");
+                var loopContext = new LoopContext<Epoch>(inputStream.Context);
                 var feedback = loopContext.Delay<int>();
                 var ingress = loopContext.EnterLoop(inputStream);
 

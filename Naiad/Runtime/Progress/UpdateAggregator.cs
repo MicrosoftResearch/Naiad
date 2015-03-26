@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.5
+ * Naiad ver. 0.6
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -42,7 +42,7 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
 
         internal override void PerformAction(Scheduler.WorkItem workItem)
         {
-            this.ConsiderFlushingBufferedUpdates();
+            this.ConsiderFlushingBufferedUpdates(false);
         }
         
         // this should only be accessed under this.Lock, where we may swap these two things and flush one or the other.
@@ -62,7 +62,7 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
             {
                 NaiadTracing.Trace.LockHeld(this.Lock);
                 foreach (var pair in deltas)
-                {             
+                {
                     if (!BufferedUpdates.ContainsKey(pair.Key))
                         BufferedUpdates.Add(pair.Key, 0);
 
@@ -74,39 +74,56 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
             }
             NaiadTracing.Trace.LockRelease(this.Lock);
 
-            ConsiderFlushingBufferedUpdates();
+            ConsiderFlushingBufferedUpdates(false);
         }
 
 
-        internal void ConsiderFlushingBufferedUpdates()
+        internal void Reset()
         {
-            // set if a flush is required.
-            var mustFlushBuffer = false;
-
-            // consult the buffered updates under a lock.
             NaiadTracing.Trace.LockAcquire(this.Lock);
             lock (this.Lock)
             {
-                NaiadTracing.Trace.LockHeld(this.Lock);
                 if (this.BufferedUpdates.Count > 0)
                 {
-                    var frontier = this.Stage.InternalComputation.ProgressTracker.GetInfoForWorker(0).PointstampCountSet.Frontier;
+                    throw new ApplicationException("Resetting aggregator with unflushed updates");
+                }
+                this.Notifications.Clear();
+            }
+            NaiadTracing.Trace.LockRelease(this.Lock);
+        }
 
-                    for (int i = 0; i < frontier.Length && !mustFlushBuffer; i++)
+        internal void ConsiderFlushingBufferedUpdates(bool force)
+        {
+            // set if a flush is required.
+            var mustFlushBuffer = force;
+
+            if (!force)
+            {
+                // consult the buffered updates under a lock.
+                NaiadTracing.Trace.LockAcquire(this.Lock);
+                lock (this.Lock)
+                {
+                    NaiadTracing.Trace.LockHeld(this.Lock);
+                    if (this.BufferedUpdates.Count > 0)
                     {
-                        // flush if we find something in the buffered deltas, and is not a still outstanding notification.
-                        // TODO ContainsKey test is overly conservative; absent key and positive update is no reason to flush.
-                        if (this.BufferedUpdates.ContainsKey(frontier[i]))
+                        var frontier = this.Stage.InternalComputation.ProgressTracker.GetInfoForWorker(0).PointstampCountSet.Frontier;
+
+                        for (int i = 0; i < frontier.Length && !mustFlushBuffer; i++)
                         {
-                            if (!this.Stage.InternalComputation.Reachability.Graph[frontier[i].Location].IsStage
-                                || !this.Notifications.ContainsKey(frontier[i])
-                                || this.Notifications[frontier[i]] + this.BufferedUpdates[frontier[i]] <= 0)
-                                mustFlushBuffer = true;
+                            // flush if we find something in the buffered deltas, and is not a still outstanding notification.
+                            // TODO ContainsKey test is overly conservative; absent key and positive update is no reason to flush.
+                            if (this.BufferedUpdates.ContainsKey(frontier[i]))
+                            {
+                                if (!this.Stage.InternalComputation.Reachability.Graph[frontier[i].Location].IsStage
+                                    || !this.Notifications.ContainsKey(frontier[i])
+                                    || this.Notifications[frontier[i]] + this.BufferedUpdates[frontier[i]] <= 0)
+                                    mustFlushBuffer = true;
+                            }
                         }
                     }
                 }
+                NaiadTracing.Trace.LockRelease(this.Lock);
             }
-            NaiadTracing.Trace.LockRelease(this.Lock);
 
             if (mustFlushBuffer)
             {
@@ -169,6 +186,8 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
         {
             this.Output = new VertexOutputBuffer<Update, Empty>(this);
             NaiadTracing.Trace.LockInfo(this.Lock, "Aggregator Lock");
+            // ensure the event stack isn't empty
+            this.PushEventTime(new Empty());
         }
     }
 }

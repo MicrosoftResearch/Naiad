@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.5
+ * Naiad ver. 0.6
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -25,6 +25,7 @@ using System.Text;
 using Microsoft.Research.Naiad.Dataflow.Channels;
 using Microsoft.Research.Naiad.Serialization;
 using Microsoft.Research.Naiad.DataStructures;
+using Microsoft.Research.Naiad.Runtime.FaultTolerance;
 
 using Microsoft.Research.Naiad.Diagnostics;
 
@@ -123,6 +124,36 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.CollectionTra
         /// </summary>
         /// <param name="keyIndex">The index for the key to update.</param>
         void EnsureStateIsCurrentWRTAdvancedTimes(ref int keyIndex);
+
+        /// <summary>
+        /// Updates the state associated with the given key to reflect a new compacted intern table
+        /// </summary>
+        /// <param name="keyIndex">The index for the key to update.</param>
+        /// <param name="transferTime">The function that translates an old time index into a new time index.</param>
+        void TransferTimesToNewInternTable(int keyIndex, Func<int, int> transferTime);
+
+        /// <summary>
+        /// Updates the state associated with the given key to remove all elements whose time does not match
+        /// a predicate
+        /// </summary>
+        /// <param name="keyIndex">The index for the key to update.</param>
+        /// <param name="keepTime">The predicate that indicates which times to keep.</param>
+        void RemoveStateInTimes(ref int keyIndex, Func<int, bool> keepTime);
+
+        /// <summary>
+        /// Count all the entries is a given key at a given time
+        /// </summary>
+        /// <param name="keyIndex">the key to count</param>
+        /// <param name="timeIndex">the time to count</param>
+        /// <returns>the number of differences in the key at the time</returns>
+        long CountDifferenceAt(int keyIndex, int timeIndex);
+
+        /// <summary>
+        /// Make sure time advancing works with a new intern table
+        /// </summary>
+        /// <param name="newLessThan">The new intern table's time comparison function.</param>
+        /// <param name="newUpdateTime">The new intern table's time update function.</param>
+        void InstallNewUpdateFunction(Func<int, int, bool> newLessThan, Func<int, int> newUpdateTime);
 
         /// <summary>
         /// Called when the collection trace is released. Currently unused.
@@ -309,6 +340,38 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.CollectionTra
             }
         }
 
+        public void RemoveStateInTimes(ref int keyIndex, Func<int, bool> keepTime)
+        {
+            throw new NotImplementedException();
+        }
+
+        public long CountDifferenceAt(int keyIndex, int timeIndex)
+        {
+            if (keyIndex == 0 || timeIndex != 0)
+            {
+                return 0L;
+            }
+            else
+            {
+                long entries = 0;
+                if (heads != null)
+                {
+                    int index = heads[keyIndex];
+                    while (index != -1)
+                    {
+                        ++entries;
+                        index = links.ElementAt(index).Second;
+                    }
+                }
+                else
+                {
+                    entries = offsets[keyIndex] - offsets[keyIndex - 1];
+                }
+
+                return entries;
+            }
+        }
+
         public void EnumerateTimes(int keyIndex, NaiadList<int> timelist)
         {
             if (keyIndex != 0)
@@ -325,6 +388,14 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.CollectionTra
         }
 
         public void EnsureStateIsCurrentWRTAdvancedTimes(ref int state)
+        {
+        }
+
+        public void TransferTimesToNewInternTable(int state, Func<int, int> updateTime)
+        {
+        }
+
+        public void InstallNewUpdateFunction(Func<int, int, bool> newLessThan, Func<int, int> newUpdateTime)
         {
         }
 
@@ -499,6 +570,23 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.CollectionTra
                 toFill.Add(default(R).ToWeighted(keyIndex));
         }
 
+        public void RemoveStateInTimes(ref int keyIndex, Func<int, bool> keepTime)
+        {
+            throw new NotImplementedException();
+        }
+
+        public long CountDifferenceAt(int keyIndex, int timeIndex)
+        {
+            if (keyIndex == 0 || timeIndex != 0)
+            {
+                return 0L;
+            }
+            else
+            {
+                return 1L;
+            }
+        }
+
         public void EnumerateTimes(int keyIndex, NaiadList<int> timelist)
         {
             if (keyIndex != 0)
@@ -514,6 +602,14 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.CollectionTra
         }
 
         public void EnsureStateIsCurrentWRTAdvancedTimes(ref int keyIndex)
+        {
+        }
+
+        public void TransferTimesToNewInternTable(int state, Func<int, int> updateTime)
+        {
+        }
+
+        public void InstallNewUpdateFunction(Func<int, int, bool> newLessThan, Func<int, int> newUpdateTime)
         {
         }
 
@@ -536,5 +632,100 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.CollectionTra
         }
 
         public bool Stateful { get { return true; } }
+    }
+
+    internal static class CheckpointExtensionMethods
+    {
+        public static long CheckpointKey<TTime, TValue>(
+            this CollectionTrace<TValue> trace, int keyIndex, ICheckpoint<TTime> checkpoint,
+            TTime[] times, NaiadWriter writer)
+            where TTime : Time<TTime>
+            where TValue : IEquatable<TValue>
+        {
+            NaiadList<int> timeList = new NaiadList<int>(16);
+            NaiadList<Weighted<TValue>> values = new NaiadList<Weighted<TValue>>(16);
+
+            // the caller wrote out the number of times before calling this
+            long entries = 0;
+
+            trace.EnumerateTimes(keyIndex, timeList);
+            for (int i = 0; i < timeList.Count; ++i)
+            {
+                if (checkpoint.ContainsTime(times[timeList.Array[i]]))
+                {
+                    writer.Write(times[timeList.Array[i]]);
+
+                    trace.EnumerateDifferenceAt(keyIndex, timeList.Array[i], values);
+
+                    entries += values.Count + 1;
+
+                    writer.Write(values.Count);
+                    for (int v = 0; v < values.Count; ++v)
+                    {
+                        writer.Write(values.Array[v]);
+                    }
+                    values.Clear();
+                }
+            }
+
+            return entries;
+        }
+
+        public static Pair<long,long> CountEntries<TTime, TValue>(
+            this CollectionTrace<TValue> trace, int keyIndex,
+            ICheckpoint<TTime> checkpoint, TTime[] times,
+            bool countInside, bool countOutside)
+            where TTime : Time<TTime>
+            where TValue : IEquatable<TValue>
+        {
+            NaiadList<int> timeList = new NaiadList<int>(16);
+
+            long insideEntries = 0;
+            long outsideEntries = 0;
+
+            trace.EnumerateTimes(keyIndex, timeList);
+            for (int i = 0; i < timeList.Count; ++i)
+            {
+                bool inside = checkpoint.ContainsTime(times[timeList.Array[i]]);
+                if (inside && countInside)
+                {
+                    insideEntries += trace.CountDifferenceAt(keyIndex, timeList.Array[i]) + 1;
+                }
+                if (!inside && countOutside)
+                {
+                    outsideEntries += trace.CountDifferenceAt(keyIndex, timeList.Array[i]) + 1;
+                }
+            }
+
+            return insideEntries.PairWith(outsideEntries);
+        }
+
+        public static long RestoreKey<TTime, TValue>(
+            this CollectionTrace<TValue> trace, ref int keyIndex,
+            LatticeInternTable<TTime> internTable, NaiadReader reader)
+            where TTime : Time<TTime>
+            where TValue : IEquatable<TValue>
+        {
+            int numberOfTimes = reader.Read<int>();
+
+            long entries = numberOfTimes;
+
+            for (int i = 0; i < numberOfTimes; ++i)
+            {
+                TTime time = reader.Read<TTime>();
+                int timeIndex = internTable.Intern(time);
+
+                int numberOfValues = reader.Read<int>();
+                for (int v = 0; v < numberOfValues; ++v)
+                {
+                    Weighted<TValue> weightedValue = reader.Read<Weighted<TValue>>();
+                    trace.Introduce(ref keyIndex, weightedValue.record, weightedValue.weight, timeIndex);
+                }
+
+                entries += numberOfValues;
+            }
+
+            return entries;
+        }
     }
 }

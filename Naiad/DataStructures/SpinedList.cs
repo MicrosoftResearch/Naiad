@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.5
+ * Naiad ver. 0.6
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -29,30 +29,38 @@ using Microsoft.Research.Naiad.Serialization;
 namespace Microsoft.Research.Naiad.DataStructures
 {
     /// <summary>
+    /// Convenience datastructures for storing data efficiently
+    /// </summary>
+    class NamespaceDoc
+    {
+    }
+
+    /// <summary>
     /// A list with a spine that grows.
     /// </summary>
     /// <typeparam name="T">record type</typeparam>
-    internal class SpinedList<T>
+    public class SpinedList<T>
     {
         T[][] Spine;
 
         T[] Small;
+
         const int SmallInit = 16;
         const int SmallLimit = 65536;
 
         /// <summary>
         /// Number of valid records.
         /// </summary>
-        public int Count;
+        public int Count { get { return (int) this.count; } }
 
-        private long size;
+        private uint count;
 
         /// <summary>
         /// Indexer
         /// </summary>
         /// <param name="index">index</param>
         /// <returns>element at position index</returns>
-        public T this[int index]
+        public T this[uint index]
         {
             get
             {
@@ -81,59 +89,91 @@ namespace Microsoft.Research.Naiad.DataStructures
             }
         }
 
-        int elementSize;
-
         /// <summary>
         /// Adds an element to the list
         /// </summary>
-        /// <param name="element"></param>
+        /// <param name="element">the element to add</param>
         public void Add(T element)
         {
-            if (Count < SmallLimit)
+            if (this.count < SmallLimit)
             {
-                if (Count == Small.Length)
+                if (this.count == Small.Length)
                 {
                     T[] old = this.Small;
                     this.Small = new T[old.Length * 2];
-                    var extra = old.Length * elementSize;
-
                     old.CopyTo(this.Small, 0);
-
-                    this.size += extra;
                 }
-                Small[Count] = element;
+                Small[this.count] = element;
             }
             else
             {
-                if (Count == SmallLimit)
+                if (this.count == SmallLimit)
                 {
-                    var extra = 0;
-
                     this.Spine = new T[65536][];
-                    extra += 8 * 65536;
-
                     Spine[0] = Small;
-
-                    this.size += extra;
+                    Small = null;
                 }
 
-                if (Count % 65536 == 0)
+                if ((this.count % 65536) == 0)
                 {
-                    //if (Spine[Count / 65536] == null)
-                    Spine[Count / 65536] = new T[65536];
-                    this.size += 65536 * elementSize;
+                    Spine[this.count / 65536] = new T[65536];
                 }
-                Spine[Count / 65536][Count % 65536] = element;
+
+                Spine[this.count / 65536][this.count % 65536] = element;
             }
-            Count++;
+
+            this.count++;
         }
+
+        /// <summary>
+        /// adds a sequence of elements to the list
+        /// </summary>
+        /// <param name="elements">the array of elements</param>
+        /// <param name="count">the number of valid elements</param>
+        public void AddRange(T[] elements, int count)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                var element = elements[i];
+
+                if (this.count < SmallLimit)
+                {
+                    if (this.count == Small.Length)
+                    {
+                        T[] old = this.Small;
+                        this.Small = new T[old.Length * 2];
+                        old.CopyTo(this.Small, 0);
+                    }
+                    Small[this.count] = element;
+                }
+                else
+                {
+                    if (this.count == SmallLimit)
+                    {
+                        this.Spine = new T[65536][];
+                        Spine[0] = Small;
+                        Small = null;
+                    }
+
+                    if ((this.count % 65536) == 0)
+                    {
+                        Spine[this.count / 65536] = new T[65536];
+                    }
+
+                    Spine[this.count / 65536][this.count % 65536] = element;
+                }
+
+                this.count++;
+            }
+        }
+
 
         /// <summary>
         /// Enumerates the contents of the list AND CONSUMES THE ELEMENTS.
         /// XXX : Implementation should record that data are now invalid.
         /// </summary>
         /// <returns>Element enumeration</returns>
-        public IEnumerable<T> AsEnumerable()
+        public IEnumerable<T> DequeueAllAndInvalidate()
         {
             if (Count <= SmallLimit)
             {
@@ -141,6 +181,8 @@ namespace Microsoft.Research.Naiad.DataStructures
                 {
                     yield return Small[i];
                 }
+
+                this.Small = null;
             }
             else
             {
@@ -152,15 +194,37 @@ namespace Microsoft.Research.Naiad.DataStructures
                     if (i > 0 && i % 65536 == 0)
                         Spine[(i / 65536) - 1] = null;
                 }
+
+                this.Spine = null;
+            }
+        }
+
+        /// <summary>
+        /// perform an action on each element of the list, a batch at a time
+        /// </summary>
+        /// <param name="action">the action to perform on each batch</param>
+        public void IterateOver(Action<T[], int> action)
+        {
+            if (this.Small != null)
+            {
+                action(this.Small, this.Count);
+            }
+            else
+            {
+                for (int i = 0; i < this.Count / 65536; i++)
+                    action(this.Spine[i], 65536);
+
+                if ((this.Count % 65536) > 0)
+                    action(this.Spine[this.Count / 65536], this.Count % 65536);
             }
         }
 
         /// <summary>
         /// Checkpoints to NaiadWriter
         /// </summary>
-        /// <param name="writer"></param>
-        /// <param name="serializer"></param>
-        /// <param name="intSerializer"></param>
+        /// <param name="writer">data writer</param>
+        /// <param name="serializer">record serializer</param>
+        /// <param name="intSerializer">integer serializer (for lengths)</param>
         public void Checkpoint(NaiadWriter writer, NaiadSerialization<T> serializer, NaiadSerialization<Int32> intSerializer)
         {
             writer.Write(this.Count, intSerializer);
@@ -171,13 +235,13 @@ namespace Microsoft.Research.Naiad.DataStructures
         /// <summary>
         /// Restores from NaiadReader
         /// </summary>
-        /// <param name="reader"></param>
-        /// <param name="serializer"></param>
-        /// <param name="intSerializer"></param>
+        /// <param name="reader">data reader</param>
+        /// <param name="serializer">record deserializer</param>
+        /// <param name="intSerializer">integer deserializer (for lengths)</param>
         public void Restore(NaiadReader reader, NaiadSerialization<T> serializer, NaiadSerialization<Int32> intSerializer)
         {
             int readCount = reader.Read(intSerializer);
-            this.Count = 0;
+            this.count = 0;
             Array.Clear(this.Spine, 0, this.Spine.Length);
             for (int i = 0; i < readCount; ++i)
                 this.Add(reader.Read(serializer));
@@ -188,10 +252,8 @@ namespace Microsoft.Research.Naiad.DataStructures
         /// </summary>
         public SpinedList()
         {
-            this.Count = 0;
+            this.count = 0;
             this.Small = new T[SmallInit];
-            this.elementSize = 4;
-            this.size = SmallInit * this.elementSize;
         }
     }
 }

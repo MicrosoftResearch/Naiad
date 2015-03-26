@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.5
+ * Naiad ver. 0.6
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -257,6 +257,128 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
             input.OnCompleted(new Weighted<TRecord>[] { new Weighted<TRecord>(value, 1) });
         }
 
+        /// <summary>
+        /// Adds records to an <see cref="SubBatchInputCollection{TRecord,TTime}"/>.
+        /// </summary>
+        /// <typeparam name="TTime">The time type of the outer batches.</typeparam>
+        /// <typeparam name="TRecord">The type of the records.</typeparam>
+        /// <param name="input">The input.</param>
+        /// <param name="records">The records.</param>
+        public static void OnNext<TRecord, TTime>(this SubBatchInputCollection<TRecord, TTime> input, IEnumerable<TRecord> records)
+            where TRecord : IEquatable<TRecord>
+            where TTime : Time<TTime>
+        {
+            if (records == null)
+                throw new ArgumentNullException("records");
+
+            input.OnNext(records.Select(x => new Weighted<TRecord>(x, 1)));
+        }
+
+        /// <summary>
+        /// Introduces several records to an <see cref="SubBatchInputCollection{TRecord,TTime}"/> with the same integer weight.
+        /// </summary>
+        /// <typeparam name="TRecord">The type of the records.</typeparam>
+        /// <typeparam name="TTime">The time type of the outer batches.</typeparam>
+        /// <param name="input">The input.</param>
+        /// <param name="records">The records.</param>
+        /// <param name="weight">Positive or negative weight for each record</param>
+        public static void OnNext<TRecord, TTime>(this SubBatchInputCollection<TRecord, TTime> input, IEnumerable<TRecord> records, int weight)
+            where TRecord : IEquatable<TRecord>
+            where TTime : Time<TTime>
+        {
+            if (records == null)
+                throw new ArgumentNullException("records");
+
+            input.OnNext(records.Select(x => new Weighted<TRecord>(x, weight)));
+        }
+
+        /// <summary>
+        /// Adds a record to an <see cref="SubBatchInputCollection{TRecord,TTime}"/>.
+        /// </summary>
+        /// <typeparam name="TRecord">The type of the record.</typeparam>
+        /// <typeparam name="TTime">The time type of the outer batches.</typeparam>
+        /// <param name="input">The input.</param>
+        /// <param name="record">The record.</param>
+        public static void OnNext<TRecord, TTime>(this SubBatchInputCollection<TRecord, TTime> input, TRecord record)
+            where TRecord : IEquatable<TRecord>
+            where TTime : Time<TTime>
+        {
+            input.OnNext(new Weighted<TRecord>[] { new Weighted<TRecord>(record, 1) });
+        }
+
+        /// <summary>
+        /// Introduces a record to an <see cref="SubBatchInputCollection{TRecord,TTime}"/> with an integer weight.
+        /// </summary>
+        /// <typeparam name="TRecord">The type of the record.</typeparam>
+        /// <typeparam name="TTime">The time type of the outer batches.</typeparam>
+        /// <param name="input">The input.</param>
+        /// <param name="record">The record.</param>
+        /// <param name="weight">Positive or negative weight for the record.</param>
+        public static void OnNext<TRecord, TTime>(this SubBatchInputCollection<TRecord, TTime> input, TRecord record, int weight)
+            where TRecord : IEquatable<TRecord>
+            where TTime : Time<TTime>
+        {
+            input.OnNext(new Weighted<TRecord>[] { new Weighted<TRecord>(record, weight) });
+        }
+
+        /// <summary>
+        /// Introduces no records to a <see cref="SubBatchInputCollection{TRecord,TTime}"/>.
+        /// </summary>
+        /// <remarks>
+        /// This extension method is typically used when a computation has multiple inputs, to "tick" the
+        /// inputs that have not changed in an epoch.
+        /// </remarks>
+        /// <typeparam name="TRecord">The type of records in the input.</typeparam>
+        /// <typeparam name="TTime">The time type of the outer batches.</typeparam>
+        /// <param name="input">The input.</param>
+        public static void OnNext<TRecord, TTime>(this SubBatchInputCollection<TRecord, TTime> input)
+            where TRecord : IEquatable<TRecord>
+            where TTime : Time<TTime>
+        {
+            input.OnNext((IEnumerable<Weighted<TRecord>>)null);
+        }
+
+        /// <summary>
+        /// Adds a single record with an integer weight and signals that the <see cref="SubBatchInputCollection{TRecord,TTime}"/> is complete.
+        /// </summary>
+        /// <param name="input">The input.</param>
+        /// <param name="value">The record.</param>
+        /// <typeparam name="TRecord">The type of the record.</typeparam>
+        /// <typeparam name="TTime">The time type of the outer batches.</typeparam>
+        public static void OnCompleted<TRecord, TTime>(this SubBatchInputCollection<TRecord, TTime> input, Weighted<TRecord> value)
+            where TRecord : IEquatable<TRecord>
+            where TTime : Time<TTime>
+        {
+            input.OnCompleted(new Weighted<TRecord>[] { value });
+        }
+
+        /// <summary>
+        /// Adds several records and signals that the <see cref="SubBatchInputCollection{TRecord,TTime}"/> is complete.
+        /// </summary>
+        /// <param name="input">The input.</param>
+        /// <param name="values">The records.</param>
+        /// <typeparam name="TRecord">The type of the records.</typeparam>
+        /// <typeparam name="TTime">The time type of the outer batches.</typeparam>
+        public static void OnCompleted<TRecord, TTime>(this SubBatchInputCollection<TRecord, TTime> input, IEnumerable<TRecord> values)
+            where TRecord : IEquatable<TRecord>
+            where TTime : Time<TTime>
+        {
+            input.OnCompleted(values.Select(x => new Weighted<TRecord>(x, 1)));
+        }
+
+        /// <summary>
+        /// Adds a single record and signals that the <see cref="SubBatchInputCollection{TRecord,TTime}"/> is complete.
+        /// </summary>
+        /// <param name="input">The input.</param>
+        /// <param name="value">The record.</param>
+        /// <typeparam name="TRecord">The type of the records.</typeparam>
+        /// <typeparam name="TTime">The time type of the outer batches.</typeparam>
+        public static void OnCompleted<TRecord, TTime>(this SubBatchInputCollection<TRecord, TTime> input, TRecord value)
+            where TRecord : IEquatable<TRecord>
+            where TTime : Time<TTime>
+        {
+            input.OnCompleted(new Weighted<TRecord>[] { new Weighted<TRecord>(value, 1) });
+        }
 
         /// <summary>
         /// Registers a callback that will be invoked each time the collection changes with a list of weighted records.

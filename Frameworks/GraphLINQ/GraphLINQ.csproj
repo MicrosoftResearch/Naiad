@@ -4,7 +4,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{BDBEACA4-1235-4FDC-BBF5-9F9B7AB553AD}</ProjectGuid>
+    <ProjectGuid>{5A2BDFC0-DAA9-42BE-A463-FD2D4F9D424E}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Microsoft.Research.Naiad.GraphLINQ</RootNamespace>
@@ -71,6 +71,7 @@
     </Compile>
     <Compile Include="GraphLINQ.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SpaceFilling.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Naiad\Naiad.csproj">

@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.5
+ * Naiad ver. 0.6
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -91,6 +91,19 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
                 {
                     Aggregator.OnRecv(outstandingRecords);
                     outstandingRecords.Clear();
+                }
+            }
+            NaiadTracing.Trace.LockRelease(this);
+        }
+
+        public void Reset()
+        {
+            NaiadTracing.Trace.LockAcquire(this);
+            lock (this)
+            {
+                if (outstandingRecords.Count > 0)
+                {
+                    throw new ApplicationException("Reset called with outstanding records present");
                 }
             }
             NaiadTracing.Trace.LockRelease(this);

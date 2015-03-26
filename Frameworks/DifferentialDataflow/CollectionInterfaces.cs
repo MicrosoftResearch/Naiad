@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.5
+ * Naiad ver. 0.6
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -29,6 +29,7 @@ using Microsoft.Research.Naiad.DataStructures;
 using Microsoft.Research.Naiad.Dataflow.Channels;
 using Microsoft.Research.Naiad.Scheduling;
 using Microsoft.Research.Naiad;
+using Microsoft.Research.Naiad.Runtime.FaultTolerance;
 using Microsoft.Research.Naiad.Dataflow;
 
 namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
@@ -137,6 +138,29 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
         /// <returns>A collection with the same elements, but in which all records with the same key will be
         /// processed by the same worker.</returns>
         Collection<TRecord, TTime> PartitionBy<TKey>(Expression<Func<TRecord, TKey>> keySelector);
+
+        /// <summary>
+        /// Partitions a collection by the given key selector, even if the collection is already paritioned that way.
+        /// </summary>
+        /// <typeparam name="TKey">The key type.</typeparam>
+        /// <param name="keySelector">Function that extracts a key from each record.</param>
+        /// <returns>A collection with the same elements, but in which all records with the same key will be
+        /// processed by the same worker.</returns>
+        Collection<TRecord, TTime> ForcePartitionBy<TKey>(Expression<Func<TRecord, TKey>> keySelector);
+
+        /// <summary>
+        /// Set the type of checkpointing/logging used at the operator that produces this collection
+        /// </summary>
+        /// <param name="checkpointType">type of checkpointing/logging</param>
+        /// <returns>the collection with the modified checkpointing type</returns>
+        Collection<TRecord, TTime> SetCheckpointType(CheckpointType checkpointType);
+
+        /// <summary>
+        /// Provides a function indicating when to checkpoint
+        /// </summary>
+        /// <param name="shouldCheckpointFactory">function to create a checkpoint policy object for a vertex</param>
+        /// <returns>the collection with the new policy</returns>
+        Collection<TRecord, TTime> SetCheckpointPolicy(Func<int, Runtime.FaultTolerance.ICheckpointPolicy> shouldCheckpointFactory);
 
         #region Consolidation
 
@@ -502,6 +526,12 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
             where TOutput : IEquatable<TOutput>;
 
         /// <summary>
+        /// Outputs the entire collection at each time
+        /// </summary>
+        /// <returns>The collection of output records.</returns>
+        Collection<TRecord, TTime> ToStateless();
+
+        /// <summary>
         /// Groups records using the supplied key selector, and computes the sum of the records in each group.
         /// </summary>
         /// <typeparam name="TKey">The key type.</typeparam>
@@ -772,6 +802,48 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
         /// </summary>
         /// <param name="values">The records to be added or removed.</param>
         new void OnNext(IEnumerable<Weighted<TRecord>> values);
+
+        /// <summary>
+        /// Signals that no more records will be added to or removed from this collection.
+        /// </summary>
+        new void OnCompleted();
+
+        //void OnNext(IEnumerable<Weighted<R>> value);        
+        //void OnCompleted();
+        //void OnError(Exception error);
+    }
+
+    /// <summary>
+    /// A <see cref="Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.Collection{TRecord,TTime}"/> that can be modified by adding or removing records.
+    /// </summary>
+    /// <typeparam name="TRecord">The type of records in this collection.</typeparam>
+    /// <typeparam name="TTime">The time type of records in the outer batch.</typeparam>
+    public interface SubBatchInputCollection<TRecord, TTime> : Collection<TRecord, IterationIn<TTime>>, IObserver<IEnumerable<Weighted<TRecord>>>
+        where TRecord : IEquatable<TRecord>
+        where TTime: Time<TTime>
+    {
+        /// <summary>
+        /// Introduces a batch of <paramref name="values"/> to this collection in a new <see cref="Epoch"/>, and signals that no more records will be added to or removed from this collection.
+        /// </summary>
+        /// <param name="values">The records to be added or removed.</param>
+        void OnCompleted(IEnumerable<Weighted<TRecord>> values);
+
+        /// <summary>
+        /// Introduces a batch of <paramref name="values"/> to this collection in a new <see cref="Epoch"/>.
+        /// </summary>
+        /// <param name="values">The records to be added or removed.</param>
+        new void OnNext(IEnumerable<Weighted<TRecord>> values);
+
+        /// <summary>
+        /// Start entering sub batches corresponding to a new outer time
+        /// </summary>
+        /// <param name="time">outer time</param>
+        void SetOuterBatch(TTime time);
+
+        /// <summary>
+        /// Marks the current outer batch complete
+        /// </summary>
+        void CompleteOuterBatch();
 
         /// <summary>
         /// Signals that no more records will be added to or removed from this collection.

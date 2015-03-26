@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.5
+ * Naiad ver. 0.6
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -30,6 +30,7 @@ using Microsoft.Research.Naiad.Serialization;
 using Microsoft.Research.Naiad.Scheduling;
 using Microsoft.Research.Naiad.Frameworks;
 using Microsoft.Research.Naiad.Dataflow;
+using Microsoft.Research.Naiad.Runtime.FaultTolerance;
 using Microsoft.Research.Naiad.Runtime.Networking;
 using Microsoft.Research.Naiad.Runtime.Controlling;
 using Microsoft.Research.Naiad.Runtime.Progress;
@@ -38,10 +39,11 @@ using Microsoft.Research.Naiad.Diagnostics;
 
 namespace Microsoft.Research.Naiad.Dataflow.Channels
 {
-    internal class CentralizedProgressChannel : Cable<Update, Empty>
+    internal class CentralizedProgressChannel : Cable<Empty, Update, Empty>
     {
         private class Mailbox : Mailbox<Update, Empty>
         {
+            private readonly int senderStageId;
             private readonly PostOffice postOffice;
             private readonly Runtime.Progress.ProgressUpdateCentralizer consumer;
             private readonly int id;
@@ -56,15 +58,25 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
 
             private readonly AutoSerializedMessageDecoder<Update, Empty> decoder;
 
+            private readonly BufferPool<Update> BufferPool;
+
+            public string WaitingMessageCount()
+            {
+                return null;
+            }
+
             public void DeliverSerializedMessage(SerializedMessage message, ReturnAddress from)
             {
-                foreach (var typedMessage in this.decoder.AsTypedMessages(message))
+                lock (this)
                 {
-                    this.consumer.ProcessCountChange(typedMessage);
-                    typedMessage.Release(AllocationReason.Deserializer);
-                }
+                    foreach (var typedMessage in this.decoder.AsTypedMessages(message))
+                    {
+                        this.consumer.ProcessCountChange(typedMessage);
+                        typedMessage.Release(AllocationReason.Deserializer, this.BufferPool);
+                    }
 
-                this.RequestFlush(from);
+                    this.RequestFlush(from);
+                }
             }
 
             internal long recordsReceived = 0;
@@ -84,19 +96,29 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
             {
             }
 
-            public Mailbox(PostOffice postOffice, Runtime.Progress.ProgressUpdateCentralizer consumer, int id, int vertexId)
+            public void TransferEndpointForRollback(VertexInput<Update, Empty> newEndpoint)
             {
+                throw new NotImplementedException();
+            }
+
+            public int SenderStageId { get { return this.senderStageId; } }
+
+            public Mailbox(int senderStageId, PostOffice postOffice, Runtime.Progress.ProgressUpdateCentralizer consumer, int id, int vertexId)
+            {
+                this.senderStageId = senderStageId;
                 this.postOffice = postOffice;
                 this.consumer = consumer;
                 this.id = id;
                 this.vertexId = vertexId;
                 this.graphId = this.consumer.Stage.InternalComputation.Index;
 
-                this.decoder = new AutoSerializedMessageDecoder<Update, Empty>(consumer.SerializationFormat);
+                this.BufferPool = new MessageBufferPool<Update>();
+
+                this.decoder = new AutoSerializedMessageDecoder<Update, Empty>(consumer.SerializationFormat, this.BufferPool);
             }
         }
 
-        private class Fiber : SendChannel<Update, Empty>
+        private class Fiber : SendChannel<Empty, Update, Empty>
         {
             private bool debug = false;
 
@@ -105,17 +127,19 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
             private readonly int channelID;
             private readonly int vertexID;   // used for tracing/debugging
 
-            private readonly VertexOutput<Update, Empty> sender;
+            private readonly VertexOutput<Empty, Update, Empty> sender;
             private readonly CentralizedProgressChannel.Mailbox localMailbox;
 
             private readonly int receiverVertexId;
             private readonly int receiverProcessId;
-
+            private readonly int senderProcessId;
             private readonly int numProcesses;
+
+            private readonly ReturnAddress senderAddress;
 
             private AutoSerializedMessageEncoder<Update, Empty> encoder;
             
-            public Fiber(int channelID, int vertexID, VertexOutput<Update, Empty> sender, CentralizedProgressChannel.Mailbox localMailbox, InternalController controller, int receiverVertexId, int receiverProcessId)
+            public Fiber(int channelID, int vertexID, VertexOutput<Empty, Update, Empty> sender, CentralizedProgressChannel.Mailbox localMailbox, InternalController controller, int receiverVertexId, int receiverProcessId)
             {
                 this.channelID = channelID;
                 this.vertexID = vertexID;
@@ -123,14 +147,16 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
                 this.localMailbox = localMailbox;
                 this.networkChannel = controller.NetworkChannel;
                 this.numProcesses = controller.Configuration.Processes;
-                int processID = controller.Configuration.ProcessID;
+                this.senderProcessId = controller.Configuration.ProcessID;
 
                 this.receiverVertexId = receiverVertexId;
                 this.receiverProcessId = receiverProcessId;
 
+                this.senderAddress = new ReturnAddress(this.sender.Vertex.Stage.StageId, this.senderProcessId, this.vertexID, 0);
+
                 if (this.networkChannel != null)
                 {
-                    this.encoder = new AutoSerializedMessageEncoder<Update, Empty>(0, this.sender.Vertex.Stage.InternalComputation.Index << 16 | this.channelID, this.networkChannel.GetBufferPool(0, -1), this.networkChannel.SendPageSize, controller.SerializationFormat, SerializedMessageType.Data, () => this.networkChannel.GetSequenceNumber(-1));
+                    this.encoder = new AutoSerializedMessageEncoder<Update, Empty>(0, this.sender.Vertex.Stage.InternalComputation.Index << 16 | this.channelID, this.networkChannel.GetBufferPool(0, -1), this.networkChannel.SendPageSize, controller.SerializationFormat, false, SerializedMessageType.Data, () => this.networkChannel.GetSequenceNumber(-1));
                     this.encoder.CompletedMessage += (o, a) => { this.SendPageContents(a.Hdr, a.Segment); };
                 }
             }
@@ -138,7 +164,14 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
             internal long bytesSent = 0;
             internal long messagesSent = 0;
 
-            public void Send(Message<Update, Empty> records)
+            public void EnableLogging(IOutgoingMessageLogger<Empty, Update, Empty> logger) { }
+
+            public IOutgoingMessageReplayer<Empty, Empty> GetMessageReplayer()
+            {
+                throw new NotImplementedException();
+            }
+
+            public void Send(Empty sendTime, Message<Update, Empty> records)
             {
                 if (debug)
                     for (int i = 0; i < records.length; i++)
@@ -151,7 +184,7 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
                     this.encoder.Write(new ArraySegment<Update>(records.payload, 0, records.length), this.vertexID);
                 }
                 else
-                    this.localMailbox.Send(records, new ReturnAddress());
+                    this.localMailbox.Send(records, this.senderAddress);
             }
 
             private void SendPageContents(MessageHeader hdr, BufferSegment segment)
@@ -187,24 +220,34 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
             }
         }
 
-        private readonly int channelID;
-        public int ChannelId { get { return channelID; } }
+        private readonly Edge<Empty, Update, Empty> edge;
+        public Edge<Empty, Update, Empty> Edge { get { return edge; } }
 
         private readonly Stage<Runtime.Progress.ProgressUpdateCentralizer, Empty> consumer;
 
-        private readonly StageOutput<Update, Empty> sendBundle;
+        private readonly FullyTypedStageOutput<Empty, Update, Empty> sendBundle;
         private readonly StageInput<Update, Empty> recvBundle;
 
         private readonly Dictionary<int, Fiber> postboxes;
         private readonly Mailbox mailbox;
 
+        public void EnableReceiveLogging()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void ReMaterializeForRollback(Dictionary<int, Vertex> newSourceVertices, Dictionary<int, Vertex> newTargetVertices)
+        {
+            throw new NotImplementedException();
+        }
+
         /// <summary>
         /// Constructor
         /// </summary>
         public CentralizedProgressChannel(Stage<ProgressUpdateCentralizer, Empty> consumer,
-                             StageOutput<Update, Empty> stream, StageInput<Update, Empty> recvPort,
+                             FullyTypedStageOutput<Empty, Update, Empty> stream, StageInput<Update, Empty> recvPort,
                              InternalController controller,
-                             int channelId)
+                             Edge<Empty, Update, Empty> edge)
         {
             this.consumer = consumer;
 
@@ -213,7 +256,7 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
 
             this.postboxes = new Dictionary<int, Fiber>();
 
-            this.channelID = channelId;
+            this.edge = edge;
 
             // Get the vertex id and process id of the single consumer
             var consumerVertexId = consumer.Placement.Single().VertexId;
@@ -227,8 +270,8 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
             {
                 VertexInput<Update, Empty> recvFiber = this.recvBundle.GetPin(consumerProcessId);
 
-                this.mailbox = new Mailbox(recvFiber.Vertex.Scheduler.State(computation).PostOffice,
-                                           consumer.GetVertex(consumerVertexId), this.channelID, consumerVertexId);
+                this.mailbox = new Mailbox(consumer.StageId, recvFiber.Vertex.Scheduler.State(computation).PostOffice,
+                                           consumer.GetVertex(consumerVertexId), this.Edge.ChannelId, consumerVertexId);
                 
                 //recvFiber.Vertex.Scheduler.State(computation).PostOffice.RegisterMailbox(this.mailbox);
 
@@ -240,24 +283,24 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
             {
                 if (loc.ProcessId == sendBundle.ForStage.InternalComputation.Controller.Configuration.ProcessID)
                 {
-                    var postbox = new Fiber(this.channelID, loc.VertexId, this.sendBundle.GetFiber(loc.VertexId),
+                    var postbox = new Fiber(this.Edge.ChannelId, loc.VertexId, this.sendBundle.GetFiber(loc.VertexId),
                                             this.mailbox, controller, consumerVertexId, consumerProcessId);
                     this.postboxes[loc.VertexId] = postbox;
                 }
             }
-            Logging.Info("Allocated CentralizedProgressChannel [{0}]: {1} -> {2}", this.channelID, sendBundle, recvBundle);
-            NaiadTracing.Trace.ChannelInfo(ChannelId, SourceStage.StageId, DestinationStage.StageId, true, true);
+            Logging.Info("Allocated CentralizedProgressChannel [{0}]: {1} -> {2}", this.Edge.ChannelId, sendBundle, recvBundle);
+            NaiadTracing.Trace.ChannelInfo(this.Edge.ChannelId, SourceStage.StageId, DestinationStage.StageId, true, true);
         }
 
-        public Dataflow.Stage SourceStage
+        public Dataflow.Stage<Empty> SourceStage
         {
             get
             {
-                return this.sendBundle.ForStage;
+                return this.sendBundle.TypedStage;
             }
         }
 
-        public Dataflow.Stage DestinationStage
+        public Dataflow.Stage<Empty> DestinationStage
         {
             get
             {
@@ -265,7 +308,7 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
             }
         }
 
-        public SendChannel<Update, Empty> GetSendChannel(int i)
+        public SendChannel<Empty, Update, Empty> GetSendChannel(int i)
         {
             return this.postboxes[i];
         }

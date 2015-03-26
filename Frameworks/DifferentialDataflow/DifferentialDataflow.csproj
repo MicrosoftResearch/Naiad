@@ -84,6 +84,7 @@
     <Compile Include="..\..\SharedAssemblyInfo.cs">
       <Link>Properties\SharedAssemblyInfo.cs</Link>
     </Compile>
+    <Compile Include="CheckpointHelpers.cs" />
     <Compile Include="Collection.cs" />
     <Compile Include="CollectionInterfaces.cs" />
     <Compile Include="CollectionTrace\CollectionTrace.cs" />
@@ -126,6 +127,7 @@
     <Compile Include="Operators\SelectMany.cs" />
     <Compile Include="Operators\Sum.cs" />
     <Compile Include="Operators\SymmetricDifference.cs" />
+    <Compile Include="Operators\ToStateless.cs" />
     <Compile Include="Operators\Union.cs" />
     <Compile Include="Operators\Where.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

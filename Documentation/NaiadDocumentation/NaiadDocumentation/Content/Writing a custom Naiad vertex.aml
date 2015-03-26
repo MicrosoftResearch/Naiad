@@ -91,8 +91,8 @@ public static Stream&lt;TRecord, TTime&gt; MakeStage(Stream&lt;TRecord, TTime&gt
 }          
         </code>
         <para>
-          In more detail, the <codeEntityReference>M:Microsoft.Research.Naiad.Dataflow.StandardVertices.Foundry.NewStage``2(Microsoft.Research.Naiad.Dataflow.TimeContext{``1},System.Func{System.Int32,Microsoft.Research.Naiad.Dataflow.Stage{``1},``0},System.String)</codeEntityReference>
-          method is what Naiad uses to assemble a new stage, taking a <codeEntityReference>T:Microsoft.Research.Naiad.Dataflow.TimeContext`1</codeEntityReference> 
+          In more detail, the <codeEntityReference>M:Microsoft.Research.Naiad.Dataflow.StandardVertices.Foundry.NewStage``2(Microsoft.Research.Naiad.StreamContext,System.Func{System.Int32,Microsoft.Research.Naiad.Dataflow.Stage{``1},``0},System.String)</codeEntityReference>
+          method is what Naiad uses to assemble a new stage, taking a <codeEntityReference>T:Microsoft.Research.Naiad.StreamContext</codeEntityReference> 
           from which the stage understands its place in the dataflow graph,
           a factory capable of producing vertices for each vertex index and stage,
           and a tasteful name to use in describing the vertex.
@@ -100,7 +100,7 @@ public static Stream&lt;TRecord, TTime&gt; MakeStage(Stream&lt;TRecord, TTime&gt
           To add a new input, the <codeEntityReference>M:Microsoft.Research.Naiad.Dataflow.Stage`2.NewInput``1(Microsoft.Research.Naiad.Stream{``0,`1},System.Action{Microsoft.Research.Naiad.Dataflow.Message{``0,`1},`0},System.Linq.Expressions.Expression{System.Func{``0,System.Int32}})</codeEntityReference> 
           method needs a source of data, a callback for each vertex supplied as an action  on messages and vertices, and a partitioning requirement.
           Naiad will make sure that all records passed along the input will be partitioned according to the requirement, in that two records evaluating to the same value will arrive at the same vertex instance. Once all inputs are added we can add outputs 
-          using <codeEntityReference>M:Microsoft.Research.Naiad.Dataflow.Stage`2.NewOutput``1(System.Func{`0,Microsoft.Research.Naiad.Dataflow.VertexOutput{``0,`1}},System.Linq.Expressions.Expression{System.Func{``0,System.Int32}})</codeEntityReference>,
+          using <codeEntityReference>M:Microsoft.Research.Naiad.Dataflow.Stage`2.NewOutput``1(System.Func{`0,Microsoft.Research.Naiad.Dataflow.VertexOutput{`1,``0,`1}},System.Linq.Expressions.Expression{System.Func{``0,System.Int32}})</codeEntityReference>,
           which requires a registration callback (essentially what the vertex should do when another vertex expresses interest in its output), and a partitioning guarantee.
           Naiad uses the guarantee to pipeline communication when an interested consumer has a requirement matching the guarantee.
 

@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.5
+ * Naiad ver. 0.6
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -127,13 +127,15 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
         /// Restores the contents of the list from a NaiadReader.
         /// </summary>
         /// <param name="reader">naiad reader</param>
-        public void Restore(Naiad.Serialization.NaiadReader reader)
+        /// <param name="clear">reset the list before restoring if true</param>
+        public void Restore(Naiad.Serialization.NaiadReader reader, bool clear = true)
         {
-            this.Clear();
+            if (clear) this.Clear();
+            int baseCount = this.count;
             int count = reader.Read<int>();
-            this.EnsureCapacity(count);
-            this.Count = count;
-            for (int i = 0; i < this.Count; ++i)
+            this.EnsureCapacity(count + baseCount);
+            this.Count = count + baseCount;
+            for (int i = baseCount; i < this.Count; ++i)
                 this.Array[i] = reader.Read<S>();
         }
     }

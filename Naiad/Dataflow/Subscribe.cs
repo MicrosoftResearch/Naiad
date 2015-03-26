@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.5
+ * Naiad ver. 0.6
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -25,6 +25,7 @@ using System.Text;
 using System.Threading;
 using Microsoft.Research.Naiad.Dataflow.Channels;
 using Microsoft.Research.Naiad.Runtime.Controlling;
+using Microsoft.Research.Naiad.Runtime.FaultTolerance;
 using Microsoft.Research.Naiad.Scheduling;
 using Microsoft.Research.Naiad.Dataflow;
 using Microsoft.Research.Naiad.Dataflow.StandardVertices;
@@ -50,6 +51,11 @@ namespace Microsoft.Research.Naiad
         /// <seealso cref="Computation.Sync"/>
         /// <seealso cref="Computation.Join"/>
         void Sync(int time);
+
+        /// <summary>
+        /// The stage of the subscription
+        /// </summary>
+        int StageId { get; }
     }
 
     /// <summary>
@@ -77,7 +83,7 @@ namespace Microsoft.Research.Naiad
         /// <returns>subscription for synchronization</returns>
         public static Subscription Subscribe<R>(this Stream<R, Epoch> stream, Action<IEnumerable<R>> action)
         {
-            return new Subscription<R>(stream, new Placement.SingleVertex(0, 0), stream.Context, (j, t, l) => action(l));
+            return new Subscription<R>(stream, new Placement.SingleVertex(0, 0), stream.ForStage.InternalComputation, (j, t, l) => action(l));
         }
 
         /// <summary>
@@ -101,7 +107,7 @@ namespace Microsoft.Research.Naiad
         /// <returns>subscription for synchronization</returns>
         public static Subscription Subscribe<R>(this Stream<R, Epoch> stream, Action<int, int, IEnumerable<R>> action)
         {
-            return new Subscription<R>(stream, stream.ForStage.Placement, stream.Context, action);
+            return new Subscription<R>(stream, stream.ForStage.Placement, stream.ForStage.InternalComputation, action);
         }
 
         /// <summary>
@@ -115,7 +121,7 @@ namespace Microsoft.Research.Naiad
         /// <returns>subscription for synchronization</returns>
         public static Subscription Subscribe<R>(this Stream<R, Epoch> stream, Action<Message<R, Epoch>, int> onRecv, Action<Epoch, int> onNotify, Action<int> onComplete)
         {
-            return new Subscription<R>(stream, stream.ForStage.Placement, stream.Context, onRecv, onNotify, onComplete);
+            return new Subscription<R>(stream, stream.ForStage.Placement, onRecv, onNotify, onComplete);
         }
     }
 }
@@ -193,15 +199,20 @@ namespace Microsoft.Research.Naiad.Dataflow
             countdown.Wait();
         }
 
-        internal Subscription(Stream<R, Epoch> input, Placement placement, TimeContext<Epoch> context, Action<Message<R, Epoch>, int> onRecv, Action<Epoch, int> onNotify, Action<int> onComplete)
+        public int StageId { get; private set; }
+
+        internal Subscription(Stream<R, Epoch> input, Placement placement, Action<Message<R, Epoch>, int> onRecv, Action<Epoch, int> onNotify, Action<int> onComplete)
         {
             foreach (var entry in placement)
-                if (entry.ProcessId == context.Context.Manager.InternalComputation.Controller.Configuration.ProcessID)
+                if (entry.ProcessId == input.ForStage.InternalComputation.Controller.Configuration.ProcessID)
                     this.LocalVertexCount++;
 
-            var stage = new Stage<SubscribeStreamingVertex<R>, Epoch>(placement, context, Stage.OperatorType.Default, (i, v) => new SubscribeStreamingVertex<R>(i, v, this, onRecv, onNotify, onComplete), "Subscribe");
+            var stage = new Stage<SubscribeStreamingVertex<R>, Epoch>(placement, input.ForStage.InternalComputation, Stage.OperatorType.Default, (i, v) => new SubscribeStreamingVertex<R>(i, v, this, onRecv, onNotify, onComplete), "Subscribe");
+            stage.SetCheckpointType(CheckpointType.None);
 
             stage.NewInput(input, (message, vertex) => vertex.OnReceive(message), null);
+
+            this.StageId = stage.StageId;
 
             this.Countdowns = new Dictionary<int, CountdownEvent>();
             this.CompleteThrough = -1;
@@ -216,15 +227,19 @@ namespace Microsoft.Research.Naiad.Dataflow
             stage.InternalComputation.Register(this);
         }
 
-        internal Subscription(Stream<R, Epoch> input, Placement placement, TimeContext<Epoch> context, Action<int, int, IEnumerable<R>> action)
+        internal Subscription(Stream<R, Epoch> input, Placement placement, InternalComputation computation, Action<int, int, IEnumerable<R>> action)
         {
             foreach (var entry in placement)
-                if (entry.ProcessId == context.Context.Manager.InternalComputation.Controller.Configuration.ProcessID)
+                if (entry.ProcessId == computation.Controller.Configuration.ProcessID)
                     this.LocalVertexCount++;
 
-            var stage = new Stage<SubscribeBufferingVertex<R>, Epoch>(placement, context, Stage.OperatorType.Default, (i, v) => new SubscribeBufferingVertex<R>(i, v, this, action), "Subscribe");
+            var stage = new Stage<SubscribeBufferingVertex<R>, Epoch>(placement, computation, Stage.OperatorType.Default, (i, v) => new SubscribeBufferingVertex<R>(i, v, this, action), "Subscribe");
+            stage.SetCheckpointType(CheckpointType.Stateless);
+            stage.SetCheckpointPolicy(i => new CheckpointWithoutPersistence());
 
             stage.NewInput(input, (message, vertex) => vertex.OnReceive(message), null);
+
+            this.StageId = stage.StageId;
 
             this.Countdowns = new Dictionary<int, CountdownEvent>();
             this.CompleteThrough = -1;
@@ -294,7 +309,9 @@ namespace Microsoft.Research.Naiad.Dataflow
             this.OnNotifyAction = onnotify;
             this.OnCompleted = oncomplete;
 
+            this.PushEventTime(new Epoch(0));
             this.NotifyAt(new Epoch(0));
+            this.PopEventTime();
         }
     }
 
@@ -306,25 +323,115 @@ namespace Microsoft.Research.Naiad.Dataflow
     {
         Action<int, int, IEnumerable<R>> Action;        // (vertexid, epoch, data) => ()
         Subscription<R> Parent;
-        
+        private int epochsToRelease = -1;
+        private readonly Dictionary<Epoch, R[]> cachedOutputs;
+
+        protected override bool MustRollBackPreservingState(Runtime.Progress.Pointstamp[] frontier)
+        {
+            return true;
+        }
+
+        public override void RollBackPreservingState(Runtime.Progress.Pointstamp[] frontier, ICheckpoint<Epoch> lastFullCheckpoint, ICheckpoint<Epoch> lastIncrementalCheckpoint)
+        {
+            base.RollBackPreservingState(frontier, lastFullCheckpoint, lastIncrementalCheckpoint);
+
+            if (frontier.Length == 0)
+            {
+                cachedOutputs.Clear();
+            }
+            else
+            {
+                if (frontier.Length != 1)
+                {
+                    throw new ApplicationException("Can only handle epochs");
+                }
+
+                int lastEpoch = frontier[0].Timestamp[0];
+
+                var toRemove = this.cachedOutputs.Keys.Where(e => e.epoch > lastEpoch).ToArray();
+                foreach (Epoch epoch in toRemove)
+                {
+                    this.cachedOutputs.Remove(epoch);
+                }
+            }
+        }
+
         /// <summary>
         /// When a time completes, invokes an action on received data, signals parent stage, and schedules OnNotify for next expoch.
         /// </summary>
         /// <param name="time"></param>
         public override void OnNotify(Epoch time)
         {
+            // test to see if inputs supplied data for this epoch, or terminated instead
             var validEpoch = false;
             for (int i = 0; i < this.Parent.SourceInputs.Length; i++)
                 if (this.Parent.SourceInputs[i].MaximumValidEpoch >= time.epoch)
                     validEpoch = true;
 
-            if (validEpoch)
-                Action(this.VertexId, time.epoch, Input.GetRecordsAt(time));
-            
-            this.Parent.Signal(time);
+            if (this.LoggingEnabled)
+            {
+                if (validEpoch)
+                {
+                    if (time.epoch <= this.epochsToRelease)
+                    {
+                        this.Action(this.VertexId, time.epoch, Input.GetRecordsAt(time));
+                    }
+                    else
+                    {
+                        this.cachedOutputs.Add(time, Input.GetRecordsAt(time).ToArray());
+                    }
+                }
+            }
+            else
+            {
+                if (validEpoch)
+                {
+                    this.Action(this.VertexId, time.epoch, Input.GetRecordsAt(time));
+                }
+
+                this.Parent.Signal(time);
+            }
 
             if (!this.Parent.Disposed && validEpoch)
                 this.NotifyAt(new Epoch(time.epoch + 1));
+        }
+
+        public override void NotifyGarbageCollectionFrontier(Runtime.Progress.Pointstamp[] frontier)
+        {
+            if (frontier.Length != 1 || frontier[0].Timestamp.Length != 1)
+            {
+                throw new ApplicationException("Must use epochs");
+            }
+
+            this.epochsToRelease = frontier[0].Timestamp[0];
+            var timesToRelease = this.cachedOutputs.Where(time => time.Key.epoch <= this.epochsToRelease).OrderBy(time => time.Key.epoch).ToArray();
+
+            foreach (var time in timesToRelease)
+            {
+                this.cachedOutputs.Remove(time.Key);
+                this.Action(this.VertexId, time.Key.epoch, time.Value);
+                this.Parent.Signal(time.Key);
+            }
+        }
+
+        protected override void InitializeRestoration(Runtime.Progress.Pointstamp[] frontier)
+        {
+            int epochsToKeep = -1;
+            if (frontier.Length != 0)
+            {
+                if (frontier.Length != 1 || frontier[0].Timestamp.Length != 1)
+                {
+                    throw new ApplicationException("Must use epochs");
+                }
+                epochsToKeep = frontier[0].Timestamp[0];
+            }
+
+            var timesToDiscard = this.cachedOutputs.Where(time => time.Key.epoch > epochsToKeep).ToArray();
+
+            foreach (var time in timesToDiscard)
+            {
+                this.cachedOutputs.Remove(time.Key);
+            }
         }
 
         public SubscribeBufferingVertex(int index, Stage<Epoch> stage, Subscription<R> parent, Action<int, int, IEnumerable<R>> action)
@@ -333,7 +440,12 @@ namespace Microsoft.Research.Naiad.Dataflow
             this.Parent = parent;
             this.Action = action;
             this.Input = new VertexInputBuffer<R, Epoch>(this);
-            this.NotifyAt(new Epoch(0));
+            Epoch eventTime = new Epoch(0);
+            this.PushEventTime(eventTime);
+            this.NotifyAt(eventTime);
+            this.PopEventTime();
+
+            this.cachedOutputs = new Dictionary<Epoch, R[]>();
         }
     }
 }

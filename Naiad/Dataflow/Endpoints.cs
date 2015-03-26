@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.5
+ * Naiad ver. 0.6
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -19,9 +19,12 @@
  */
 
 using Microsoft.Research.Naiad.Dataflow.Channels;
+using Microsoft.Research.Naiad.Runtime.Progress;
+using Microsoft.Research.Naiad.Runtime.FaultTolerance;
 using Microsoft.Research.Naiad.Serialization;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
@@ -30,38 +33,45 @@ using System.Threading.Tasks;
 namespace Microsoft.Research.Naiad.Dataflow
 {
     /// <summary>
-    /// Represents an output of a vertex, to which zero or more <see cref="SendChannel{TRecord,TTime}"/> (receivers)
+    /// Represents an output of a vertex, to which zero or more <see cref="SendChannel{TSender,TRecord,TTime}"/> (receivers)
     /// can be added.
     /// </summary>
     /// <typeparam name="TRecord">The type of records produced by this output.</typeparam>
     /// <typeparam name="TTime">The type of timestamp on the records produced by this output.</typeparam>
-    public interface VertexOutput<TRecord, TTime>
-     where TTime : Time<TTime>
+    /// <typeparam name="TSender">The type of timestamp on the vertex producing this output.</typeparam>
+    public interface VertexOutput<TSender, TRecord, TTime>
+        where TTime : Time<TTime>
+        where TSender : Time<TSender>
     {
         /// <summary>
         /// The vertex hosting the output.
         /// </summary>
-        Dataflow.Vertex Vertex { get; }
+        Dataflow.Vertex<TSender> Vertex { get; }
 
         /// <summary>
         /// Adds the given receiver to those that will be informed of every messages sent on this output.
         /// </summary>
         /// <param name="receiver">A receiver of messages.</param>
-        void AddReceiver(SendChannel<TRecord, TTime> receiver);
+        void AddReceiver(SendChannel<TSender, TRecord, TTime> receiver);
     }
 
     /// <summary>
     /// Defines the input of a vertex, which must process messages and manage re-entrancy for the runtime.
     /// </summary>
-    /// <typeparam name="TRecord">The type of records accepted by thie input.</typeparam>
+    /// <typeparam name="TRecord">The type of records accepted by this input.</typeparam>
     /// <typeparam name="TTime">The type of timestamp on the records accepted by this input.</typeparam>
     public interface VertexInput<TRecord, TTime>
         where TTime : Time<TTime>
     {
         /// <summary>
-        /// Reports and sets the status of logging; infrequently supported.
+        /// Sets the object in charge of making checkpoints
         /// </summary>
-        bool LoggingEnabled { get; set; }
+        /// <param name="checkpointer">the checkpointing object</param>
+        void SetCheckpointer(Checkpointer<TTime> checkpointer);
+        /// <summary>
+        /// Reports and sets the status of logging.
+        /// </summary>
+        bool LoggingEnabled { get; }
 
         /// <summary>
         /// Indicates whether the destination vertex can be currently re-entered. Decremented and incremented by Naiad.
@@ -69,9 +79,19 @@ namespace Microsoft.Research.Naiad.Dataflow
         int AvailableEntrancy { get; set; }
 
         /// <summary>
+        /// The ID of the edge feeding in to this input
+        /// </summary>
+        int ChannelId { get; set; }
+
+        /// <summary>
+        /// The ID of the stage feeding in to this input
+        /// </summary>
+        int SenderStageId { get; set; }
+
+        /// <summary>
         /// The vertex hosting the input.
         /// </summary>
-        Dataflow.Vertex Vertex { get; }
+        Dataflow.Vertex<TTime> Vertex { get; }
 
         /// <summary>
         /// Ensures that before returning all messages are sent and all progress traffic has been presented to the worker.
@@ -89,7 +109,8 @@ namespace Microsoft.Research.Naiad.Dataflow
         /// Callback for a serialized message. 
         /// </summary>
         /// <param name="message">the serialized message</param>
-        /// <param name="from">the source of the serialized message</param>
+        /// <param name="from">the sender of the message</param>
+        /// 
         void SerializedMessageReceived(SerializedMessage message, ReturnAddress from);
     }
 
@@ -103,7 +124,9 @@ namespace Microsoft.Research.Naiad.Dataflow
     public class StageInput<TRecord, TTime>
         where TTime : Time<TTime>
     {
-        internal readonly Stage ForStage;
+        internal int SenderStageId;
+        internal int ChannelId;
+        internal readonly Stage<TTime> ForStage;
         internal readonly Expression<Func<TRecord, int>> PartitionedBy;
 
         private readonly Dictionary<int, VertexInput<TRecord, TTime>> endpointMap;
@@ -111,6 +134,14 @@ namespace Microsoft.Research.Naiad.Dataflow
         internal void Register(VertexInput<TRecord, TTime> endpoint)
         {
             this.endpointMap[endpoint.Vertex.VertexId] = endpoint;
+            endpoint.ChannelId = this.ChannelId;
+            endpoint.SenderStageId = this.SenderStageId;
+        }
+
+        internal void SetChannelId(int channelId, int senderStageId)
+        {
+            this.ChannelId = channelId;
+            this.SenderStageId = senderStageId;
         }
 
         internal VertexInput<TRecord, TTime> GetPin(int index)
@@ -130,15 +161,12 @@ namespace Microsoft.Research.Naiad.Dataflow
             return String.Format("StageInput[{0}]", this.ForStage);
         }
 
-        internal StageInput(Stage stage, Expression<Func<TRecord, int>> partitionedBy)
+        internal StageInput(Stage<TTime> stage, Expression<Func<TRecord, int>> partitionedBy)
         {
             this.PartitionedBy = partitionedBy;
             this.ForStage = stage;
             this.endpointMap = new Dictionary<int, VertexInput<TRecord, TTime>>();
         }
-        internal StageInput(Stage stage)
-            : this(stage, null)
-        { }
     }
 
 #if false
@@ -228,8 +256,17 @@ namespace Microsoft.Research.Naiad.Dataflow
         private int channelId;
         public int ChannelId { get { return this.channelId; } set { this.channelId = value; } }
 
-        private bool loggingEnabled = false;
-        public bool LoggingEnabled { get { return this.loggingEnabled; } set { this.loggingEnabled = value; } }
+        private int senderStageId;
+        public int SenderStageId { get { return this.senderStageId; } set { this.senderStageId = value; } }
+
+        protected IMessageLogger<S, T> logger = null;
+        public void SetCheckpointer(Checkpointer<T> checkpointer)
+        {
+            this.logger = checkpointer.CreateIncomingMessageLogger<S>(this.channelId, this.senderStageId, this.ReplayReceive, this.BufferPool);
+        }
+        public bool LoggingEnabled { get { return this.logger != null; } }
+
+        private BufferPool<S> BufferPool;
 
         public int AvailableEntrancy
         {
@@ -237,9 +274,9 @@ namespace Microsoft.Research.Naiad.Dataflow
             set { this.Vertex.Entrancy = value; }
         }
 
-        protected Vertex vertex;
+        protected Vertex<T> vertex;
 
-        public Vertex Vertex
+        public Vertex<T> Vertex
         {
             get { return this.vertex; }
         }
@@ -250,6 +287,12 @@ namespace Microsoft.Research.Naiad.Dataflow
             this.vertex.Flush();
         }
 
+        public void ReplayReceive(Message<S, T> message, ReturnAddress from)
+        {
+            this.OnReceive(message, from);
+            message.Release(AllocationReason.PostOfficeChannel, this.BufferPool);
+        }
+
         public abstract void OnReceive(Message<S, T> message, ReturnAddress from);
 
         private AutoSerializedMessageDecoder<S, T> decoder = null;
@@ -257,13 +300,13 @@ namespace Microsoft.Research.Naiad.Dataflow
         public void SerializedMessageReceived(SerializedMessage serializedMessage, ReturnAddress from)
         {
             System.Diagnostics.Debug.Assert(this.AvailableEntrancy >= -1);
-            if (this.decoder == null) this.decoder = new AutoSerializedMessageDecoder<S, T>(this.Vertex.SerializationFormat);
+            if (this.decoder == null) this.decoder = new AutoSerializedMessageDecoder<S, T>(this.Vertex.SerializationFormat, this.Vertex.Scheduler.GetBufferPool<S>());
 
-            if (this.loggingEnabled)
-                this.LogMessage(serializedMessage);
+            Stage stage = this.Vertex.Stage;
+            InternalComputation computation = stage.InternalComputation;
 
             Message<S, T> msg = new Message<S, T>();
-            msg.Allocate(AllocationReason.Deserializer);
+            msg.Allocate(AllocationReason.Deserializer, this.BufferPool);
             // N.B. At present, AsTypedMessages reuses and yields the same given msg for each batch
             //      of deserialized messages. As a result, the message passed to OnReceive MUST NOT
             //      be queued, because its payload will be overwritten by the next batch of messages.
@@ -271,36 +314,13 @@ namespace Microsoft.Research.Naiad.Dataflow
             {
                 this.OnReceive(message, from);
             }
-            msg.Release(AllocationReason.Deserializer);
+            msg.Release(AllocationReason.Deserializer, this.BufferPool);
         }
 
-        protected void LogMessage(Message<S, T> message)
-        {
-            var encoder = new AutoSerializedMessageEncoder<S, T>(this.Vertex.VertexId, this.channelId, DummyBufferPool<byte>.Pool, this.Vertex.Stage.InternalComputation.Controller.Configuration.SendPageSize, this.Vertex.SerializationFormat);
-            encoder.CompletedMessage += (o, a) =>
-            {
-                ArraySegment<byte> messageSegment = a.Segment.ToArraySegment();
-                this.Vertex.LoggingOutput.Write(messageSegment.Array, messageSegment.Offset, messageSegment.Count);
-            };
-
-            // XXX : Needs to be fixed up...
-            for (int i = 0; i < message.length; ++i)
-                encoder.Write(message.payload[i].PairWith(message.time));
-
-            encoder.Flush();
-        }
-
-        protected void LogMessage(SerializedMessage message)
-        {
-            byte[] messageHeaderBuffer = new byte[MessageHeader.SizeOf];
-            MessageHeader.WriteHeaderToBuffer(messageHeaderBuffer, 0, message.Header);
-            this.Vertex.LoggingOutput.Write(messageHeaderBuffer, 0, messageHeaderBuffer.Length);
-            this.Vertex.LoggingOutput.Write(message.Body.Buffer, message.Body.CurrentPos, message.Body.End - message.Body.CurrentPos);
-        }
-
-        public Receiver(Vertex vertex)
+        public Receiver(Vertex<T> vertex)
         {
             this.vertex = vertex;
+            this.BufferPool = vertex.Scheduler.GetBufferPool<S>();
         }
     }
 
@@ -311,44 +331,47 @@ namespace Microsoft.Research.Naiad.Dataflow
 
         public override void OnReceive(Message<S, T> message, ReturnAddress from)
         {
+            this.vertex.PushEventTime(message.time);
+
             if (this.LoggingEnabled)
-                this.LogMessage(message);
+                this.logger.LogMessage(message, from);
             this.MessageCallback(message, from);
+
+            T poppedTime = this.vertex.PopEventTime();
+            if (poppedTime.CompareTo(message.time) != 0)
+            {
+                throw new ApplicationException("Time stack mismatch");
+            }
         }
 
-        public ActionReceiver(Vertex vertex, Action<Message<S, T>, ReturnAddress> messagecallback)
-            : base(vertex)
-        {
-            this.MessageCallback = messagecallback;
-        }
-        public ActionReceiver(Vertex vertex, Action<Message<S, T>> messagecallback)
+        public ActionReceiver(Vertex<T> vertex, Action<Message<S, T>> messagecallback)
             : base(vertex)
         {
             this.MessageCallback = (m, u) => messagecallback(m);
         }
-        public ActionReceiver(Vertex vertex, Action<S, T> recordcallback)
+        public ActionReceiver(Vertex<T> vertex, Action<S, T> recordcallback)
             : base(vertex)
         {
             this.MessageCallback = ((m, u) => { for (int i = 0; i < m.length; i++) recordcallback(m.payload[i], m.time); });
         }
     }
 
-    internal class ActionSubscriber<S, T> : VertexOutput<S, T> where T : Time<T>
+    internal class ActionSubscriber<S, T> : VertexOutput<T, S, T> where T : Time<T>
     {
-        private readonly Action<SendChannel<S, T>> onListener;
+        private readonly Action<SendChannel<T, S, T>> onListener;
         private Vertex<T> vertex;
 
-        public Vertex Vertex
+        public Vertex<T> Vertex
         {
             get { return this.vertex; }
         }
 
-        public void AddReceiver(SendChannel<S, T> receiver)
+        public void AddReceiver(SendChannel<T, S, T> receiver)
         {
             this.onListener(receiver);
         }
 
-        public ActionSubscriber(Vertex<T> vertex, Action<SendChannel<S, T>> action)
+        public ActionSubscriber(Vertex<T> vertex, Action<SendChannel<T, S, T>> action)
         {
             this.vertex = vertex;
             this.onListener = action;
@@ -359,46 +382,114 @@ namespace Microsoft.Research.Naiad.Dataflow
 
     #region StageOutput and friends
 
-    internal class StageOutput<R, T>
-        where T : Time<T>
+    internal interface UntypedStageOutput
     {
-        internal readonly Dataflow.Stage ForStage;
-        internal readonly Dataflow.TimeContext<T> Context;
+        HashSet<Edge> OutputChannels { get; }
+    }
 
-        private readonly Dictionary<int, VertexOutput<R, T>> endpointMap;
+    internal interface StageOutputForVertex<TVertexTime> : UntypedStageOutput where TVertexTime : Time<TVertexTime>
+    {
+        CheckpointState<TVertexTime>.DiscardedTimes MakeDiscardedTimesBundle();
+        void EnableLogging(int vertexId);
+    }
+
+    internal abstract class StageOutput<R, TMessageTime>
+        where TMessageTime : Time<TMessageTime>
+    {
+        internal abstract Dataflow.Stage ForStage { get; }
+
+        private readonly HashSet<Edge> outputChannels = new HashSet<Edge>();
+        public HashSet<Edge> OutputChannels { get { return this.outputChannels; } }
 
         private readonly Expression<Func<R, int>> partitionedBy;
         public Expression<Func<R, int>> PartitionedBy { get { return partitionedBy; } }
 
-        internal void Register(VertexOutput<R, T> endpoint)
-        {
-            this.endpointMap[endpoint.Vertex.VertexId] = endpoint;
-        }
-
-        public VertexOutput<R, T> GetFiber(int index) { return endpointMap[index]; }
-
-        public void AttachBundleToSender(Cable<R, T> bundle)
-        {
-            foreach (var pair in endpointMap)
-            {
-                pair.Value.AddReceiver(bundle.GetSendChannel(pair.Key));
-            }
-        }
+        public abstract Edge NewEdge(StageInput<R, TMessageTime> recvPort, Action<R[], int[], int> key, Channel.Flags flags);
 
         public override string ToString()
         {
             return String.Format("SendPort[{0}]", this.ForStage);
         }
 
-        internal StageOutput(Stage stage, Dataflow.ITimeContext<T> context)
-            : this(stage, context, null) { }
-
-        internal StageOutput(Stage stage, Dataflow.ITimeContext<T> context, Expression<Func<R, int>> partitionedBy)
+        internal StageOutput(Expression<Func<R, int>> partitionedBy)
         {
-            this.ForStage = stage;
-            this.Context = new TimeContext<T>(context);
-            endpointMap = new Dictionary<int, VertexOutput<R, T>>();
             this.partitionedBy = partitionedBy;
+        }
+    }
+
+    internal class FullyTypedStageOutput<TVertexTime, R, TMessageTime> : StageOutput<R, TMessageTime>, StageOutputForVertex<TVertexTime>
+        where TVertexTime : Time<TVertexTime>
+        where TMessageTime : Time<TMessageTime>
+    {
+        internal readonly int StageOutputIndex;
+        internal readonly Func<TVertexTime, TMessageTime> SendTimeProjection;
+
+        private readonly Dictionary<int, VertexOutput<TVertexTime, R, TMessageTime>> endpointMap;
+        private readonly Dictionary<int, Cable<TVertexTime, R, TMessageTime>> receivers;
+
+        private IOutgoingMessageLogger<TVertexTime, R, TMessageTime> messageLogger = null;
+
+        internal readonly Dataflow.Stage<TVertexTime> TypedStage;
+        internal override Stage ForStage
+        {
+            get { return this.TypedStage; }
+        }
+
+        internal void Register(VertexOutput<TVertexTime, R, TMessageTime> endpoint)
+        {
+            this.endpointMap[endpoint.Vertex.VertexId] = endpoint;
+        }
+
+        public VertexOutput<TVertexTime, R, TMessageTime> GetFiber(int index) { return endpointMap[index]; }
+
+        public void AttachBundleToSender(Cable<TVertexTime, R, TMessageTime> bundle)
+        {
+            this.receivers.Add(bundle.Edge.ChannelId, bundle);
+            foreach (var pair in endpointMap)
+            {
+                pair.Value.AddReceiver(bundle.GetSendChannel(pair.Key));
+            }
+        }
+
+        public void ReAttachBundleForRollback(Cable<TVertexTime, R, TMessageTime> bundle, Dictionary<int, Vertex> newSourceVertices)
+        {
+            foreach (int vertex in newSourceVertices.Keys)
+            {
+                endpointMap[vertex].AddReceiver(bundle.GetSendChannel(vertex));
+            }
+        }
+
+        public override Edge NewEdge(StageInput<R, TMessageTime> recvPort, Action<R[], int[], int> key, Channel.Flags flags)
+        {
+            return new Edge<TVertexTime, R, TMessageTime>(this, recvPort, key, flags);
+        }
+
+        public CheckpointState<TVertexTime>.DiscardedTimes MakeDiscardedTimesBundle()
+        {
+            return new CheckpointState<TVertexTime>.DiscardedTimes<TMessageTime>(this);
+        }
+
+        public void EnableLogging(int vertexId)
+        {
+            VertexOutput<TVertexTime, R, TMessageTime> endpoint = this.endpointMap[vertexId];
+
+            this.messageLogger =
+                endpoint.Vertex.Checkpointer.CreateLogger<R, TMessageTime>(this, this.receivers.Values);
+
+            foreach (Cable<TVertexTime, R, TMessageTime> cable in this.receivers.Values)
+            {
+                cable.GetSendChannel(endpoint.Vertex.VertexId).EnableLogging(messageLogger);
+            }
+        }
+
+        internal FullyTypedStageOutput(Stage<TVertexTime> stage, Expression<Func<R, int>> partitionedBy, Func<TVertexTime, TMessageTime> sendTimeProjection)
+            : base(partitionedBy)
+        {
+            this.StageOutputIndex = stage.NewStageOutput(this);
+            this.TypedStage = stage;
+            this.SendTimeProjection = sendTimeProjection;
+            this.endpointMap = new Dictionary<int, VertexOutput<TVertexTime, R, TMessageTime>>();
+            this.receivers = new Dictionary<int, Cable<TVertexTime, R, TMessageTime>>();
         }
     }
 

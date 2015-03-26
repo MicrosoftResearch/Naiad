@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.5
+ * Naiad ver. 0.6
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -63,7 +63,7 @@ namespace Microsoft.Research.Naiad.Examples.Throughput
 
             Placement placement = new Placement.Explicit(locations);
 
-            Stage<ProducerVertex, Epoch> stage = Foundry.NewStage(placement, input.Context, (i, s) => new ProducerVertex(i, s, numberToSend), "Producer");
+            Stage<ProducerVertex, Epoch> stage = Foundry.NewStage<ProducerVertex, Epoch>(placement, input.Context, (i, s) => new ProducerVertex(i, s, numberToSend), "Producer");
             stage.NewInput(input, (v, m) => { }, null);
             Stream<Pair<int, int>, Epoch> stream = stage.NewOutput(v => v.output);
             return stream;
@@ -106,7 +106,7 @@ namespace Microsoft.Research.Naiad.Examples.Throughput
 
             Placement placement = new Placement.Explicit(locations);
 
-            Stage<ConsumerVertex, Epoch> stage = Foundry.NewStage(placement, stream.Context, (i, s) => new ConsumerVertex(i, s, numberToConsume), "Consumer");
+            Stage<ConsumerVertex, Epoch> stage = Foundry.NewStage<ConsumerVertex, Epoch>(placement, stream.Context, (i, s) => new ConsumerVertex(i, s, numberToConsume), "Consumer");
 
 
             if (exchange)

@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.5
+ * Naiad ver. 0.6
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -472,7 +472,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Reduction
         private readonly Func<A> factory;
         private Int64 recordsIn;
         ///private A[] reducers;
-        private SpinedList<A> reducers;
+        private List<A> reducers;
         private int nextReducer;
         private Dictionary<K, int> index;
         private T lastTime;
@@ -483,7 +483,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Reduction
             {
                 //reducers = new A[4];
                 // Console.Error.WriteLine("Making a SpinedList in reducer");
-                reducers = new SpinedList<A>();
+                reducers = new List<A>();
                 nextReducer = 0;
                 index = new Dictionary<K, int>(2000000);
                 lastTime = message.time;
@@ -529,9 +529,6 @@ namespace Microsoft.Research.Naiad.Frameworks.Reduction
                 {
                     throw new Exception("One time at a time please!");
                 }
-
-                Context.Reporting.LogAggregate("RecordsIn", Dataflow.Reporting.AggregateType.Sum, recordsIn, time);
-                Context.Reporting.LogAggregate("RecordsOut", Dataflow.Reporting.AggregateType.Sum, index.Count, time);
 
                 var output = this.Output.GetBufferForTime(time);
 
@@ -713,9 +710,6 @@ namespace Microsoft.Research.Naiad.Frameworks.Reduction
                 {
                     throw new Exception("One time at a time please!");
                 }
-
-                Context.Reporting.LogAggregate("RecordsIn", Dataflow.Reporting.AggregateType.Sum, recordsIn, time);
-                Context.Reporting.LogAggregate("RecordsOut", Dataflow.Reporting.AggregateType.Sum, index.Count, time);
 
                 var output = this.Output.GetBufferForTime(time);
                 foreach (var r in index)

@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.5
+ * Naiad ver. 0.6
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -33,31 +33,6 @@ using Microsoft.Research.Naiad.Diagnostics;
 namespace Microsoft.Research.Naiad
 {
     /// <summary>
-    /// Thread-local buffer pool
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    static internal class ThreadLocalBufferPools<T>
-    {
-        /// <summary>
-        /// A buffer pool
-        /// </summary>
-        public static ThreadLocal<BufferPool<T>> pool = new ThreadLocal<BufferPool<T>>(() => new ThreadLocalBufferPool<T>(16));
-    }
-
-    /// <summary>
-    /// Thread-local buffer pool
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    static internal class ThreadLocalMessageBufferPools<T>
-    {
-        /// <summary>
-        /// A buffer pool
-        /// </summary>
-        public static ThreadLocal<BufferPool<T>> pool = new ThreadLocal<BufferPool<T>>(() => new ThreadLocalMessageBufferPool<T>(16));
-    }
-
-
-    /// <summary>
     /// Enumeration tagging the reason for a byte buffer allocation
     /// </summary>
     public enum AllocationReason
@@ -74,15 +49,13 @@ namespace Microsoft.Research.Naiad
         /// Allocation is used in a post office channel send
         /// </summary>
         PostOfficeChannel = 2,
-        /// <summary>
-        /// Allocation is used to break a re-entrancy cycle
-        /// </summary>
-        PostOfficeRentrancy = 3
     }
 
     static internal class ThreadLocalAllocationCounters<T>
     {
         public static ThreadLocal<Dictionary<AllocationReason, Pair<Int64, Int64>>> Counters = new ThreadLocal<Dictionary<AllocationReason, Pair<Int64, Int64>>>(() => new Dictionary<AllocationReason, Pair<Int64, Int64>>());
+
+        public static Dictionary<AllocationReason, Pair<Int64, Int64>> Counter = new Dictionary<AllocationReason, Pair<long, long>>();
 
         public static void Increment(AllocationReason tag)
         {
@@ -98,7 +71,7 @@ namespace Microsoft.Research.Naiad
             {
                 if (Math.Abs(pair.Second) > 256)
                 {
-                    Console.WriteLine("{0} Allocations; {1}, {2}", pair.Second, tag, typeof(T).GetHashCode());
+                    Console.WriteLine("{0} Allocations;\t{1},\t{2},\t{3}", pair.Second, tag, typeof(T).GetHashCode(), System.Threading.Thread.CurrentThread.ManagedThreadId);
                     pair.First = pair.Second;
                 }
             }
@@ -120,7 +93,7 @@ namespace Microsoft.Research.Naiad
             {
                 if (Math.Abs(pair.Second) > 256)
                 {
-                    Console.WriteLine("{0} Allocations; {1}, {2}", pair.Second, tag, typeof(T).GetHashCode());
+                    Console.WriteLine("{0} Allocations;\t{1},\t{2}\t{3}", pair.Second, tag, typeof(T).GetHashCode(), System.Threading.Thread.CurrentThread.ManagedThreadId);
                     pair.First = pair.Second;
                 }
             }
@@ -144,7 +117,12 @@ namespace Microsoft.Research.Naiad
 
     }
 
-    internal interface BufferPool<T>
+    internal interface BufferPool
+    { 
+        
+    }
+
+    internal interface BufferPool<T> : BufferPool
     {
         T[] CheckOut(int size);
         void CheckIn(T[] array);
@@ -214,80 +192,7 @@ namespace Microsoft.Research.Naiad
         public static DummyBufferPool<T> Pool = new DummyBufferPool<T>();
     }
 
-    internal class ThreadLocalBufferPool<T> : BufferPool<T>
-    {
-        public const int MaximumStackLength = 256;
-
-        protected readonly Stack<T[]>[] stacks;    // indexed by log of the buffer size.
-
-        // Variables for logging
-        public readonly int id; // unique identifier of this buffer pool
-        public readonly int typesize;   // size in bytes of T
-
-        public int Captured()
-        {
-            var result = 0;
-            for (int i = 0; i < stacks.Length; i++)
-                result += stacks[i].Count << i;
-
-            return result;
-        }
-
-        public T[] CheckOut(int size)
-        {
-            var logSize = BufferPoolUtils.Log2(size);
-
-            if ((1 << logSize) < size)
-                throw new Exception("TLBP Exception !!!!!!!!!");
-
-            if (logSize < stacks.Length && stacks[logSize].Count > 0)
-                return stacks[logSize].Pop();
-            else
-            {
-                try
-                {
-                    T[] res = new T[1 << logSize];
-                    return res;
-                }
-                catch (Exception e)
-                {
-                    Debug.Assert(false);
-                    Logging.Fatal("BufferPool.CheckOut exception {0}", e);
-                    Logging.Fatal("Size {0}, Type {1}", logSize, typeof(T));
-                    Logging.Fatal(e.StackTrace);
-                    throw;
-                }
-            }
-        }
-
-        public void CheckIn(T[] array)
-        {
-            if (array != null && array.Length > 0)
-            {
-                var size = BufferPoolUtils.Log2(array.Length);
-
-                while ((1 << size) > array.Length)
-                    size--;
-
-                if (size < stacks.Length && stacks[size].Count < MaximumStackLength)
-                {
-                        stacks[size].Push(array);
-                }
-            }
-        }
-
-        public ThreadLocalBufferPool(int maxsize)
-        {
-            stacks = new Stack<T[]>[maxsize + 1];
-            for (int i = 0; i < stacks.Length; i++)
-                stacks[i] = new Stack<T[]>(1);
-
-            this.id = this.GetHashCode();
-            this.typesize = ObjectSize.ManagedSize(typeof(T));
-        }
-    }
-
-    internal class ThreadLocalMessageBufferPool<T> : BufferPool<T>
+    internal class MessageBufferPool<T> : BufferPool<T>
     {
         public const int MaximumStackLength = 256;
 
@@ -301,12 +206,15 @@ namespace Microsoft.Research.Naiad
 
         public T[] CheckOut(int size)
         {
+            if (size != 256)
+                throw new NotImplementedException();
+            
             if (this.stacks.Count == 0)
             {
                 lock (GlobalStack)
                 {
                     for (int i = 0; i < 16; i++)
-                        this.stacks.Push(GlobalStack.Count > 0 ? GlobalStack.Pop() : new T[256]);
+                        this.stacks.Push(GlobalStack.Count > 0 ? GlobalStack.Pop() : new T[size]);
                 }
             }
 
@@ -327,7 +235,7 @@ namespace Microsoft.Research.Naiad
             this.stacks.Push(array);
         }
 
-        public ThreadLocalMessageBufferPool(int maxsize)
+        public MessageBufferPool()
         {
             stacks = new Stack<T[]>();
 

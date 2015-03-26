@@ -1,5 +1,5 @@
 /* 
- * Naiad ver. 0.5
+ * Naiad ver. 0.6
  * Copyright (c) Microsoft Corporation 
  * All rights reserved.  
  * 
@@ -29,6 +29,7 @@ using Microsoft.Research.Naiad.Dataflow.StandardVertices;
 using Microsoft.Research.Naiad.Dataflow.PartitionBy;
 
 using Microsoft.Research.Naiad.Frameworks.Lindi;
+using Microsoft.Research.Naiad.DataStructures;
 
 namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
 {
@@ -380,7 +381,7 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
         /// <param name="edges">The stream of edges.</param>
         /// <returns>The stream of targets with values for each edge in <paramref name="edges"/>.</returns>
         /// <remarks>
-        /// This operator may produce several values for a particular target node. The <see cref="GraphReduce{TValue,TTime}"/> operator
+        /// This operator may produce several values for a particular target node. The <see cref="Microsoft.Research.Naiad.Frameworks.GraphLINQ.ExtensionMethods.GraphReduce{TValue,TTime}(Stream{NodeWithValue{TValue}, TTime}, Stream{Edge, TTime}, Func{TValue, TValue, TValue}, bool)"/> operator
         /// produces a unique value for each target node.
         /// </remarks>
         public static Stream<NodeWithValue<TValue>, TTime> TransmitAlong<TValue, TTime>(this Stream<NodeWithValue<TValue>, TTime> nodes, Stream<Edge, TTime> edges)
@@ -388,11 +389,33 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
         {
             if (nodes == null) throw new ArgumentNullException("nodes");
             if (edges == null) throw new ArgumentNullException("edges");
+
             var compacted = edges.Compact();    // could be cached and retrieved as needed
 
-            return compacted.NewBinaryStage(nodes, (i, s) => new GraphJoinVertex<TValue, TTime>(i, s), null, x => x.node.index, null, "TransmitAlong");
+            return nodes.TransmitAlong(compacted);
         }
 
+        /// <summary>
+        /// Transmits the value associated with each node in <paramref name="nodes"/> along the matching edges in <paramref name="edges"/>
+        /// to produce a stream of <see cref="NodeWithValue{TValue}"/>s for each target of a matching edge.
+        /// </summary>
+        /// <typeparam name="TValue">The type of value associated with each node.</typeparam>
+        /// <typeparam name="TTime">The type of timestamp on each record.</typeparam>
+        /// <param name="nodes">The stream of nodes with values.</param>
+        /// <param name="edges">The stream of edges.</param>
+        /// <returns>The stream of targets with values for each edge in <paramref name="edges"/>.</returns>
+        /// <remarks>
+        /// This operator may produce several values for a particular target node. The <see cref="Microsoft.Research.Naiad.Frameworks.GraphLINQ.ExtensionMethods.GraphReduce{TValue,TTime}(Stream{NodeWithValue{TValue}, TTime}, Stream{CompactGraph, TTime}, Func{TValue, TValue, TValue}, bool)"/> operator
+        /// produces a unique value for each target node.
+        /// </remarks>
+        public static Stream<NodeWithValue<TValue>, TTime> TransmitAlong<TValue, TTime>(this Stream<NodeWithValue<TValue>, TTime> nodes, Stream<CompactGraph, TTime> edges)
+            where TTime : Time<TTime>
+        {
+            if (nodes == null) throw new ArgumentNullException("nodes");
+            if (edges == null) throw new ArgumentNullException("edges");
+
+            return edges.NewBinaryStage(nodes, (i, s) => new GraphJoinVertex<TValue, TTime>(i, s), null, x => x.node.index, null, "TransmitAlong");
+        }
 
         /// <summary>
         /// Transmits the value associated with each node in <paramref name="nodes"/> along the matching edges in <paramref name="edges"/>
@@ -406,7 +429,7 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
         /// <param name="valueSelector">A function from input (node, value) pair and destination node producing the value to send to that destination.</param>
         /// <returns>The stream of targets with values for each edge in <paramref name="edges"/>.</returns>
         /// <remarks>
-        /// This operator may produce several values for a particular target node. The <see cref="GraphReduce{TValue,TTime}"/> operator
+        /// This operator may produce several values for a particular target node. The <see cref="Microsoft.Research.Naiad.Frameworks.GraphLINQ.ExtensionMethods.GraphReduce{TValue,TTime}(Stream{NodeWithValue{TValue}, TTime}, Stream{Edge, TTime}, Func{TValue, TValue, TValue}, bool)"/> operator
         /// produces a unique value for each target node.
         /// </remarks>
         public static Stream<NodeWithValue<TOutput>, TTime> TransmitAlong<TValue, TOutput, TTime>(this Stream<NodeWithValue<TValue>, TTime> nodes, Stream<Edge, TTime> edges, Func<NodeWithValue<TValue>, Node, TOutput> valueSelector)
@@ -431,10 +454,43 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
         /// <param name="useLocalAggregation">If <c>true</c>, pre-aggregates locally at each worker before the global aggregation.</param>
         /// <returns>The stream of aggregated values for each target of an edge in <paramref name="edges"/>.</returns>
         /// <remarks>
-        /// This operator produces a single value for each target node. The <see cref="TransmitAlong{TValue,TTime}"/> operator
+        /// This operator produces a single value for each target node. The <see cref="TransmitAlong{TValue,TTime}(Stream{NodeWithValue{TValue}, TTime}, Stream{Edge, TTime})"/> operator
         /// produces one value per source node.
         /// </remarks>
         public static Stream<NodeWithValue<TValue>, TTime> GraphReduce<TValue, TTime>(this Stream<NodeWithValue<TValue>, TTime> nodes, Stream<Edge, TTime> edges, Func<TValue, TValue, TValue> combiner, bool useLocalAggregation)
+            where TTime : Time<TTime>
+        {
+            if (nodes == null) throw new ArgumentNullException("nodes");
+            if (edges == null) throw new ArgumentNullException("edges");
+            if (combiner == null) throw new ArgumentNullException("combiner");
+            if (useLocalAggregation)
+            {
+                return nodes.TransmitAlong(edges)
+                            .NodeAggregateLocally(combiner)
+                            .NodeAggregate(combiner);
+            }
+            else
+            {
+                return nodes.TransmitAlong(edges)
+                            .NodeAggregate(combiner);
+            }
+        }
+
+        /// <summary>
+        /// For each target node in <paramref name="edges"/>, aggregates the values at the neighboring <paramref name="nodes"/> using the given <paramref name="combiner"/>.
+        /// </summary>
+        /// <typeparam name="TValue">The type of value associated with each node.</typeparam>
+        /// <typeparam name="TTime">The type of timestamp on each record.</typeparam>
+        /// <param name="nodes">The stream of nodes with values.</param>
+        /// <param name="edges">The stream of edges.</param>
+        /// <param name="combiner">A function from current value and incoming value, to the new value.</param>
+        /// <param name="useLocalAggregation">If <c>true</c>, pre-aggregates locally at each worker before the global aggregation.</param>
+        /// <returns>The stream of aggregated values for each target of an edge in <paramref name="edges"/>.</returns>
+        /// <remarks>
+        /// This operator produces a single value for each target node. The <see cref="TransmitAlong{TValue,TTime}(Stream{NodeWithValue{TValue}, TTime}, Stream{Edge, TTime})"/> operator
+        /// produces one value per source node.
+        /// </remarks>
+        public static Stream<NodeWithValue<TValue>, TTime> GraphReduce<TValue, TTime>(this Stream<NodeWithValue<TValue>, TTime> nodes, Stream<CompactGraph, TTime> edges, Func<TValue, TValue, TValue> combiner, bool useLocalAggregation)
             where TTime : Time<TTime>
         {
             if (nodes == null) throw new ArgumentNullException("nodes");
@@ -459,10 +515,35 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
         /// <typeparam name="TTime">Time type</typeparam>
         /// <param name="edges">stream of edges</param>
         /// <returns>stream of single CompactGraph</returns>
-        internal static Stream<CompactGraph, TTime> Compact<TTime>(this Stream<Edge, TTime> edges)
+        public static Stream<CompactGraph, TTime> Compact<TTime>(this Stream<Edge, TTime> edges)
             where TTime : Time<TTime>
         {
-            return edges.NewUnaryStage((i, v) => new GraphCompactor<TTime>(i, v), x => x.source.index, null, "Compactor");
+            return edges.NewUnaryStage((i, v) => new GraphCompactor<TTime>(i, v, null), x => x.source.index, null, "Compactor");
+        }
+
+        /// <summary>
+        /// Transforms a stream of edges into a single CompactGraph object.
+        /// </summary>
+        /// <typeparam name="TTime">Time type</typeparam>
+        /// <param name="edges">stream of edges</param>
+        /// <param name="format">format string for filename, accepts vertex index as a parameter</param>
+        /// <returns>stream of single CompactGraph</returns>
+        public static Stream<CompactGraph, TTime> Compact<TTime>(this Stream<Edge, TTime> edges, string format)
+            where TTime : Time<TTime>
+        {
+            return edges.NewUnaryStage((i, v) => new GraphCompactor<TTime>(i, v, format), x => x.source.index, null, "Compactor");
+        }
+
+        /// <summary>
+        /// Converts a compact graph to a stream of edges
+        /// </summary>
+        /// <typeparam name="TTime">Time type</typeparam>
+        /// <param name="graph">Stream of a single compactgraph</param>
+        /// <returns>stream of edges</returns>
+        public static Stream<Edge, TTime> Edges<TTime>(this Stream<CompactGraph, TTime> graph)
+            where TTime : Time<TTime>
+        {
+             return graph.NewUnaryStage((i, s) => new CompactGraphEdgesVertex<TTime>(i, s), null, null, "Expander");
         }
 
         #endregion
@@ -487,7 +568,7 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
             if (combiner == null) throw new ArgumentNullException("combiner");
 
 #if true
-            var stage = Foundry.NewStage(nodes.Context, (i,s) => new NodeAggregatorVertex<TValue, TTime>(i, s, combiner, nodes.ForStage.Placement.Count), "Aggregator");
+            var stage = Foundry.NewStage<NodeAggregatorVertex<TValue, TTime>, TTime>(nodes.Context, (i, s) => new NodeAggregatorVertex<TValue, TTime>(i, s, combiner, nodes.ForStage.Placement.Count), "Aggregator");
 
             Action<NodeWithValue<TValue>[], int[], int> action = (data, dsts, len) => { for (int i = 0; i < len; i++) dsts[i] = data[i].node.index; };
 
@@ -546,7 +627,7 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
             if (nodes == null) throw new ArgumentNullException("nodes");
             if (transitionSelector == null) throw new ArgumentNullException("transitionSelector");
 
-            var stage = Foundry.NewStage(nodes.Context, (i, s) => new NodeUnaryStateMachine<TValue, TState, TOutput, TTime>(i, s, transitionSelector, defaultState), "StateMachine");
+            var stage = Foundry.NewStage<NodeUnaryStateMachine<TValue, TState, TOutput, TTime>, TTime>(nodes.Context, (i, s) => new NodeUnaryStateMachine<TValue, TState, TOutput, TTime>(i, s, transitionSelector, defaultState), "StateMachine");
 
             Action<NodeWithValue<TValue>[], int[], int> action = (data, dsts, len) => { for (int i = 0; i < len; i++) dsts[i] = data[i].node.index; };
 
@@ -574,7 +655,7 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
             if (nodes == null) throw new ArgumentNullException("nodes");
             if (transitionSelector == null) throw new ArgumentNullException("transitionSelector");
 
-            var stage = Foundry.NewStage(nodes.Context, (i, s) => new NodeUnaryStateMachine<TValue, TState, TTime>(i, s, transitionSelector, defaultState), "StateMachine");
+            var stage = Foundry.NewStage<NodeUnaryStateMachine<TValue, TState, TTime>, TTime>(nodes.Context, (i, s) => new NodeUnaryStateMachine<TValue, TState, TTime>(i, s, transitionSelector, defaultState), "StateMachine");
 
             Action<NodeWithValue<TValue>[], int[], int> action = (data, dsts, len) => { for (int i = 0; i < len; i++) dsts[i] = data[i].node.index; };
 
@@ -967,6 +1048,8 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
         public NodeUnaryStateMachine(int index, Stage<TTime> vertex, Func<TValue, TState, Pair<TState, TMessage>> transition, TState defaultState)
             : base(index, vertex)
         {
+            this.Entrancy = 5;
+
             this.state = new TState[] { };
 
             this.transition = transition;
@@ -1026,6 +1109,8 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
 
             this.parts = vertex.Placement.Count;
             this.defaultState = defaultState;
+
+            this.Entrancy = Int32.MaxValue;
         }
     }
 
@@ -1166,90 +1251,276 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
             this.graph = new CompactGraph();
             this.toProcess = new List<NodeWithValue<TValue>>();
 
-            this.Entrancy = 5;
+            this.Entrancy = Int32.MaxValue;
         }
     }
 
-    // dense list of edge destinations and node offsets.
-    internal struct CompactGraph
+    /// <summary>
+    /// dense list of edge destinations and node offsets.
+    /// </summary>
+    public struct CompactGraph
     {
-        public readonly Int32[] Nodes;  // offsets in this.edges
-        public readonly Node[] Edges;  // names of target nodes
+        /// <summary>
+        /// The start offset in Edges for node i.
+        /// </summary>
+        public readonly Int32[] Nodes;
 
-        public CompactGraph(Int32[] n, Node[] e) { this.Nodes = n; this.Edges = e; }
+        /// <summary>
+        /// Destinations of edges associated with vertices described in Nodes.
+        /// </summary>
+        public readonly Node[] Edges;
+
+        /// <summary>
+        /// Constructs a CompactGraph from node and edge data.
+        /// </summary>
+        /// <param name="nodes">node offset vector</param>
+        /// <param name="edges">edge array</param>
+        public CompactGraph(Int32[] nodes, Node[] edges) { this.Nodes = nodes; this.Edges = edges; }
+
+        /// <summary>
+        /// Constructs a CompactGraph from a pair of files <paramref name="filenamePrefix"/>-nodes and <paramref name="filenamePrefix"/>-edges
+        /// </summary>
+        /// <param name="filenamePrefix">prefix for the pair of filenames</param>
+        /// <returns>the graph</returns>
+        public static CompactGraph ReadFromFile(string filenamePrefix)
+        {
+            Int32[] nodes;
+            Node[] edges;
+            // read the files in
+
+            var byteBuffer = new byte[1 << 20];
+            using (var nodesStream = System.IO.File.OpenRead(filenamePrefix + "-nodes"))
+            {
+                var bytesToRead = nodesStream.Length;
+                nodes = new int[nodesStream.Length / 4];
+
+                var nodeCursor = 0;
+                while (bytesToRead > 0)
+                {
+                    var read = nodesStream.Read(byteBuffer, 0, (int)Math.Min(bytesToRead, byteBuffer.Length));
+                    bytesToRead -= read;
+
+                    Buffer.BlockCopy(byteBuffer, 0, nodes, nodeCursor, read);
+
+                    nodeCursor += read / 4;
+                }
+            }
+
+            var intBuffer = new int[byteBuffer.Length / 4];
+            using (var edgesStream = System.IO.File.OpenRead(filenamePrefix + "-edges"))
+            {
+                var bytesToRead = edgesStream.Length;
+                edges = new Node[edgesStream.Length / 4];
+
+                var edgeCursor = 0;
+                while (bytesToRead > 0)
+                {
+                    var read = edgesStream.Read(byteBuffer, 0, (int)Math.Min(bytesToRead, byteBuffer.Length));
+                    bytesToRead -= read;
+
+                    Buffer.BlockCopy(byteBuffer, 0, intBuffer, 0, read);
+
+                    for (int i = 0; i < read / 4; i++)
+                        edges[edgeCursor++] = new Node(intBuffer[i]);
+                }
+            }
+
+            return new CompactGraph(nodes, edges);
+        }
+
+        /// <summary>
+        /// Writes the graph to a pair of files that can be re-read using <see cref="ReadFromFile"/>
+        /// </summary>
+        /// <param name="filenamePrefix">prefix for the files to be written</param>
+        public void WriteToFile(string filenamePrefix)
+        {
+            Console.WriteLine("Writing {0}", filenamePrefix);
+
+            // now write the files out
+            using (var nodesStream = new System.IO.BinaryWriter(System.IO.File.OpenWrite(filenamePrefix + "-nodes")))
+            {
+                for (int i = 0; i < this.Nodes.Length; i++)
+                    nodesStream.Write(this.Nodes[i]);
+            }
+            using (var edgesStream = new System.IO.BinaryWriter(System.IO.File.OpenWrite(filenamePrefix + "-edges")))
+            {
+                for (int i = 0; i < this.Edges.Length; i++)
+                    edgesStream.Write(this.Edges[i].index);
+            }
+        }
     }
 
-    // vertex managing the compaction of a graph, taking a stream of edge pairs to a single CompactGraph.
-    internal class GraphCompactor<T> : UnaryVertex<Edge, CompactGraph, T>
+    /// <summary>
+    /// vertex managing the compaction of a graph, taking a stream of edge pairs to a single CompactGraph.
+    /// </summary>
+    /// <typeparam name="T">Time type</typeparam>
+    public class GraphCompactor<T> : UnaryVertex<Edge, CompactGraph, T>
         where T : Time<T>
     {
-        private readonly Dictionary<T, CompactGraphBuilder> edges = new Dictionary<T, CompactGraphBuilder>();
+        private readonly string filenamePrefix;
+        private readonly Dictionary<T, CachingCompactGraphBuilder> edges = new Dictionary<T, CachingCompactGraphBuilder>();
 
+        private readonly Edge[] tempArray = new Edge[256];
+
+        /// <summary>
+        /// Called to process a batch of edges arriving at the vertex
+        /// </summary>
+        /// <param name="message">Message containing the batch of edges</param>
         public override void OnReceive(Message<Edge, T> message)
         {
-            // Console.Error.WriteLine("Compactor received {0} edges", message.length);
+            var filename = filenamePrefix == null ? null : (filenamePrefix + "-" + message.time);
+
             if (!this.edges.ContainsKey(message.time))
             {
-                this.edges.Add(message.time, new CompactGraphBuilder());
-                this.NotifyAt(message.time);
+                this.edges.Add(message.time, new CachingCompactGraphBuilder(this.Stage.Placement.Count, filename));
+                if (this.edges[message.time].Cached)
+                    this.Output.GetBufferForTime(message.time).Send(this.edges[message.time].Build());
+                else
+                    this.NotifyAt(message.time);
             }
 
             var builder = this.edges[message.time];
-            for (int i = 0; i < message.length; i++)
-                builder.AddEdge(message.payload[i]);
+
+            if (!builder.Cached)
+            {
+                for (int i = 0; i < message.length; i++)
+                    this.tempArray[i] = message.payload[i];
+
+                builder.AddEdges(this.tempArray, message.length);
+            }
 
             this.edges[message.time] = builder;
         }
 
+        /// <summary>
+        /// Called to process a notification
+        /// </summary>
+        /// <param name="time">time of the notification</param>
         public override void OnNotify(T time)
         {
             if (this.edges.ContainsKey(time))
             {
-                this.Output.GetBufferForTime(time).Send(this.edges[time].Build(this.Stage.Placement.Count));
+                this.Output.GetBufferForTime(time).Send(this.edges[time].Build());
                 this.edges.Remove(time);
             }
         }
 
-        public GraphCompactor(int index, Stage<T> stage)
+        /// <summary>
+        /// Construct a graph compactor vertex
+        /// </summary>
+        /// <param name="index">Id of the vertex in this stage</param>
+        /// <param name="stage">Stage the vertex is contained in</param>
+        /// <param name="format">Filename prefix to use for caching the graph, or null for no caching</param>
+        public GraphCompactor(int index, Stage<T> stage, string format)
             : base(index, stage)
         {
+            this.filenamePrefix = format == null ? null : string.Format(format, this.VertexId, this.Stage.Placement.Count);
+        }
+    }
+
+    internal class CompactGraphEdgesVertex<TTime> : UnaryVertex<CompactGraph, Edge, TTime>
+        where TTime : Time<TTime>
+    {
+        public override void OnReceive(Message<CompactGraph, TTime> message)
+        {
+            var output = this.Output.GetBufferForTime(message.time);
+            for (int i = 0; i < message.length; i++)
+            {
+                var graph = message.payload[i];
+                for (int j = 0; j < graph.Nodes.Length - 1; j++)
+                {
+                    var vertex = new Node(this.VertexId + j * this.Stage.Placement.Count);
+                    for (int k = graph.Nodes[j]; k < graph.Nodes[j + 1]; k++)
+                        output.Send(new Edge(vertex, new Node(graph.Edges[k])));
+                }
+            }
+        }
+
+        public CompactGraphEdgesVertex(int index, Stage<TTime> stage) : base(index, stage) { }
+    }
+
+    internal class CachingCompactGraphBuilder
+    {
+        private readonly CompactGraphBuilder builder;
+        private readonly string filenamePrefix;
+
+        public readonly bool Cached;
+
+        public CachingCompactGraphBuilder(int parts, string prefix)
+        {
+            this.filenamePrefix = prefix;
+            this.Cached = filenamePrefix != null && System.IO.File.Exists(prefix + "-nodes") && System.IO.File.Exists(prefix + "-edges");
+            this.builder = new CompactGraphBuilder(parts);
+        }
+
+        public void AddEdges(Edge[] edges, int count)
+        {
+            if (!this.Cached)
+                this.builder.AddEdge(edges, count);
+        }
+
+        public CompactGraph Build()
+        {
+            if (!this.Cached)
+            {
+                Console.WriteLine("Cached graph not found; building graph");
+
+                var graph = this.builder.Build();
+
+                if (this.filenamePrefix != null)
+                    graph.WriteToFile(this.filenamePrefix);
+
+                return graph;
+            }
+            else
+            {
+                Console.WriteLine("Cached graph found; loading from cache");
+
+                return CompactGraph.ReadFromFile(this.filenamePrefix);
+            }
         }
     }
 
     // storage and logic for building a CompactGraph.
-    internal struct CompactGraphBuilder
+    internal class CompactGraphBuilder
     {
-        private List<Edge> newEdges;
+        private readonly Int32 parts;
+        private readonly SpinedList<Edge> newEdges;
 
-        public CompactGraphBuilder AddEdge(Edge edge)
+        private Int64 maxNode;
+
+        public CompactGraphBuilder(int parts)
         {
-            if (this.newEdges == null)
-                this.newEdges = new List<Edge>();
-
-            newEdges.Add(edge);
-
-            return this;
+            this.parts = parts;
+            this.newEdges = new SpinedList<Edge>();
+            this.maxNode = 0L;
         }
 
-        public CompactGraph Build(int parts)
+        public void AddEdge(Edge[] edges, int count)
         {
-            if (this.newEdges == null)
-                this.newEdges = new List<Edge>();
+            for (int i = 0; i < count; i++)
+                edges[i].source.index = edges[i].source.index / this.parts;
+
+            newEdges.AddRange(edges, count);
 
             // step 0: determine how many nodes we are talking about here
-            var maxNode = 0L;
-            for (int i = 0; i < newEdges.Count; i++)
-                if (maxNode < newEdges[i].source.index / parts)
-                    maxNode = newEdges[i].source.index / parts;
+            for (int i = 0; i < count; i++)
+                if (this.maxNode < edges[i].source.index)
+                    this.maxNode = edges[i].source.index;
+        }
 
+        public CompactGraph Build()
+        {
             // step 1: determine degree of each node we have been presented with
-            var nodes = new Int32[maxNode + 2];
+            var nodes = new Int32[this.maxNode + 2];
             var edges = new Node[newEdges.Count];
 
-            // determine degrees
-            for (int i = 0; i < newEdges.Count; i++)
-                nodes[newEdges[i].source.index / parts]++;
-
+            this.newEdges.IterateOver((edgeArray, count) =>
+            {
+                for (int i = 0; i < count; i++)
+                    nodes[edgeArray[i].source.index]++;
+            });
+            
             // accumulate to determine ending offsets
             for (int i = 1; i < nodes.Length; i++)
                 nodes[i] += nodes[i - 1];
@@ -1261,8 +1532,11 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
             nodes[0] = 0;
 
             // step 2: populate this.edges with actual edges
-            for (int i = 0; i < newEdges.Count; i++)
-                edges[nodes[newEdges[i].source.index / parts]++] = newEdges[i].target;
+            this.newEdges.IterateOver((edgeArray, count) =>
+            {
+                for (int i = 0; i < count; i++)
+                    edges[nodes[edgeArray[i].source.index]++] = edgeArray[i].target;
+            });
 
             // shift to determine return to offsets
             for (int i = nodes.Length - 1; i > 0; i--)
@@ -1452,15 +1726,15 @@ namespace Microsoft.Research.Naiad.Frameworks.GraphLINQ
         private Stage<Vertex, IterationIn<Epoch>> stage;
         private readonly List<Action> connectLoopsActions = new List<Action>();
 
-        internal void InitializeContext(TimeContext<Epoch> context)
+        internal void InitializeContext(StreamContext context)
         {
             if (this.Context == null)
             {
-                this.Context = new LoopContext<Epoch>(context, "RenameContext");
+                this.Context = new LoopContext<Epoch>(context);
 
                 var delay = this.Context.Delay<bool>();
 
-                this.stage = new Stage<Vertex, IterationIn<Epoch>>(delay.Output.Context, (i, s) => new Vertex(i, s), "Renamer");
+                this.stage = Foundry.NewStage<Vertex, IterationIn<Epoch>>(delay.Output.Context, (i, s) => new Vertex(i, s), "Renamer");
             }
         }
 

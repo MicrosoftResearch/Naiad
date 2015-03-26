@@ -1,0 +1,90 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{BBBAC58E-BE4A-4483-A4DF-5BF966865587}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>PageRank</RootNamespace>
+    <AssemblyName>PageRank</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\x64\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>true</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <OutputPath>bin\x64\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config">
+      <SubType>Designer</SubType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\naiad\Frameworks\DifferentialDataflow\DifferentialDataflow.csproj">
+      <Project>{a6bee749-a036-4a34-80cd-689c496d1a56}</Project>
+      <Name>DifferentialDataflow</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\naiad\frameworks\HdfsSupport\HdfsSupport.csproj">
+      <Project>{66d2a00e-f889-4b2f-9c40-04a32278fb86}</Project>
+      <Name>HdfsSupport</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\naiad\Frameworks\Lindi\Lindi.csproj">
+      <Project>{bdc6546c-7ba0-472b-b260-0d596b6152e4}</Project>
+      <Name>Lindi</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\naiad\frameworks\Storage\Storage.csproj">
+      <Project>{0dca9543-ff9d-48d6-9748-a966dc39c35d}</Project>
+      <Name>Storage</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\naiad\Frameworks\WebHdfsSupport\WebHdfsSupport.csproj">
+      <Project>{5cfc93f6-68c3-45b5-92fa-43f8626ec482}</Project>
+      <Name>WebHdfsSupport</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\naiad\Naiad\Naiad.csproj">
+      <Project>{a6221415-1283-4c04-8d2c-e25a857e1fe9}</Project>
+      <Name>Naiad</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Frameworks\GraphLINQ\GraphLINQ.csproj">
+      <Project>{5a2bdfc0-daa9-42be-a463-fd2d4f9d424e}</Project>
+      <Name>GraphLINQ</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

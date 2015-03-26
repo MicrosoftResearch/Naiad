@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.5
+ * Naiad ver. 0.6
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -25,7 +25,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyDescription("")]
 
 [assembly: AssemblyCompany("Microsoft Corporation")]
-[assembly: AssemblyCopyright("Copyright © Microsoft Corporation.  All rights reserved.")]
+[assembly: AssemblyCopyright("Copyright ï¿½ Microsoft Corporation.  All rights reserved.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")] //if we localize, we should move this to assembly specific files
 [assembly: AssemblyProduct("Microsoft.Research.Naiad")]

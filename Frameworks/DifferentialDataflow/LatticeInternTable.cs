@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.5
+ * Naiad ver. 0.6
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -28,6 +28,7 @@ using Microsoft.Research.Naiad.DataStructures;
 using System.Diagnostics;
 using Microsoft.Research.Naiad.Dataflow.Channels;
 using Microsoft.Research.Naiad.Serialization;
+using Microsoft.Research.Naiad.Runtime.FaultTolerance;
 using Microsoft.Research.Naiad.Runtime.Progress;
 
 namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
@@ -78,7 +79,9 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
         /// set of equivalent times, based on the givne set of versions that can reach this table's operator.
         /// </summary>
         /// <param name="causalTimes"></param>
-        public void UpdateReachability(List<Pointstamp> causalTimes)
+        /// <param name="withinStableEra"></param>
+        /// <param name="withinRollbackEra"></param>
+        public int UpdateReachability(List<Pointstamp> causalTimes, Func<T, bool> withinStableEra, Func<T, bool> withinRollbackEra)
         {
             // Convert the given VertexVersions into local T times.
             this.reachableTimes.Clear();
@@ -89,22 +92,60 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
             // so that as many times as possible stay stable.
 #if true
             // Maps T times to intern table indices.
-            var redirectionDictionary = new Dictionary<T, int>();
+            // we have two redirection dictionaries, since recent times must only redirect to other recent times
+            var stableRedirectionDictionary = new Dictionary<T, int>();
+            var recentRedirectionDictionary = new Dictionary<T, int>();
 
             // For each time in this intern table, attempt to update it reflecting the new reachable times.
             for (int i = 0; i < this.count; i++)
             {
-                var newTime = this.Advance(times[i]);
-                if (!redirectionDictionary.ContainsKey(newTime) || this.times[redirectionDictionary[newTime]].CompareTo(times[i]) > 0)
-                    redirectionDictionary[newTime] = i;
+                // don't let anyone except the time itself redirect to a time that must remain distinct
+                if (!withinRollbackEra(times[i]))
+                {
+                    var newTime = this.Advance(times[i]);
+                    if (withinStableEra(times[i]))
+                    {
+                        if (!stableRedirectionDictionary.ContainsKey(newTime) ||
+                            this.times[stableRedirectionDictionary[newTime]].CompareTo(times[i]) > 0)
+                            stableRedirectionDictionary[newTime] = i;
+                    }
+                    else
+                    {
+                        if (!recentRedirectionDictionary.ContainsKey(newTime) ||
+                            this.times[recentRedirectionDictionary[newTime]].CompareTo(times[i]) > 0)
+                            recentRedirectionDictionary[newTime] = i;
+                    }
+                }
             }
+
+            int newStaleTimes = 0;
 
             // Update the redirection for each interned time to the computed equivalent time.
             for (int i = 0; i < count; i++)
             {
-                var newTime = this.Advance(this.times[i]);
-                this.redirection[i] = redirectionDictionary[newTime];
+                if (withinRollbackEra(this.times[i]))
+                {
+                    this.redirection[i] = i;
+                }
+                else
+                {
+                    var newTime = this.Advance(this.times[i]);
+                    if (withinStableEra(times[i]))
+                    {
+                        this.redirection[i] = stableRedirectionDictionary[newTime];
+                    }
+                    else
+                    {
+                        this.redirection[i] = recentRedirectionDictionary[newTime];
+                    }
+                }
+                if (this.redirection[i] != i)
+                {
+                    ++newStaleTimes;
+                }
             }
+
+            return newStaleTimes;
 #else
             // advance any times we have interned, updating their redirection[] entry.
             for (int i = 0; i < count; i++)
@@ -263,6 +304,78 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
 
             //Console.Error.WriteLine("% LIT.lastInternedResult read {0} objects", reader.objectsRead - before);
 
+        }
+
+        /* Compacting checkpoint format:
+         * int                       count
+         * T*count                   times
+         * int                       count
+         * int*count                 redirections
+         */
+
+        public int[] Checkpoint(NaiadWriter writer, ICheckpoint<T> checkpoint)
+        {
+            int[] compactionRedirection = new int[this.times.Length];
+            int matchedCount = 0;
+
+            for (int i = 0; i < this.count; ++i)
+            {
+                // make sure we always write out default(T) to keep the invariant that it is index 0
+                if (i == 0 || checkpoint.ContainsTime(this.times[i]))
+                {
+                    compactionRedirection[i] = matchedCount;
+                    ++matchedCount;
+                }
+                else
+                {
+                    compactionRedirection[i] = -1;
+                }
+            }
+
+            writer.Write(matchedCount);
+            for (int i = 0; i < this.count; ++i)
+            {
+                if (compactionRedirection[i] >= 0)
+                {
+                    writer.Write(times[i]);
+                }
+            }
+
+            writer.Write(matchedCount);
+            for (int i = 0; i < this.count; ++i)
+            {
+                if (compactionRedirection[i] >= 0)
+                {
+                    writer.Write(compactionRedirection[redirection[i]]);
+                }
+            }
+
+            return compactionRedirection;
+        }
+
+        public void RestoreCompacted(NaiadReader reader)
+        {
+            this.times = CheckpointRestoreExtensionMethods.RestoreArray<T>(reader, n =>
+            {
+                this.count = n;
+                return this.times.Length >= n ? this.times : new T[n];
+            });
+
+            this.indices = new Dictionary<T,int>();
+            for (int i = 0; i < count; ++i)
+            {
+                this.indices.Add(this.times[i], i);
+            }
+
+            // make sure the redirection array is the same length as the times array
+            this.redirection = CheckpointRestoreExtensionMethods.RestoreArray<int>(reader, n =>
+            {
+                return new int[this.times.Length];
+            });
+
+
+            this.lastInterned = default(T);
+            this.lastInternedResult = 0;
         }
 
         public LatticeInternTable()

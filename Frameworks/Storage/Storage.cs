@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.5
+ * Naiad ver. 0.6
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -83,7 +83,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Storage
         /// <returns>An enumeration of records in the stream</returns>
         public static IEnumerable<TRecord> GetNaiadReaderEnumerable<TRecord>(System.IO.Stream stream)
         {
-            using (NaiadReader<TRecord> reader = new NaiadReader<TRecord>(stream))
+            using (NaiadReader<TRecord> reader = new NaiadReader<TRecord>(stream, true))
             {
                 TRecord nextElement;
                 while (reader.TryRead(out nextElement))
@@ -103,7 +103,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Storage
         public static IEnumerable<ArraySegment<TRecord>> GetNaiadReaderBatchEnumerable<TRecord>(
             System.IO.Stream stream, int batchSize)
         {
-            using (NaiadReader<TRecord> reader = new NaiadReader<TRecord>(stream))
+            using (NaiadReader<TRecord> reader = new NaiadReader<TRecord>(stream, true))
             {
                 int batchIndex;
                 do
@@ -134,7 +134,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Storage
         /// <returns>A record observer that writes records to the given stream.</returns>
         public static IObserver<TRecord> GetNaiadWriterObserver<TRecord>(System.IO.Stream stream, SerializationFormat codeGenerator)
         {
-            NaiadWriter<TRecord> writer = new NaiadWriter<TRecord>(stream, codeGenerator);
+            NaiadWriter<TRecord> writer = new NaiadWriter<TRecord>(stream, codeGenerator, true);
             return Observer.Create<TRecord>(r =>
             {
                 writer.Write(r);

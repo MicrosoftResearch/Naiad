@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.5
+ * Naiad ver. 0.6
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -225,7 +225,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Hdfs
 
             return source.WriteHdfsBinary(
                 (processId, threadId, segment) => Utils.DefaultPartFormat(prefix, processId, threadId, segment),
-                stream => new NaiadWriter<TOutput>(stream, source.ForStage.Computation.Controller.SerializationFormat, bufferSize),
+                stream => new NaiadWriter<TOutput>(stream, source.ForStage.Computation.Controller.SerializationFormat, true, bufferSize),
                 (writer, arraySegment) =>
                 {
                     for (int i = 0; i < arraySegment.Count; i++)
@@ -296,7 +296,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Hdfs
 
             return source.ToHdfsBinary(
                 (processId, threadId, time, segment) => Utils.DefaultPartFormat(prefix, processId, threadId, time, segment),
-                stream => new NaiadWriter<TOutput>(stream, source.ForStage.Computation.Controller.SerializationFormat, bufferSize),
+                stream => new NaiadWriter<TOutput>(stream, source.ForStage.Computation.Controller.SerializationFormat, true, bufferSize),
                 (writer, arraySegment) =>
                 {
                     for (int i = 0; i < arraySegment.Count; i++)

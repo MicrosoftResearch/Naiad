@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.5
+ * Naiad ver. 0.6
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -25,6 +25,7 @@ using System.Linq.Expressions;
 using System.Text;
 using Microsoft.Research.Naiad;
 using Microsoft.Research.Naiad.Dataflow.Channels;
+using Microsoft.Research.Naiad.Runtime.FaultTolerance;
 using Microsoft.Research.Naiad.Serialization;
 using Microsoft.Research.Naiad.DataStructures;
 
@@ -38,14 +39,8 @@ namespace Microsoft.Research.Naiad.Dataflow
     /// </summary>
     /// <typeparam name="TRecord">The type of records in this buffer.</typeparam>
     /// <typeparam name="TTime">The type of timestamp by which this buffer is indexed.</typeparam>
-    public class VertexInputBuffer<TRecord, TTime> : VertexInput<TRecord, TTime>
-        where TTime : Time<TTime>
+    public class VertexInputBuffer<TRecord, TTime> where TTime : Time<TTime>
     {
-        /// <summary>
-        /// Controls whether logging occurs (presently disabled)
-        /// </summary>
-        public bool LoggingEnabled { get { return false; } set { throw new NotImplementedException("Logging for RecvFiberBank"); } }
-
         /// <summary>
         /// Indicates available entrancy; always 1 as this class buffers everything.
         /// </summary>
@@ -69,7 +64,15 @@ namespace Microsoft.Research.Naiad.Dataflow
             else
                 result = new SpinedList<TRecord>();
 
-            return result.AsEnumerable();
+            return result.DequeueAllAndInvalidate();
+        }
+
+        /// <summary>
+        /// Remove all the state from this buffer
+        /// </summary>
+        public void Clear()
+        {
+            this.recordsToProcess.Clear();
         }
 
         /// <summary>
@@ -96,8 +99,7 @@ namespace Microsoft.Research.Naiad.Dataflow
         /// a corresponding notification on the owning <see cref="Vertex"/>.
         /// </summary>
         /// <param name="message">The message.</param>
-        /// <param name="sender">The sender of the message.</param>
-        public void OnReceive(Message<TRecord, TTime> message, ReturnAddress sender)
+        public void OnReceive(Message<TRecord, TTime> message)
         {
             if (!this.recordsToProcess.ContainsKey(message.time))
             {
@@ -108,28 +110,6 @@ namespace Microsoft.Research.Naiad.Dataflow
             var list = this.recordsToProcess[message.time];
             for (int i = 0; i < message.length; ++i)
                 list.Add(message.payload[i]);
-        }
-
-        private AutoSerializedMessageDecoder<TRecord, TTime> decoder = null;
-
-        /// <summary>
-        /// Buffers the content of the given <paramref name="serializedMessage"/>, and
-        /// schedules a corresponding notification on the owning <see cref="Vertex"/>.
-        /// </summary>
-        /// <param name="serializedMessage">The serialized message.</param>
-        /// <param name="sender">The sender of the message.</param>
-        public void SerializedMessageReceived(SerializedMessage serializedMessage, ReturnAddress sender)
-        {
-            System.Diagnostics.Debug.Assert(this.AvailableEntrancy >= -1);
-            if (this.decoder == null) this.decoder = new AutoSerializedMessageDecoder<TRecord, TTime>(this.Vertex.SerializationFormat);
-
-            Message<TRecord, TTime> msg = new Message<TRecord, TTime>();
-            msg.Allocate(AllocationReason.Deserializer);
-            foreach (Message<TRecord, TTime> message in this.decoder.AsTypedMessages(serializedMessage, msg))
-            {
-                this.OnReceive(message, sender);
-            }
-            msg.Release(AllocationReason.Deserializer);
         }
 
         /// <summary>
@@ -187,23 +167,33 @@ namespace Microsoft.Research.Naiad.Dataflow
     /// </summary>
     /// <typeparam name="TRecord">The type of records to be sent.</typeparam>
     /// <typeparam name="TTime">The type of timestamp on the records to be sent.</typeparam>
-    public class VertexOutputBuffer<TRecord, TTime> : VertexOutput<TRecord, TTime>
+    /// <typeparam name="TVertexTime">The type of timestamp on the vertex sending records.</typeparam>
+    public class VertexOutputBufferForInterestingTime<TVertexTime, TRecord, TTime> : VertexOutput<TVertexTime, TRecord, TTime>
         where TTime : Time<TTime>
+        where TVertexTime : Time<TVertexTime>
     {
-        private Dataflow.SendChannel<TRecord, TTime>[] sendChannels;
+        private Dataflow.SendChannel<TVertexTime, TRecord, TTime>[] sendChannels;
 
-        private readonly Dictionary<TTime, VertexOutputBufferPerTime<TRecord, TTime>> Buffers;
+        private readonly Dictionary<Pair<TTime, TVertexTime>, VertexOutputBufferPerInterestingTime<TVertexTime, TRecord, TTime>> Buffers;
 
         private bool MustFlushChannels;
 
-        private readonly Queue<TTime> TimesToFlush = new Queue<TTime>();
-        private readonly Queue<VertexOutputBufferPerTime<TRecord, TTime>> SpareBuffers = new Queue<VertexOutputBufferPerTime<TRecord, TTime>>();
+        internal BufferPool<TRecord> BufferPool;
+
+        private readonly Queue<Pair<TTime, TVertexTime>> TimesToFlush = new Queue<Pair<TTime, TVertexTime>>();
+        private readonly Queue<VertexOutputBufferPerInterestingTime<TVertexTime, TRecord, TTime>> SpareBuffers =
+            new Queue<VertexOutputBufferPerInterestingTime<TVertexTime, TRecord, TTime>>();
+
+        internal virtual VertexOutputBufferPerInterestingTime<TVertexTime, TRecord, TTime> MakeBuffer(Pair<TTime, TVertexTime> timePair)
+        {
+            return new VertexOutputBufferPerInterestingTime<TVertexTime, TRecord, TTime>(this, timePair, this.BufferPool);
+        }
 
         /// <summary>
         /// Adds a recipient for records handled by this buffer.
         /// </summary>
         /// <param name="recipient">The recipient.</param>
-        public void AddReceiver(Dataflow.SendChannel<TRecord, TTime> recipient)
+        public void AddReceiver(Dataflow.SendChannel<TVertexTime, TRecord, TTime> recipient)
         {
             this.sendChannels = this.sendChannels.Concat(new[] { recipient }).ToArray();
         }
@@ -214,9 +204,19 @@ namespace Microsoft.Research.Naiad.Dataflow
         /// <param name="message">The message.</param>
         public void Send(Message<TRecord, TTime> message)
         {
-            this.MustFlushChannels = true;
-            for (int i = 0; i < this.sendChannels.Length; i++)
-                this.sendChannels[i].Send(message);
+            this.Send(message, this.vertex.CurrentEventTime);
+        }
+
+        internal void Send(Message<TRecord, TTime> message, TVertexTime vertexTime)
+        {
+            if (this.sendChannels.Length > 0)
+            {
+                this.MustFlushChannels = true;
+                for (int i = 0; i < this.sendChannels.Length; i++)
+                {
+                    this.sendChannels[i].Send(vertexTime, message);
+                }
+            }
         }
 
         /// <summary>
@@ -248,45 +248,79 @@ namespace Microsoft.Research.Naiad.Dataflow
         /// </summary>
         /// <param name="time">The constant time.</param>
         /// <returns>A new per-time buffer.</returns>
-        public VertexOutputBufferPerTime<TRecord, TTime> GetBufferForTime(TTime time)
+        public VertexOutputBufferPerInterestingTime<TVertexTime, TRecord, TTime> GetBufferForInterestingTime(TTime time)
         {
-            if (!this.Buffers.ContainsKey(time))
+            Pair<TTime, TVertexTime> timePair = time.PairWith(this.vertex.CurrentEventTime);
+            if (!this.Buffers.ContainsKey(timePair))
             {
                 if (this.SpareBuffers.Count > 0)
                 { 
                     var buffer = this.SpareBuffers.Dequeue();
-                    buffer.ReinitializeFor(time);
-                    this.Buffers.Add(time, buffer);
+                    buffer.ReinitializeFor(timePair);
+                    this.Buffers.Add(timePair, buffer);
                 }
                 else
                 {
-                    this.Buffers.Add(time, new VertexOutputBufferPerTime<TRecord, TTime>(this, time));
+                    this.Buffers.Add(timePair, this.MakeBuffer(timePair));
                 }
 
-                this.TimesToFlush.Enqueue(time);
+                this.TimesToFlush.Enqueue(timePair);
             }
-            return this.Buffers[time];
+            return this.Buffers[timePair];
         }
 
         /// <summary>
         /// The vertex to which this buffer belongs.
         /// </summary>
-        public Vertex Vertex { get { return this.vertex; } }
+        public Vertex<TVertexTime> Vertex { get { return this.vertex; } }
 
-        private readonly Vertex vertex;
+        private readonly Vertex<TVertexTime> vertex;
 
         /// <summary>
         /// Constructs a VertexOutputBuffer for the given vertex.
         /// </summary>
         /// <param name="vertex">The vertex to which this buffer will belong.</param>
-        public VertexOutputBuffer(Vertex vertex)
+        public VertexOutputBufferForInterestingTime(Vertex<TVertexTime> vertex)
         {
             this.vertex = vertex;
 
-            this.sendChannels = new Dataflow.SendChannel<TRecord, TTime>[] { };
-            this.Buffers = new Dictionary<TTime, VertexOutputBufferPerTime<TRecord, TTime>>();
+            this.BufferPool = vertex.Scheduler.GetBufferPool<TRecord>();
+
+            this.sendChannels = new Dataflow.SendChannel<TVertexTime, TRecord, TTime>[] { };
+            this.Buffers = new Dictionary<Pair<TTime, TVertexTime>, VertexOutputBufferPerInterestingTime<TVertexTime, TRecord, TTime>>();
 
             vertex.AddOnFlushAction(() => this.Flush());
+        }
+    }
+
+    /// <summary>
+    /// An intermediate buffer for records sent by a <see cref="Vertex"/>.
+    /// </summary>
+    /// <typeparam name="TRecord">The type of records to be sent.</typeparam>
+    /// <typeparam name="TTime">The type of timestamp on the records to be sent.</typeparam>
+    public class VertexOutputBuffer<TRecord, TTime> : VertexOutputBufferForInterestingTime<TTime, TRecord, TTime>
+        where TTime : Time<TTime>
+    {
+        internal override VertexOutputBufferPerInterestingTime<TTime, TRecord, TTime> MakeBuffer(Pair<TTime, TTime> timePair)
+        {
+            return new VertexOutputBufferPerTime<TRecord, TTime>(this, timePair, this.BufferPool);
+        }
+        /// <summary>
+        /// Returns a per-time buffer with for records with a single time, using which records may be sent.
+        /// </summary>
+        /// <param name="time">The constant time.</param>
+        /// <returns>A new per-time buffer.</returns>
+        public VertexOutputBufferPerTime<TRecord, TTime> GetBufferForTime(TTime time)
+        {
+            return this.GetBufferForInterestingTime(time) as VertexOutputBufferPerTime<TRecord, TTime>;
+        }
+
+        /// <summary>
+        /// Constructs a VertexOutputBuffer for the given vertex.
+        /// </summary>
+        /// <param name="vertex">The vertex to which this buffer will belong.</param>
+        public VertexOutputBuffer(Vertex<TTime> vertex) : base(vertex)
+        {
         }
     }
 
@@ -295,13 +329,16 @@ namespace Microsoft.Research.Naiad.Dataflow
     /// </summary>
     /// <typeparam name="TRecord">The type of records to be sent.</typeparam>
     /// <typeparam name="TTime">The type of timestamp on the records to be sent.</typeparam>
-    public class VertexOutputBufferPerTime<TRecord, TTime>
+    /// <typeparam name="TVertexTime">The type of timestamp on the vertex sending records.</typeparam>
+    public class VertexOutputBufferPerInterestingTime<TVertexTime, TRecord, TTime>
         where TTime : Time<TTime>
+        where TVertexTime : Time<TVertexTime>
     {
-        private readonly VertexOutputBuffer<TRecord, TTime> parent;
-        private TTime Time;
+        private readonly VertexOutputBufferForInterestingTime<TVertexTime, TRecord, TTime> parent;
+        private Pair<TTime, TVertexTime> Time;
 
         private Message<TRecord, TTime> Buffer;
+        private BufferPool<TRecord> BufferPool;
 
         /// <summary>
         /// Sends the given record.
@@ -315,19 +352,19 @@ namespace Microsoft.Research.Naiad.Dataflow
                 this.SendBuffer();
         }
 
-        internal void SendBuffer()
+        private void SendBuffer()
         {
             if (Buffer.length > 0)
             {
                 var temp = Buffer;
 
                 this.Buffer = new Message<TRecord, TTime>();
-                this.Buffer.Allocate(AllocationReason.VertexOutputBuffer);
-                this.Buffer.time = this.Time;
+                this.Buffer.Allocate(AllocationReason.VertexOutputBuffer, this.BufferPool);
+                this.Buffer.time = this.Time.First;
 
-                parent.Send(temp);
+                parent.Send(temp, this.Time.Second);
 
-                temp.Release(AllocationReason.VertexOutputBuffer);
+                temp.Release(AllocationReason.VertexOutputBuffer, this.BufferPool);
             }
         }
 
@@ -335,37 +372,54 @@ namespace Microsoft.Research.Naiad.Dataflow
         internal void SendBufferNoReallocate()
         {
             if (Buffer.length > 0)
-                parent.Send(Buffer);
+                parent.Send(Buffer, this.Time.Second);
 
-            Buffer.Release(AllocationReason.VertexOutputBuffer);
+            Buffer.Release(AllocationReason.VertexOutputBuffer, this.BufferPool);
         }
 
-        internal void ReinitializeFor(TTime time)
+        internal void ReinitializeFor(Pair<TTime, TVertexTime> time)
         {
             this.Time = time;
 
             if (!this.Buffer.Unallocated)
                 Console.WriteLine("!!!!!!!!!!!!!!!!");
 
-            this.Buffer = new Message<TRecord, TTime>(time);
-            this.Buffer.Allocate(AllocationReason.VertexOutputBuffer);
+            this.Buffer = new Message<TRecord, TTime>(time.First);
+            this.Buffer.Allocate(AllocationReason.VertexOutputBuffer, this.BufferPool);
         }
 
         /// <summary>
-        /// Constructions a new buffer from its parent <see cref="VertexOutputBuffer{TRecord,TTime}"/> and a constant logical time.
+        /// Constructs a new buffer from its parent <see cref="VertexOutputBuffer{TRecord,TTime}"/> and a constant logical time.
         /// </summary>
         /// <param name="parent">The parent buffer.</param>
         /// <param name="time">The constant time.</param>
-        internal VertexOutputBufferPerTime(VertexOutputBuffer<TRecord, TTime> parent, TTime time)
+        /// <param name="bufferPool">The buffer pool to use</param>
+        internal VertexOutputBufferPerInterestingTime(VertexOutputBufferForInterestingTime<TVertexTime, TRecord, TTime> parent, Pair<TTime, TVertexTime> time, BufferPool<TRecord> bufferPool)
         {
+            this.BufferPool = bufferPool;
             this.parent = parent;
             this.Time = time;
 
-            this.Buffer = new Message<TRecord, TTime>(time);
-            this.Buffer.Allocate(AllocationReason.VertexOutputBuffer);
+            this.Buffer = new Message<TRecord, TTime>(time.First);
+            this.Buffer.Allocate(AllocationReason.VertexOutputBuffer, this.BufferPool);
+        }
+    }
+
+    /// <summary>
+    /// Represents a per-time buffer for sending records with a single time.
+    /// </summary>
+    /// <typeparam name="TRecord">The type of records to be sent.</typeparam>
+    /// <typeparam name="TTime">The type of timestamp on the records to be sent.</typeparam>
+    public class VertexOutputBufferPerTime<TRecord, TTime> : VertexOutputBufferPerInterestingTime<TTime, TRecord, TTime>
+        where TTime : Time<TTime>
+    {
+        internal VertexOutputBufferPerTime(VertexOutputBufferForInterestingTime<TTime, TRecord, TTime> parent, Pair<TTime,TTime> time, BufferPool<TRecord> bufferPool)
+            : base(parent, time, bufferPool)
+        {
         }
     }
 }
+
 
 namespace Microsoft.Research.Naiad.Dataflow.StandardVertices
 {
@@ -392,11 +446,14 @@ namespace Microsoft.Research.Naiad.Dataflow.StandardVertices
         /// <param name="factory">vertex factory</param>
         /// <param name="partitionedBy">partitioning requirement</param>
         /// <param name="name">stage name</param>
-        public static void MakeStage(Stream<TOutput, TTime> stream, Func<int, Stage<TTime>, SinkVertex<TOutput, TTime>> factory, Expression<Func<TOutput, int>> partitionedBy, string name)
+        /// <returns>the sink stage</returns>
+        public static Stage<SinkVertex<TOutput,TTime>, TTime> MakeStage(Stream<TOutput, TTime> stream, Func<int, Stage<TTime>, SinkVertex<TOutput, TTime>> factory, Expression<Func<TOutput, int>> partitionedBy, string name)
         {
             var stage = Foundry.NewStage(stream.Context, factory, name);
 
             stage.NewInput(stream, (message, vertex) => vertex.OnReceive(message), partitionedBy);
+
+            return stage;
         }
 
         /// <summary>
@@ -474,8 +531,7 @@ namespace Microsoft.Research.Naiad.Dataflow.StandardVertices
         /// </summary>
         /// <param name="index">vertex index</param>
         /// <param name="stage">host stage</param>
-        public UnaryVertex(int index, Stage<TTime> stage)
-            : base(index, stage)
+        public UnaryVertex(int index, Stage<TTime> stage) : base(index, stage)
         {
             this.Output = new VertexOutputBuffer<TOutput, TTime>(this);
         }
@@ -587,12 +643,25 @@ namespace Microsoft.Research.Naiad.Dataflow.StandardVertices
         readonly Action<IEnumerable<TOutput>> Action;
 
         /// <summary>
+        /// Prune internal state to include only events within a rollback frontier
+        /// </summary>
+        /// <param name="frontier">the frontier to roll back to</param>
+        /// <param name="lastFullCheckpoint">the last full checkpoint contained within frontier</param>
+        /// <param name="lastIncrementalCheckpoint">the last incremental checkpoint contained within frontier</param>
+        public override void RollBackPreservingState(Runtime.Progress.Pointstamp[] frontier, ICheckpoint<TTime> lastFullCheckpoint, ICheckpoint<TTime> lastIncrementalCheckpoint)
+        {
+            base.RollBackPreservingState(frontier, lastFullCheckpoint, lastIncrementalCheckpoint);
+
+            this.Input.Clear();
+        }
+
+        /// <summary>
         /// Called when a message is received.
         /// </summary>
         /// <param name="message">The message.</param>
         public override void OnReceive(Message<TOutput, TTime> message)
         {
-            this.Input.OnReceive(message, new ReturnAddress());
+            this.Input.OnReceive(message);
         }
 
         /// <summary>
@@ -642,7 +711,7 @@ namespace Microsoft.Research.Naiad.Dataflow.StandardVertices
         /// <param name="message">The message.</param>
         public override void OnReceive(Message<TInput, TTime> message)
         {
-            this.Input.OnReceive(message, new ReturnAddress());
+            this.Input.OnReceive(message);
         }
 
         /// <summary>
@@ -655,6 +724,19 @@ namespace Microsoft.Research.Naiad.Dataflow.StandardVertices
             var output = this.Output.GetBufferForTime(time);
             foreach (var result in this.Transformation(records))
                 output.Send(result);
+        }
+
+        /// <summary>
+        /// Prune internal state to include only events within a rollback frontier
+        /// </summary>
+        /// <param name="frontier">the frontier to roll back to</param>
+        /// <param name="lastFullCheckpoint">the last full checkpoint contained within frontier</param>
+        /// <param name="lastIncrementalCheckpoint">the last incremental checkpoint contained within frontier</param>
+        public override void RollBackPreservingState(Runtime.Progress.Pointstamp[] frontier, ICheckpoint<TTime> lastFullCheckpoint, ICheckpoint<TTime> lastIncrementalCheckpoint)
+        {
+            base.RollBackPreservingState(frontier, lastFullCheckpoint, lastIncrementalCheckpoint);
+
+            this.Input.Clear();
         }
 
         /// <summary>
@@ -701,7 +783,7 @@ namespace Microsoft.Research.Naiad.Dataflow.StandardVertices
         /// <param name="message">The message.</param>
         public override void OnReceive1(Message<TInput1, TTime> message)
         {
-            this.Input1.OnReceive(message, new ReturnAddress());
+            this.Input1.OnReceive(message);
         }
 
         /// <summary>
@@ -710,7 +792,7 @@ namespace Microsoft.Research.Naiad.Dataflow.StandardVertices
         /// <param name="message">The message.</param>
         public override void OnReceive2(Message<TInput2, TTime> message)
         {
-            this.Input2.OnReceive(message, new ReturnAddress());
+            this.Input2.OnReceive(message);
         }
 
         /// <summary>
@@ -726,6 +808,20 @@ namespace Microsoft.Research.Naiad.Dataflow.StandardVertices
 
             foreach (var result in this.Transformation(records1, records2))
                 outputBuffer.Send(result);
+        }
+
+        /// <summary>
+        /// Prune internal state to include only events within a rollback frontier
+        /// </summary>
+        /// <param name="frontier">the frontier to roll back to</param>
+        /// <param name="lastFullCheckpoint">the last full checkpoint contained within frontier</param>
+        /// <param name="lastIncrementalCheckpoint">the last incremental checkpoint contained within frontier</param>
+        public override void RollBackPreservingState(Runtime.Progress.Pointstamp[] frontier, ICheckpoint<TTime> lastFullCheckpoint, ICheckpoint<TTime> lastIncrementalCheckpoint)
+        {
+            base.RollBackPreservingState(frontier, lastFullCheckpoint, lastIncrementalCheckpoint);
+
+            this.Input1.Clear();
+            this.Input2.Clear();
         }
 
         /// <summary>
@@ -761,10 +857,11 @@ namespace Microsoft.Research.Naiad.Dataflow.StandardVertices
         /// <param name="factory">Vertex factory</param>
         /// <param name="inputPartitionBy">Partitioning requirement</param>
         /// <param name="name">Descriptive name</param>
-        public static void NewSinkStage<TOutput, TTime>(this Stream<TOutput, TTime> source, Func<int, Stage<TTime>, SinkVertex<TOutput, TTime>> factory, Expression<Func<TOutput, int>> inputPartitionBy, string name)
+        /// <returns>the sink stage</returns>
+        public static Stage<SinkVertex<TOutput,TTime>, TTime> NewSinkStage<TOutput, TTime>(this Stream<TOutput, TTime> source, Func<int, Stage<TTime>, SinkVertex<TOutput, TTime>> factory, Expression<Func<TOutput, int>> inputPartitionBy, string name)
             where TTime : Time<TTime>
         {
-            SinkVertex<TOutput, TTime>.MakeStage(source, factory, inputPartitionBy, name);
+            return SinkVertex<TOutput, TTime>.MakeStage(source, factory, inputPartitionBy, name);
         }
 
         /// <summary>
@@ -815,7 +912,7 @@ namespace Microsoft.Research.Naiad.Dataflow.StandardVertices
         /// <param name="factory">Vertex factory</param>
         /// <param name="name">Descriptive name</param>
         /// <returns>Constructed stage</returns>
-        public static Stage<TVertex, TTime> NewStage<TVertex, TTime>(TimeContext<TTime> context, Func<int, Stage<TTime>, TVertex> factory, string name)
+        public static Stage<TVertex, TTime> NewStage<TVertex, TTime>(StreamContext context, Func<int, Stage<TTime>, TVertex> factory, string name)
             where TTime : Time<TTime>
             where TVertex : Vertex<TTime>
         {
@@ -832,11 +929,11 @@ namespace Microsoft.Research.Naiad.Dataflow.StandardVertices
         /// <param name="factory">Vertex factory</param>
         /// <param name="name">Descriptive name</param>
         /// <returns>Constructed stage</returns>
-        public static Stage<TVertex, TTime> NewStage<TVertex, TTime>(Placement placement, TimeContext<TTime> context, Func<int, Stage<TTime>, TVertex> factory, string name)
+        public static Stage<TVertex, TTime> NewStage<TVertex, TTime>(Placement placement, StreamContext context, Func<int, Stage<TTime>, TVertex> factory, string name)
             where TTime : Time<TTime>
             where TVertex : Vertex<TTime>
         {
-            return new Stage<TVertex, TTime>(placement, context, Stage.OperatorType.Default, factory, name);
+            return new Stage<TVertex, TTime>(placement, context.Computation, Stage.OperatorType.Default, factory, name);
         }
     }
 

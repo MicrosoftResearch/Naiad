@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.5
+ * Naiad ver. 0.6
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -38,6 +38,7 @@ using Microsoft.Research.Naiad.Utilities;
 using Microsoft.Research.Naiad.Scheduling;
 using Microsoft.Research.Naiad.Runtime.Controlling;
 using Microsoft.Research.Naiad.Runtime.Networking;
+using Microsoft.Research.Naiad.Runtime.FaultTolerance;
 using Microsoft.Research.Naiad.Runtime.Progress;
 using Microsoft.Research.Naiad.Runtime;
 
@@ -169,13 +170,27 @@ namespace Microsoft.Research.Naiad
 
         SerializationFormat SerializationFormat { get; }
 
-        Stream GetLoggingOutputStream(Dataflow.Vertex vertex);
-
         NetworkChannel NetworkChannel { get; }
 
         void DoStartupBarrier();
+        void TriggerSimulatedFailure(int processId, int restartDelay);
+        void ReportSimulatedFailureRestart(int processId);
+        void SimulateFailure(int delay);
+        bool HasFailed { get; }
+        long TicksSinceStartup { get; }
+
+        void PausePeerProcesses(IEnumerable<int> processes);
+        void StartRollback();
+
+        void RestoreToFrontiers(int graphId, IEnumerable<CheckpointLowWatermark> frontiers);
+
+        void ResetProgress();
+
+        void SignalRestore();
 
         InternalComputation GetInternalComputation(int index);
+
+        void WriteLog(string entry);
 
         Controller ExternalController { get; }
     }
@@ -323,15 +338,6 @@ namespace Microsoft.Research.Naiad
                 this.OnShutdown(this, new EventArgs());
         }
 
-
-        int streamCounter = 0;
-        public Stream GetLoggingOutputStream(Dataflow.Vertex vertex)
-        {
-            int streamNumber = Interlocked.Increment(ref this.streamCounter);
-
-            return File.OpenWrite(string.Format("{0}_{1}-{2}.naiadlog", streamNumber, vertex.Stage.StageId, vertex.VertexId));
-        }
-
         private readonly Configuration configuration;
         public Configuration Configuration
         {
@@ -347,6 +353,243 @@ namespace Microsoft.Research.Naiad
         public SerializationFormat SerializationFormat { get; private set; }
 
         #region Checkpoint / Restore
+
+        private AutoResetEvent restoreEvent;
+        private volatile bool aborted = false;
+        private Thread restoreThread;
+
+        private FileStream checkpointLogFile = null;
+        private StreamWriter checkpointLog = null;
+        internal StreamWriter CheckpointLog
+        {
+            get
+            {
+                if (checkpointLog == null)
+                {
+                    string fileName = String.Format("controller.{0:D3}.log",
+                        this.Configuration.ProcessID);
+                    this.checkpointLogFile = new FileStream(fileName, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
+                    this.checkpointLog = new StreamWriter(this.checkpointLogFile);
+                    var flush = new System.Threading.Thread(new System.Threading.ThreadStart(() => FlushThread()));
+                    flush.Start();
+                }
+                return checkpointLog;
+            }
+        }
+
+        private void FlushThread()
+        {
+            while (true)
+            {
+                Thread.Sleep(1000);
+                lock (this)
+                {
+                    if (this.checkpointLog != null)
+                    {
+                        this.checkpointLog.Flush();
+                        this.checkpointLogFile.Flush(true);
+                    }
+                }
+            }
+        }
+
+        public void WriteLog(string entry)
+        {
+            lock (this)
+            {
+                this.CheckpointLog.WriteLine(entry);
+            }
+        }
+
+        private void ShowWaitingNotifications()
+        {
+            IEnumerable<Scheduler.WorkItem> items = new Scheduler.WorkItem[0];
+            foreach (var scheduler in this.workerGroup.schedulers)
+            {
+                foreach (var computation in this.baseComputations)
+                {
+                    foreach (var stage in computation.Stages.OrderBy(s => s.Key))
+                    {
+                        foreach (var vertex in stage.Value.Vertices.OrderBy(v => v.VertexId))
+                        {
+                            items = items.Concat(scheduler.GetWorkItemsForVertex(vertex));
+                        }
+                    }
+                }
+            }
+
+            foreach (var stage in items.GroupBy(i => i.Vertex.Stage.StageId))
+            {
+                foreach (var vertex in stage.GroupBy(v => v.Vertex.VertexId))
+                {
+                    Console.Write(stage.Key + "." + vertex.Key + ":");
+
+                    foreach (var time in vertex.GroupBy(v => v.Requirement))
+                    {
+                        Console.Write(" " + time.Key + ":" + time.Count());
+                    }
+
+                    Console.WriteLine();
+                }
+            }
+        }
+
+        public void RestorationThread()
+        {
+            while (true)
+            {
+                this.restoreEvent.WaitOne();
+
+                if (this.aborted)
+                {
+                    return;
+                }
+
+                long startTicks = this.stopwatch.ElapsedTicks;
+
+                this.Pause();
+
+                long pauseTicks = this.stopwatch.ElapsedTicks;
+
+                this.ResetProgress();
+
+                foreach (BaseComputation computation in this.baseComputations)
+                {
+                    computation.ProgressTracker.Reset();
+                }
+
+                long progressTicks = this.stopwatch.ElapsedTicks;
+
+                Console.WriteLine("Paused in preparation for restoration");
+
+                // block until the coordinator has reported that the progress mechanism has been repaired
+                this.restoreEvent.WaitOne();
+
+                long repairTicks = this.stopwatch.ElapsedTicks;
+
+                Console.WriteLine("Heard progress is restored");
+
+                foreach (BaseComputation computation in this.baseComputations)
+                {
+                    computation.Rollback();
+                }
+
+                long rollbackTicks = this.stopwatch.ElapsedTicks;
+
+                Console.WriteLine("Restarting receive threads");
+
+                this.ResumeAfterRollback();
+
+                long resumeTicks = this.stopwatch.ElapsedTicks;
+
+                foreach (BaseComputation computation in this.baseComputations)
+                {
+                    computation.RestartAfterRollback();
+                }
+
+                long totalTicks = this.stopwatch.ElapsedTicks;
+
+                long pauseMicroSeconds = ((pauseTicks - startTicks) * 1000000L) / System.Diagnostics.Stopwatch.Frequency;
+                long progressMicroSeconds = ((progressTicks - startTicks) * 1000000L) / System.Diagnostics.Stopwatch.Frequency;
+                long repairMicroSeconds = ((repairTicks - startTicks) * 1000000L) / System.Diagnostics.Stopwatch.Frequency;
+                long rollbackMicroSeconds = ((rollbackTicks - startTicks) * 1000000L) / System.Diagnostics.Stopwatch.Frequency;
+                long resumeMicroSeconds = ((resumeTicks - startTicks) * 1000000L) / System.Diagnostics.Stopwatch.Frequency;
+                long restartMicroSeconds = ((totalTicks - startTicks) * 1000000L) / System.Diagnostics.Stopwatch.Frequency;
+                long totalMicroSeconds = (totalTicks * 1000000L) / System.Diagnostics.Stopwatch.Frequency;
+                this.WriteLog(String.Format("{0:D3} P {1:D7} {2:D7} {3:D7} {4:D7} {5:D7} {6:D7} {7:D11}",
+                    this.configuration.ProcessID,
+                    pauseMicroSeconds, progressMicroSeconds, repairMicroSeconds,
+                    rollbackMicroSeconds, resumeMicroSeconds, restartMicroSeconds,
+                    totalMicroSeconds));
+
+                Console.WriteLine("Finished rollback");
+            }
+        }
+
+        public void PausePeerProcesses(IEnumerable<int> processes)
+        {
+            if (this.networkChannel != null && this.networkChannel is Snapshottable)
+            {
+                ((Snapshottable)this.networkChannel).StartRollback(processes);
+                ((Snapshottable)this.networkChannel).WaitForWorkerPausedMessages(processes);
+            }
+        }
+
+        public void StartRollback()
+        {
+            this.Pause();
+
+            // forward any fault tolerance updates we received after pausing
+            this.FlushFinalFaultToleranceTraffic();
+
+            // stop sending any clock updates from the centralizer, in preparation for the surgery we will do below
+            foreach (BaseComputation computation in this.baseComputations)
+            {
+                computation.ProgressTracker.PrepareForRollback(true);
+            }
+
+            foreach (BaseComputation computation in this.baseComputations)
+            {
+                StringWriter w = new StringWriter();
+                computation.ProgressTracker.Complain(w);
+                Console.WriteLine(w);
+                // clear out all progress information
+                computation.ProgressTracker.Reset();
+                // let the centralizer forward updates again for the next phase in which everyone sends
+                // out their post-rollback progress items
+                computation.ProgressTracker.PrepareForRollback(false);
+            }
+
+            Console.WriteLine("Initiator paused in preparation for restoration");
+        }
+
+        public void RestoreToFrontiers(int computationIndex, IEnumerable<CheckpointLowWatermark> frontiers)
+        {
+            if (this.networkChannel != null && this.networkChannel is Snapshottable)
+            {
+                ((Snapshottable)this.networkChannel).BroadcastCheckpoints(computationIndex, frontiers);
+            }
+
+            this.baseComputations[computationIndex].ReceiveCheckpointFrontiersAndRepairProgress(frontiers);
+
+            Console.WriteLine("Waiting for progress");
+
+            if (this.networkChannel != null && this.networkChannel is Snapshottable)
+            {
+                // wait for peers to send their progress traffic
+                ((Snapshottable)this.networkChannel).WaitForAllRollbackProgressMessages();
+                // tell them all the progress traffic has arrived, so they can shut down their
+                // receive thread and restore before we start sending messages again
+                ((Snapshottable)this.networkChannel).SignalProgressRepaired(true);
+            }
+
+            Console.WriteLine("Rolling back");
+
+            this.baseComputations[computationIndex].Rollback();
+
+            Console.WriteLine("Resuming");
+
+            this.ResumeAfterRollback();
+
+            Console.WriteLine("Restarting");
+
+            this.baseComputations[computationIndex].RestartAfterRollback();
+
+            Console.WriteLine("Finished rollback");
+        }
+
+        public void ResetProgress()
+        {
+            foreach (var scheduler in this.workerGroup.schedulers)
+            {
+                scheduler.ResetProgress();
+            }
+        }
+
+        public void SignalRestore()
+        {
+            this.restoreEvent.Set();
+        }
 
         public void Checkpoint(bool major)
         {
@@ -459,6 +702,34 @@ namespace Microsoft.Research.Naiad
             internal bool useBroadcastWakeup;
             internal EventCount wakeUpEvent;
 
+            private int totalSharedItemInCount = 0;
+            private int totalSharedItemOutCount = 0;
+
+            public int IncrementSharedQueueCount(int queuedItemCount)
+            {
+                lock (this)
+                {
+                    totalSharedItemInCount += queuedItemCount;
+                    return totalSharedItemInCount;
+                }
+            }
+
+            public int DecrementSharedQueueCount(int dequeuedItemCount)
+            {
+                lock (this)
+                {
+                    totalSharedItemOutCount += dequeuedItemCount;
+                    if (totalSharedItemOutCount == totalSharedItemInCount)
+                    {
+                        return totalSharedItemOutCount;
+                    }
+                    else
+                    {
+                        return -1;
+                    }
+                }
+            }
+
             internal readonly Scheduler[] schedulers;
 
             public Scheduler this[int index] { get { return this.schedulers[index]; } }
@@ -515,6 +786,19 @@ namespace Microsoft.Research.Naiad
                 }
             }
 
+            public void SimulateFailure()
+            {
+                using (CountdownEvent failureCountdown = new CountdownEvent(this.schedulers.Length))
+                {
+                    lock (this)
+                    {
+                        foreach (Scheduler scheduler in this.schedulers)
+                            scheduler.SimulateFailure(failureCountdown);
+                    }
+                    failureCountdown.Wait();
+                }
+            }
+
             public void Resume()
             {
                 foreach (Scheduler scheduler in this.schedulers)
@@ -523,8 +807,10 @@ namespace Microsoft.Research.Naiad
 
             internal void DrainAllQueuedMessages()
             {
+                int dequeued = 0;
                 foreach (Scheduler scheduler in this.schedulers)
-                    scheduler.AcceptWorkItemsFromOthers();
+                    dequeued += scheduler.AcceptWorkItemsFromOthers();
+                this.DecrementSharedQueueCount(dequeued);
             }
 
             #region Scheduler events
@@ -582,10 +868,10 @@ namespace Microsoft.Research.Naiad
             /// This event is fired by a worker when it becomes idle, because it has no work to execute.
             /// </summary>
             public event EventHandler<WorkerSleepArgs> Sleeping;
-            public void NotifySchedulerSleeping(Scheduler scheduler)
+            public void NotifySchedulerSleeping(Scheduler scheduler, int queueHighWaterMark)
             {
                 if (this.Sleeping != null)
-                    this.Sleeping(this, new WorkerSleepArgs(scheduler.Index));
+                    this.Sleeping(this, new WorkerSleepArgs(scheduler.Index, queueHighWaterMark));
             }
 
             /// <summary>
@@ -668,7 +954,7 @@ namespace Microsoft.Research.Naiad
         {
             List<Exception> graphExceptions = new List<Exception>();
 
-            foreach (var manager in this.baseComputations.Where(x => x.CurrentState != InternalComputationState.Inactive))
+            foreach (var manager in this.baseComputations.Where(x => x.CurrentState == InternalComputationState.Active))
             {
                 try
                 {
@@ -679,6 +965,10 @@ namespace Microsoft.Research.Naiad
                     graphExceptions.Add(e);
                 }
             }
+
+            this.aborted = true;
+            this.restoreEvent.Set();
+            this.restoreThread.Join();
 
             this.workerGroup.Abort();
             
@@ -759,6 +1049,7 @@ namespace Microsoft.Research.Naiad
         {
             this.activated = false;
             this.configuration = config;
+            this.HasFailed = false;
 
             this.SerializationFormat = SerializationFactory.GetCodeGeneratorForVersion(config.SerializerVersion.First, config.SerializerVersion.Second);
 
@@ -774,6 +1065,10 @@ namespace Microsoft.Research.Naiad
             // if we pass in a null endpoint the server will pick one and return it in the ref arg
             this.server = new NaiadServer(ref endpoint);
             this.localEndpoint = endpoint;
+
+            this.restoreEvent = new AutoResetEvent(false);
+            this.restoreThread = new Thread(new ThreadStart(this.RestorationThread));
+            this.restoreThread.Start();
 
             this.workerGroup = new BaseWorkerGroup(this, config.WorkerCount);
 
@@ -876,6 +1171,8 @@ namespace Microsoft.Research.Naiad
             if (this.server != null)
                 this.server.Dispose();
 
+            this.restoreEvent.Dispose();
+
             Logging.Stop();
         }
 
@@ -890,33 +1187,95 @@ namespace Microsoft.Research.Naiad
             return client.WorkerEndpoints;
         }
 
+        private long ticksAtStartup = -1;
+        public long TicksSinceStartup { get { return DateTime.Now.Ticks - this.ticksAtStartup; } }
+
         public void DoStartupBarrier()
         {
+            bool oldActived = false;
             this.activated = true;
             if (this.networkChannel != null)
             {
                 this.networkChannel.DoStartupBarrier();
                 Logging.Progress("Did startup barrier for graph");
             }
+            if (oldActived)
+            {
+                this.ticksAtStartup = DateTime.Now.Ticks;
+            }
         }
 
         public void Pause()
         {
+            Console.WriteLine("Pausing workers");
             this.Workers.Pause();
+            foreach (BaseComputation computation in this.baseComputations)
+            {
+                computation.ProgressTracker.ForceFlush();
+            }
+
             if (this.networkChannel != null && this.networkChannel is Snapshottable)
             {
-                ((Snapshottable)this.networkChannel).AnnounceCheckpoint();
-                ((Snapshottable)this.networkChannel).WaitForAllCheckpointMessages();
+                Console.WriteLine("Announcing pause");
+                ((Snapshottable)this.networkChannel).AnnounceWorkersPaused();
+                ((Snapshottable)this.networkChannel).AnnounceRollbackBarrier();
+                ((Snapshottable)this.networkChannel).WaitForAllRollbackBarrierMessages();
             }
+            // XXXXX
             this.workerGroup.DrainAllQueuedMessages();
         }
 
-        public void Resume()
+        public bool HasFailed { get; private set; }
+        public void TriggerSimulatedFailure(int processId, int restartDelay)
         {
-            this.Workers.Resume();
             if (this.networkChannel != null && this.networkChannel is Snapshottable)
             {
-                ((Snapshottable)this.networkChannel).ResumeAfterCheckpoint();
+                ((Snapshottable)this.networkChannel).AnnounceFailure(processId, restartDelay, true);
+            }
+        }
+        public void ReportSimulatedFailureRestart(int processId)
+        {
+            foreach (BaseComputation computation in this.baseComputations)
+            {
+                computation.ReportSimulatedFailureRestart(processId);
+            }
+        }
+
+        public void SimulateFailure(int delay)
+        {
+            this.Workers.SimulateFailure();
+
+            this.HasFailed = true;
+
+            Thread.Sleep(delay);
+
+            // on resumption the workers won't actually do anything other than rollbacks and progress traffic
+            // since they were set to the restoring state in SimulateFailure above
+            this.Workers.Resume();
+        }
+
+        public void FlushFinalFaultToleranceTraffic()
+        {
+            // pick up any fault tolerance messages that were sent after the scheduler paused
+            foreach (Scheduler scheduler in this.workerGroup.schedulers)
+            {
+                scheduler.FlushFaultToleranceTraffic();
+            }
+
+            // then flush progress traffic generated by those messages
+            foreach (BaseComputation computation in this.baseComputations)
+            {
+                computation.ProgressTracker.ForceFlush();
+            }
+        }
+
+        public void ResumeAfterRollback()
+        {
+            this.HasFailed = false;
+
+            if (this.networkChannel != null && this.networkChannel is Snapshottable)
+            {
+                ((Snapshottable)this.networkChannel).ResumeAfterRollback();
             }
         }
     }

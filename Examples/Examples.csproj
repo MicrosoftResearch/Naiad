@@ -92,7 +92,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Frameworks\GraphLINQ\GraphLINQ.csproj">
-      <Project>{bdbeaca4-1235-4fdc-bbf5-9f9b7ab553ad}</Project>
+      <Project>{5a2bdfc0-daa9-42be-a463-fd2d4f9d424e}</Project>
       <Name>GraphLINQ</Name>
     </ProjectReference>
     <ProjectReference Include="..\Frameworks\Lindi\Lindi.csproj">

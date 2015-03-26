@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.5
+ * Naiad ver. 0.6
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -25,17 +25,31 @@ using System.Linq.Expressions;
 using System.Text;
 
 using Microsoft.Research.Naiad.Dataflow;
+using Microsoft.Research.Naiad.Runtime.FaultTolerance;
 
 namespace Microsoft.Research.Naiad
 {
+    /// <summary>
+    /// Context of a stream, that can be passed to the constructor e.g. of a LoopContext
+    /// </summary>
+    public class StreamContext
+    {
+        internal InternalComputation Computation { get; private set; }
+
+        internal StreamContext(InternalComputation computation)
+        {
+            this.Computation = computation;
+        }
+    }
+
     /// <summary>
     /// Represents a stream of records each tagged with a time.
     /// </summary>
     /// <typeparam name="TRecord">record type</typeparam>
     /// <typeparam name="TTime">time type</typeparam>
-    public class Stream<TRecord, TTime> where TTime : Time<TTime>
+    public abstract class Stream<TRecord, TTime> where TTime : Time<TTime>
     {
-        internal readonly StageOutput<TRecord, TTime> StageOutput;
+        internal abstract StageOutput<TRecord, TTime> StageOutput { get; }
 
         /// <summary>
         /// Expression indicating a partitioning property the stream obeys, or null if none exists.
@@ -48,13 +62,46 @@ namespace Microsoft.Research.Naiad
         public Dataflow.Stage ForStage { get { return this.StageOutput.ForStage; } }
 
         /// <summary>
-        /// Time context for the stream.
+        /// Context of the stream, used to construct stages, loop contexts, etc.
         /// </summary>
-        public Dataflow.TimeContext<TTime> Context { get { return this.StageOutput.Context; } }
+        public StreamContext Context { get { return new StreamContext(this.ForStage.InternalComputation); } }
 
-        internal Stream(StageOutput<TRecord, TTime> stageOutput)
+        /// <summary>
+        /// Set the type of checkpointing/logging used at the operator that produces this stream
+        /// </summary>
+        /// <param name="checkpointType">type of checkpointing/logging</param>
+        /// <returns>the stream with the modified checkpointing type</returns>
+        public Stream<TRecord, TTime> SetCheckpointType(CheckpointType checkpointType)
         {
-            this.StageOutput = stageOutput;
+            this.ForStage.SetCheckpointType(checkpointType);
+            return this;
+        }
+
+        /// <summary>
+        /// Provides a function indicating when to checkpoint
+        /// </summary>
+        /// <param name="shouldCheckpointFactory">function to create a checkpoint policy object for a vertex</param>
+        /// <returns>the stream with the sender's checkpoint policy updated</returns>
+        public Stream<TRecord, TTime> SetCheckpointPolicy(Func<int, ICheckpointPolicy> shouldCheckpointFactory)
+        {
+            this.ForStage.SetCheckpointPolicy(shouldCheckpointFactory);
+            return this;
+        }
+    }
+
+    internal class FullyTypedStream<TSender, TRecord, TTime> : Stream<TRecord, TTime>
+        where TTime : Time<TTime>
+        where TSender : Time<TSender>
+    {
+        internal readonly FullyTypedStageOutput<TSender, TRecord, TTime> TypedStageOutput;
+        internal override StageOutput<TRecord, TTime> StageOutput
+        {
+            get { return this.TypedStageOutput; }
+        }
+
+        internal FullyTypedStream(FullyTypedStageOutput<TSender, TRecord, TTime> stageOutput)
+        {
+            this.TypedStageOutput = stageOutput;
         }
     }
 }

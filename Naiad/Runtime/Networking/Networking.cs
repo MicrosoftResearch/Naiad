@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.5
+ * Naiad ver. 0.6
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -42,6 +42,8 @@ using Microsoft.Research.Naiad.Utilities;
 using Microsoft.Research.Naiad.Scheduling;
 using Microsoft.Research.Naiad.DataStructures;
 using Microsoft.Research.Naiad.Runtime.Controlling;
+using Microsoft.Research.Naiad.Runtime.FaultTolerance;
+using Microsoft.Research.Naiad.Runtime.Progress;
 using Microsoft.Research.Naiad.Dataflow.Channels;
 using Microsoft.Research.Naiad.Serialization;
 
@@ -130,9 +132,17 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
 
     internal interface Snapshottable
     {
-        void AnnounceCheckpoint();
-        void WaitForAllCheckpointMessages();
-        void ResumeAfterCheckpoint();
+        void ShowWaitingMessageCounts();
+        void StartRollback(IEnumerable<int> processes);
+        void WaitForWorkerPausedMessages(IEnumerable<int> processes);
+        void BroadcastCheckpoints(int graphId, IEnumerable<CheckpointLowWatermark> frontiers);
+        void AnnounceFailure(int failedProcess, int delay, bool fromCoordinator);
+        void AnnounceWorkersPaused();
+        void AnnounceRollbackBarrier();
+        void WaitForAllRollbackProgressMessages();
+        void WaitForAllRollbackBarrierMessages();
+        void SignalProgressRepaired(bool fromCoordinator);
+        void ResumeAfterRollback();
     }
     
     internal class TcpNetworkChannel : NetworkChannel, Snapshottable
@@ -204,8 +214,10 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
             
             public BufferPool<byte> SendPool;
 
-            public readonly AutoResetEvent CheckpointPauseEvent;
-            public readonly AutoResetEvent CheckpointResumeEvent;
+            public readonly AutoResetEvent WorkerPauseEvent;
+            public readonly AutoResetEvent RollbackPauseEvent;
+            public readonly AutoResetEvent RollbackProgressEvent;
+            public readonly AutoResetEvent RollbackResumeEvent;
 
             public Socket SendSocket;
             public Socket RecvSocket;
@@ -273,8 +285,10 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
 
                 this.SendEvent = new AutoResetEvent(false);
 
-                this.CheckpointPauseEvent = new AutoResetEvent(false);
-                this.CheckpointResumeEvent = new AutoResetEvent(false);
+                this.WorkerPauseEvent = new AutoResetEvent(false);
+                this.RollbackPauseEvent = new AutoResetEvent(false);
+                this.RollbackProgressEvent = new AutoResetEvent(false);
+                this.RollbackResumeEvent = new AutoResetEvent(false);
 
                 this.sequenceNumber = 1;
 
@@ -299,10 +313,11 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
                     this.RecvSocket.Shutdown(SocketShutdown.Both);
                     this.RecvSocket.Close(5);
                 }
-                
+
+                this.WorkerPauseEvent.Dispose();
                 this.SendEvent.Dispose();
-                this.CheckpointPauseEvent.Dispose();
-                this.CheckpointResumeEvent.Dispose();
+                this.RollbackPauseEvent.Dispose();
+                this.RollbackResumeEvent.Dispose();
             }
         }
 
@@ -422,6 +437,7 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
             for (int i = 0; i < this.Controller.Configuration.Endpoints.Length; ++i)
                 if (i != this.Controller.Configuration.ProcessID)
                     this.AddEndPointOutgoing(i, this.Controller.Configuration.Endpoints[i]);
+            this.blockReceiveEvent = new ManualResetEventSlim[this.Controller.Configuration.Endpoints.Length];
 
             this.MAX_SEND_SIZE = 32 * this.sendPageSize;
 
@@ -573,11 +589,69 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
             //Logging.Info("Registered Mailbox {0} Vertex {1}", mailbox.Id, mailbox.VertexID);
         }
 
-        public void AnnounceCheckpoint()
+        public void BroadcastCheckpoints(int graphId, IEnumerable<CheckpointLowWatermark> frontiers)
         {
             int seqno = this.GetSequenceNumber(-1);
-            SendBufferPage checkpointPage = SendBufferPage.CreateSpecialPage(MessageHeader.Checkpoint, seqno);
-            BufferSegment checkpointSegment = checkpointPage.Consume();
+
+            NaiadSerialization<int> intSerializer = this.Controller.SerializationFormat.GetSerializer<int>();
+
+            int pageSize = 16 * 1024;
+            while (true)
+            {
+                SendBufferPage sendPage = new SendBufferPage(GlobalBufferPool<byte>.pool, pageSize);
+                MessageHeader sendHeader = new MessageHeader(-1, seqno, graphId, -1, 0, SerializedMessageType.RestorationFrontier);
+                sendPage.WriteHeader(sendHeader, MessageHeader.Serialization);
+
+                bool fits = sendPage.Write<int>(intSerializer, frontiers.Count());
+
+                foreach (CheckpointLowWatermark frontier in frontiers)
+                {
+                    fits = fits && sendPage.Write<int>(intSerializer, frontier.stageId);
+                    fits = fits && sendPage.Write<int>(intSerializer, frontier.vertexId);
+                    fits = fits && frontier.frontier.TrySerialize(sendPage, this.Controller.SerializationFormat);
+                }
+
+                if (fits)
+                {
+                    MessageHeader finalHeader = sendPage.FinalizeLastMessage(MessageHeader.Serialization);
+
+                    BufferSegment segment = sendPage.Consume();
+
+                    for (int i = 0; i < this.connections.Count; ++i)
+                    {
+                        if (i != this.localProcessID)
+                        {
+                            Logging.Info("Sending checkpoint message to process {0}", i);
+                            this.SendBufferSegment(finalHeader, i, segment.DeepCopy());
+                        }
+                    }
+
+                    return;
+                }
+
+                pageSize *= 2;
+            }
+        }
+
+        public void AnnounceWorkersPaused()
+        {
+            int seqno = this.GetSequenceNumber(-1);
+            SendBufferPage pausedPage = SendBufferPage.CreateSpecialPage(MessageHeader.WorkersPaused, seqno);
+            BufferSegment pausedSegment = pausedPage.Consume();
+
+            if (this.Controller.Configuration.CentralizerProcessId != this.localProcessID)
+            {
+                Console.WriteLine("Sending worker paused message to " + this.Controller.Configuration.CentralizerProcessId);
+                Logging.Info("Sending worker paused message to process {0}", this.localProcessID);
+                this.SendBufferSegment(pausedPage.CurrentMessageHeader, this.Controller.Configuration.CentralizerProcessId, pausedSegment);
+            }
+        }
+
+        public void AnnounceRollbackBarrier()
+        {
+            int seqno = this.GetSequenceNumber(-1);
+            SendBufferPage rollbackPage = SendBufferPage.CreateSpecialPage(MessageHeader.RollbackBarrier, seqno);
+            BufferSegment rollbackSegment = rollbackPage.Consume();
 
             // XXX: Hack due to new sequence numbers.
 
@@ -588,26 +662,178 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
             {
                 if (i != this.localProcessID)
                 {
-                    Logging.Info("Sending checkpoint message to process {0}", i);
-                    this.SendBufferSegment(checkpointPage.CurrentMessageHeader, i, checkpointSegment.DeepCopy());
+                    Logging.Info("Sending rollback message to process {0}", i);
+                    this.SendBufferSegment(rollbackPage.CurrentMessageHeader, i, rollbackSegment.DeepCopy());
                 }
             }
         }
 
-        public void WaitForAllCheckpointMessages()
+        public void ShowWaitingMessageCounts()
+        {
+            for (int graphId=0; graphId < this.graphmailboxes.Count; ++graphId)
+            {
+                var graph = this.graphmailboxes[graphId];
+                if (graph != null)
+                {
+                    for (int channelId = 0; channelId < graph.Count; ++channelId)
+                    {
+                        var channel = graph[channelId];
+                        if (channel != null)
+                        {
+                            for (int vertexId=0; vertexId<channel.Count; ++vertexId)
+                            {
+                                var vertex = channel[vertexId];
+                                if (vertex != null)
+                                {
+                                    string counts = vertex.WaitingMessageCount();
+                                    if (counts != null)
+                                    {
+                                        Console.WriteLine("{0}.{1}.{2}:{3}",
+                                            graphId, channelId, vertexId, counts);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        public void StartRollback(IEnumerable<int> processes)
+        {
+            int seqno = this.GetSequenceNumber(-1);
+            SendBufferPage restorePage = SendBufferPage.CreateSpecialPage(MessageHeader.PrepareToRestore, seqno);
+            BufferSegment restoreSegment = restorePage.Consume();
+
+            foreach (int process in processes)
+            {
+                if (process != this.localProcessID)
+                {
+                    Logging.Info("Sending prepare to restore to process {0}", process);
+                    this.SendBufferSegment(restorePage.CurrentMessageHeader, process, restoreSegment.DeepCopy());
+                }
+            }
+        }
+
+        public void SignalProgressRepaired(bool fromCoordinator)
+        {
+            int seqno = this.GetSequenceNumber(-1);
+            SendBufferPage restorePage = SendBufferPage.CreateSpecialPage(MessageHeader.RestorationProgressRepaired, seqno);
+            BufferSegment restoreSegment = restorePage.Consume();
+
+            for (int i = 0; i < this.connections.Count; ++i)
+            {
+                if ((fromCoordinator && i != this.localProcessID) ||
+                    (!fromCoordinator && i == this.Controller.Configuration.CentralizerProcessId))
+                {
+                    Logging.Info("Sending rollback repair complete to process {0}", i);
+                    this.SendBufferSegment(restorePage.CurrentMessageHeader, i, restoreSegment.DeepCopy());
+                }
+            }
+        }
+
+        public void AnnounceFailure(int failedProcess, int delay, bool fromCoordinator)
+        {
+            int seqno = this.GetSequenceNumber(-1);
+            SendBufferPage failurePage = SendBufferPage.CreateSpecialPage(MessageHeader.AnnounceFailure(failedProcess, delay), seqno);
+            BufferSegment failureSegment = failurePage.Consume();
+
+            if (fromCoordinator)
+            {
+                this.SendBufferSegment(failurePage.CurrentMessageHeader, failedProcess, failureSegment);
+            }
+            else
+            {
+                this.SendBufferSegment(failurePage.CurrentMessageHeader, this.Controller.Configuration.CentralizerProcessId, failureSegment);
+            }
+        }
+
+        public void SimulateFailure(int delay)
+        {
+            lock (this)
+            {
+                // this will get incremented by each thread that blocks, and signaled after it wakes up
+                this.unblockCountdown = new CountdownEvent(1);
+
+                for (int i = 0; i < this.connections.Count; ++i)
+                {
+                    if (i != this.localProcessID && i != this.Controller.Configuration.CentralizerProcessId)
+                    {
+                        // make a new event that the other threads will block on
+                        this.blockReceiveEvent[i] = new ManualResetEventSlim(false);
+                    }
+                }
+            }
+
+            // go to sleep for the specified delay time
+            this.Controller.SimulateFailure(delay);
+
+            List<ManualResetEventSlim> toDispose = new List<ManualResetEventSlim>();
+
+            lock (this)
+            {
+                // tell everyone they can wake up again
+                for (int i = 0; i < this.connections.Count; ++i)
+                {
+                    if (i != this.localProcessID && i != this.Controller.Configuration.CentralizerProcessId)
+                    {
+                        // save this to dispose it after everyone wakes up
+                        toDispose.Add(this.blockReceiveEvent[i]);
+                        // tell the thread to wake up
+                        this.blockReceiveEvent[i].Set();
+                        // make sure the thread doesn't block again
+                        this.blockReceiveEvent[i] = null;
+                    }
+                }
+            }
+
+            // remove our hold on the countdown
+            this.unblockCountdown.Signal();
+
+            // wait until all the other receive threads have woken up
+            this.unblockCountdown.Wait();
+
+            this.unblockCountdown.Dispose();
+            this.unblockCountdown = null;
+
+            foreach (ManualResetEventSlim ev in toDispose)
+            {
+                ev.Dispose();
+            }
+        }
+
+        public void WaitForWorkerPausedMessages(IEnumerable<int> processes)
+        {
+            foreach (int process in processes)
+            {
+                if (process != this.localProcessID)
+                    this.connections[process].WorkerPauseEvent.WaitOne();
+            }
+        }
+
+        public void WaitForAllRollbackBarrierMessages()
         {
             // Could replace with a WaitHandle.WaitAll if we make this.connections[localProcessID].CheckpointPauseEvent a
             // ManualResetEvent that is pinned to true.
             for (int i = 0; i < this.connections.Count; ++i)
                 if (i != this.localProcessID)
-                    this.connections[i].CheckpointPauseEvent.WaitOne();
+                    this.connections[i].RollbackPauseEvent.WaitOne();
         }
 
-        public void ResumeAfterCheckpoint()
+        public void WaitForAllRollbackProgressMessages()
+        {
+            // Could replace with a WaitHandle.WaitAll if we make this.connections[localProcessID].CheckpointPauseEvent a
+            // ManualResetEvent that is pinned to true.
+            for (int i = 0; i < this.connections.Count; ++i)
+                if (i != this.localProcessID)
+                    this.connections[i].RollbackProgressEvent.WaitOne();
+        }
+
+        public void ResumeAfterRollback()
         {
             for (int i = 0; i < this.connections.Count; ++i)
                 if (i != this.localProcessID)
-                    this.connections[i].CheckpointResumeEvent.Set();
+                    this.connections[i].RollbackResumeEvent.Set();
         }
 
         private void AnnounceShutdown()
@@ -1031,6 +1257,9 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
 #endif
         }
 
+        private ManualResetEventSlim[] blockReceiveEvent;
+        private CountdownEvent unblockCountdown;
+
 #if SYNC_RECV
         private void PerProcessRecvThread(int srcProcessID)
         {
@@ -1142,6 +1371,23 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
                 recvBytesOut += bytesRecvd;
                 numRecvs++;
 
+                ManualResetEventSlim blocking = null;
+                // when we are faking a failure, we block all the receive threads for a while
+                lock (this)
+                {
+                    if (this.blockReceiveEvent[srcProcessID] != null)
+                    {
+                        blocking = this.blockReceiveEvent[srcProcessID];
+                        this.unblockCountdown.AddCount(1);
+                    }
+                }
+
+                if (blocking != null)
+                {
+                    blocking.Wait();
+                    this.unblockCountdown.Signal();
+                }
+
                 //Logging.Progress("Received {0} bytes from {1}", bytesRecvd, srcProcessID);
 
                 foreach (SerializedMessage message in this.connections[srcProcessID].RecvBufferSheaf.ConsumeMessages())
@@ -1163,7 +1409,10 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
                     this.connections[srcProcessID].recvStatistics[(int)RuntimeStatistic.RxNetBytes] += message.Header.Length;
 
                     //Console.WriteLine("Received {1} message: {0}", message.Header.SequenceNumber, message.Type);
-                    
+
+                    long totalTicks;
+                    long totalMicroSeconds;
+
                     switch (message.Type)
                     {
                         case SerializedMessageType.Startup:
@@ -1179,16 +1428,28 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
                             Logging.Info("PerProcessRecvThread[{0}]: numRecvs {1} avgBytesIn {2} avgBytesOut {3}", srcProcessID, numRecvs, recvBytesIn / numRecvs, recvBytesOut / numRecvs);
                             this.shutdownRecvCountdown.Signal();
                             return;
-                        case SerializedMessageType.Checkpoint:
-                            // Pause the thread until we are informed that we can continue.
+                        case SerializedMessageType.RollbackBarrier:
                             Logging.Progress("Got checkpoint message from process {0}", srcProcessID);
+                            totalTicks = this.Controller.Stopwatch.ElapsedTicks;
+                            totalMicroSeconds = (totalTicks * 1000000L) / System.Diagnostics.Stopwatch.Frequency;
+                            this.Controller.WriteLog(String.Format("{0:D3}.{1:D3} RBE {2:D11}",
+                                this.Controller.Configuration.ProcessID, srcProcessID, totalMicroSeconds));
                             this.connections[srcProcessID].ReceivedCheckpointMessages++;
                             this.connections[srcProcessID].LastCheckpointSequenceNumber = message.ConnectionSequenceNumber;
-                            this.connections[srcProcessID].CheckpointPauseEvent.Set();
+                            this.connections[srcProcessID].RollbackPauseEvent.Set();
 
-                            Logging.Progress("Pausing recieve thread for process {0} because of {1}", srcProcessID, message.Type);
-                            this.connections[srcProcessID].CheckpointResumeEvent.WaitOne();
-                            Logging.Progress("Resuming receive thread for process {0} after checkpoint", srcProcessID);
+                            if (srcProcessID != this.Controller.Configuration.CentralizerProcessId &&
+                                this.localProcessID != this.Controller.Configuration.CentralizerProcessId)
+                            {
+                                // The coordinator still needs to communicate with all the other processes for
+                                // one more round, but every thread that isn't part of that round pauses now
+                                // until the rollback is ready to accept external messages again
+                                this.Controller.WriteLog(String.Format("{0:D3}.{1:D3} RBW {2:D11}",
+                                    this.Controller.Configuration.ProcessID, srcProcessID, totalMicroSeconds));
+                                Logging.Progress("Pausing recieve thread for process {0} because of {1}", srcProcessID, message.Type);
+                                this.connections[srcProcessID].RollbackResumeEvent.WaitOne();
+                                Logging.Progress("Resuming receive thread for process {0} after checkpoint", srcProcessID);
+                            }
 
                             break;
                         case SerializedMessageType.Data:
@@ -1197,6 +1458,94 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
                             break;
                         case SerializedMessageType.Ack:
                             this.HandleAcknowledgement(srcProcessID, message.Header.SequenceNumber);
+                            break;
+                        case SerializedMessageType.PrepareToRestore:
+                            totalTicks = this.Controller.Stopwatch.ElapsedTicks;
+                            totalMicroSeconds = (totalTicks * 1000000L) / System.Diagnostics.Stopwatch.Frequency;
+                            this.Controller.WriteLog(String.Format("{0:D3}.{1:D3} PTR {2:D11}",
+                                this.Controller.Configuration.ProcessID, srcProcessID, totalMicroSeconds));
+                            this.Controller.SignalRestore();
+                            break;
+                        case SerializedMessageType.WorkersPaused:
+                            totalTicks = this.Controller.Stopwatch.ElapsedTicks;
+                            totalMicroSeconds = (totalTicks * 1000000L) / System.Diagnostics.Stopwatch.Frequency;
+                            this.Controller.WriteLog(String.Format("{0:D3}.{1:D3} WPR {2:D11}",
+                                this.Controller.Configuration.ProcessID, srcProcessID, totalMicroSeconds));
+                            Logging.Progress("Got worker pause message from process {0}", srcProcessID);
+                            Console.WriteLine("Got worker paused message from " + srcProcessID);
+                            this.connections[srcProcessID].WorkerPauseEvent.Set();
+                            break;
+                        case SerializedMessageType.RestorationFrontier:
+                            totalTicks = this.Controller.Stopwatch.ElapsedTicks;
+                            totalMicroSeconds = (totalTicks * 1000000L) / System.Diagnostics.Stopwatch.Frequency;
+                            this.Controller.WriteLog(String.Format("{0:D3}.{1:D3} RFR {2:D11}",
+                                this.Controller.Configuration.ProcessID, srcProcessID, totalMicroSeconds));
+                            if (srcProcessID != this.Controller.Configuration.CentralizerProcessId)
+                            {
+                                throw new ApplicationException("Non-Coordinator should not send frontiers");
+                            }
+                            this.ReceiveCheckpoints(message);
+
+                            totalTicks = this.Controller.Stopwatch.ElapsedTicks;
+                            totalMicroSeconds = (totalTicks * 1000000L) / System.Diagnostics.Stopwatch.Frequency;
+                            this.Controller.WriteLog(String.Format("{0:D3}.{1:D3} SPR {2:D11}",
+                                this.Controller.Configuration.ProcessID, srcProcessID, totalMicroSeconds));
+
+                            // tell the coordinator we aren't going to send any more progress traffic
+                            this.SignalProgressRepaired(false);
+
+                            // Keep waiting while the progress traffic propagates, before we pause the receive thread
+                            break;
+                        case SerializedMessageType.RestorationProgressRepaired:
+                            if (srcProcessID != this.Controller.Configuration.CentralizerProcessId &&
+                                this.localProcessID != this.Controller.Configuration.CentralizerProcessId)
+                            {
+                                throw new ApplicationException("Got pause message from process " + srcProcessID);
+                            }
+
+                            totalTicks = this.Controller.Stopwatch.ElapsedTicks;
+                            totalMicroSeconds = (totalTicks * 1000000L) / System.Diagnostics.Stopwatch.Frequency;
+                            this.Controller.WriteLog(String.Format("{0:D3}.{1:D3} RPR {2:D11}",
+                                this.Controller.Configuration.ProcessID, srcProcessID, totalMicroSeconds));
+
+                            if (srcProcessID == this.Controller.Configuration.CentralizerProcessId)
+                            {
+                                // wake up the restoration thread now that progress has been repaired
+                                this.Controller.SignalRestore();
+                            }
+                            else
+                            {
+                                // tell the coordinator thread that this peer has sent all its progress traffic
+                                this.connections[srcProcessID].RollbackProgressEvent.Set();
+                            }
+
+                            // Progress traffic is completed on this channel now
+                            Logging.Progress("Pausing receive thread for process {0} because of {1}", srcProcessID, message.Type);
+                            this.connections[srcProcessID].RollbackResumeEvent.WaitOne();
+                            Logging.Progress("Resuming receive thread for process {0} after checkpoint", srcProcessID);
+                            break;
+                        case SerializedMessageType.AnnounceFailure:
+
+                            totalTicks = this.Controller.Stopwatch.ElapsedTicks;
+                            totalMicroSeconds = (totalTicks * 1000000L) / System.Diagnostics.Stopwatch.Frequency;
+                            this.Controller.WriteLog(String.Format("{0:D3}.{1:D3} AFR {2:D11}",
+                                this.Controller.Configuration.ProcessID, srcProcessID, totalMicroSeconds));
+
+                                int simulatedFailureTime = message.Header.ChannelID;
+                            if (this.localProcessID == this.Controller.Configuration.CentralizerProcessId)
+                            {
+                                // tell the computations the process has woken up again
+                                this.Controller.ReportSimulatedFailureRestart(srcProcessID);
+                            }
+                            else
+                            {
+                                // this stops all the workers and blocks all the other receive threads for the specified time
+                                // (and blocks us in the call) then wakes up the workers and receive threads, but leaves the
+                                // workers in the restoring state so they won't actually do anything
+                                this.SimulateFailure(simulatedFailureTime);
+                                // tell the coordinator we have woken up again; at this point it will trigger a rollback
+                                this.AnnounceFailure(message.Header.FromVertexID, -1, false);
+                            }
                             break;
                         default:
                             Logging.Progress("Received BAD msg type {0} from process {1}! ", message.Type, srcProcessID);
@@ -1219,6 +1568,55 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
         }
 #endif
 
+        private void ReceiveCheckpoints(SerializedMessage message)
+        {
+            NaiadSerialization<int> intSerializer = this.Controller.SerializationFormat.GetSerializer<int>();
+
+            RecvBuffer body = message.Body;
+
+            int graphId = message.Header.ChannelID;
+
+            int numberOfFrontiers;
+            if (!intSerializer.TryDeserialize(ref body, out numberOfFrontiers))
+            {
+                throw new ApplicationException("Bad restoration frontier message");
+            }
+
+            List<CheckpointLowWatermark> frontiers = new List<CheckpointLowWatermark>();
+
+            for (int i=0; i<numberOfFrontiers; ++i)
+            {
+                int stageId;
+                if (!intSerializer.TryDeserialize(ref body, out stageId))
+                {
+                    throw new ApplicationException("Bad restoration frontier message");
+                }
+
+                int vertexId;
+                if (!intSerializer.TryDeserialize(ref body, out vertexId))
+                {
+                    throw new ApplicationException("Bad restoration frontier message");
+                }
+
+                FTFrontier frontier = new FTFrontier(false);
+                if (!frontier.TryDeserialize(ref body, this.Controller.SerializationFormat))
+                {
+                    throw new ApplicationException("Bad restoration frontier message");
+                }
+
+                frontiers.Add(new CheckpointLowWatermark
+                    {
+                        stageId = stageId,
+                        vertexId = vertexId,
+                        frontier = frontier,
+                        dstStageId = -2,
+                        dstVertexId = -2
+                    });
+            }
+
+            this.Controller.GetInternalComputation(graphId).ReceiveCheckpointFrontiersAndRepairProgress(frontiers);
+        }
+
         private void HandleSocketError(int peerID, SocketError errorCode)
         {
             switch (errorCode)
@@ -1234,7 +1632,7 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
             }
         }
 
-        private bool AttemptDelivery(SerializedMessage message, int peerID = -1)
+        private bool AttemptDelivery(SerializedMessage message, int peerID)
         {
             int graphId = message.Header.ChannelID >> 16;
             int channelId = message.Header.ChannelID & 0xFFFF;                    
@@ -1248,7 +1646,8 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
                 NaiadTracing.Trace.MsgRecv(channelId, message.Header.SequenceNumber, message.Header.Length, message.Header.FromVertexID, this.localProcessID);
                 try
                 {
-                    this.graphmailboxes[graphId][channelId][this.localProcessID].DeliverSerializedMessage(message, new ReturnAddress(peerID, message.Header.FromVertexID));
+                    Mailbox receiver = this.graphmailboxes[graphId][channelId][this.localProcessID];
+                    receiver.DeliverSerializedMessage(message, new ReturnAddress(receiver.SenderStageId, peerID, message.Header.FromVertexID, -1));
                 }
                 catch (Exception)
                 {
@@ -1280,7 +1679,8 @@ namespace Microsoft.Research.Naiad.Runtime.Networking
             else
             {
                 NaiadTracing.Trace.MsgRecv(channelId, message.Header.SequenceNumber, message.Header.Length, message.Header.FromVertexID, message.Header.DestVertexID);
-                this.graphmailboxes[graphId][channelId][message.Header.DestVertexID].DeliverSerializedMessage(message, new ReturnAddress(peerID, message.Header.FromVertexID));
+                Mailbox receiver = this.graphmailboxes[graphId][channelId][message.Header.DestVertexID];
+                receiver.DeliverSerializedMessage(message, new ReturnAddress(receiver.SenderStageId, peerID, message.Header.FromVertexID, -1));
                 return true;
             }
         }

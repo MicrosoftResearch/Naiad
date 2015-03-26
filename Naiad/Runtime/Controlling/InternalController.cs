@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.5
+ * Naiad ver. 0.6
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -43,7 +43,11 @@ namespace Microsoft.Research.Naiad.Runtime.Controlling
         void Abort();
         void Activate();
         void Pause();
+        void SimulateFailure();
         void Resume();
+
+        int IncrementSharedQueueCount(int queuedItemCount);
+        int DecrementSharedQueueCount(int dequeuedItemCount);
 
         Scheduler this[int index] { get; }
 
@@ -52,7 +56,7 @@ namespace Microsoft.Research.Naiad.Runtime.Controlling
         void NotifyVertexStarting(Scheduler scheduler, Scheduler.WorkItem work);
         void NotifyVertexEnding(Scheduler scheduler, Scheduler.WorkItem work);
         void NotifyVertexEnqueued(Scheduler scheduler, Scheduler.WorkItem work);
-        void NotifySchedulerSleeping(Scheduler scheduler);
+        void NotifySchedulerSleeping(Scheduler scheduler, int queueHighWaterMark);
         void NotifySchedulerTerminating(Scheduler scheduler);
 #if false
         void NotifyOperatorReceivedRecords(Dataflow.Vertex op, int channelId, int recordsReceived);

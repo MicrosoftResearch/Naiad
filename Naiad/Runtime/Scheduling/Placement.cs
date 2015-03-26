@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.5
+ * Naiad ver. 0.6
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -271,6 +271,30 @@ namespace Microsoft.Research.Naiad.Dataflow
             public Explicit(IEnumerable<VertexLocation> locations)
             {
                 this.locations = locations.ToArray();
+            }
+        }
+
+        /// <summary>
+        /// Placement using a subset of the processes and threads
+        /// </summary>
+        public class ProcessRange : Explicit
+        {
+            private static IEnumerable<VertexLocation> MakeRange(IEnumerable<int> processes, IEnumerable<int> threads)
+            {
+                int numberOfThreads = threads.Count();
+                return processes.SelectMany((thisProcess, index) =>
+                    threads.Select(thisThread =>
+                        new VertexLocation(numberOfThreads * index + thisThread, thisProcess, thisThread)));
+            }
+
+            /// <summary>
+            /// Constructs placement from a subset of processes and threads
+            /// </summary>
+            /// <param name="processes">list of processes in the placement</param>
+            /// <param name="threads">list of threads in each process in the placement</param>
+            public ProcessRange(IEnumerable<int> processes, IEnumerable<int> threads)
+                : base(MakeRange(processes, threads))
+            {
             }
         }
 

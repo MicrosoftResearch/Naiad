@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.5
+ * Naiad ver. 0.6
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -585,7 +585,7 @@ namespace Microsoft.Research.Naiad.Frameworks.WorkGenerator
             Placement workerPlacement = input.ForStage.Computation.Controller.DefaultPlacement;
 
             // Make a loop context to hold the coordinator and the worker vertices
-            var workLoop = new Dataflow.Iteration.LoopContext<TTime>(input.Context, "WorkLoop");
+            var workLoop = new Dataflow.Iteration.LoopContext<TTime>(input.Context);
 
             // Make the feedback edge that takes work requests from workers and routes them back to the coordinator
             var feedback = workLoop.Delay<WorkRequest<TWorkerDescription>>();

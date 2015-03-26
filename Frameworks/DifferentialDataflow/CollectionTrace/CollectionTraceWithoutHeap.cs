@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.5
+ * Naiad ver. 0.6
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -298,6 +298,59 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.CollectionTra
             }
         }
 
+        public void RemoveStateInTimes(ref int offsetLength, Func<int, bool> keepTime)
+        {
+            var ol = new OffsetLength(offsetLength);
+
+            if (!ol.IsEmpty)
+            {
+                var handle = increments.Dereference(ol);
+
+                for (int i = 0; i < handle.Length; i++)
+                {
+                    if (handle.Array[handle.Offset + i].Weight != 0)
+                    {
+                        if (!keepTime(handle.Array[handle.Offset + i].TimeIndex))
+                        {
+                            handle.Array[handle.Offset + i] = new CollectionTraceWithoutHeapIncrement();
+                        }
+                    }
+                }
+
+                var position = 0;
+                for (int i = 0; i < handle.Length; i++)
+                    if (!handle.Array[handle.Offset + i].IsEmpty)
+                    {
+                        var temp = handle.Array[handle.Offset + i];
+                        handle.Array[handle.Offset + i] = new CollectionTraceWithoutHeapIncrement();
+                        handle.Array[handle.Offset + (position++)] = temp;
+                    }
+
+                if (handle.Array[handle.Offset].IsEmpty)
+                    increments.Release(ref ol);
+
+                offsetLength = ol.offsetLength;
+            }
+
+            ReleaseCache();
+        }
+
+        public long CountDifferenceAt(int keyIndex, int timeIndex)
+        {
+            var ol = new OffsetLength(keyIndex);
+            var handle = increments.Dereference(ol);
+
+            var weight = 0L;
+
+            for (int i = 0; i < handle.Length && !handle.Array[handle.Offset + i].IsEmpty; i++)
+            {
+                if (handle.Array[handle.Offset + i].TimeIndex == timeIndex)
+                    weight += handle.Array[handle.Offset + i].Weight;
+            }
+
+            return (weight == 0) ? 0L : 1L;
+        }
+
         HashSet<int> hashSet = new HashSet<int>();
         public void EnumerateTimes(int keyIndex, NaiadList<int> timelist)
         {
@@ -388,6 +441,32 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.CollectionTra
 
                 offsetLength = ol.offsetLength;
             }
+        }
+
+        public void TransferTimesToNewInternTable(int offsetLength, Func<int, int> transferTime)
+        {
+            var ol = new OffsetLength(offsetLength);
+
+            if (!ol.IsEmpty)
+            {
+                var handle = increments.Dereference(ol);
+
+                for (int i = 0; i < handle.Length; i++)
+                {
+                    if (handle.Array[handle.Offset + i].Weight != 0)
+                    {
+                        handle.Array[handle.Offset + i].TimeIndex = transferTime(handle.Array[handle.Offset + i].TimeIndex);
+                    }
+                }
+            }
+        }
+
+        public void InstallNewUpdateFunction(Func<int, int, bool> newLessThan, Func<int, int> newUpdateTime)
+        {
+            this.ReleaseCache();
+
+            this.TimeLessThan = newLessThan;
+            this.UpdateTime = newUpdateTime;
         }
 
         public void Release() { }

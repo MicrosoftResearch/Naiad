@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.5
+ * Naiad ver. 0.6
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -88,6 +88,39 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
         {
             return new IncrementalCollection<TRecord>(computation);
         }
+
+        /// <summary>
+        /// Creates a new <see cref="SubBatchInputCollection{TRecord,TTime}"/> in the given computation.
+        /// </summary>
+        /// <typeparam name="TRecord">The type of records in the collection.</typeparam>
+        /// <typeparam name="TTime">The time type in the outer batch.</typeparam>
+        /// <param name="computation">The graph manager for the computation.</param>
+        /// <returns>The new <see cref="SubBatchInputCollection{TRecord,TTime}"/>.</returns>
+        public static SubBatchInputCollection<TRecord, TTime> NewInputCollection<TRecord, TTime>(this Computation computation)
+            where TRecord : IEquatable<TRecord>
+            where TTime : Time<TTime>
+        {
+            return new SubBatchIncrementalCollection<TRecord,TTime>(computation);
+        }
+
+        /// <summary>
+        /// Create a new batched entry subgraph
+        /// </summary>
+        /// <typeparam name="S">type of records exiting the subgraph</typeparam>
+        /// <typeparam name="T">time type of records after exiting</typeparam>
+        /// <param name="computation">computation graph</param>
+        /// <param name="entryComputation">function within the subgraph</param>
+        /// <returns>the function after exiting the subbatches</returns>
+        public static Collection<S, T> BatchedEntry<S, T>(this Computation computation, Func<Dataflow.Iteration.LoopContext<T>, Collection<S, IterationIn<T>>> entryComputation)
+            where S : IEquatable<S>
+            where T : Time<T>
+        {
+            var helper = new Dataflow.Iteration.LoopContext<T>(computation.Context);
+
+            var batchedOutput = entryComputation(helper);
+
+            return helper.ExitLoop(batchedOutput.Output).ToCollection();
+        }
     }
 
     internal class IncrementalCollection<R> : TypedCollection<R, Epoch>, InputCollection<R>
@@ -121,11 +154,62 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
             inputVertex.OnNext(value);
         }
 
-        internal override Microsoft.Research.Naiad.Dataflow.TimeContext<Epoch> Statistics { get { return this.stream.Context; } }
+        internal override StreamContext Context { get { return this.stream.Context; } }
 
         public IncrementalCollection(Microsoft.Research.Naiad.Computation manager)
         {
             this.inputVertex = new BatchedDataSource<Weighted<R>>();
+            this.stream = manager.NewInput(inputVertex);
+        }
+    }
+
+    internal class SubBatchIncrementalCollection<R, T> : TypedCollection<R, IterationIn<T>>, SubBatchInputCollection<R, T>
+        where R : IEquatable<R>
+        where T : Time<T>
+    {
+        private readonly Microsoft.Research.Naiad.Input.SubBatchDataSource<Weighted<R>, T> inputVertex;
+        private readonly Stream<Weighted<R>, IterationIn<T>> stream;
+
+        public override Stream<Weighted<R>, IterationIn<T>> Output
+        {
+            get { return this.stream; }
+        }
+
+        public void OnCompleted()
+        {
+            inputVertex.OnCompleted();
+        }
+
+        public void OnCompleted(IEnumerable<Weighted<R>> value)
+        {
+            inputVertex.OnCompleted(value);
+        }
+
+        public void OnError(Exception error)
+        {
+            inputVertex.OnError(error);
+        }
+
+        public void OnNext(IEnumerable<Weighted<R>> value)
+        {
+            inputVertex.OnNext(value);
+        }
+
+        public void CompleteOuterBatch()
+        {
+            inputVertex.CompleteOuterBatch();
+        }
+
+        public void SetOuterBatch(T time)
+        {
+            inputVertex.SetOuterBatch(time);
+        }
+
+        internal override StreamContext Context { get { return this.stream.Context; } }
+
+        public SubBatchIncrementalCollection(Microsoft.Research.Naiad.Computation manager)
+        {
+            this.inputVertex = new SubBatchDataSource<Weighted<R>, T>();
             this.stream = manager.NewInput(inputVertex);
         }
     }

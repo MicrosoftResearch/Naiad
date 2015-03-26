@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.5
+ * Naiad ver. 0.6
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -85,6 +85,13 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
             this.Counts.Restore(reader);
             this.actualFrontier.Restore(reader);
             this.Frontier = CheckpointRestoreExtensionMethods.RestoreArray<Pointstamp>(reader, n => new Pointstamp[n]);
+        }
+
+        public void Reset()
+        {
+            this.Counts.Clear();
+            this.actualFrontier.Clear();
+            this.Frontier = new Pointstamp[0];
         }
 
         public bool Stateful { get { return true; } }

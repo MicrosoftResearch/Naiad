@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.5
+ * Naiad ver. 0.6
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -26,6 +26,7 @@ using System.Text;
 using Microsoft.Research.Naiad.Dataflow.Channels;
 using Microsoft.Research.Naiad.Dataflow;
 using Microsoft.Research.Naiad.Dataflow.StandardVertices;
+using Microsoft.Research.Naiad.Runtime.FaultTolerance;
 
 namespace Microsoft.Research.Naiad.Dataflow.PartitionBy
 {
@@ -42,14 +43,49 @@ namespace Microsoft.Research.Naiad.Dataflow.PartitionBy
         /// <param name="stream">stream</param>
         /// <param name="partitionBy">partitioning function</param>
         /// <returns>a repartitioned stream</returns>
-        public static Stream<TRecord, TTime> PartitionBy<TRecord, TTime>(this Stream<TRecord, TTime> stream, Expression<Func<TRecord,int>> partitionBy)
+        public static Stream<TRecord, TTime> PartitionBy<TRecord, TTime>(this Stream<TRecord, TTime> stream, Expression<Func<TRecord, int>> partitionBy)
             where TTime : Time<TTime>
         {
             // if the data are already partitioned correctly (or claim to be) just return the stream.
             if (partitionBy == null || Microsoft.Research.Naiad.Utilities.ExpressionComparer.Instance.Equals(stream.PartitionedBy, partitionBy))
                 return stream;
 
-            return stream.NewUnaryStage((i, v) => new PartitionByVertex<TRecord, TTime>(i, v, null), partitionBy, partitionBy, "PartitionBy");
+            return stream.NewUnaryStage((i, v) => new PartitionByVertex<TRecord, TTime>(i, v, null), partitionBy, partitionBy, "PartitionBy").SetCheckpointType(CheckpointType.Stateless);
+        }
+
+        /// <summary>
+        /// Partitions a stream by a function even if it seems to be partition already.
+        /// </summary>
+        /// <typeparam name="TRecord">record type</typeparam>
+        /// <typeparam name="TTime">time type</typeparam>
+        /// <param name="stream">stream</param>
+        /// <param name="partitionBy">partitioning function</param>
+        /// <returns>a repartitioned stream</returns>
+        public static Stream<TRecord, TTime> ForcePartitionBy<TRecord, TTime>(this Stream<TRecord, TTime> stream, Expression<Func<TRecord, int>> partitionBy)
+            where TTime : Time<TTime>
+        {
+            return stream.NewUnaryStage((i, v) => new PartitionByVertex<TRecord, TTime>(i, v, null), partitionBy, partitionBy, "PartitionBy").SetCheckpointType(CheckpointType.Stateless);
+        }
+
+        /// <summary>
+        /// Partitions a stream by a function.
+        /// </summary>
+        /// <typeparam name="TRecord">record type</typeparam>
+        /// <typeparam name="TTime">time type</typeparam>
+        /// <param name="stream">stream</param>
+        /// <param name="partitionBy">partitioning function</param>
+        /// <param name="partitionByImplementation">Action populating the destinations of associated records</param>
+        /// <returns>a repartitioned stream</returns>
+        public static Stream<TRecord, TTime> PartitionBy<TRecord, TTime>(this Stream<TRecord, TTime> stream, Expression<Func<TRecord, int>> partitionBy, Action<TRecord[], int[], int> partitionByImplementation)
+            where TTime : Time<TTime>
+        {
+            var stage = Foundry.NewStage<PartitionByVertex<TRecord, TTime>, TTime>(stream.Context, (i, s) => new PartitionByVertex<TRecord, TTime>(i, s, null), "VectoredPartitionBy");
+            stage.SetCheckpointType(CheckpointType.Stateless);
+
+            stage.NewInput(stream, (Message, vertex) => vertex.OnReceive(Message), partitionBy, partitionByImplementation);
+            return stage.NewOutput(vertex => vertex.Output);
+
+            //return stream.NewUnaryStage((i, v) => new PartitionByVertex<TRecord, TTime>(i, v, null), partitionBy, partitionBy, "PartitionBy");
         }
 
         /// <summary>
@@ -63,7 +99,7 @@ namespace Microsoft.Research.Naiad.Dataflow.PartitionBy
         public static Stream<TRecord, TTime> AssumePartitionedBy<TRecord, TTime>(this Stream<TRecord, TTime> stream, Expression<Func<TRecord, int>> partitionBy)
             where TTime : Time<TTime>
         {
-            return stream.NewUnaryStage((i, v) => new PartitionByVertex<TRecord, TTime>(i, v, null), null, partitionBy, "PartitionBy");
+            return stream.NewUnaryStage((i, v) => new PartitionByVertex<TRecord, TTime>(i, v, null), null, partitionBy, "PartitionBy").SetCheckpointType(CheckpointType.Stateless);
         }
 
         /// <summary>
@@ -77,7 +113,7 @@ namespace Microsoft.Research.Naiad.Dataflow.PartitionBy
         public static Stream<TRecord, TTime> AssertPartitionedBy<TRecord, TTime>(this Stream<TRecord, TTime> stream, Expression<Func<TRecord, int>> partitionBy)
             where TTime : Time<TTime>
         {
-            return stream.NewUnaryStage((i, v) => new PartitionByVertex<TRecord, TTime>(i, v, partitionBy), null, partitionBy, "PartitionBy");
+            return stream.NewUnaryStage((i, v) => new PartitionByVertex<TRecord, TTime>(i, v, partitionBy), null, partitionBy, "PartitionBy").SetCheckpointType(CheckpointType.Stateless);
         }
     }
 
@@ -86,7 +122,7 @@ namespace Microsoft.Research.Naiad.Dataflow.PartitionBy
     {
         private readonly Func<R,int> key;
         private readonly int Vertices;
-
+ 
         public override void OnReceive(Message<R, T> message)
         {
             for (int i = 0; i < message.length; ++i)

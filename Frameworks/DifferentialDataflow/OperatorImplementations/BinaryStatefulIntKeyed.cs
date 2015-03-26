@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.5
+ * Naiad ver. 0.6
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -37,6 +37,7 @@ using System.Diagnostics;
 using Microsoft.Research.Naiad;
 using Microsoft.Research.Naiad.Dataflow;
 using Microsoft.Research.Naiad.Dataflow.StandardVertices;
+using Microsoft.Research.Naiad.Runtime.FaultTolerance;
 using Microsoft.Research.Naiad.Runtime.Progress;
 
 namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.OperatorImplementations
@@ -74,13 +75,28 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.OperatorImple
             keysToProcess = null;
             keyIndices = null;
         }
+
+        protected override void SetPotentialRollbackRange(ICheckpoint<T> stableRange, ICheckpoint<T> rollbackRange)
+        {
+            this.checkpointManager.StableTimeRange = stableRange;
+            this.checkpointManager.RollbackTimeRange = rollbackRange;
+        }
         
         protected override void UpdateReachability(List<Pointstamp> versions)
         {
             base.UpdateReachability(versions);
 
             if (versions != null && internTable != null)
-                internTable.UpdateReachability(versions);
+            {
+                int staleTimesCount = internTable.UpdateReachability(versions,
+                    t => this.checkpointManager.StableTimeRange.ContainsTime(t),
+                    t => this.checkpointManager.RollbackTimeRange.ContainsTime(t));
+
+                if (staleTimesCount > this.Stage.Computation.Controller.Configuration.MaxLatticeInternStaleTimes)
+                {
+                    this.CompactInternTable();
+                }
+            }
         }
 
         //public readonly Naiad.Frameworks.RecvFiberBank<Weighted<S1>, T> LeftInput;
@@ -259,6 +275,11 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.OperatorImple
         // Moves from unprocessed[key] to processed[key], updating output[key] and Send()ing.
         protected virtual void Update(int index)
         {
+            if (keyIndices[index / 65536] == null)
+            {
+                return;
+            }
+
             var traceIndices = keyIndices[index / 65536][index % 65536];
 
             if (traceIndices.unprocessed1 != 0 || traceIndices.unprocessed2 != 0)
@@ -423,6 +444,350 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.OperatorImple
             }
         }
 
+        private bool HasStateInCheckpoint(BinaryKeyIndices indices, ICheckpoint<T> checkpoint)
+        {
+            // we don't care about unprocessed times since they will be replayed when the checkpoint is restored
+
+            NaiadList<int> timeList = new NaiadList<int>(16);
+            this.inputTrace1.EnumerateTimes(indices.processed1, timeList);
+            for (int i = 0; i < timeList.Count; ++i)
+            {
+                if (checkpoint.ContainsTime(this.internTable.times[timeList.Array[i]]))
+                {
+                    return true;
+                }
+            }
+
+            timeList.Clear();
+            this.inputTrace2.EnumerateTimes(indices.processed2, timeList);
+            for (int i = 0; i < timeList.Count; ++i)
+            {
+                if (checkpoint.ContainsTime(this.internTable.times[timeList.Array[i]]))
+                {
+                    return true;
+                }
+            }
+
+            timeList.Clear();
+            this.outputTrace.EnumerateTimes(indices.output, timeList);
+            for (int i = 0; i < timeList.Count; ++i)
+            {
+                if (checkpoint.ContainsTime(this.internTable.times[timeList.Array[i]]))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private Pair<Pair<int, int>, int> CountTimesInCheckpoint(BinaryKeyIndices indices, ICheckpoint<T> checkpoint)
+        {
+            // we don't care about unprocessed times since they will be replayed when the checkpoint is restored
+
+            NaiadList<int> timeList = new NaiadList<int>(16);
+            this.inputTrace1.EnumerateTimes(indices.processed1, timeList);
+            int input1Count = 0;
+            for (int i = 0; i < timeList.Count; ++i)
+            {
+                if (checkpoint.ContainsTime(this.internTable.times[timeList.Array[i]]))
+                {
+                    ++input1Count;
+                }
+            }
+
+            timeList.Clear();
+            this.inputTrace2.EnumerateTimes(indices.processed2, timeList);
+            int input2Count = 0;
+            for (int i = 0; i < timeList.Count; ++i)
+            {
+                if (checkpoint.ContainsTime(this.internTable.times[timeList.Array[i]]))
+                {
+                    ++input2Count;
+                }
+            }
+
+            timeList.Clear();
+            this.outputTrace.EnumerateTimes(indices.output, timeList);
+            int outputCount = 0;
+            for (int i = 0; i < timeList.Count; ++i)
+            {
+                if (checkpoint.ContainsTime(this.internTable.times[timeList.Array[i]]))
+                {
+                    ++outputCount;
+                }
+            }
+
+            return input1Count.PairWith(input2Count).PairWith(outputCount);
+        }
+
+        protected readonly CheckpointHelpers.IncrementalCheckpointManager<T> checkpointManager;
+
+        protected override bool NextCheckpointIsIncremental(ICheckpoint<T> candidateIncrementalCheckpoint)
+        {
+            if (this.isShutdown || this.checkpointManager.ForceFullCheckpoint)
+            {
+                return false;
+            }
+
+            long entries = this.CountEntries(candidateIncrementalCheckpoint);
+
+            return this.checkpointManager.NextCheckpointIsIncremental(entries);
+        }
+
+        protected virtual long CountEntries(ICheckpoint<T> checkpoint)
+        {
+            long checkpointEntries = 0;
+
+            if (!this.isShutdown)
+            {
+                for (int outerKeys = 0; outerKeys < this.keyIndices.Length; ++outerKeys)
+                {
+                    if (this.keyIndices[outerKeys] != null)
+                    {
+                        for (int innerKeys = 0; innerKeys < this.keyIndices[outerKeys].Length; ++innerKeys)
+                        {
+                            int index = (outerKeys * 65536) + innerKeys;
+                            BinaryKeyIndices indices = this.keyIndices[outerKeys][innerKeys];
+
+                            checkpointEntries +=
+                                this.inputTrace1.CountEntries(indices.processed1, checkpoint, this.internTable.times, true, false).First;
+                            checkpointEntries +=
+                                this.inputTrace2.CountEntries(indices.processed2, checkpoint, this.internTable.times, true, false).First;
+                            checkpointEntries +=
+                                this.outputTrace.CountEntries(indices.output, checkpoint, this.internTable.times, true, false).First;
+                        }
+                    }
+                }
+            }
+
+            return checkpointEntries;
+        }
+
+        protected override void Checkpoint(NaiadWriter writer, ICheckpoint<T> checkpoint)
+        {
+            long checkpointEntries = 0;
+
+            writer.Write(this.isShutdown);
+            if (!this.isShutdown)
+            {
+                if (checkpoint.IsFullCheckpoint)
+                {
+                    this.CompactInternTable();
+                }
+
+                int compactedCount = 0;
+                for (int outerKeys = 0; outerKeys < this.keyIndices.Length; ++outerKeys)
+                {
+                    if (this.keyIndices[outerKeys] != null)
+                    {
+                        for (int innerKeys = 0; innerKeys < this.keyIndices[outerKeys].Length; ++innerKeys)
+                        {
+                            if (this.HasStateInCheckpoint(this.keyIndices[outerKeys][innerKeys], checkpoint))
+                            {
+                                ++compactedCount;
+                            }
+                        }
+                    }
+                }
+
+                writer.Write(compactedCount);
+                for (int outerKeys = 0; outerKeys < this.keyIndices.Length; ++outerKeys)
+                {
+                    if (this.keyIndices[outerKeys] != null)
+                    {
+                        for (int innerKeys = 0; innerKeys < this.keyIndices[outerKeys].Length; ++innerKeys)
+                        {
+                            int index = (outerKeys * 65536) + innerKeys;
+                            BinaryKeyIndices indices = this.keyIndices[outerKeys][innerKeys];
+
+                            Pair<Pair<int, int>, int> timeCounts = this.CountTimesInCheckpoint(indices, checkpoint);
+
+                            if (timeCounts.First.First > 0 || timeCounts.First.Second > 0 || timeCounts.Second > 0)
+                            {
+                                writer.Write(index);
+
+                                writer.Write(timeCounts.First.First);
+                                checkpointEntries +=
+                                    this.inputTrace1.CheckpointKey(indices.processed1, checkpoint, this.internTable.times, writer);
+
+                                writer.Write(timeCounts.First.Second);
+                                checkpointEntries +=
+                                    this.inputTrace2.CheckpointKey(indices.processed2, checkpoint, this.internTable.times, writer);
+
+                                writer.Write(timeCounts.Second);
+                                checkpointEntries +=
+                                    this.outputTrace.CheckpointKey(indices.output, checkpoint, this.internTable.times, writer);
+                            }
+                        }
+                    }
+                }
+
+                this.keysToProcess.Checkpoint(writer);
+            }
+
+            this.checkpointManager.RegisterCheckpoint(checkpointEntries, checkpoint);
+        }
+
+        protected override bool CanRollBackPreservingState(Pointstamp[] frontier)
+        {
+            // we are careful not to coalesce times in the potential rollback range, so we are able to roll back without
+            // restoring from a checkpoint.
+            return true;
+        }
+
+        public void RollBackBasePreservingState(Pointstamp[] frontier, ICheckpoint<T> lastFullCheckpoint, ICheckpoint<T> lastIncrementalCheckpoint)
+        {
+            base.RollBackPreservingState(frontier, lastFullCheckpoint, lastIncrementalCheckpoint);
+        }
+
+        public override void RollBackPreservingState(Pointstamp[] frontier, ICheckpoint<T> lastFullCheckpoint, ICheckpoint<T> lastIncrementalCheckpoint)
+        {
+            base.RollBackPreservingState(frontier, lastFullCheckpoint, lastIncrementalCheckpoint);
+
+            if (!this.isShutdown)
+            {
+                bool countFull = !this.checkpointManager.CachedFullCheckpoint.Equals(lastFullCheckpoint);
+                bool countIncremental = countFull || !this.checkpointManager.CachedIncrementalCheckpoint.Equals(lastIncrementalCheckpoint);
+
+                Pair<long, long> counts = 0L.PairWith(0L);
+
+                if (frontier.Length == 0)
+                {
+                    this.InitializeRestoration(frontier);
+                }
+                else
+                {
+                    ICheckpoint<T> timeRange = FrontierCheckpointTester<T>.CreateDownwardClosed(frontier);
+
+                    for (int outerKeys = 0; outerKeys < this.keyIndices.Length; ++outerKeys)
+                    {
+                        if (this.keyIndices[outerKeys] != null)
+                        {
+                            for (int innerKeys = 0; innerKeys < this.keyIndices[outerKeys].Length; ++innerKeys)
+                            {
+                                int index = (outerKeys * 65536) + innerKeys;
+                                BinaryKeyIndices indices = this.keyIndices[outerKeys][innerKeys];
+
+                                this.inputTrace1.RemoveStateInTimes(ref indices.processed1, t => timeRange.ContainsTime(this.internTable.times[t]));
+                                this.inputTrace1.ZeroState(ref indices.unprocessed1);
+                                this.inputTrace2.RemoveStateInTimes(ref indices.processed2, t => timeRange.ContainsTime(this.internTable.times[t]));
+                                this.inputTrace2.ZeroState(ref indices.unprocessed2);
+                                this.outputTrace.RemoveStateInTimes(ref indices.output, t => timeRange.ContainsTime(this.internTable.times[t]));
+
+                                if (countFull || countIncremental)
+                                {
+                                    Pair<long, long> thisCounts;
+                                    thisCounts = this.inputTrace1.CountEntries(indices.processed1, lastFullCheckpoint, this.internTable.times, countFull, countIncremental);
+                                    counts.First += thisCounts.First;
+                                    counts.Second += thisCounts.Second;
+                                    thisCounts = this.inputTrace2.CountEntries(indices.processed2, lastFullCheckpoint, this.internTable.times, countFull, countIncremental);
+                                    counts.First += thisCounts.First;
+                                    counts.Second += thisCounts.Second;
+                                    thisCounts = this.outputTrace.CountEntries(indices.output, lastFullCheckpoint, this.internTable.times, countFull, countIncremental);
+                                    counts.First += thisCounts.First;
+                                    counts.Second += thisCounts.Second;
+                                }
+
+                                this.keyIndices[outerKeys][innerKeys] = indices;
+                            }
+                        }
+                    }
+
+                    if (!countFull)
+                    {
+                        counts.First = this.checkpointManager.CachedFullCheckpointEntries;
+                    }
+
+                    if (!countIncremental)
+                    {
+                        counts.Second = this.checkpointManager.CachedIncrementalCheckpointEntries;
+                    }
+
+                    this.checkpointManager.RegisterCheckpoint(counts.First, lastFullCheckpoint, counts.Second, lastIncrementalCheckpoint);
+                }
+            }
+        }
+
+        internal virtual void CompactInternTable()
+        {
+            if (!this.isShutdown)
+            {
+                LatticeInternTable<T> newInternTable = new LatticeInternTable<T>();
+
+                for (int outerKeys = 0; outerKeys < this.keyIndices.Length; ++outerKeys)
+                {
+                    if (this.keyIndices[outerKeys] != null)
+                    {
+                        for (int innerKeys = 0; innerKeys < this.keyIndices[outerKeys].Length; ++innerKeys)
+                        {
+                            int index = (outerKeys * 65536) + innerKeys;
+                            BinaryKeyIndices indices = this.keyIndices[outerKeys][innerKeys];
+                            this.inputTrace1.EnsureStateIsCurrentWRTAdvancedTimes(ref indices.processed1);
+                            this.inputTrace1.EnsureStateIsCurrentWRTAdvancedTimes(ref indices.unprocessed1);
+                            this.inputTrace2.EnsureStateIsCurrentWRTAdvancedTimes(ref indices.processed2);
+                            this.inputTrace2.EnsureStateIsCurrentWRTAdvancedTimes(ref indices.unprocessed2);
+                            this.outputTrace.EnsureStateIsCurrentWRTAdvancedTimes(ref indices.output);
+                            this.keyIndices[outerKeys][innerKeys] = indices;
+
+                            this.inputTrace1.TransferTimesToNewInternTable(indices.processed1, t => newInternTable.Intern(this.internTable.times[t]));
+                            this.inputTrace1.TransferTimesToNewInternTable(indices.unprocessed1, t => newInternTable.Intern(this.internTable.times[t]));
+                            this.inputTrace2.TransferTimesToNewInternTable(indices.processed2, t => newInternTable.Intern(this.internTable.times[t]));
+                            this.inputTrace2.TransferTimesToNewInternTable(indices.unprocessed2, t => newInternTable.Intern(this.internTable.times[t]));
+                            this.outputTrace.TransferTimesToNewInternTable(indices.output, t => newInternTable.Intern(this.internTable.times[t]));
+                        }
+                    }
+                }
+
+                this.inputTrace1.InstallNewUpdateFunction((t1, t2) => newInternTable.LessThan(t1, t2), t => newInternTable.UpdateTime(t));
+                this.inputTrace2.InstallNewUpdateFunction((t1, t2) => newInternTable.LessThan(t1, t2), t => newInternTable.UpdateTime(t));
+                this.outputTrace.InstallNewUpdateFunction((t1, t2) => newInternTable.LessThan(t1, t2), t => newInternTable.UpdateTime(t));
+                this.internTable = newInternTable;
+            }
+        }
+
+        protected override void InitializeRestoration(Pointstamp[] frontier)
+        {
+            // empty all the state
+            this.keyIndices = new BinaryKeyIndices[65536][];
+            this.internTable = new LatticeInternTable<T>();
+            this.inputTrace1 = createInputTrace1();
+            this.inputTrace2 = createInputTrace2();
+            this.outputTrace = createOutputTrace();
+            this.checkpointManager.ForceFullCheckpoint = true;
+        }
+
+        protected override void RestorePartialCheckpoint(NaiadReader reader, ICheckpoint<T> checkpoint)
+        {
+            long checkpointEntries = 0;
+
+            this.isShutdown = reader.Read<bool>();
+
+            if (!this.isShutdown)
+            {
+                int numberOfKeys = reader.Read<int>();
+                for (int i = 0; i < numberOfKeys; ++i)
+                {
+                    int index = reader.Read<int>();
+
+                    if (keyIndices[index / 65536] == null)
+                        keyIndices[index / 65536] = new BinaryKeyIndices[65536];
+
+                    BinaryKeyIndices indices = this.keyIndices[index / 65536][index % 65536];
+
+                    checkpointEntries += this.inputTrace1.RestoreKey(ref indices.processed1, this.internTable, reader);
+                    checkpointEntries += this.inputTrace2.RestoreKey(ref indices.processed2, this.internTable, reader);
+                    checkpointEntries += this.outputTrace.RestoreKey(ref indices.output, this.internTable, reader);
+
+                    this.keyIndices[index / 65536][index % 65536] = indices;
+                }
+
+                this.keysToProcess.Restore(reader, false);
+            }
+
+            this.checkpointManager.RegisterCheckpoint(checkpointEntries, checkpoint);
+        }
+
         #endregion
         
         public BinaryStatefulIntKeyedOperator(int index, Stage<T> stage, bool input1Immutable, bool input2Immutable, Expression<Func<S1, Int32>> k1, Expression<Func<S2, Int32>> k2, Expression<Func<S1, V1>> v1, Expression<Func<S2, V2>> v2, bool maintainOC = true)
@@ -452,6 +817,8 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.OperatorImple
             outputTrace = createOutputTrace();
 
             outputWorkspace = 0;
+
+            this.checkpointManager = new CheckpointHelpers.IncrementalCheckpointManager<T>(this.Stage);
         }
     }
 

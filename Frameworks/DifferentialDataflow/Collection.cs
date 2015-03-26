@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.5
+ * Naiad ver. 0.6
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -36,6 +36,7 @@ using System.Net;
 using System.IO;
 using Microsoft.Research.Naiad.Scheduling;
 using Microsoft.Research.Naiad.Runtime.Controlling;
+using Microsoft.Research.Naiad.Runtime.FaultTolerance;
 using Microsoft.Research.Naiad.Dataflow.StandardVertices;
 using Microsoft.Research.Naiad.Frameworks.DifferentialDataflow.OperatorImplementations;
 
@@ -113,6 +114,29 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
 
         public abstract Stream<Weighted<R>, T> Output { get; }
 
+        public Collection<R, T> SetCheckpointType(CheckpointType checkpointType)
+        {
+            this.Output.SetCheckpointType(checkpointType);
+            return this;
+        }
+
+        public Collection<R, T> SetCheckpointPolicy(Func<int, Runtime.FaultTolerance.ICheckpointPolicy> shouldCheckpointFactory)
+        {
+            this.Output.SetCheckpointPolicy(shouldCheckpointFactory);
+            return this;
+        }
+
+        public static Expression<Func<Weighted<S>, int>> IdentityWeightedFuncAndHashCode<S>()
+            where S : IEquatable<S>
+        {
+            Expression<Func<S, S>> func = x => x;
+
+            var compiled = func.Compile();
+            Expression<Func<Weighted<S>, int>> result = x => compiled(x.record).GetHashCode();
+
+            return ExtensionHelpers.LookUpOrAdd(func, result) as Expression<Func<Weighted<S>, int>>;
+        }
+
         internal virtual Expression OutputPartitionedBy
         {
             get { return this.Output.PartitionedBy.ReverseLookUp(); }
@@ -123,6 +147,13 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
         public Collection<R, T> PartitionBy<K>(Expression<Func<R, K>> partitionFunction)
         {
             var stream = Microsoft.Research.Naiad.Dataflow.PartitionBy.ExtensionMethods.PartitionBy(this.Output, partitionFunction.ConvertToWeightedFuncAndHashCode());
+
+            return stream.ToCollection();
+        }
+
+        public Collection<R, T> ForcePartitionBy<K>(Expression<Func<R, K>> partitionFunction)
+        {
+            var stream = Microsoft.Research.Naiad.Dataflow.PartitionBy.ExtensionMethods.ForcePartitionBy(this.Output, partitionFunction.ConvertToWeightedFuncAndHashCode());
 
             return stream.ToCollection();
         }
@@ -148,7 +179,8 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
 
         internal Collection<R, T> Consolidate(Expression<Func<Weighted<R>,int>> partitionFunction)
         {
-            return this.Manufacture((i, v) => new Operators.Consolidate<R, T>(i, v), partitionFunction, partitionFunction, "Consolidate");
+            Collection<R, T> consolidated = this.Manufacture((i, v) => new Operators.Consolidate<R, T>(i, v), partitionFunction, partitionFunction, false, "Consolidate");
+            return consolidated;
         }
 
         #endregion Consolidation
@@ -160,28 +192,46 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
             if (adjustment == null)
                 throw new ArgumentNullException("adjustment");
 
-            var result = this.Manufacture((i, v) => new Operators.AdjustTime<R, T>(i, v, adjustment), this.Output.PartitionedBy, this.Output.PartitionedBy, "AdjustLattice");
+            var result = this.Manufacture((i, v) => new Operators.AdjustTime<R, T>(i, v, adjustment), this.Output.PartitionedBy, this.Output.PartitionedBy, false, "AdjustLattice");
 
             result.immutable = false;
 
-            return result;
+            // manufacture sets the checkpoint type to StatelessDiscardAll but since we are adjusting the times we actually
+            // have to keep track of which times are being discarded
+            return result.SetCheckpointType(CheckpointType.Stateless);
         }
 
         #endregion Lattice adjustment
 
-        private InternalCollection<R2, T> Manufacture<R2>(Func<int, Stage<T>, UnaryVertex<Weighted<R>, Weighted<R2>, T>> factory, Expression<Func<Weighted<R>, int>> inputPartitionedBy, Expression<Func<Weighted<R2>, int>> outputPartitionedBy, string name)
+        private InternalCollection<R2, T> Manufacture<R2>(Func<int, Stage<T>, UnaryVertex<Weighted<R>, Weighted<R2>, T>> factory, Expression<Func<Weighted<R>, int>> inputPartitionedBy, Expression<Func<Weighted<R2>, int>> outputPartitionedBy, bool stateful, string name)
             where R2 : IEquatable<R2>
         {
             var output = Foundry.NewUnaryStage(this.Output, factory, inputPartitionedBy, outputPartitionedBy, name);
+            if (stateful)
+            {
+                output.SetCheckpointType(Runtime.FaultTolerance.CheckpointType.Stateful);
+            }
+            else
+            {
+                output.SetCheckpointType(Runtime.FaultTolerance.CheckpointType.Stateless);
+            }
             
             return new InternalCollection<R2, T>(output, this.Immutable);
         }
 
-        private InternalCollection<R2, T> Manufacture<S, R2>(TypedCollection<S, T> other, Func<int, Stage<T>, BinaryVertex<Weighted<R>, Weighted<S>, Weighted<R2>, T>> factory, Expression<Func<Weighted<R>, int>> input1PartitionedBy, Expression<Func<Weighted<S>, int>> input2PartitionedBy, Expression<Func<Weighted<R2>, int>> outputPartitionedBy, string name)
+        private InternalCollection<R2, T> Manufacture<S, R2>(TypedCollection<S, T> other, Func<int, Stage<T>, BinaryVertex<Weighted<R>, Weighted<S>, Weighted<R2>, T>> factory, Expression<Func<Weighted<R>, int>> input1PartitionedBy, Expression<Func<Weighted<S>, int>> input2PartitionedBy, Expression<Func<Weighted<R2>, int>> outputPartitionedBy, bool stateful, string name)
             where S : IEquatable<S>
             where R2 : IEquatable<R2>
         {
             var output = Foundry.NewBinaryStage(this.Output, other.Output, factory, input1PartitionedBy, input2PartitionedBy, outputPartitionedBy, name);
+            if (stateful)
+            {
+                output.SetCheckpointType(Runtime.FaultTolerance.CheckpointType.Stateful);
+            }
+            else
+            {
+                output.SetCheckpointType(Runtime.FaultTolerance.CheckpointType.Stateless);
+            }
 
             return new InternalCollection<R2, T>(output, this.Immutable && other.Immutable);
         }
@@ -195,7 +245,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
             if (selector == null)
                 throw new ArgumentNullException("selector");
 
-            return this.Manufacture<R2>((i, v) => new Operators.Select<R, T, R2>(i, v, selector), null, null, "Select");
+            return this.Manufacture<R2>((i, v) => new Operators.Select<R, T, R2>(i, v, selector), null, null, false, "Select");
         }
 
         public Collection<R, T> Where(Expression<Func<R, bool>> predicate)
@@ -203,7 +253,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
             if (predicate == null)
                 throw new ArgumentNullException("predicate");
 
-            return this.Manufacture((i, v) => new Operators.Where<R, T>(i, v, predicate), this.Output.PartitionedBy, this.Output.PartitionedBy, "Where");
+            return this.Manufacture((i, v) => new Operators.Where<R, T>(i, v, predicate), this.Output.PartitionedBy, this.Output.PartitionedBy, false, "Where");
         }
 
         public Collection<R2, T> SelectMany<R2>(Expression<Func<R, IEnumerable<R2>>> selector)
@@ -212,7 +262,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
             if (selector == null)
                 throw new ArgumentNullException("selector");
 
-            return this.Manufacture<R2>((i, v) => new Operators.SelectMany<R, T, R2>(i, v, selector), null, null, "SelectMany");
+            return this.Manufacture<R2>((i, v) => new Operators.SelectMany<R, T, R2>(i, v, selector), null, null, false, "SelectMany");
         }
 
         public Collection<R2, T> SelectMany<R2>(Expression<Func<R, IEnumerable<ArraySegment<R2>>>> selector)
@@ -221,7 +271,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
             if (selector == null)
                 throw new ArgumentNullException("selector");
 
-            return this.Manufacture<R2>((i, v) => new Operators.SelectManyBatch<R, T, R2>(i, v, selector), null, null, "SelectManyBatch");
+            return this.Manufacture<R2>((i, v) => new Operators.SelectManyBatch<R, T, R2>(i, v, selector), null, null, false, "SelectManyBatch");
         }
 
         #endregion Select/Where/SelectMany
@@ -240,7 +290,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
             if (reducer == null)
                 throw new ArgumentNullException("reducer");
 
-            return this.Manufacture<R2>((i, v) => new Operators.GroupBy<K, V, R, T, R2>(i, v, this.Immutable, key, selector, reducer), key.ConvertToWeightedFuncAndHashCode(), null, "SelectMany");
+            return this.Manufacture<R2>((i, v) => new Operators.GroupBy<K, V, R, T, R2>(i, v, this.Immutable, key, selector, reducer), key.ConvertToWeightedFuncAndHashCode(), null, true, "SelectMany");
         }
 
         public Collection<R2, T> GroupBy<K, R2>(Expression<Func<R, K>> key, Func<K, IEnumerable<R>, IEnumerable<R2>> reducer)
@@ -275,7 +325,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
 
             var that = other as TypedCollection<R2, T>;
 
-            return this.Manufacture<R2, R3>(that, (i, v) => new Operators.CoGroupBy<K, V1, V2, R, R2, T, R3>(i, v, this.immutable, that.immutable, key1, key2, selector1, selector2, reducer), key1.ConvertToWeightedFuncAndHashCode(), key2.ConvertToWeightedFuncAndHashCode(), null, "CoGroupBy");
+            return this.Manufacture<R2, R3>(that, (i, v) => new Operators.CoGroupBy<K, V1, V2, R, R2, T, R3>(i, v, this.immutable, that.immutable, key1, key2, selector1, selector2, reducer), key1.ConvertToWeightedFuncAndHashCode(), key2.ConvertToWeightedFuncAndHashCode(), null, true, "CoGroupBy");
         }
 
         public Collection<R3, T> CoGroupBy<K, V1, V2, R2, R3>(Collection<R2, T> other, Expression<Func<R, K>> key1, Expression<Func<R2, K>> key2, Expression<Func<R, V1>> selector1, Expression<Func<R2, V2>> selector2, Expression<Func<K, IEnumerable<Weighted<V1>>, IEnumerable<Weighted<V2>>, IEnumerable<Weighted<R3>>>> reducer)
@@ -303,7 +353,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
 
             var that = other as TypedCollection<R2, T>;
 
-            return this.Manufacture<R2, R3>(that, (i, v) => new Operators.CoGroupBy<K, V1, V2, R, R2, T, R3>(i, v, this.immutable, that.immutable, key1, key2, selector1, selector2, reducer), key1.ConvertToWeightedFuncAndHashCode(), key2.ConvertToWeightedFuncAndHashCode(), null, "CoGroupBy");
+            return this.Manufacture<R2, R3>(that, (i, v) => new Operators.CoGroupBy<K, V1, V2, R, R2, T, R3>(i, v, this.immutable, that.immutable, key1, key2, selector1, selector2, reducer), key1.ConvertToWeightedFuncAndHashCode(), key2.ConvertToWeightedFuncAndHashCode(), null, true, "CoGroupBy");
         }
 
         public Collection<R3, T> CoGroupBy<K, R2, R3>(Collection<R2, T> other, Expression<Func<R, K>> key1, Expression<Func<R2, K>> key2, Expression<Func<K, IEnumerable<R>, IEnumerable<R2>, IEnumerable<R3>>> reducer)
@@ -370,7 +420,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
             
             var that = other as TypedCollection<R2, T>;
 
-            return this.Manufacture<R2,R3>(that, (i, v) => new Operators.Join<K, R, R2, R, R2, T, R3>(i, v, this.Immutable, that.Immutable, key1, key2, x => x, x => x, (k, x, y) => compiledReducer(x, y)), key1.ConvertToWeightedFuncAndHashCode(), key2.ConvertToWeightedFuncAndHashCode(), null, "Join");
+            return this.Manufacture<R2,R3>(that, (i, v) => new Operators.Join<K, R, R2, R, R2, T, R3>(i, v, this.Immutable, that.Immutable, key1, key2, x => x, x => x, (k, x, y) => compiledReducer(x, y)), key1.ConvertToWeightedFuncAndHashCode(), key2.ConvertToWeightedFuncAndHashCode(), null, true, "Join");
         }
 
         public Collection<R3, T> Join<K, V1, V2, R2, R3>(Collection<R2, T> other, Expression<Func<R, K>> key1, Expression<Func<R2, K>> key2, Expression<Func<R, V1>> val1, Expression<Func<R2, V2>> val2, Expression<Func<K, V1, V2, R3>> reducer)
@@ -400,7 +450,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
 
             var that = other as TypedCollection<R2, T>;
 
-            return this.Manufacture<R2, R3>(that, (i, v) => new Operators.Join<K, V1, V2, R, R2, T, R3>(i, v, this.Immutable, that.Immutable, key1, key2, val1, val2, (k, x, y) => compiledReducer(k, x, y)), key1.ConvertToWeightedFuncAndHashCode(), key2.ConvertToWeightedFuncAndHashCode(), null, "Join");
+            return this.Manufacture<R2, R3>(that, (i, v) => new Operators.Join<K, V1, V2, R, R2, T, R3>(i, v, this.Immutable, that.Immutable, key1, key2, val1, val2, (k, x, y) => compiledReducer(k, x, y)), key1.ConvertToWeightedFuncAndHashCode(), key2.ConvertToWeightedFuncAndHashCode(), null, true, "Join");
         }
 
         public Collection<R3, T> Join<V1, V2, R2, R3>(Collection<R2, T> other, Expression<Func<R, Int32>> key1, Expression<Func<R2, Int32>> key2, Expression<Func<R, V1>> val1, Expression<Func<R2, V2>> val2, Expression<Func<Int32, V1, V2, R3>> reducer, bool useDenseIntKeys)
@@ -430,7 +480,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
             {
                 var that = other as TypedCollection<R2, T>;
 
-                return this.Manufacture<R2, R3>(that, (i, v) => new Operators.JoinIntKeyed<V1, V2, R, R2, T, R3>(i, v, this.Immutable, that.Immutable, key1, key2, val1, val2, (k, x, y) => compiledReducer(k, x, y)), key1.ConvertToWeightedFuncAndHashCode(), key2.ConvertToWeightedFuncAndHashCode(), null, "Join");
+                return this.Manufacture<R2, R3>(that, (i, v) => new Operators.JoinIntKeyed<V1, V2, R, R2, T, R3>(i, v, this.Immutable, that.Immutable, key1, key2, val1, val2, (k, x, y) => compiledReducer(k, x, y)), key1.ConvertToWeightedFuncAndHashCode(), key2.ConvertToWeightedFuncAndHashCode(), null, true, "Join");
             }
             else
                 return this.Join<Int32, V1, V2, R2, R3>(other, key1, key2, val1, val2, reducer);
@@ -456,7 +506,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
             if (reducer == null)
                 throw new ArgumentNullException("reducer");
 
-            return this.Manufacture<R2>((i, v) => new Operators.Aggregate<K, R, T, R2, V>(i, v, this.Immutable, key, value, axpy, isZero, reducer), key.ConvertToWeightedFuncAndHashCode(), null, "Aggregate");
+            return this.Manufacture<R2>((i, v) => new Operators.Aggregate<K, R, T, R2, V>(i, v, this.Immutable, key, value, axpy, isZero, reducer), key.ConvertToWeightedFuncAndHashCode(), null, true, "Aggregate");
         }
 
         public Collection<Pair<K, Int64>, T> Count<K>(Expression<Func<R, K>> key)
@@ -475,7 +525,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
             if (reducer == null)
                 throw new ArgumentNullException("reducer");
 
-            return this.Manufacture<R2>((i, v) => new Operators.Count<K, R, T, R2>(i, v, this.Immutable, key, reducer), key.ConvertToWeightedFuncAndHashCode(), null, "Count");
+            return this.Manufacture<R2>((i, v) => new Operators.Count<K, R, T, R2>(i, v, this.Immutable, key, reducer), key.ConvertToWeightedFuncAndHashCode(), null, true, "Count");
         }
 
         public Collection<R2, T> Sum<K, R2>(Expression<Func<R, K>> key, Expression<Func<R, int>> valueSelector, Expression<Func<K, int, R2>> reducer)
@@ -489,7 +539,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
             if (reducer == null)
                 throw new ArgumentNullException("reducer");
 
-            return this.Manufacture<R2>((i,v) => new Operators.SumInt32<K, R, T, R2>(i, v, this.Immutable, key, valueSelector, reducer), key.ConvertToWeightedFuncAndHashCode(), null, "Sum<Int32>");
+            return this.Manufacture<R2>((i,v) => new Operators.SumInt32<K, R, T, R2>(i, v, this.Immutable, key, valueSelector, reducer), key.ConvertToWeightedFuncAndHashCode(), null, true, "Sum<Int32>");
         }
 
         public Collection<R2, T> Sum<K, R2>(Expression<Func<R, K>> key, Expression<Func<R, Int64>> valueSelector, Expression<Func<K, Int64, R2>> reducer)
@@ -503,7 +553,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
             if (reducer == null)
                 throw new ArgumentNullException("reducer");
 
-            return this.Manufacture<R2>((i, v) => new Operators.SumInt64<K, R, T, R2>(i, v, this.Immutable, key, valueSelector, reducer), key.ConvertToWeightedFuncAndHashCode(), null, "Sum<Int64>");
+            return this.Manufacture<R2>((i, v) => new Operators.SumInt64<K, R, T, R2>(i, v, this.Immutable, key, valueSelector, reducer), key.ConvertToWeightedFuncAndHashCode(), null, true, "Sum<Int64>");
         }
 
         public Collection<R2, T> Sum<K, R2>(Expression<Func<R, K>> key, Expression<Func<R, float>> valueSelector, Expression<Func<K, float, R2>> reducer)
@@ -517,7 +567,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
             if (reducer == null)
                 throw new ArgumentNullException("reducer");
 
-            return this.Manufacture<R2>((i, v) => new Operators.SumFloat<K, R, T, R2>(i, v, this.Immutable, key, valueSelector, reducer), key.ConvertToWeightedFuncAndHashCode(), null, "Sum<float>");
+            return this.Manufacture<R2>((i, v) => new Operators.SumFloat<K, R, T, R2>(i, v, this.Immutable, key, valueSelector, reducer), key.ConvertToWeightedFuncAndHashCode(), null, true, "Sum<float>");
         }
 
         public Collection<R2, T> Sum<K, R2>(Expression<Func<R, K>> key, Expression<Func<R, double>> valueSelector, Expression<Func<K, double, R2>> reducer)
@@ -531,7 +581,12 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
             if (reducer == null)
                 throw new ArgumentNullException("reducer");
 
-            return this.Manufacture<R2>((i, v) => new Operators.SumDouble<K, R, T, R2>(i, v, this.Immutable, key, valueSelector, reducer), key.ConvertToWeightedFuncAndHashCode(), null, "Sum<double>");
+            return this.Manufacture<R2>((i, v) => new Operators.SumDouble<K, R, T, R2>(i, v, this.Immutable, key, valueSelector, reducer), key.ConvertToWeightedFuncAndHashCode(), null, true, "Sum<double>");
+        }
+
+        public Collection<R, T> ToStateless()
+        {
+            return this.Manufacture<R>((i, v) => new Operators.ToStateless<R, T>(i, v, this.Immutable), IdentityWeightedFuncAndHashCode<R>(), IdentityWeightedFuncAndHashCode<R>(), true, "ToStateLess");
         }
 
         public Collection<R, T> Min<K, M>(Expression<Func<R, K>> key, Expression<Func<R, M>> minBy)
@@ -545,7 +600,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
 
             var compiledValue = minBy.Compile();
 
-            return this.Manufacture<R>((i,v) => new Operators.Min<K, R, M, R, T>(i, v, this.Immutable, key, x => x, (k, t) => compiledValue(t), (k, t) => t), key.ConvertToWeightedFuncAndHashCode(), key.ConvertToWeightedFuncAndHashCode(), "Min");
+            return this.Manufacture<R>((i, v) => new Operators.Min<K, R, M, R, T>(i, v, this.Immutable, key, x => x, (k, t) => compiledValue(t), (k, t) => t), key.ConvertToWeightedFuncAndHashCode(), key.ConvertToWeightedFuncAndHashCode(), true, "Min");
         }
 
         public Collection<R, T> Min<V, M>(Expression<Func<R, int>> key, Expression<Func<R, V>> value, Expression<Func<int, V, M>> minBy, Expression<Func<int, V, R>> reducer, bool useDenseIntKeys)
@@ -562,7 +617,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
                 throw new ArgumentNullException("reducer");
 
             if (useDenseIntKeys)
-                return this.Manufacture<R>((i,v) => new Operators.MinIntKeyed<V, M, R, T>(i, v, this.Immutable, key, value, minBy, reducer), key.ConvertToWeightedFuncAndHashCode(), null, "Min");
+                return this.Manufacture<R>((i, v) => new Operators.MinIntKeyed<V, M, R, T>(i, v, this.Immutable, key, value, minBy, reducer), key.ConvertToWeightedFuncAndHashCode(), null, true, "Min");
             else
                 return this.Min<int, M, V>(key, value, minBy, reducer);
         }
@@ -579,7 +634,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
             if (reducer == null)
                 throw new ArgumentNullException("reducer");
 
-            return this.Manufacture<R>((i,v) => new Operators.Min<K, V, M, R, T>(i, v, this.Immutable, key, value, minBy, reducer), key.ConvertToWeightedFuncAndHashCode(), null, "Min");
+            return this.Manufacture<R>((i, v) => new Operators.Min<K, V, M, R, T>(i, v, this.Immutable, key, value, minBy, reducer), key.ConvertToWeightedFuncAndHashCode(), null, true, "Min");
         }
 
         public Collection<R, T> Max<K, M>(Expression<Func<R, K>> key, Expression<Func<R, M>> value)
@@ -592,7 +647,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
                 throw new ArgumentNullException("value");
             var compiledValue = value.Compile();
 
-            return this.Manufacture((i,v) => new Operators.Max<K, R, M, R, T>(i, v, this.Immutable, key, x => x, (k,t) => compiledValue(t), (k,t) => t), key.ConvertToWeightedFuncAndHashCode(), key.ConvertToWeightedFuncAndHashCode(), "Max");
+            return this.Manufacture((i, v) => new Operators.Max<K, R, M, R, T>(i, v, this.Immutable, key, x => x, (k, t) => compiledValue(t), (k, t) => t), key.ConvertToWeightedFuncAndHashCode(), key.ConvertToWeightedFuncAndHashCode(), true, "Max");
         }
 
         public Collection<R, T> Max<K, M, S>(Expression<Func<R, K>> key, Expression<Func<R, S>> selector, Expression<Func<K, S, M>> value, Expression<Func<K, S, R>> reducer)
@@ -609,7 +664,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
             if (reducer == null)
                 throw new ArgumentNullException("reducer");
 
-            return this.Manufacture<R>((i,v) => new Operators.Max<K, S, M, R, T>(i, v, this.Immutable, key, selector, value, reducer), key.ConvertToWeightedFuncAndHashCode(), null, "Max");
+            return this.Manufacture<R>((i, v) => new Operators.Max<K, S, M, R, T>(i, v, this.Immutable, key, selector, value, reducer), key.ConvertToWeightedFuncAndHashCode(), null, true, "Max");
         }
         #endregion Data-parallel aggregations
 
@@ -619,14 +674,14 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
         {
             var ident = ((Expression<Func<R, R>>)(x => x)).ConvertToWeightedFuncAndHashCode();
 
-            return this.Manufacture((i, v) => new Operators.Abs<R, T>(i, v, this.Immutable), ident, ident, "Abs");
+            return this.Manufacture((i, v) => new Operators.Abs<R, T>(i, v, this.Immutable), ident, ident, true, "Abs");
         }
 
         public Collection<R, T> Distinct()
         {
             var ident = ((Expression<Func<R, R>>)(x => x)).ConvertToWeightedFuncAndHashCode();
 
-            return this.Manufacture((i, v) => new Operators.Distinct<R, T>(i, v, this.Immutable), ident, ident, "Distinct");
+            return this.Manufacture((i, v) => new Operators.Distinct<R, T>(i, v, this.Immutable), ident, ident, true, "Distinct");
         }
 
         public Collection<R, T> Union(Collection<R, T> other)
@@ -639,7 +694,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
 
             var ident = ((Expression<Func<R,R>>) (x => x)).ConvertToWeightedFuncAndHashCode();
 
-            return this.Manufacture(that, (i, v) => new Operators.Union<R, T>(i, v, this.Immutable, that.Immutable), ident, ident, ident, "Union");
+            return this.Manufacture(that, (i, v) => new Operators.Union<R, T>(i, v, this.Immutable, that.Immutable), ident, ident, ident, true, "Union");
         }
 
         public Collection<R, T> Intersect(Collection<R, T> other)
@@ -652,7 +707,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
 
             var ident = ((Expression<Func<R, R>>)(x => x)).ConvertToWeightedFuncAndHashCode();
 
-            return this.Manufacture(that, (i, v) => new Operators.Intersect<R, T>(i, v, this.Immutable, that.Immutable), ident, ident, ident, "Intersect");
+            return this.Manufacture(that, (i, v) => new Operators.Intersect<R, T>(i, v, this.Immutable, that.Immutable), ident, ident, ident, true, "Intersect");
         }
 
         public Collection<R, T> SymmetricDifference(Collection<R, T> other)
@@ -665,7 +720,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
 
             var ident = ((Expression<Func<R, R>>)(x => x)).ConvertToWeightedFuncAndHashCode();
 
-            return this.Manufacture(that, (i, v) => new Operators.SymmetricDifference<R, T>(i, v, this.Immutable, that.Immutable), ident, ident, ident, "SymmetricDifference");
+            return this.Manufacture(that, (i, v) => new Operators.SymmetricDifference<R, T>(i, v, this.Immutable, that.Immutable), ident, ident, ident, true, "SymmetricDifference");
 
         }
 
@@ -681,7 +736,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
             if (!Microsoft.Research.Naiad.Utilities.ExpressionComparer.Instance.Equals(this.Output.PartitionedBy, that.Output.PartitionedBy))
                 partitionFunction = null;
 
-            return this.Manufacture(that, (i, v) => new Operators.Concat<R, T>(i, v), partitionFunction, partitionFunction, partitionFunction, "Concat");
+            return this.Manufacture(that, (i, v) => new Operators.Concat<R, T>(i, v), partitionFunction, partitionFunction, partitionFunction, false, "Concat");
         }
 
         public Collection<R, T> Except(Collection<R, T> other)
@@ -696,7 +751,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
             if (!Microsoft.Research.Naiad.Utilities.ExpressionComparer.Instance.Equals(this.Output.PartitionedBy, that.Output.PartitionedBy))
                 partitionFunction = null;
 
-            return this.Manufacture(that, (i, v) => new Operators.Except<R, T>(i, v), partitionFunction, partitionFunction, partitionFunction, "Except");
+            return this.Manufacture(that, (i, v) => new Operators.Except<R, T>(i, v), partitionFunction, partitionFunction, partitionFunction, false, "Except");
         }
 
         #endregion MultiSet operations
@@ -735,7 +790,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
 
             var compiled = partitionedBy.ConvertToWeightedFuncAndHashCode();
 
-            var fp = new Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext<T>(this.Statistics, "FixedPointSequence");
+            var fp = new Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext<T>(this.Context);
 
             // probably doesn't work correctly when max + pri >= 2^31. Fix!
             var delayVertex = fp.Delay(compiled, maxIterations);
@@ -786,7 +841,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
 
             var compiled = consolidateFunction.ConvertToWeightedFuncAndHashCode();
 
-            var fp = new Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext<T>(this.Statistics, "FixedPoint");
+            var fp = new Microsoft.Research.Naiad.Dataflow.Iteration.LoopContext<T>(this.Context);
 
             var delay = fp.Delay<Weighted<R>>(compiled, maxIterations);
 
@@ -816,14 +871,14 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
         /// <returns>Input collection</returns>
         public Collection<R, T> Monitor(Action<int, List<Pair<Weighted<R>, T>>> action)
         {
-            return this.Manufacture((i,v) => new Operators.Monitor<R, T>(i, v, this.Immutable, action), this.Output.PartitionedBy, this.Output.PartitionedBy, "Monitor");
+            return this.Manufacture((i,v) => new Operators.Monitor<R, T>(i, v, this.Immutable, action), this.Output.PartitionedBy, this.Output.PartitionedBy, false, "Monitor");
         }
 
         #endregion Monitoring
 
         #endregion Naiad Operators
 
-        internal abstract TimeContext<T> Statistics { get; }
+        internal abstract StreamContext Context { get; }
 
         #region Constructor
         internal TypedCollection() { }
@@ -843,7 +898,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
             get { return this.output; }
         }
 
-        internal override TimeContext<T> Statistics
+        internal override StreamContext Context
         {
             get { return this.output.Context; }
         }
@@ -862,7 +917,7 @@ namespace Microsoft.Research.Naiad.Frameworks.DifferentialDataflow
 
         public override Stream<Weighted<R>, T> Output { get { return this.output; } }
 
-        internal override TimeContext<T> Statistics
+        internal override StreamContext Context
         {
             get { return output.Context; }
         }

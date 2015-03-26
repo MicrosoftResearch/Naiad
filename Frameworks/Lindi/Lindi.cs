@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.5
+ * Naiad ver. 0.6
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -21,12 +21,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Research.Naiad.Runtime.FaultTolerance;
 using Microsoft.Research.Naiad.Dataflow;
 using Microsoft.Research.Naiad.Dataflow.PartitionBy;
 using Microsoft.Research.Naiad.Dataflow.StandardVertices;
 using Microsoft.Research.Naiad.Utilities;
 using Microsoft.Research.Naiad.Dataflow.Iteration;
 using System.Linq.Expressions;
+using Microsoft.Research.Naiad.DataStructures;
 
 
 namespace Microsoft.Research.Naiad.Frameworks.Lindi
@@ -62,7 +64,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Lindi
         {
             if (stream == null) throw new ArgumentNullException("stream");
             if (selector == null) throw new ArgumentNullException("selector");
-            return stream.NewUnaryStage((i, v) => new SelectVertex<TInput, TOutput, TTime>(i, v, selector), null, null, "Select");
+            return stream.NewUnaryStage((i, v) => new SelectVertex<TInput, TOutput, TTime>(i, v, selector), null, null, "Select").SetCheckpointType(CheckpointType.Stateless);
         }
 
         internal class SelectVertex<TInput, TOutput, TTime> : UnaryVertex<TInput, TOutput, TTime>
@@ -96,7 +98,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Lindi
         {
             if (stream == null) throw new ArgumentNullException("stream");
             if (predicate == null) throw new ArgumentNullException("predicate");
-            return stream.NewUnaryStage((i, v) => new WhereVertex<TRecord, TTime>(i, v, predicate), stream.PartitionedBy, stream.PartitionedBy, "Where");
+            return stream.NewUnaryStage((i, v) => new WhereVertex<TRecord, TTime>(i, v, predicate), stream.PartitionedBy, stream.PartitionedBy, "Where").SetCheckpointType(CheckpointType.Stateless);
         }
 
         internal class WhereVertex<TRecord, TTime> : UnaryVertex<TRecord, TRecord, TTime>
@@ -132,7 +134,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Lindi
         {
             if (stream == null) throw new ArgumentNullException("stream");
             if (selector == null) throw new ArgumentNullException("selector");
-            return stream.NewUnaryStage((i, v) => new SelectManyVertex<TInput, TOutput, TTime>(i, v, selector), null, null, "SelectMany");
+            return stream.NewUnaryStage((i, v) => new SelectManyVertex<TInput, TOutput, TTime>(i, v, selector), null, null, "SelectMany").SetCheckpointType(CheckpointType.Stateless);
         }
 
         internal class SelectManyVertex<TInput, TOutput, TTime> : UnaryVertex<TInput, TOutput, TTime>
@@ -169,14 +171,22 @@ namespace Microsoft.Research.Naiad.Frameworks.Lindi
             if (stream2 == null) throw new ArgumentNullException("stream2");
             // test to see if they are partitioned properly, and if so maintain the information in output partitionedby information.
             var partitionedBy = ExpressionComparer.Instance.Equals(stream1.PartitionedBy, stream2.PartitionedBy) ? stream1.PartitionedBy : null;
-            return stream1.NewBinaryStage(stream2, (i, v) => new ConcatVertex<TRecord, TTime>(i, v), partitionedBy, partitionedBy, partitionedBy, "Concat");
+            return stream1
+                .NewBinaryStage(stream2, (i, v) => new ConcatVertex<TRecord, TTime>(i, v), partitionedBy, partitionedBy, partitionedBy, "Concat")
+                .SetCheckpointType(CheckpointType.Stateless);
         }
 
         internal class ConcatVertex<TRecord, TTime> : BinaryVertex<TRecord, TRecord, TRecord, TTime>
             where TTime : Time<TTime>
         {
-            public override void OnReceive1(Message<TRecord, TTime> message) { this.Output.Send(message); }
-            public override void OnReceive2(Message<TRecord, TTime> message) { this.Output.Send(message); }
+            public override void OnReceive1(Message<TRecord, TTime> message)
+            {
+                this.Output.Send(message);
+            }
+            public override void OnReceive2(Message<TRecord, TTime> message)
+            {
+                this.Output.Send(message);
+            }
 
             public ConcatVertex(int index, Stage<TTime> stage) : base(index, stage) { }
         }
@@ -198,7 +208,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Lindi
             if (stream == null) throw new ArgumentNullException("stream");
             if (keySelector == null) throw new ArgumentNullException("keySelector");
             if (reducer == null) throw new ArgumentNullException("reducer");
-            return stream.UnaryExpression(x => keySelector(x).GetHashCode(), x => x.GroupBy(keySelector, reducer).SelectMany(y => y), "GroupBy");
+            return stream.UnaryExpression(x => keySelector(x).GetHashCode(), x => x.GroupBy(keySelector, reducer).SelectMany(y => y), "GroupBy").SetCheckpointType(CheckpointType.Stateless);
         }
 
         /// <summary>
@@ -222,7 +232,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Lindi
             if (keySelector1 == null) throw new ArgumentNullException("keySelector1");
             if (keySelector2 == null) throw new ArgumentNullException("keySelector2");
             if (reducer == null) throw new ArgumentNullException("reducer");
-            return stream1.NewBinaryStage(stream2, (i, s) => new CoGroupByVertex<TKey, TInput1, TInput2, List<TInput1>, List<TInput2>, TOutput, TTime>(i, s, keySelector1, keySelector2, () => new List<TInput1>(), () => new List<TInput2>(), (l, elem) => { l.Add(elem); return l; }, (l, elem) => { l.Add(elem); return l; }, reducer), x => keySelector1(x).GetHashCode(), x => keySelector2(x).GetHashCode(), null, "CoGroupBy");
+            return stream1.NewBinaryStage(stream2, (i, s) => new CoGroupByVertex<TKey, TInput1, TInput2, List<TInput1>, List<TInput2>, TOutput, TTime>(i, s, keySelector1, keySelector2, () => new List<TInput1>(), () => new List<TInput2>(), (l, elem) => { l.Add(elem); return l; }, (l, elem) => { l.Add(elem); return l; }, reducer), x => keySelector1(x).GetHashCode(), x => keySelector2(x).GetHashCode(), null, "CoGroupBy").SetCheckpointType(CheckpointType.Stateless);
         }
 
         internal class CoGroupByVertex<TKey, TInput1, TInput2, TState1, TState2, TOutput, TTime> : BinaryVertex<TInput1, TInput2, TOutput, TTime>
@@ -395,7 +405,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Lindi
             if (keySelector1 == null) throw new ArgumentNullException("keySelector1");
             if (keySelector2 == null) throw new ArgumentNullException("keySelector2");
             if (resultSelector == null) throw new ArgumentNullException("resultSelector");
-            return stream1.NewBinaryStage(stream2, (i, s) => new JoinVertex<TInput1, TInput2, TKey, TOutput, TTime>(i, s, keySelector1, keySelector2, resultSelector), x => keySelector1(x).GetHashCode(), x => keySelector2(x).GetHashCode(), null, "Join");
+            return stream1.NewBinaryStage(stream2, (i, s) => new JoinVertex<TInput1, TInput2, TKey, TOutput, TTime>(i, s, keySelector1, keySelector2, resultSelector), x => keySelector1(x).GetHashCode(), x => keySelector2(x).GetHashCode(), null, "Join").SetCheckpointType(CheckpointType.Stateless);
         }
 
         internal class JoinVertex<TInput1, TInput2, TKey, TOutput, TTime> : BinaryVertex<TInput1, TInput2, TOutput, TTime> where TTime : Time<TTime>
@@ -488,7 +498,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Lindi
         public static Stream<TRecord, TTime> Distinct<TRecord, TTime>(this Stream<TRecord, TTime> stream) where TTime : Time<TTime>
         {
             if (stream == null) throw new ArgumentNullException("stream");
-            return stream.NewUnaryStage((i, v) => new DistinctVertex<TRecord, TTime>(i, v), x => x.GetHashCode(), x => x.GetHashCode(), "Distinct");
+            return stream.NewUnaryStage((i, v) => new DistinctVertex<TRecord, TTime>(i, v), x => x.GetHashCode(), x => x.GetHashCode(), "Distinct").SetCheckpointType(CheckpointType.Stateless);
         }
 
         internal class DistinctVertex<TRecord, TTime> : UnaryVertex<TRecord, TRecord, TTime>
@@ -547,7 +557,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Lindi
         {
             if (stream1 == null) throw new ArgumentNullException("stream1");
             if (stream2 == null) throw new ArgumentNullException("stream2");
-            return stream1.NewBinaryStage(stream2, (i, s) => new IntersectVertex<TRecord, TTime>(i, s), x => x.GetHashCode(), x => x.GetHashCode(), x => x.GetHashCode(), "Intersect");
+            return stream1.NewBinaryStage(stream2, (i, s) => new IntersectVertex<TRecord, TTime>(i, s), x => x.GetHashCode(), x => x.GetHashCode(), x => x.GetHashCode(), "Intersect").SetCheckpointType(CheckpointType.Stateless);
         }
 
         internal class IntersectVertex<TRecord, TTime> : BinaryVertex<TRecord, TRecord, TRecord, TTime> where TTime : Time<TTime>
@@ -610,7 +620,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Lindi
         {
             if (stream1 == null) throw new ArgumentNullException("stream1");
             if (stream2 == null) throw new ArgumentNullException("stream2");
-            return stream1.NewBinaryStage(stream2, (i, s) => new ExceptVertex<TRecord, TTime>(i, s), x => x.GetHashCode(), x => x.GetHashCode(), x => x.GetHashCode(), "Except");
+            return stream1.NewBinaryStage(stream2, (i, s) => new ExceptVertex<TRecord, TTime>(i, s), x => x.GetHashCode(), x => x.GetHashCode(), x => x.GetHashCode(), "Except").SetCheckpointType(CheckpointType.Stateless);
         }
 
         internal class ExceptVertex<TRecord, TTime> : BinaryVertex<TRecord, TRecord, TRecord, TTime> where TTime : Time<TTime>
@@ -792,7 +802,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Lindi
         {
             if (stream == null) throw new ArgumentNullException("stream");
             if (combiner == null) throw new ArgumentNullException("combiner");
-            return stream.NewUnaryStage((i, s) => new AggregateVertex<TKey, TState, TTime>(i, s, combiner), x => x.First.GetHashCode(), x => x.First.GetHashCode(), "Combiner");
+            return stream.NewUnaryStage((i, s) => new AggregateVertex<TKey, TState, TTime>(i, s, combiner), x => x.First.GetHashCode(), x => x.First.GetHashCode(), "Combiner").SetCheckpointType(CheckpointType.Stateless);
         }
 
         /// <summary>
@@ -811,8 +821,8 @@ namespace Microsoft.Research.Naiad.Frameworks.Lindi
             if (stream == null) throw new ArgumentNullException("stream");
             if (combiner == null) throw new ArgumentNullException("combiner");
             if (locallyCombine)
-                return stream.NewUnaryStage((i, s) => new AggregateVertex<TKey, TState, TTime>(i, s, combiner), null, null, "Combiner")
-                             .NewUnaryStage((i, s) => new AggregateVertex<TKey, TState, TTime>(i, s, combiner), x => x.First.GetHashCode(), x => x.First.GetHashCode(), "Combiner");
+                return stream.NewUnaryStage((i, s) => new AggregateVertex<TKey, TState, TTime>(i, s, combiner), null, null, "Combiner").SetCheckpointType(CheckpointType.Stateless)
+                             .NewUnaryStage((i, s) => new AggregateVertex<TKey, TState, TTime>(i, s, combiner), x => x.First.GetHashCode(), x => x.First.GetHashCode(), "Combiner").SetCheckpointType(CheckpointType.Stateless);
             else
                 return stream.Aggregate(combiner);
         }
@@ -887,7 +897,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Lindi
         {
             if (stream == null) throw new ArgumentNullException("stream");
             if (selector == null) throw new ArgumentNullException("selector");
-            return stream.NewUnaryStage((i, v) => new VertexSelect<TInput, TOutput, TTime>(i, v, selector), null, null, "SelectByVertex");
+            return stream.NewUnaryStage((i, v) => new VertexSelect<TInput, TOutput, TTime>(i, v, selector), null, null, "SelectByVertex").SetCheckpointType(CheckpointType.Stateless);
         }
 
         /// <summary>
@@ -908,7 +918,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Lindi
         {
             if (stream == null) throw new ArgumentNullException("stream");
             if (selector == null) throw new ArgumentNullException("selector");
-            return stream.NewUnaryStage((i, v) => new SelectManyArraySegment<TInput, TOutput, TTime>(i, v, selector), null, null, "SelectManyArraySegment");
+            return stream.NewUnaryStage((i, v) => new SelectManyArraySegment<TInput, TOutput, TTime>(i, v, selector), null, null, "SelectManyArraySegment").SetCheckpointType(CheckpointType.Stateless);
         }
 
         /// <summary>
@@ -925,7 +935,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Lindi
             if (stream == null) throw new ArgumentNullException("stream");
             if (predicate == null) throw new ArgumentNullException("predicate");
 
-            return stream.NewUnaryStage((i, s) => new SynchronizeVertex<TRecord, TTime>(i, s, predicate), null, stream.PartitionedBy, "Synchronize");
+            return stream.NewUnaryStage((i, s) => new SynchronizeVertex<TRecord, TTime>(i, s, predicate), null, stream.PartitionedBy, "Synchronize").SetCheckpointType(CheckpointType.Stateless);
         }
 
         /// <summary>
@@ -962,7 +972,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Lindi
         {
             if (stream == null) throw new ArgumentNullException("stream");
             if (function == null) throw new ArgumentNullException("function");
-            return stream.Iterate(function, x => 0, partitionedBy, iterations, name);
+            return stream.Iterate(function, null, partitionedBy, iterations, name);
         }
 
         /// <summary>
@@ -982,8 +992,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Lindi
         {
             if (stream == null) throw new ArgumentNullException("stream");
             if (function == null) throw new ArgumentNullException("function");
-            if (iterationSelector == null) throw new ArgumentNullException("iterationSelector");
-            var helper = new LoopContext<TTime>(stream.Context, name);
+            var helper = new LoopContext<TTime>(stream.Context);
 
             var delayed = helper.Delay(partitionedBy, iterations);
 
@@ -1032,7 +1041,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Lindi
         {
             if (stream == null) throw new ArgumentNullException("stream");
             if (function == null) throw new ArgumentNullException("function");
-            return stream.IterateAndAccumulate(function, x => 0, partitionedBy, iterations, name);
+            return stream.IterateAndAccumulate(function, null, partitionedBy, iterations, name);
         }
 
         /// <summary>
@@ -1052,8 +1061,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Lindi
         {
             if (stream == null) throw new ArgumentNullException("stream");
             if (function == null) throw new ArgumentNullException("function");
-            if (iterationSelector == null) throw new ArgumentNullException("iterationSelector");
-            var helper = new LoopContext<TTime>(stream.Context, name);
+            var helper = new LoopContext<TTime>(stream.Context);
 
             var delayed = helper.Delay(partitionedBy, iterations);
 
@@ -1084,7 +1092,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Lindi
             if (stream == null) throw new ArgumentNullException("stream");
             if (format == null) throw new ArgumentNullException("format");
             if (action == null) throw new ArgumentNullException("action");
-            stream.NewSinkStage((i, v) => new Writer<TInput>(i, v, action, format), null, "Writer");
+            stream.NewSinkStage((i, v) => new Writer<TInput>(i, v, action, format), null, "Writer").SetCheckpointType(CheckpointType.Stateless);
         }
     }
    
@@ -1121,8 +1129,14 @@ namespace Microsoft.Research.Naiad.Frameworks.Lindi
             {
                 var record = message.payload[ii];
                 foreach (var result in function(record))
-                    for (int i = result.Offset; i < result.Offset + result.Count; i++)
-                        output.Send(result.Array[i]);
+                {
+                    var array = result.Array;
+                    var count = result.Count;
+                    var offset = result.Offset;
+
+                    for (int i = offset; i < offset + count; i++)
+                        output.Send(array[i]);
+                }
             }
         }
 
@@ -1137,7 +1151,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Lindi
         where TTime : Time<TTime>
     {
         private readonly Func<TTime, bool> Predicate;
-        private readonly Dictionary<TTime, List<TRecord>> Records;
+        private readonly Dictionary<TTime, SpinedList<TRecord>> Records;
 
         public override void OnReceive(Message<TRecord, TTime> message)
         {
@@ -1145,7 +1159,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Lindi
             {
                 if (!this.Records.ContainsKey(message.time))
                 {
-                    this.Records.Add(message.time, new List<TRecord>());
+                    this.Records.Add(message.time, new SpinedList<TRecord>());
                     this.NotifyAt(message.time);
                 }
 
@@ -1165,8 +1179,11 @@ namespace Microsoft.Research.Naiad.Frameworks.Lindi
                 this.Records.Remove(time);
 
                 var output = this.Output.GetBufferForTime(time);
-                for (int i = 0; i < list.Count; i++)
-                    output.Send(list[i]);
+                list.IterateOver((array, count) =>
+                {
+                    for (int i = 0; i < count; i++)
+                        output.Send(array[i]);
+                });
             }
         }
 
@@ -1174,7 +1191,7 @@ namespace Microsoft.Research.Naiad.Frameworks.Lindi
             : base(index, stage)
         {
             this.Predicate = predicate;
-            this.Records = new Dictionary<TTime, List<TRecord>>();
+            this.Records = new Dictionary<TTime, SpinedList<TRecord>>();
         }
     }
 

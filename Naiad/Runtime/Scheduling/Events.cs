@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.5
+ * Naiad ver. 0.6
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -68,10 +68,16 @@ namespace Microsoft.Research.Naiad.Diagnostics
         /// The worker thread that is sleeping.
         /// </summary>
         public readonly int ThreadId;
+        /// <summary>
+        /// If all the shared queues have drained when this worker goes to sleep, this contains the total number
+        /// of items drained from all the queues, otherwise it is -1
+        /// </summary>
+        public readonly int QueueHighWaterMark;
 
-        internal WorkerSleepArgs(int threadId)
+        internal WorkerSleepArgs(int threadId, int queueHighWaterMark)
         {
             this.ThreadId = threadId;
+            this.QueueHighWaterMark = queueHighWaterMark;
         }
     }
 

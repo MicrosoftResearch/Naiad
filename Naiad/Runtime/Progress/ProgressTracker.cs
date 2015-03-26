@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.5
+ * Naiad ver. 0.6
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -30,6 +30,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Microsoft.Research.Naiad.Diagnostics;
+using Microsoft.Research.Naiad.Runtime.FaultTolerance;
 
 namespace Microsoft.Research.Naiad.Runtime.Progress
 {
@@ -44,6 +45,10 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
 
         LocalProgressInfo GetInfoForWorker(int workerId);
         ProgressUpdateAggregator Aggregator { get; }
+
+        void ForceFlush();
+        void PrepareForRollback(bool preparing);
+        void Reset();
 
         void Complain(TextWriter writer);
 
@@ -79,30 +84,45 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
             this.consumer.FrontierEmpty.WaitOne();
         }
 
+        public void ForceFlush()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void PrepareForRollback(bool preparing)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Reset()
+        {
+            throw new NotImplementedException();
+        }
+
         public DistributedProgressTracker(InternalComputation internalComputation) 
         {
             var processes = internalComputation.Controller.Configuration.Processes;
             var processid = internalComputation.Controller.Configuration.ProcessID;
 
-            var context = new TimeContext<Empty>(internalComputation.ContextManager.MakeRawContextForScope<Empty>("progress context"));
-
             // construct aggregator stage with unconnected output
             var aggregatorPlacement = new Placement.SingleVertexPerProcess(processes, 0);
-            var aggregator = new Stage<ProgressUpdateAggregator, Empty>(aggregatorPlacement, context, Stage.OperatorType.Default, (i, v) => new ProgressUpdateAggregator(i, v), "Aggregator");
-            var stream = aggregator.NewOutput(vertex => vertex.Output);
+            var aggregator = new Stage<ProgressUpdateAggregator, Empty>(aggregatorPlacement, internalComputation, Stage.OperatorType.Default, (i, v) => new ProgressUpdateAggregator(i, v), "Aggregator");
+            aggregator.SetCheckpointType(CheckpointType.None);
+            var stream = aggregator.NewTypedOutput(vertex => vertex.Output, null);
             aggregator.Materialize();
             this.aggregator = aggregator.GetVertex(processid);
 
             // construct consumer stage with unconnected input
             var consumerPlacement = new Placement.SingleVertexPerProcess(processes, 0);
-            var consumer = new Stage<ProgressUpdateConsumer, Empty>(consumerPlacement, context, Stage.OperatorType.Default, (i, v) => new ProgressUpdateConsumer(i, v, this.aggregator), "Consumer");
+            var consumer = new Stage<ProgressUpdateConsumer, Empty>(consumerPlacement, internalComputation, Stage.OperatorType.Default, (i, v) => new ProgressUpdateConsumer(i, v, this.aggregator), "Consumer");
+            consumer.SetCheckpointType(CheckpointType.None);
             var recvPort = consumer.NewUnconnectedInput(vertex => vertex.Input, null);
             consumer.Materialize();
             this.consumer = consumer.GetVertex(processid);
 
             // connect aggregators to consumers with special progress channel
-            this.progressChannel = new ProgressChannel(aggregatorPlacement.Count, this.consumer, stream.StageOutput, recvPort, internalComputation.Controller, internalComputation.AllocateNewGraphIdentifier());
-            stream.StageOutput.AttachBundleToSender(this.progressChannel);
+            this.progressChannel = new ProgressChannel(aggregatorPlacement.Count, this.consumer, stream.TypedStageOutput, recvPort, internalComputation.Controller, new Edge<Empty, Update, Empty>(internalComputation.AllocateNewGraphIdentifier()));
+            stream.TypedStageOutput.AttachBundleToSender(this.progressChannel);
 
             Logging.Progress("Distributed progress tracker enabled");
         }
@@ -150,6 +170,25 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
                 this.centralizer.InjectElement(time, update);
         }
 
+        public void ForceFlush()
+        {
+            this.aggregator.ConsiderFlushingBufferedUpdates(true);
+        }
+
+        public void PrepareForRollback(bool preparing)
+        {
+            // this may only be called by the process where the centralizer lives
+            this.centralizer.PrepareCentralizerForRollback(preparing);
+        }
+
+        public void Reset()
+        {
+            aggregator.Reset();
+            if (this.centralizer != null)
+                centralizer.Reset();
+            consumer.Reset();
+        }
+
 
         public CentralizedProgressTracker(InternalComputation internalComputation) 
         {
@@ -161,37 +200,38 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
 
             Logging.Progress("Centralized progress tracker enabled, running on process {0} thread {1}", centralizerProcessId, centralizerThreadId);
 
-            var context = new TimeContext<Empty>(internalComputation.ContextManager.MakeRawContextForScope<Empty>("progress context"));
-
             // construct aggregator stage and unconnected output
             var aggregatorPlacement = new Placement.SingleVertexPerProcess(processes, 0);
-            var aggregatorStage = new Stage<ProgressUpdateAggregator, Empty>(aggregatorPlacement, context, Stage.OperatorType.Default, (i, v) => new ProgressUpdateAggregator(i, v), "Aggregator");
-            var stream = aggregatorStage.NewOutput(vertex => vertex.Output);
+            var aggregatorStage = new Stage<ProgressUpdateAggregator, Empty>(aggregatorPlacement, internalComputation, Stage.OperatorType.Default, (i, v) => new ProgressUpdateAggregator(i, v), "Aggregator");
+            aggregatorStage.SetCheckpointType(CheckpointType.None);
+            var stream = aggregatorStage.NewTypedOutput(vertex => vertex.Output, null);
             aggregatorStage.Materialize();
             this.aggregator = aggregatorStage.GetVertex(processid);
 
             // construct centralizer stage and unconnected input and output
             var centralizerPlacement = new Placement.SingleVertex(centralizerProcessId, centralizerThreadId);
-            var centralizer = new Stage<ProgressUpdateCentralizer, Empty>(centralizerPlacement, context, Stage.OperatorType.Default, (i, v) => new ProgressUpdateCentralizer(i, v, null), "Centralizer");
+            var centralizer = new Stage<ProgressUpdateCentralizer, Empty>(centralizerPlacement, internalComputation, Stage.OperatorType.Default, (i, v) => new ProgressUpdateCentralizer(i, v, null), "Centralizer");
+            centralizer.SetCheckpointType(CheckpointType.None);
             var centralizerRecvPort = centralizer.NewUnconnectedInput<Update>(vertex => vertex.Input, null);
-            var centralizerSendPort = centralizer.NewOutput(vertex => vertex.Output, null);
+            var centralizerSendPort = centralizer.NewTypedOutput(vertex => vertex.Output, null);
             centralizer.Materialize();
             this.centralizer = (processid == centralizerProcessId) ? centralizer.GetVertex(0) : null;
 
             // construct consumer stage and unconnected input
             var consumerPlacement = new Placement.SingleVertexPerProcess(processes, 0); 
-            var consumer = new Stage<ProgressUpdateConsumer, Empty>(consumerPlacement, context, Stage.OperatorType.Default, (i, v) => new Runtime.Progress.ProgressUpdateConsumer(i, v, this.aggregator), "Consumer");
+            var consumer = new Stage<ProgressUpdateConsumer, Empty>(consumerPlacement, internalComputation, Stage.OperatorType.Default, (i, v) => new Runtime.Progress.ProgressUpdateConsumer(i, v, this.aggregator), "Consumer");
+            consumer.SetCheckpointType(CheckpointType.None);
             var consumerRecvPort = consumer.NewUnconnectedInput(vertex => vertex.Input, null);
             consumer.Materialize();
             this.consumer = consumer.GetVertex(processid);
 
             // connect centralizer to consumers with special progress channel
-            var progressChannel = new ProgressChannel(centralizer.Placement.Count, this.consumer, centralizerSendPort.StageOutput, consumerRecvPort, internalComputation.Controller, internalComputation.AllocateNewGraphIdentifier());
-            centralizerSendPort.StageOutput.AttachBundleToSender(progressChannel);
+            var progressChannel = new ProgressChannel(centralizer.Placement.Count, this.consumer, centralizerSendPort.TypedStageOutput, consumerRecvPort, internalComputation.Controller, new Edge<Empty, Update, Empty>(internalComputation.AllocateNewGraphIdentifier()));
+            centralizerSendPort.TypedStageOutput.AttachBundleToSender(progressChannel);
 
             // connect aggregators to centralizer with special centralized progress channel
-            var centralizerChannel = new CentralizedProgressChannel(centralizer, stream.StageOutput, centralizerRecvPort, internalComputation.Controller, internalComputation.AllocateNewGraphIdentifier());
-            stream.StageOutput.AttachBundleToSender(centralizerChannel);
+            var centralizerChannel = new CentralizedProgressChannel(centralizer, stream.TypedStageOutput, centralizerRecvPort, internalComputation.Controller, new Edge<Empty, Update, Empty>(internalComputation.AllocateNewGraphIdentifier()));
+            stream.TypedStageOutput.AttachBundleToSender(centralizerChannel);
 
             Logging.Progress("Centralized progress tracker initialization completed");
         }
@@ -201,6 +241,8 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
         {
             lock (this.consumer.PCS)
             {
+                foreach (var count in this.consumer.PCS.Counts.OrderBy(c => c.Key.Location))
+                    writer.WriteLine("\tcounts[{0}]:\t{1}", count.Key, count.Value);
                 var frontier = this.consumer.PCS.Frontier;
                 for (int i = 0; i < frontier.Length; i++)
                     writer.WriteLine("\tfrontier[{0}]:\t{1}\t{2}", i, frontier[i], this.consumer.PCS.Counts[frontier[i]]);
@@ -210,6 +252,14 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
             {
                 lock (this.centralizer.PCS)
                 {
+                    foreach (var count in this.centralizer.PCS.Counts.OrderBy(c => c.Key.Location))
+                    {
+                        if (count.Key.Location == 34)
+                        {
+//                            System.Threading.Thread.Sleep(System.Threading.Timeout.Infinite);
+                        }
+                        writer.WriteLine("\tcentralized counts[{0}]:\t{1}", count.Key, count.Value);
+                    }
                     var frontier = this.centralizer.PCS.Frontier;
                     for (int i = 0; i < frontier.Length; i++)
                         writer.WriteLine("\tcentralized frontier[{0}]:\t{1}\t{2}", i, frontier[i], this.centralizer.PCS.Counts[frontier[i]]);

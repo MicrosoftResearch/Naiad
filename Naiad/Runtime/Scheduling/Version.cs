@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.5
+ * Naiad ver. 0.6
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -28,8 +28,18 @@ using Microsoft.Research.Naiad.Dataflow;
 
 namespace Microsoft.Research.Naiad.Runtime.Progress
 {
-    internal static class PointstampConstructor
+    /// <summary>
+    /// Turn a time into a pointstamp
+    /// </summary>
+    public static class PointstampConstructor
     {
+        /// <summary>
+        /// Turn a time into a pointstamp
+        /// </summary>
+        /// <typeparam name="T">time type</typeparam>
+        /// <param name="time">time to convert</param>
+        /// <param name="graphObjectID">location in the dataflow graph of the time</param>
+        /// <returns>new pointstamp</returns>
         public static Pointstamp ToPointstamp<T>(this T time, int graphObjectID) where T : Time<T>
         {
             var pointstamp = new Pointstamp();

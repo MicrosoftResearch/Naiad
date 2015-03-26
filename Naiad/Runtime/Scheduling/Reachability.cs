@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.5
+ * Naiad ver. 0.6
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Microsoft.Research.Naiad.Runtime.Controlling;
+using Microsoft.Research.Naiad.Runtime.FaultTolerance;
 using Microsoft.Research.Naiad.DataStructures;
 
 namespace Microsoft.Research.Naiad.Runtime.Progress
@@ -113,6 +114,14 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
             {
                 this.Index = edge.ChannelId;
                 this.Depth = edge.SourceStage.DefaultVersion.Timestamp.Length;
+                if (edge.SourceStage.IsIterationIngress)
+                {
+                    ++this.Depth;
+                }
+                if (edge.SourceStage.IsIterationEgress)
+                {
+                    --this.Depth;
+                }
 
                 this.Ingress = false;
                 this.Egress = false;
@@ -324,7 +333,9 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
 
         // For each operator, compute the minimal antichain of times that are reachable from the given list of versions, and 
         // update their state accordingly.
-        public void UpdateReachability(InternalController controller, Pointstamp[] versions, List<Dataflow.Vertex> vertices)
+        public void UpdateReachability(
+            InternalController controller, Pointstamp[] versions, List<Dataflow.Vertex> vertices,
+            DiscardManager discardManager)
         {
             //Console.Error.WriteLine("Updating reachability with versions");
             //foreach (var version in versions)
@@ -387,18 +398,18 @@ namespace Microsoft.Research.Naiad.Runtime.Progress
                                 localtime.Location = target;
 
                                 // If the target is a feedback stage, we must increment the last coordinate.
-                                if (this.Graph[target].Advance)
+                                if (this.Graph[collectionId].Advance)
                                     localtime.Timestamp[localtime.Timestamp.Length - 1]++;
 
                                 // If the target is an egress stage, we must strip off the last coordinate.
-                                if (this.Graph[target].Egress)
+                                if (this.Graph[collectionId].Egress)
                                 {
                                     localtime.Timestamp.Length--;
                                     localtime.Timestamp[localtime.Timestamp.Length] = 0;
                                 }
 
                                 // If the target is an ingress stage, we must add a new coordinate.
-                                if (this.Graph[target].Ingress)
+                                if (this.Graph[collectionId].Ingress)
                                 {
                                     localtime.Timestamp.Length++;
                                 }

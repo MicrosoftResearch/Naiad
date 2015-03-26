@@ -1,5 +1,5 @@
 /*
- * Naiad ver. 0.5
+ * Naiad ver. 0.6
  * Copyright (c) Microsoft Corporation
  * All rights reserved. 
  *
@@ -27,6 +27,7 @@ using System.IO;
 using System.Collections.Concurrent;
 using Microsoft.Research.Naiad.DataStructures;
 using Microsoft.Research.Naiad.Dataflow.Channels;
+using Microsoft.Research.Naiad.Runtime.FaultTolerance;
 using System.Diagnostics;
 using System.Linq.Expressions;
 
@@ -40,7 +41,7 @@ namespace Microsoft.Research.Naiad.Dataflow
     public struct Message<TRecord, TTime>
         where TTime : Time<TTime>
     {
-        private const int DEFAULT_MESSAGE_LENGTH = 256;
+        internal const int DefaultMessageLength = 256;
 
         /// <summary>
         /// Payload of typed records
@@ -60,36 +61,34 @@ namespace Microsoft.Research.Naiad.Dataflow
         /// <summary>
         /// Tests whether the message points at valid data or not
         /// </summary>
-        public bool Unallocated { get { return this.payload == null; } }
+        internal bool Unallocated { get { return this.payload == null; } }
 
         /// <summary>
         /// Causes an unallocated message to point at empty valid data
         /// </summary>
         /// <param name="tag">indication of why the allocation was done, for tracing reasons</param>
-        public void Allocate(AllocationReason tag)
+        /// <param name="bufferPool">pool to use for allocation</param>
+        internal void Allocate(AllocationReason tag, BufferPool<TRecord> bufferPool)
         {
             Debug.Assert(this.Unallocated);
 
             // acquire from a shared queue.
-            this.payload = ThreadLocalMessageBufferPools<TRecord>.pool.Value.CheckOut(DEFAULT_MESSAGE_LENGTH);
-            
-            //ThreadLocalAllocationCounters<TRecord>.Increment(tag); 
+            this.payload = bufferPool.CheckOut(DefaultMessageLength);
         }
 
         /// <summary>
         /// Releases the memory held by an allocated message back to a pool. Only call when no other references to the message are held.
         /// </summary>
         /// <param name="tag">indication of why the release was done, for tracing reasons</param>
-        public void Release(AllocationReason tag)
+        /// <param name="bufferPool">pool used for allocation</param>
+        internal void Release(AllocationReason tag, BufferPool<TRecord> bufferPool)
         {
             Debug.Assert(!this.Unallocated);
 
             Array.Clear(this.payload, 0, this.length);
 
             // return to a shared queue.
-            ThreadLocalMessageBufferPools<TRecord>.pool.Value.CheckIn(this.payload);
-            
-            //ThreadLocalAllocationCounters<TRecord>.Decrement(tag);
+            bufferPool.CheckIn(this.payload);
 
             this.payload = null;
             this.length = 0;
@@ -108,23 +107,44 @@ namespace Microsoft.Research.Naiad.Dataflow
     }
 
     /// <summary>
-    /// Represents the recipient of a <see cref="Message{TRecord,TTime}"/>
+    /// Represents a channel that can be flushed of sent items
     /// </summary>
-    /// <typeparam name="TRecord">record type</typeparam>
-    /// <typeparam name="TTime">time type</typeparam>
-    public interface SendChannel<TRecord, TTime>
-        where TTime : Time<TTime>
+    public interface FlushableChannel
     {
-        /// <summary>
-        /// Inserts the given <paramref name="message"/>into the channel.
-        /// </summary>
-        /// <param name="message">The message to be sent.</param>
-        void Send(Message<TRecord, TTime> message);
-
         /// <summary>
         /// Flushes any buffered messages to the receiver.
         /// </summary>
         void Flush();
+    }
+
+    /// <summary>
+    /// Represents the recipient of a <see cref="Message{TRecord,TTime}"/>
+    /// </summary>
+    /// <typeparam name="TSender">time type of the sending vertex</typeparam>
+    /// <typeparam name="TRecord">record type</typeparam>
+    /// <typeparam name="TTime">time type</typeparam>
+    public interface SendChannel<TSender, TRecord, TTime> : FlushableChannel
+        where TSender : Time<TSender>
+        where TTime : Time<TTime>
+    {
+        /// <summary>
+        /// Inserts the given <paramref name="message"/> into the channel.
+        /// </summary>
+        /// <param name="vertexTime">The time of the event sending the message.</param>
+        /// <param name="message">The message to be sent.</param>
+        void Send(TSender vertexTime, Message<TRecord, TTime> message);
+
+        /// <summary>
+        /// Install the class that handles checkpointing/logging for outgoing messages
+        /// </summary>
+        /// <param name="logger"></param>
+        void EnableLogging(IOutgoingMessageLogger<TSender, TRecord, TTime> logger);
+
+        /// <summary>
+        /// Get an object that can be used to replay logged messages
+        /// </summary>
+        /// <returns>the replayer</returns>
+        IOutgoingMessageReplayer<TSender,TTime> GetMessageReplayer();
     }
 }
 
@@ -159,13 +179,18 @@ namespace Microsoft.Research.Naiad.Dataflow.Channels
         }
     }
 
-    internal interface Cable<S, T>
+    internal interface Cable<TSender, S, T>
+        where TSender : Time<TSender>
         where T : Time<T>
     {
-        SendChannel<S, T> GetSendChannel(int i);
+        SendChannel<TSender, S, T> GetSendChannel(int i);
 
-        Dataflow.Stage SourceStage { get; }
-        Dataflow.Stage DestinationStage { get; }
-        int ChannelId { get; }
+        Dataflow.Stage<TSender> SourceStage { get; }
+        Dataflow.Stage<T> DestinationStage { get; }
+        Edge<TSender, S, T> Edge { get; }
+
+        void EnableReceiveLogging();
+
+        void ReMaterializeForRollback(Dictionary<int, Vertex> newSourceVertices, Dictionary<int, Vertex> newTargetVertices);
     }
 }
