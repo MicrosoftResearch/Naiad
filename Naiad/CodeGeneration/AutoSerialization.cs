@@ -17,7 +17,7 @@
  * See the Apache Version 2.0 License for specific language governing
  * permissions and limitations under the License.
  */
-#define FIXED_STRING_SERIALIZATION
+// #define FIXED_STRING_SERIALIZATION
 using System;
 using System.CodeDom;
 using System.CodeDom.Compiler;
@@ -1237,7 +1237,7 @@ namespace Microsoft.Research.Naiad.Serialization
                 nullStringStmts.Add(Assign(toDeserialize, new CodePrimitiveExpression(null)));
 
                 List<CodeStatement> stringStmts = new List<CodeStatement>();
-                
+
                 stringStmts.Add(Assign(toDeserialize,
                     new CodeObjectCreateExpression(typeof(string), new CodeCastExpression(typeof(char).MakePointerType(), currentPosition), Expr("0"), Var(lengthVar))));
 
