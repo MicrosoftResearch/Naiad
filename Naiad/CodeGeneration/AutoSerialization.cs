@@ -17,7 +17,7 @@
  * See the Apache Version 2.0 License for specific language governing
  * permissions and limitations under the License.
  */
-//#define FIXED_STRING_SERIALIZATION
+// #define FIXED_STRING_SERIALIZATION
 using System;
 using System.CodeDom;
 using System.CodeDom.Compiler;
@@ -1193,7 +1193,7 @@ namespace Microsoft.Research.Naiad.Serialization
                 stringStmts.Add(Stmt(string.Format("fixed (char* {0} = {1})", stringPtrVar, stringAliasVar) + 
                     "{"));
 
-                stringStmts.Add(Decl(sourceCharPtr, typeof(char*), Var(stringPtrVar)));
+                stringStmts.Add(Decl(sourceCharPtr, typeof(char).MakePointerType(), Var(stringPtrVar)));
 #endif
 
                 string iterationVar = this.GenerateTempVariableName("iteration");
@@ -1239,7 +1239,7 @@ namespace Microsoft.Research.Naiad.Serialization
                 List<CodeStatement> stringStmts = new List<CodeStatement>();
 
                 stringStmts.Add(Assign(toDeserialize,
-                    new CodeObjectCreateExpression(typeof(string), new CodeCastExpression(typeof(char*), currentPosition), Expr("0"), Var(lengthVar))));
+                    new CodeObjectCreateExpression(typeof(string), new CodeCastExpression(typeof(char).MakePointerType(), currentPosition), Expr("0"), Var(lengthVar))));
 
                 stringStmts.Add(Assign(currentPosition, new CodeBinaryOperatorExpression(currentPosition, CodeBinaryOperatorType.Add, BinOp(Var(lengthVar), CodeBinaryOperatorType.Multiply, Expr("sizeof(char)")))));
                 stringStmts.Add(Assign(bytesRemaining, new CodeBinaryOperatorExpression(bytesRemaining, CodeBinaryOperatorType.Subtract, BinOp(Var(lengthVar), CodeBinaryOperatorType.Multiply, Expr("sizeof(char)")))));
