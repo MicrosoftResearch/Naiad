@@ -768,6 +768,9 @@ namespace Microsoft.Research.Naiad
 
             if (this.configuration.Endpoints != null)
             {
+                if(this.configuration.Endpoints.Length >= this.configuration.ProcessID){
+                    throw new ApplicationException("Intended process number (-p) should less then the number supplied to -n");
+                }
                 endpoint = this.configuration.Endpoints[this.configuration.ProcessID];
             }
 
